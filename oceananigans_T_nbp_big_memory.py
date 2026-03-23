@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.15'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.05'
 output_folder = folder #'figures and videos/'
 name = 'comparison-range-NBP-'
 
@@ -32,7 +32,7 @@ video = True
 video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = True
-xy_plot = False
+xy_plot = True
 buoyancy_analysis_plot = False
 plume_plot = False
 
@@ -48,7 +48,7 @@ dTdz = 0.05 # background temperature gradient in K/m
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = 0.1
+Sj = 0.05
 # plotting prep
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -80,10 +80,10 @@ ranges['w'] = [-1*10**(-2), 1*10**(-2)]
 ranges['w_fluc'] = [-0.003, 0.003]
 ranges['restress'] = [-4*10**(-8), 4*10**(-8)]
 ranges['vel'] = [-1e-5, 1e-5]
-ranges['B'] = [-1.0*10**(-2), 1.0*10**(-2)]#[-2.0*10**(-3), 2.0*10**(-3)]#
-ranges['rho'] = [rho0-0.02, rho0+0.9] #[rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+1.3] #
+ranges['B'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
+ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
-ranges['T'] =  [T0-3.4, T0 + 0.05]#[T0-7.0, T0 + 0.05]#[T0-0.7, T0 + 0.05]# 
+ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
@@ -99,7 +99,7 @@ elif Nranks == 1 and stokes:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
 elif Nranks > 1 and not stokes:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes)
-else:
+elif Nranks > 1 and stokes:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
     u_s = stokes_exp(z)
 if salinity:
