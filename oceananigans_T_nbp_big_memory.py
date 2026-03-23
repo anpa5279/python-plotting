@@ -6,9 +6,9 @@ from scipy.interpolate import make_interp_spline
 from plotting_functions import stratification_profile, plot_ranges, turb_stats, plot_3d_fields, vert_plane_slices, xy_plane_slices, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean, richardson_number
 from dense_plume_analysis import plume_bw_anlaysis, mld_info, centerline_analysis_buoyancy
-from dense_plume_plotting import buoyancy_analysis, dense_tracer_analysis
+from plotting_dense_plume import buoyancy_analysis, dense_tracer_analysis
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
-from comparison_plots import plume_spatial_analysis
+from plotting_comparisons import plume_spatial_analysis
 def stokes_exp(z):
     g_Earth = 9.80665
     wavelength = 60.0 #m
@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1 dTdz = 0.05'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.15'
 output_folder = folder #'figures and videos/'
 name = 'comparison-range-NBP-'
 
@@ -266,24 +266,11 @@ for it in np.arange(nt):
             bw_neutral = bw_fluc_center[neutral_index]
             rho_intrusion = rho_perturbed_center[max_index]
             rho_neutral = rho_perturbed_center[neutral_index]
-            # ozmidov length scale
-            #epsilon =visc_dissipation_rate(visc, u, v, wc, dx)
-            #epsilon_avg = np.mean(epsilon, axis=(0, 1, 2))
-            #Lo_plume = ozmidov_length(epsilon, dbdz_plume_avg)
-            #L_ozmidov_background.append(ozmidov_length(epsilon_avg, g*dTdz*alpha))
-            #L_ozmidov_average.append(ozmidov_length(epsilon_avg, dbdz_vol_avg))
-            #L_ozmidov_plume.append(Lo_plume)
 
             #richardson number
             Ri_avg = richardson_number(dbdz_avg, z, u_avg, v_avg)
             Ri_strat = richardson_number(np.gradient(b_background, z, axis=-1), z, u_avg, v_avg)
             Ri_plume = richardson_number(dbdz_center, z, u_center, v_center)
-            #Ri_avg_h = richardson_number_ratio(b_avg, rho_avg, rho0, z, u_fluc_avg, v_fluc_avg, wc_fluc_avg, lx)
-            #Ri_strat_h = richardson_number_ratio(g*alpha*dTdz, rho_avg, rho0, z, u_fluc_avg, v_fluc_avg, wc_fluc_avg, lx)
-            #Ri_plume_h = richardson_number_ratio(dbdz_center, rho_avg, rho0, z, u_fluc_center, v_fluc_center, wc_fluc_center, lx)
-            #Ri_avg = [Ri_avg, Ri_avg_h]
-            #Ri_strat = [Ri_strat, Ri_strat_h]
-            #Ri_plume = [Ri_plume, Ri_plume_h]
         
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)

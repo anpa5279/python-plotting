@@ -5,7 +5,7 @@ from scipy.interpolate import make_interp_spline
 
 from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from comparison_plots import plot_format, turb_stats_multi, plume_spatial_analysis #, plume_analysis_multi
+from plotting_comparisons import plot_format, turb_stats_multi, plume_spatial_analysis #, plume_analysis_multi
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_contour_analysis
 
@@ -19,7 +19,7 @@ case_names =[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']
 #[r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='average-rp-stratification'
+name_uni ='mld-only-average-rp-stratification'
 
 num_cases = len(case_names)
 folders = []
@@ -34,7 +34,7 @@ ND = True
 
 # flags for how to read data
 with_halos = False
-stokes = [False, False, False]
+stokes = False * np.ones(num_cases) 
 salinity = True
 
 video = True
@@ -133,7 +133,7 @@ if ND:
         N2[i] = g  * dTdz[i] / T0
         b_scale[i] = mld[i] * N2[i]
         vel_scale[i] = mld[i] * np.sqrt(N2[i])
-        Sj = Sflux[i] * np.ones(num_cases) / (np.sqrt(g  * rj)) #/ (vel_scale)
+        Sj[i] = Sflux[i]/ (vel_scale[i]) # / (np.sqrt(g  * rj)) #
         z_nd[:, i] = z[:, i] / mld[i]
         zf_nd[:, i] = zf[:, i] / mld[i]
         bflux_scale = b_scale[i] * vel_scale[i]
@@ -183,19 +183,13 @@ for it in nt:
     for i, folder in enumerate(folders):
         # Load data from files
         if Nranks == 1 and not salinity:
-            u_temp, v_temp, w_temp, T_temp, Pdynamic_temp, Pstatic_temp = collect_fields(folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+            u, v, w, T, Pdynamic, Pstatic = collect_fields(folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
         elif Nranks == 1 and salinity:
-            u_temp, v_temp, w_temp, T_temp, S_temp, Pdynamic, Pstatic = collect_fields(folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
-            S = S_temp
+            u, v, w, T, S, Pdynamic, Pstatic = collect_fields(folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
         elif Nranks > 1 and not salinity:
-            u_temp, v_temp, w_temp, T_temp, Pdynamic_temp, Pstatic_temp = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+            u, v, w, T, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
         else:
-            u_temp, v_temp, w_temp, T_temp, S_temp, Pdynamic_temp, Pstatic_temp = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
-            S = S_temp
-        u = u_temp
-        v = v_temp
-        w = w_temp
-        T = T_temp
+            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
         if stokes[i]:
             u = u - u_s
         # convert temperature and salinity to buoyancy 
@@ -279,7 +273,7 @@ for it in nt:
             b_center[:, i] = b_center[:, i]/b_scale[i]
             T_fluc_center[:, i] = T_fluc_center[:, i]/(T0)
             S_fluc_center[:, i] = S_fluc_center[:, i]/Sj[i]
-        r_profile = r_profile/rj
+            r_profile[:, i] = r_profile[:, i]/mld[i] #/rj
         if turb_stats_plot:
             turb_stat_dir_nd = turb_stats_multi(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg, ND)
         if plume_analysis_plot:

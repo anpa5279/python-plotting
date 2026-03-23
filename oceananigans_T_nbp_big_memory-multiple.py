@@ -6,7 +6,7 @@ from scipy.interpolate import make_interp_spline
 from plotting_functions import stratification_profile, plot_ranges, turb_stats, plot_3d_fields, vert_plane_slices, xy_plane_slices, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean, richardson_number
 from dense_plume_analysis import plume_bw_anlaysis, mld_info, centerline_analysis_buoyancy
-from dense_plume_plotting import buoyancy_analysis, dense_tracer_analysis
+from plotting_dense_plume import buoyancy_analysis, dense_tracer_analysis
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 
 # Set up folder and simulation parameters

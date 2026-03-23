@@ -5,24 +5,24 @@ from scipy.interpolate import make_interp_spline
 
 from plotting_functions import plot_ranges
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from comparison_plots import plot_format, plume_temporal_analysis 
+from plotting_comparisons import plot_format, plume_temporal_analysis 
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_contour_analysis, neutral_buoyancy_loc
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.1', 'beta = default S0 = 0.2']
-#['beta = default S0 = 0.1', 'beta = default S0 = 0.2']
+folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
+#[beta = default S0 = 0.05, 'beta = default S0 = 0.1', beta = default S0 = 0.15, 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures')
-case_names = [r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
+case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
 #[r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='average-rp-Sj'
+name_uni ='mld-only-average-rp-mld'
 
 num_cases = len(case_names)
 folders = []
@@ -32,7 +32,7 @@ output_folder = universal_folder
 
 # flags for what to plot
 plume_analysis_plot = True
-ND = False
+ND = True
 
 # flags for how to read data
 with_halos = False
@@ -42,18 +42,15 @@ salinity = True
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.01 * np.ones(num_cases) # np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
+dTdz = 0.01 * np.ones(num_cases) # np.array([0.01, 0.05, 0.1]) #  background temperature gradient in K/m
 rho0 = 1026
-mld = 30 * np.ones(num_cases) # np.array([20, 30, 40]) # 
+mld = np.array([20, 30, 40]) # 30 * np.ones(num_cases) # 
 T0 = 25
 S0 = 0 
 wp = 0.001
-Sj = np.array([0.1, 0.2]) # 0.1 * np.ones(num_cases) # 
+Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2]) #
 Sflux = np.dot(Sj, wp)
-if np.size(Sj) == 1:
-    contour = np.dot(Sj * np.ones(num_cases), 0.05)
-else:
-    contour = np.dot(Sj, 0.05)
+contour = np.dot(Sj, 0.05)
 # plotting prep
 color_opt, line_opt = plot_format(num_cases)
 # font for plotting 
@@ -101,7 +98,6 @@ nt = len(t_save[0])
 z = z*np.ones([num_cases, nx[2]])
 zf = zf*np.ones([num_cases, nx[2]+1])
 lx_plot = lx
-Sj = Sflux / (np.sqrt(g  * rj))
 
 for i in range(num_cases):
     mld_idx.append(np.argmin(np.abs(z[i, :]+mld[i])))
@@ -233,11 +229,9 @@ if ND:
         N2[i] = g  * dTdz[i] / T0
         b_scale[i] = mld[i] * N2[i]
         vel_scale[i] = mld[i] * np.sqrt(N2[i])
-        Sj = Sflux[i] * np.ones(num_cases) / (np.sqrt(g  * rj)) #/ (vel_scale)
+        Sj[i] = Sflux[i] / (vel_scale[i]) #/ (np.sqrt(g  * rj)) #
         z[i, :] = z[i, :] / mld[i]
         zf[i, :] = zf[i, :] / mld[i]
-
-    lx_plot= np.array(lx) / np.min(mld)
     bflux_scale = b_scale * vel_scale
 
 if plume_analysis_plot and ND:
@@ -261,8 +255,8 @@ if plume_analysis_plot and ND:
     ranges['T_fluc'] = [-Tfluc_max, Tfluc_max]
     plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name_uni[3::], lx_plot, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, S_mld, S_neutral, S_hmax, S_mld_avg, w_mld_rms)
     for i in range(num_cases):
-        S_mld_avg[:, i] = S_mld_avg[:, i]/Sj[i]
-        w_mld_rms[:, i] = w_mld_rms[:, i]/vel_scale[i]
+        S_mld_avg[:, i] = S_mld_avg[:, i] / Sj[i]
+        w_mld_rms[:, i] = w_mld_rms[:, i] / vel_scale[i]
 
         h_neutral[:, i] = h_neutral[:, i] / mld[i]
         h_max[:, i] = h_max[:, i] / mld[i]
@@ -282,15 +276,16 @@ if plume_analysis_plot and ND:
         z[:, i] = z[:, i] / mld[i]
         zf[:, i] = zf[:, i] / mld[i]
 
+        r_mld[:, i] = r_mld[:, i] / mld[i] # / rj #
+        r_neutral[:, i] = r_neutral[:, i] / mld[i] # / rj #
+        r_hmax[:, i] = r_hmax[:, i] / mld[i] # / rj #
+
+    lx_plot= np.array(lx) / np.min(mld)
     mld_plot = np.ones(num_cases)
 
     T_mld = T_mld / T0
     T_neutral = T_neutral / T0
     T_hmax = T_hmax / T0
-
-    r_mld = r_mld / rj
-    r_neutral = r_neutral / rj
-    r_hmax = r_hmax / rj
 elif plume_analysis_plot:
     mld_plot = mld
 # plot ranges
