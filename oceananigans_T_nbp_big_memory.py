@@ -150,14 +150,14 @@ for it in nt:
         u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
     # convert temperature and salinity to buoyancy 
     if not salinity:
-        rho_total = rho0 - rho0 * alpha * (T - T0)
-        drhodz = np.gradient(rho_total, z, axis=-1)
+        rho = rho0 - rho0 * alpha * (T - T0)
+        drhodz = np.gradient(rho, z, axis=-1)
         b = -g*alpha*(T - T0)
     else:
         rhoS = rho0 + rho0 * beta * (S - S0)
         rhoT = rho0 - rho0 * alpha * (T - T0)
-        rho_total = rho0 - rho0 * alpha * (T - T0)+ rho0 * beta * (S - S0)
-        drhodz = np.gradient(rho_total, z, axis=-1)
+        rho = rho0 - rho0 * alpha * (T - T0)+ rho0 * beta * (S - S0)
+        drhodz = np.gradient(rho, z, axis=-1)
         b = g*alpha*(T - T0) - g*beta*(S - S0)
     # interpolate so all values are from the center, center, center of the grid cell
     w_face = make_interp_spline(zf, w, axis=-1, k=1)
@@ -175,7 +175,7 @@ for it in nt:
         w_avg = np.mean(w, axis=(-3, -2))
         wc_avg = np.mean(wc, axis=(-3, -2))
         b_avg = np.mean(b, axis=(-3, -2))
-        rho_avg = np.mean(rho_total, axis=(-3, -2))
+        rho_avg = np.mean(rho, axis=(-3, -2))
         S_avg = np.mean(S, axis=(-3, -2))
         T_avg = np.mean(T, axis=(-3, -2))
 
@@ -184,7 +184,7 @@ for it in nt:
         v_fluc = v-v_avg
         w_fluc = w-w_avg
         wc_fluc = wc-wc_avg
-        rho_fluc = rho_total - rho_avg
+        rho_fluc = rho - rho_avg
 
         # calcualte reynolds stresses
         u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
@@ -252,7 +252,7 @@ for it in nt:
             b_fluc_center = b_fluc[int(nx[0]/2), int(nx[1]/2), :]
             dbdz_center = dbdz[int(nx[0]/2), int(nx[1]/2), :]
             db_flucdz_center = db_flucdz[int(nx[0]/2), int(nx[1]/2), :]
-            rho_center = rho_total[int(nx[0]/2), int(nx[1]/2), :]
+            rho_center = rho[int(nx[0]/2), int(nx[1]/2), :]
             rho_perturbed_center = rho_perturbed[int(nx[0]/2), int(nx[1]/2), :]
             bw_fluc_center = b_fluc_center*wc_center
             mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, ml)
@@ -311,13 +311,13 @@ for it in nt:
     if video_3d_flag:
         video_3d_dir = plot_3d_fields(time, it, ranges, output_folder, lx, X, Y, Z, X_zf, Y_zf, Z_zf, u, v, w, T, S)
     if vert_slice_plot:
-        plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, X_zf, Y, Y_zf, Z, Z_zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho_total, rho_perturbed, b, T, S)
+        plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, X_zf, Y, Y_zf, Z, Z_zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho, rho_perturbed, b, T, S)
     if xy_plot and salinity:
         loc = "z[250]"
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho_total, rho_perturbed, 250, loc, T, S)
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, 250, loc, T, S)
     elif xy_plot and not salinity:
         loc = "z[250]"
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho_total, rho_perturbed, 250, loc, T)
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, 250, loc, T)
     if buoyancy_analysis_plot and not salinity:
         b_ranges = ranges.copy()
         buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, ml, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)

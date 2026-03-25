@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.ndimage import center_of_mass
 from general_analysis_functions import point_linear_interp
-from scipy import integrate
+from scipy.ndimage import label
+from scipy.spatial import ConvexHull
 ### -------------------------NBJ FUNCTIONS------------------------- ###
 # mixed layer depth information
 def mld_info(w, bw_fluc, rho_perturbed, z, ml): # inputs are 1d arrays
@@ -201,67 +202,39 @@ def plume_contour_analysis_momentum(lx, nx, u, v, w, b, b_fluc, bw_fluc, w_avg, 
     center_idx[2, :] = np.arange(nx[2]+1).astype(int)
 
     # finding relative max height of plume
+    rho_cl = rho_fluc[center_idx[0, :-1], center_idx[1, :-1], center_idx[2, :-1]] 
+    rho_cl_sign = np.sign(rho_cl)
+    rho_cl_sign_change = np.diff(rho_cl_sign)
+    idx_max_rho_sign = np.where(rho_cl_sign_change < 0)[0][-1]+1
+    idx_neutral_rho_sign = np.where(rho_cl_sign_change > 0)[0][-1]+1
+
+    rho_contour = rho_cl*contour
     w_cl = w[center_idx[0], center_idx[1], center_idx[2]] 
-    w_cl_sign = np.sign(w_cl)
-    w_cl_sign_change = np.diff(w_cl_sign)
-    idx_w_sign = np.where(w_cl_sign_change < 0)[0][-1]+1
-    idx_w_bnds = np.array([idx_w_sign-1, idx_w_sign+1])
-
     w_contour = w_cl*contour
+    bw_cl = bw_fluc[center_idx[0, :-1], center_idx[1, :-1], center_idx[2, :-1]] 
     # finding area of plume at each height
-    area = np.zeros(nx[2]+1)
-    # special case max height of plume
-    w_sign = w[:, :, idx_w_sign]<=0
-    w_contour_sign = (w[:, :, idx_w_sign]<=w_contour[idx_w_sign]) & w_sign
-    x_idx, y_idx = np.where(w_contour_sign)
-    splits = np.where(np.diff(x_idx) > 1)[0] + 1
-
-    collectx = np.split(x_idx, splits)
-    collecty = np.split(y_idx, splits)
-    best_idx = np.argmin([np.min(np.abs(g - nx_center)) for g in collectx])
-
-    x_best = collectx[best_idx]
-    y_best = collecty[best_idx]
-    Xloc = x[x_best] - x_center
-    Yloc = y[y_best] - y_center
-    angles = np.arctan2(Yloc, Xloc)
-    sort_idx = np.argsort(angles)
-    X_ordered = Xloc[sort_idx]
-    Y_ordered = Yloc[sort_idx]
-    x_next = np.roll(X_ordered, -1)
-    y_next = np.roll(Y_ordered, -1)
-    area[idx_w_sign] = 0.5 * np.sum((X_ordered + x_next) * (y_next - Y_ordered))
-
-    for k in range(idx_w_bnds[-1], nx[2]+1):
-        if w_avg[k]==0:
-            area[k] = 0
-            continue
+    area = np.zeros(nx[2])
+    area_idx = np.zeros((nx[0], nx[1], nx[2]))
+    for k in range(idx_max_rho_sign, nx[2]):
+        rho_k = rho_fluc[:, :, k]
         wk = w[:, :, k]
-        w_sign = wk<=0
-        w_contour_sign = (wk<=w_contour[k]) & w_sign
-        x_idx, y_idx = np.where(w_contour_sign)
-        # --- outermost points along each row/column ---
-        edge = w_contour_sign & (
-            ~np.roll(w_contour_sign, 1, axis=0) |
-            ~np.roll(w_contour_sign, -1, axis=0) |
-            ~np.roll(w_contour_sign, 1, axis=1) |
-            ~np.roll(w_contour_sign, -1, axis=1)
-        )
-        i_edge, j_edge = np.where(edge)
-        Xloc = X[i_edge, j_edge, k] - x_center
-        Yloc = Y[i_edge, j_edge, k] - y_center
-        angles = np.arctan2(Yloc, Xloc)
-        sort_idx = np.argsort(angles)
-        X_ordered = Xloc[sort_idx]
-        Y_ordered = Yloc[sort_idx]
-        x_next = np.roll(X_ordered, -1)
-        y_next = np.roll(Y_ordered, -1)
-        area[k] = 0.5 * np.sum((X_ordered + x_next) * (y_next - Y_ordered))
-
-    if area[idx_w_sign] > area[idx_w_sign+1]:
-        area[idx_w_sign] = area[idx_w_sign+1]
-
-
+        if k < idx_neutral_rho_sign: # looking for negative perturbed density
+            rho_sign = rho_k<rho_contour[k] 
+        elif k == idx_neutral_rho_sign: # looking for neutral perturbed density
+            w_sign = wk<=w_contour[k]
+            rho_sign = w_sign
+        else: # looking for positive perturbed density
+            rho_sign = rho_k>=rho_contour[k]
+        labeled, num_features = label(rho_sign, structure=[[0,1,0],[1,1,1],[0,1,0]])#np.ones([3,3]))#
+        center_label = labeled[nx_center, ny_center]
+        connected_rho_sign = labeled == center_label # extract all points that belong to the same connected component
+        x_idx, y_idx = np.where(connected_rho_sign)
+        area_idx[:, :, k] = connected_rho_sign
+        Xloc = X[x_idx, y_idx, k] - x_center
+        Yloc = Y[x_idx, y_idx, k] - y_center
+        points = np.stack([Xloc, Yloc], axis=1)
+        hull = ConvexHull(points)
+        area[k] = hull.volume 
 
     # finding volume flux
     Q = area*w_avg
