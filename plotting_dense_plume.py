@@ -444,7 +444,7 @@ def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_
     return outdir # return the directory where frames are saved for video creation
 
 ## dense tracer buoyancy analysis via momentum
-def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_rms, v_rms, w_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, Q, M, F, B, wm, dm, bm, Ri, r_profile, b_center, plume_depths, ND = False):
+def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tracer_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, tracer_fluc, T_fluc, Q, M, F, B, wm, dm, bm, Ri, r_profile, b_center, plume_depths, ND = False):
     plume_depth_intrusion = plume_depths[0]
     plume_depth_neutral = plume_depths[1]
 
@@ -452,7 +452,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
     gridspec_kw={'height_ratios': [1, 1, 1, 1, 0.02]} # add space for universal legend
-    fig, ax = plt.subplots(5, 4, figsize=(12, 20), gridspec_kw=gridspec_kw)
+    fig, ax = plt.subplots(5, 4, figsize=(12, 25), gridspec_kw=gridspec_kw)
     for a in ax[4, :]:
         a.remove()
     fig.suptitle(f'{td:.2f} days', fontsize=12) 
@@ -515,13 +515,13 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
         ax12.set_xlabel(r"[m$^3$/s$^2$]")
         ax13.set_xlabel(r"[m/s]")
         ax14.set_xlabel(r"[m]")
-        ax15.set_xlabel(r"[m/s$^2$]")
+        ax15.set_xlabel(r"[-]")
         ax16.set_xlabel(r"[-]")
 
     # velocity rms
-    mld_handle = ax1.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
-    intrusion_handle = ax1.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
-    neutral_handle = ax1.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    mld_handle, = ax1.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    intrusion_handle, = ax1.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    neutral_handle, = ax1.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
     ax1.plot(u_rms, z, label=r"$\langle$u$_{\text{rms}}\rangle_{\text{xy}}$", color = 'blue')
     ax1.plot(v_rms, z, label=r"$\langle$v$_{\text{rms}}\rangle_{\text{xy}}$", color = 'green')
     ax1.plot(w_rms, zf, label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = 'red')
@@ -614,7 +614,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax9.plot(Q, z, color = 'black')
     ax9.set_title("Volume Flux")
     ax9.set_ylim(-lx[2], 0)
-    ax9.set_xlim(ranges['T_fluc'])
+    ax9.set_xlim(ranges['Q'])
 
     # M
     ax10.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -623,7 +623,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax10.plot(M, z, color = 'black')
     ax10.set_title("Momentum Flux")
     ax10.set_ylim(-lx[2], 0)
-    ax10.set_xlim(ranges['T_fluc'])
+    ax10.set_xlim(ranges['M'])
 
     # F
     ax11.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -632,7 +632,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax11.plot(F, z, color = 'black')
     ax11.set_title("Buoyancy Flux")
     ax11.set_ylim(-lx[2], 0)
-    ax11.set_xlim(ranges['bw_fluc'])
+    ax11.set_xlim(xmin = ranges['F'][0]*10.0, xmax = ranges['F'][-1]*10.0)
 
     # B
     ax12.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -641,7 +641,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax12.plot(B, z, color = 'black')
     ax12.set_title("Buoyancy Integral")
     ax12.set_ylim(-lx[2], 0)
-    ax12.set_xlim(ranges['T_fluc'])
+    ax12.set_xlim(xmin = ranges['B'][0]*10.0, xmax = ranges['B'][-1]*10.0)
 
     # wm
     ax13.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -650,7 +650,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax13.plot(wm, z, color = 'red')
     ax13.set_title("Characteristic Velocity")
     ax13.set_ylim(-lx[2], 0)
-    ax13.set_xlim(ranges['w'])
+    ax13.set_xlim(xmin = ranges['w'][0]*10.0, xmax = ranges['w'][-1]*10.0)
 
     # dm
     ax14.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -659,7 +659,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax14.plot(dm, z, color = 'black')
     ax14.set_title("Characteristic Length")
     ax14.set_ylim(-lx[2], 0)
-    ax14.set_xlim(ranges['w'])
+    ax14.set_xlim(xmin = 0, xmax = lx[0]/2)
 
     # Ri
     ax15.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -668,7 +668,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
     ax15.plot(Ri, z, color = 'black')
     ax15.set_title("Richardson Number")
     ax15.set_ylim(-lx[2], 0)
-    ax15.set_xlim(ranges['Ri'])
+    ax15.set_xlim(ranges['richardson'])
 
     fig.legend(handles=[mld_handle, intrusion_handle, neutral_handle], labels=["MLD", "Intrusion Depth", "Neutral Buoyancy Depth"],
             loc='lower center',
@@ -676,7 +676,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_r
             bbox_to_anchor=(0.52, 0.015))
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_comparison_turb_stats_{it:04d}.png")
+    frame_path = os.path.join(outdir, f"plume_momentum_analysis_{it:04d}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")

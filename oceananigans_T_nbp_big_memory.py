@@ -85,6 +85,10 @@ ranges['B'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
 ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
 ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
+ranges['Q'] = [-1*10**(-1), 1*10**(-1)]
+ranges['M'] = [-1*10**(-1), 1*10**(-1)]
+ranges['F'] = [-1*10**(-1), 1*10**(-1)]
+ranges['richarson'] = [0, 1*10**6]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
@@ -122,7 +126,7 @@ else:
     nt = [-1, ]  # only last time step
 X, Y, Z = np.meshgrid(x, y, z)
 X_zf, Y_zf, Z_zf = np.meshgrid(x, y, zf)
-if buoyancy_analysis_plot or turb_stats_plot:
+if buoyancy_analysis_plot or turb_stats_plot or buoyancy_momentum_analysis:
     L_ozmidov_average_list = []
     L_ozmidov_background_list = []
     L_ozmidov_plume_list = []
@@ -168,52 +172,52 @@ for it in nt:
         u = u - u_s
     
     b_background = stratification_profile(z, alpha*g*dTdz, ml)
+    # calculate means
+    u_avg = np.mean(u, axis=(-3, -2))
+    v_avg = np.mean(v, axis=(-3, -2))
+    w_avg = np.mean(w, axis=(-3, -2))
+    wc_avg = np.mean(wc, axis=(-3, -2))
+    b_avg = np.mean(b, axis=(-3, -2))
+    rho_avg = np.mean(rho, axis=(-3, -2))
+    S_avg = np.mean(S, axis=(-3, -2))
+    T_avg = np.mean(T, axis=(-3, -2))
 
-    if buoyancy_analysis_plot or turb_stats_plot or vert_slice_plot or xy_plot or plume_plot:
-        # calculate means
-        u_avg = np.mean(u, axis=(-3, -2))
-        v_avg = np.mean(v, axis=(-3, -2))
-        w_avg = np.mean(w, axis=(-3, -2))
-        wc_avg = np.mean(wc, axis=(-3, -2))
-        b_avg = np.mean(b, axis=(-3, -2))
-        rho_avg = np.mean(rho, axis=(-3, -2))
-        S_avg = np.mean(S, axis=(-3, -2))
-        T_avg = np.mean(T, axis=(-3, -2))
+    # calculate fluctuations
+    u_fluc = u-u_avg
+    v_fluc = v-v_avg
+    w_fluc = w-w_avg
+    wc_fluc = wc-wc_avg
+    rho_fluc = rho - rho_avg
+    S_fluc = S - S_avg
+    T_fluc = T - T_avg
 
-        # calculate fluctuations
-        u_fluc = u-u_avg
-        v_fluc = v-v_avg
-        w_fluc = w-w_avg
-        wc_fluc = wc-wc_avg
-        rho_fluc = rho - rho_avg
+    # calcualte reynolds stresses
+    u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
+    v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
+    w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
+    wc_fluc_avg, wc2_fluc, wc2_fluc_avg = a2_fluc_mean(wc_fluc)
+    rho_fluc_avg, rho2_fluc, rho2_fluc_avg = a2_fluc_mean(rho_fluc)
+    uv_fluc, uv_fluc_avg = ab_fluc_mean(u, v, u_avg, v_avg)
+    uw_fluc, uw_fluc_avg = ab_fluc_mean(u, wc, u_avg, wc_avg)
+    vw_fluc, vw_fluc_avg = ab_fluc_mean(v, wc, v_avg, wc_avg)
 
-        # calcualte reynolds stresses
-        u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
-        v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
-        w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-        wc_fluc_avg, wc2_fluc, wc2_fluc_avg = a2_fluc_mean(wc_fluc)
-        rho_fluc_avg, rho2_fluc, rho2_fluc_avg = a2_fluc_mean(rho_fluc)
-        uv_fluc, uv_fluc_avg = ab_fluc_mean(u, v, u_avg, v_avg)
-        uw_fluc, uw_fluc_avg = ab_fluc_mean(u, wc, u_avg, wc_avg)
-        vw_fluc, vw_fluc_avg = ab_fluc_mean(v, wc, v_avg, wc_avg)
+    b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg, b_avg)
+    bu_fluc, bu_fluc_avg = ab_fluc_mean(b, u, b_avg, u_avg)
+    bv_fluc, bv_fluc_avg = ab_fluc_mean(b, v, b_avg, v_avg)
+    bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
+    
+    # rms fluctuations
+    u_rms = u2_fluc_avg**0.5
+    v_rms = v2_fluc_avg**0.5
+    w_rms = w2_fluc_avg**0.5
+    wc_rms = wc2_fluc_avg**0.5
+    b_rms = b2_fluc_avg**0.5
 
-        b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg, b_avg)
-        bu_fluc, bu_fluc_avg = ab_fluc_mean(b, u, b_avg, u_avg)
-        bv_fluc, bv_fluc_avg = ab_fluc_mean(b, v, b_avg, v_avg)
-        bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
-        
-        # rms fluctuations
-        u_rms = u2_fluc_avg**0.5
-        v_rms = v2_fluc_avg**0.5
-        w_rms = w2_fluc_avg**0.5
-        wc_rms = wc2_fluc_avg**0.5
-        b_rms = b2_fluc_avg**0.5
-
-    if (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot) and rho_IC_perturb:
+    if (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis) and rho_IC_perturb:
         # calculating density 
         rho_perturbed = ((b - b_background)*rho0)/(-g)
         b_fluc = b - b_background
-    elif (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot) and not rho_IC_perturb:
+    elif (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis) and not rho_IC_perturb:
         # calculating density 
         rho_perturbed = ((b - b_avg)*rho0)/(-g)
         b_fluc = b - b_avg
@@ -234,6 +238,8 @@ for it in nt:
             dbdx = np.mean(np.gradient(b, x, axis=0), axis=(-3, -2))
             dbdy = np.mean(np.gradient(b, y, axis=1), axis=(-3, -2))
             dbdz =  np.mean(np.gradient(b, z, axis=2), axis=(-3, -2))
+            S_fluc_center = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
+            T_fluc_center = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
         else:
             # centerline analysis
             u_center = u[int(nx[0]/2), int(nx[1]/2), :]
@@ -273,37 +279,54 @@ for it in nt:
             neutral = np.array(z_neutral)
 
         if it < 5:
-            continue
+            below_plume = np.where(rp_profile==0)
+            max_index = np.where(rp_profile==rp_profile.max())[0][0]
+            neutral_index = max_index
+            Q = np.zeros(nx[2])
+            M = np.zeros(nx[2])
+            F = np.zeros(nx[2])
+            F_perturb = np.zeros(nx[2])
+            B = np.zeros(nx[2])
+            wm = np.zeros(nx[2])
+            dm = np.zeros(nx[2])
+            bm = np.zeros(nx[2])
+            Ri = np.zeros(nx[2])
         else:
             Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, wc, b, b_fluc, rho_fluc, X, Y)
-            max_index = np.min(area_idx[2, :])
-            w_intrusion = wc_center[max_index]
-            w_neutral = wc_center[neutral_index]
-            bw_intrusion = b_fluc_center[max_index]
-            bw_neutral = b_fluc_center[neutral_index]
-            rho_intrusion = rho_perturbed_center[max_index]
-            rho_neutral = rho_perturbed_center[neutral_index]
-            mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, ml)
-            # appending plume statistics to lists
-            depth_intrusion_list.append(z_intrusion)
-            depth_neutral_list.append(z_neutral)
-            
-            w_intrusion_list.append(w_intrusion)
-            w_neutral_list.append(w_neutral)
-            w_mld_list.append(w_mld)
+            max_index = np.min(area_idx[2])
+        wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
+        bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
+        rho_perturbed_center = rho_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]]
+        b_center = b[centerline_index[0], centerline_index[1], centerline_index[2]]
+        z_intrusion = z[max_index]
+        z_neutral = z[neutral_index]
+        w_intrusion = wc_center[max_index]
+        w_neutral = wc_center[neutral_index]
+        bw_intrusion = bw_fluc_center[max_index]
+        bw_neutral = bw_fluc_center[neutral_index]
+        rho_intrusion = rho_perturbed_center[max_index]
+        rho_neutral = rho_perturbed_center[neutral_index]
+        mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(wc_center, bw_fluc_center, rho_perturbed_center, z, ml)
+        # appending plume statistics to lists
+        depth_intrusion_list.append(z_intrusion)
+        depth_neutral_list.append(z_neutral)
+        
+        w_intrusion_list.append(w_intrusion)
+        w_neutral_list.append(w_neutral)
+        w_mld_list.append(w_mld)
 
-            bwfluc_neutral_list.append(bw_neutral)
-            bwfluc_intrusion_list.append(bw_intrusion)
-            bwfluc_mld_list.append(mld_bw_fluc)
+        bwfluc_neutral_list.append(bw_neutral)
+        bwfluc_intrusion_list.append(bw_intrusion)
+        bwfluc_mld_list.append(mld_bw_fluc)
 
-            rho_perturbed_neutral_list.append(rho_neutral)
-            rho_perturbed_intrusion_list.append(rho_intrusion)
-            rho_perturbed_mld_list.append(rho_mld)
+        rho_perturbed_neutral_list.append(rho_neutral)
+        rho_perturbed_intrusion_list.append(rho_intrusion)
+        rho_perturbed_mld_list.append(rho_mld)
 
-            plume_depths = [depth_intrusion_list, depth_neutral_list]
-            ws = [w_intrusion_list, w_neutral_list, w_mld_list]
-            rhos = [rho_perturbed_intrusion_list, rho_perturbed_neutral_list, rho_perturbed_mld_list]
-            bw_flucs = [bwfluc_intrusion_list, bwfluc_neutral_list, bwfluc_mld_list]
+        plume_depths = [depth_intrusion_list, depth_neutral_list]
+        ws = [w_intrusion_list, w_neutral_list, w_mld_list]
+        rhos = [rho_perturbed_intrusion_list, rho_perturbed_neutral_list, rho_perturbed_mld_list]
+        bw_flucs = [bwfluc_intrusion_list, bwfluc_neutral_list, bwfluc_mld_list]
         
     ############ PLOTTING ############
     # --- Create Video ---
@@ -332,9 +355,9 @@ for it in nt:
     if buoyancy_analysis_plot and salinity:
         buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, ml, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
     if plume_plot:
-        plume_dir = plume_spatial_analysis(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
+        plume_dir = plume_spatial_analysis(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, rp_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
     if buoyancy_momentum_analysis:
-        momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, ml, b_avg, u_rms, v_rms, w_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, Q, M, F, B, wm, dm, bm, Ri, r_profile, b_center, plume_depths)
+        momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, ml, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
 print("All frames created.")
 # creating videos
 if video:
