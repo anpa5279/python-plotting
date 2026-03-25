@@ -1,6 +1,7 @@
 import numpy as np
-from scipy.ndimage import center_of_mass, binary_erosion
+from scipy.ndimage import center_of_mass
 from general_analysis_functions import point_linear_interp
+from scipy import integrate
 ### -------------------------NBJ FUNCTIONS------------------------- ###
 # mixed layer depth information
 def mld_info(w, bw_fluc, rho_perturbed, z, ml): # inputs are 1d arrays
@@ -133,7 +134,7 @@ def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_tracer, rho_pert
     return z_intrusion, bw_intrusion, w_intrusion, rho_intrusion, z_neutral, bw_neutral, w_neutral, rho_neutral, rp_max, centerline_index, rho_perturbed_centerline, rho_tracer_centerline, tracer_centerline, bw_centerline, bfluc_centerline, w_centerline, r_max_profile
 
 def plume_contour_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle domain'):
-    if calc_option == 'middle domain':
+    if calc_option == 'middle domain' or calc_option == 'momentum':
         # finding centerline of plume 
         centerline_index = np.zeros((3, nx[2])).astype(int)
         center_xy_loc = np.zeros((3, nx[2]))
@@ -143,48 +144,129 @@ def plume_contour_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle
         centerline_index[0, :] = nx[0]//2
         centerline_index[1, :] = nx[1]//2
         centerline_index[2, :] = np.arange(nx[2]).astype(int)
-    elif calc_option == 'center of mass':
-        # finding centerline of plume 
-        centerline_index = np.zeros((3, nx[2]))
-        center_xy_loc = np.zeros((3, nx[2]))
-        for k in range(nx[2]-1, -1, -1): # nx[2] = top of the domain 
-            center_xy = center_of_mass(tracer[:, :, k])
-            if ((np.isnan(center_xy[0]) or np.isnan(center_xy[1])) or (tracer[int(center_xy[0]), int(center_xy[1]), k] < contour)) and (k < nx[2]-1):
-                center_xy = centerline_index[:, k + 1]
-            elif ((np.isnan(center_xy[0]) or np.isnan(center_xy[1])) or (tracer[int(center_xy[0]), int(center_xy[1]), k] < contour)) and (k == nx[2]-1):
-                center_xy = [nx[0]//2, nx[1]//2]
-            centerline_index[:, k] = [(center_xy[0]), (center_xy[1]), k]
-            center_int = [int(center_xy[0]), int(center_xy[1])]
-            center_xy_loc[0, k] = point_linear_interp(x[center_int[0]], x[center_int[0]+1], centerline_index[0][k], center_int[0], center_int[0]+1)
-            center_xy_loc[1, k] = point_linear_interp(y[center_int[1]], y[center_int[1]+1], centerline_index[1][k], center_int[1], center_int[1]+1)
-            center_xy_loc[2, k] = z[k]
-        centerline_index = np.round(centerline_index).astype(int)
-    # finding plume bounds via contour on the centerline of the tracer
-    plume_contour = tracer >= contour
-    plume_index = np.where(plume_contour)
-    edge_mask = plume_contour & (
-        ~np.roll(plume_contour, 1, axis=0)
-        | ~np.roll(plume_contour,-1, axis=0)
-        | ~np.roll(plume_contour, 1, axis=1)
-        | ~np.roll(plume_contour,-1, axis=1)
-    )
-    edge_index = np.where(edge_mask)
-    # find the radius of plume on xy plane
-    X, Y = np.meshgrid(x, y, indexing='ij')
-    rp_profile = np.zeros(nx[2])
-    for k in np.arange(nx[2]):
-        hor_plane = np.where(edge_index[2]==k)[0]
-        if len(hor_plane)==0:
-            rp_profile[k] = 0.0
-        else:
-            r = np.zeros(len(hor_plane))
-            for i in range(len(hor_plane)):
-                rx = np.abs(x[edge_index[0][hor_plane[i]]]) - center_xy_loc[0, k]
-                ry = np.abs(y[edge_index[1][hor_plane[i]]]) - center_xy_loc[1, k]
-                r[i] = np.sqrt(rx**2 + ry**2)
-            rp_profile[k] = np.mean(r)
-    return center_xy_loc, centerline_index, rp_profile, plume_index
+    if calc_option == 'middle domain' or calc_option == 'center of mass':
+        if calc_option == 'center of mass':
+            # finding centerline of plume 
+            centerline_index = np.zeros((3, nx[2]))
+            center_xy_loc = np.zeros((3, nx[2]))
+            for k in range(nx[2]-1, -1, -1): # nx[2] = top of the domain 
+                center_xy = center_of_mass(tracer[:, :, k])
+                if ((np.isnan(center_xy[0]) or np.isnan(center_xy[1])) or (tracer[int(center_xy[0]), int(center_xy[1]), k] < contour)) and (k < nx[2]-1):
+                    center_xy = centerline_index[:, k + 1]
+                elif ((np.isnan(center_xy[0]) or np.isnan(center_xy[1])) or (tracer[int(center_xy[0]), int(center_xy[1]), k] < contour)) and (k == nx[2]-1):
+                    center_xy = [nx[0]//2, nx[1]//2]
+                centerline_index[:, k] = [(center_xy[0]), (center_xy[1]), k]
+                center_int = [int(center_xy[0]), int(center_xy[1])]
+                center_xy_loc[0, k] = point_linear_interp(x[center_int[0]], x[center_int[0]+1], centerline_index[0][k], center_int[0], center_int[0]+1)
+                center_xy_loc[1, k] = point_linear_interp(y[center_int[1]], y[center_int[1]+1], centerline_index[1][k], center_int[1], center_int[1]+1)
+                center_xy_loc[2, k] = z[k]
+            centerline_index = np.round(centerline_index).astype(int)
+        # finding plume bounds via contour on the centerline of the tracer
+        plume_contour = tracer >= contour
+        plume_index = np.where(plume_contour)
+        edge_mask = plume_contour & (
+            ~np.roll(plume_contour, 1, axis=0)
+            | ~np.roll(plume_contour,-1, axis=0)
+            | ~np.roll(plume_contour, 1, axis=1)
+            | ~np.roll(plume_contour,-1, axis=1)
+        )
+        edge_index = np.where(edge_mask)
+        # find the radius of plume on xy plane
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        rp_profile = np.zeros(nx[2])
+        for k in np.arange(nx[2]):
+            hor_plane = np.where(edge_index[2]==k)[0]
+            if len(hor_plane)==0:
+                rp_profile[k] = 0.0
+            else:
+                r = np.zeros(len(hor_plane))
+                for i in range(len(hor_plane)):
+                    rx = np.abs(x[edge_index[0][hor_plane[i]]]) - center_xy_loc[0, k]
+                    ry = np.abs(y[edge_index[1][hor_plane[i]]]) - center_xy_loc[1, k]
+                    r[i] = np.sqrt(rx**2 + ry**2)
+                rp_profile[k] = np.mean(r)
+        return center_xy_loc, centerline_index, rp_profile, plume_index
+    else:
+        return None
+def plume_contour_analysis_momentum(lx, nx, u, v, w, b, b_fluc, bw_fluc, w_avg, b_avg, bw_fluc_avg, tracer_avg, surf_flux):
+    contour = 0.05
+    # finding centerline of plume 
+    center_idx = np.zeros((3, nx[2])).astype(int)
+    center_idx[0, :] = nx[0]//2
+    center_idx[1, :] = nx[1]//2
+    center_idx[2, :] = np.arange(nx[2]).astype(int)
+    x_center = lx[0]/2
+    y_center = lx[1]/2
 
+    # finding relative max height of plume
+    w_cl = w[center_idx[0], center_idx[1], center_idx[2]] 
+    w_cl_sign = np.sign(w_cl)
+    w_cl_sign_change = np.diff(w_cl_sign)
+    idx_w_sign = np.where(w_cl_sign_change < 0)[0][-1]+1
+    idx_w_bnds = np.array([idx_w_sign-1, idx_w_sign+1])
+
+    w_contour = w_cl*contour
+    # finding area of plume at each height
+    area = np.zeros(nx[2]+1)
+    for k in range(idx_w_bnds[0], nx[2]+1):
+        wk = w[:, :, k]
+        w_sign = wk<=0
+        x_idx, y_idx = np.where(w_sign)
+        # --- outermost points along each row/column ---
+        outer_points = []
+        for i0 in np.unique(x_idx):
+            j_vals = y_idx[x_idx == i0]
+            outer_points.append((i0, np.min(j_vals)))
+            outer_points.append((i0, np.max(j_vals)))
+        outer_points = np.array(outer_points)
+        Xloc = X[outer_points[:, 0], outer_points[:, 1], 0] - x_center 
+        Yloc = Y[outer_points[:, 0], outer_points[:, 1], 0] - y_center
+        angles = np.arctan2(Yloc, Xloc)
+        sort_idx = np.argsort(angles)
+        X_ordered = Xloc[sort_idx]
+        Y_ordered = Yloc[sort_idx]
+        x_next = np.roll(X_ordered, -1)
+        y_next = np.roll(Y_ordered, -1)
+        area[k] = 0.5 * np.sum((X_ordered + x_next) * (y_next - Y_ordered))
+
+
+
+    # finding volume flux
+    Q = area*w_avg
+    Qface = make_interp_spline(zf, Q, axis=-1, k=1)
+    Qc = Qface(z)
+    # finding momentum flux
+    M = area*w_avg**2 
+    Mface = make_interp_spline(zf, M, axis=-1, k=1)
+    Mc = Mface(z)
+    # finding buoyancy flux
+    F = area*wc_avg*b_avg 
+    # finding the buoyancy integral
+    B = area*b_avg 
+    # find characteristic w
+    wm = M/Q
+    # finding characteristic width of plume
+    dm = Q / (M**0.5)
+    # finding characteristic buoyancy
+    bm = B*Mc/(Qc**2)
+    # finding Richardson
+    Ri = B*Qc/(Mc**1.5)
+
+    max_flux_index = np.where(bw_fluc_avg == np.max(bw_fluc_avg))[0][0]
+    wp = w_avg[max_flux_index]
+    tracerp = tracer_avg[max_flux_index]
+
+    # starting from bottom of domain, sign_change = 2: negative to positive, sign_change = -2: positive to negative, 0: no change
+    bfluc_sign = np.sign(b_fluc)
+    bfluc_sign_change = np.diff(bfluc_sign) 
+    bw_sign = np.sign(bw_fluc)
+    bw_sign_change = np.diff(bw_sign) 
+    u_sign = np.sign(u)
+    u_sign_change = np.diff(u_sign) 
+    v_sign = np.sign(v)
+    v_sign_change = np.diff(v_sign) 
+    w_sign = np.sign(w)
+    w_sign_change = np.diff(w_sign) 
 # neutral buoyancy calculation 
 def neutral_buoyancy_loc(b_fluc, plume_index, centerline_index):
     if np.size(plume_index)==0:

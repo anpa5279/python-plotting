@@ -31,7 +31,7 @@ video = True
 
 video_3d_flag = False
 turb_stats_plot = False
-vert_slice_plot = True
+vert_slice_plot = False
 xy_plot = True
 buoyancy_analysis_plot = False
 plume_plot = False
@@ -116,9 +116,9 @@ dz_ml = np.abs(z + ml)/ml
 mld_index = np.where(dz_ml==dz_ml.min())[0][-1]
 
 if video:
-    nt = len(t_save)
+    nt = np.arange(len(t_save))
 else:
-    nt = 1  # only last time step
+    nt = [-1, ]  # only last time step
 X, Y, Z = np.meshgrid(x, y, z)
 X_zf, Y_zf, Z_zf = np.meshgrid(x, y, zf)
 if buoyancy_analysis_plot or turb_stats_plot:
@@ -138,7 +138,7 @@ if buoyancy_analysis_plot or turb_stats_plot:
     rho_perturbed_mld_list = []
     l_scale_list = []
     rp_list = []
-for it in np.arange(nt):
+for it in nt:
     # Load data from files
     if Nranks == 1 and not salinity:
         u, v, w, T, Pdynamic, Pstatic = collect_fields(folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
@@ -313,9 +313,11 @@ for it in np.arange(nt):
     if vert_slice_plot:
         plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, X_zf, Y, Y_zf, Z, Z_zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho_total, rho_perturbed, b, T, S)
     if xy_plot and salinity:
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho_total, rho_perturbed, mld_index, "MLD", T, S)
+        loc = "z[250]"
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho_total, rho_perturbed, 250, loc, T, S)
     elif xy_plot and not salinity:
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho_total, rho_perturbed, mld_index, "MLD", T)
+        loc = "z[250]"
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho_total, rho_perturbed, 250, loc, T)
     if buoyancy_analysis_plot and not salinity:
         b_ranges = ranges.copy()
         buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, ml, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
@@ -325,13 +327,15 @@ for it in np.arange(nt):
         plume_dir = plume_spatial_analysis(time, it, ranges, line_opt, fig_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
 print("All frames created.")
 # creating videos
-if turb_stats_plot:
-    create_video(turb_stat_dir, output_folder, name, 'turbulence_statistics')
-if video_3d_flag:
-    create_video(video_3d_dir, output_folder, name, '3D_fields')
-if vert_slice_plot:
-    create_video(plane_slices_dir, output_folder, name, 'vert_plane_slices')
-if xy_plot:
-    create_video(surface_dir, output_folder, name, 'xy_plane_slices')
-if buoyancy_analysis_plot:
-    create_video(buoyancy_dir, output_folder, name, 'buoyancy_analysis')
+if video:
+    if turb_stats_plot:
+        create_video(turb_stat_dir, output_folder, name, 'turbulence_statistics')
+    if video_3d_flag:
+        create_video(video_3d_dir, output_folder, name, '3D_fields')
+    if vert_slice_plot:
+        create_video(plane_slices_dir, output_folder, name, 'vert_plane_slices')
+    if xy_plot:
+        name_xy = loc + '-xy-plane-slices'
+        create_video(surface_dir, output_folder, name, name_xy)
+    if buoyancy_analysis_plot:
+        create_video(buoyancy_dir, output_folder, name, 'buoyancy_analysis')

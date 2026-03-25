@@ -629,9 +629,14 @@ def xy_plane_slices(time, it, ranges, fig_folder, lx, X, Y, u, v, w, b, b_fluc, 
         cbar.formatter.set_powerlimits((-3, 2))
         cbar.update_ticks()
     else:
+        T_slice = T[:, :, idx_loc]
+        if (np.max(T_slice) - np.min(T_slice))<=1e-6:
+            levelsT = 10
+        else:
+            levelsT = levels
         norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
         mappable = cm.ScalarMappable(norm=norm)
-        ax4.contourf(X[:, :, idx_loc], Y[:, :, idx_loc], T[:, :, idx_loc], levels, norm=norm)
+        ax4.contourf(X[:, :, idx_loc], Y[:, :, idx_loc], T_slice, levelsT, norm=norm)
         #ax4.set_xlabel("[m]")
         ax4.set_title("Temperature")
         ax4.set_ylim(0, lx[1])
