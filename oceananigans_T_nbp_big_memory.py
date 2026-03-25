@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.05'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1'
 output_folder = folder #'figures and videos/'
 name = 'comparison-range-NBP-'
 
@@ -27,7 +27,7 @@ name = 'comparison-range-NBP-'
 rho_IC_perturb = False
 
 # flags for what to plot
-video = True
+video = False
 
 video_3d_flag = False
 turb_stats_plot = False

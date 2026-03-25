@@ -191,12 +191,14 @@ def plume_contour_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle
 def plume_contour_analysis_momentum(lx, nx, u, v, w, b, b_fluc, bw_fluc, w_avg, b_avg, bw_fluc_avg, tracer_avg, surf_flux):
     contour = 0.05
     # finding centerline of plume 
-    center_idx = np.zeros((3, nx[2])).astype(int)
-    center_idx[0, :] = nx[0]//2
-    center_idx[1, :] = nx[1]//2
-    center_idx[2, :] = np.arange(nx[2]).astype(int)
     x_center = lx[0]/2
     y_center = lx[1]/2
+    nx_center = nx[0]//2
+    ny_center = nx[1]//2
+    center_idx = np.zeros((3, nx[2]+1)).astype(int)
+    center_idx[0, :] = nx_center
+    center_idx[1, :] = ny_center
+    center_idx[2, :] = np.arange(nx[2]+1).astype(int)
 
     # finding relative max height of plume
     w_cl = w[center_idx[0], center_idx[1], center_idx[2]] 
@@ -208,19 +210,46 @@ def plume_contour_analysis_momentum(lx, nx, u, v, w, b, b_fluc, bw_fluc, w_avg, 
     w_contour = w_cl*contour
     # finding area of plume at each height
     area = np.zeros(nx[2]+1)
-    for k in range(idx_w_bnds[0], nx[2]+1):
+    # special case max height of plume
+    w_sign = w[:, :, idx_w_sign]<=0
+    w_contour_sign = (w[:, :, idx_w_sign]<=w_contour[idx_w_sign]) & w_sign
+    x_idx, y_idx = np.where(w_contour_sign)
+    splits = np.where(np.diff(x_idx) > 1)[0] + 1
+
+    collectx = np.split(x_idx, splits)
+    collecty = np.split(y_idx, splits)
+    best_idx = np.argmin([np.min(np.abs(g - nx_center)) for g in collectx])
+
+    x_best = collectx[best_idx]
+    y_best = collecty[best_idx]
+    Xloc = x[x_best] - x_center
+    Yloc = y[y_best] - y_center
+    angles = np.arctan2(Yloc, Xloc)
+    sort_idx = np.argsort(angles)
+    X_ordered = Xloc[sort_idx]
+    Y_ordered = Yloc[sort_idx]
+    x_next = np.roll(X_ordered, -1)
+    y_next = np.roll(Y_ordered, -1)
+    area[idx_w_sign] = 0.5 * np.sum((X_ordered + x_next) * (y_next - Y_ordered))
+
+    for k in range(idx_w_bnds[-1], nx[2]+1):
+        if w_avg[k]==0:
+            area[k] = 0
+            continue
         wk = w[:, :, k]
         w_sign = wk<=0
-        x_idx, y_idx = np.where(w_sign)
+        w_contour_sign = (wk<=w_contour[k]) & w_sign
+        x_idx, y_idx = np.where(w_contour_sign)
         # --- outermost points along each row/column ---
-        outer_points = []
-        for i0 in np.unique(x_idx):
-            j_vals = y_idx[x_idx == i0]
-            outer_points.append((i0, np.min(j_vals)))
-            outer_points.append((i0, np.max(j_vals)))
-        outer_points = np.array(outer_points)
-        Xloc = X[outer_points[:, 0], outer_points[:, 1], 0] - x_center 
-        Yloc = Y[outer_points[:, 0], outer_points[:, 1], 0] - y_center
+        edge = w_contour_sign & (
+            ~np.roll(w_contour_sign, 1, axis=0) |
+            ~np.roll(w_contour_sign, -1, axis=0) |
+            ~np.roll(w_contour_sign, 1, axis=1) |
+            ~np.roll(w_contour_sign, -1, axis=1)
+        )
+        i_edge, j_edge = np.where(edge)
+        Xloc = X[i_edge, j_edge, k] - x_center
+        Yloc = Y[i_edge, j_edge, k] - y_center
         angles = np.arctan2(Yloc, Xloc)
         sort_idx = np.argsort(angles)
         X_ordered = Xloc[sort_idx]
@@ -228,6 +257,9 @@ def plume_contour_analysis_momentum(lx, nx, u, v, w, b, b_fluc, bw_fluc, w_avg, 
         x_next = np.roll(X_ordered, -1)
         y_next = np.roll(Y_ordered, -1)
         area[k] = 0.5 * np.sum((X_ordered + x_next) * (y_next - Y_ordered))
+
+    if area[idx_w_sign] > area[idx_w_sign+1]:
+        area[idx_w_sign] = area[idx_w_sign+1]
 
 
 
