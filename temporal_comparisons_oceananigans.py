@@ -7,7 +7,7 @@ from plotting_functions import plot_ranges
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format, plume_temporal_analysis 
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
-from dense_plume_analysis import plume_contour_analysis, neutral_buoyancy_loc
+from dense_plume_analysis import plume_tracer_analysis, neutral_buoyancy_loc
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
@@ -181,7 +181,7 @@ for it in range(nt):
         w_rms = w2_fluc_avg**0.5
 
         # plume analysis 
-        center_xy_loc_temp, centerline_index, r_profile, plume_index = plume_contour_analysis(x, y, z[i, :], lx, nx, S, contour[i])#, 'center of mass')
+        center_xy_loc_temp, centerline_index, r_profile, plume_index = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, contour[i])#, 'center of mass')
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
         neutral_index = neutral_buoyancy_loc(b_fluc, plume_index, centerline_index)

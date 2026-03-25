@@ -6,7 +6,7 @@ from scipy.interpolate import make_interp_spline
 from plotting_functions import stratification_profile, plot_ranges, turb_stats, plot_3d_fields, vert_plane_slices, xy_plane_slices, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean, richardson_number
 from dense_plume_analysis import plume_bw_anlaysis, mld_info, centerline_analysis_buoyancy
-from plotting_dense_plume import buoyancy_analysis, dense_tracer_analysis
+from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 
 # Set up folder and simulation parameters
@@ -237,24 +237,11 @@ for it in np.arange(nt):
             bw_neutral = bw_fluc_center[neutral_index]
             rho_intrusion = rho_perturbed_center[max_index]
             rho_neutral = rho_perturbed_center[neutral_index]
-            # ozmidov length scale
-            #epsilon =visc_dissipation_rate(visc, u, v, wc, dx)
-            #epsilon_avg = np.mean(epsilon, axis=(0, 1, 2))
-            #Lo_plume = ozmidov_length(epsilon, dbdz_plume_avg)
-            #L_ozmidov_background.append(ozmidov_length(epsilon_avg, g*dTdz*alpha))
-            #L_ozmidov_average.append(ozmidov_length(epsilon_avg, dbdz_vol_avg))
-            #L_ozmidov_plume.append(Lo_plume)
 
             #richardson number
             Ri_avg = richardson_number(dbdz_avg, z, u_avg, v_avg)
             Ri_strat = richardson_number(np.gradient(b_background, z, axis=-1), z, u_avg, v_avg)
             Ri_plume = richardson_number(dbdz_center, z, u_center, v_center)
-            #Ri_avg_h = richardson_number_ratio(b_avg, rho_avg, rho0, z, u_fluc_avg, v_fluc_avg, wc_fluc_avg, lx)
-            #Ri_strat_h = richardson_number_ratio(g*alpha*dTdz, rho_avg, rho0, z, u_fluc_avg, v_fluc_avg, wc_fluc_avg, lx)
-            #Ri_plume_h = richardson_number_ratio(dbdz_center, rho_avg, rho0, z, u_fluc_center, v_fluc_center, wc_fluc_center, lx)
-            #Ri_avg = [Ri_avg, Ri_avg_h]
-            #Ri_strat = [Ri_strat, Ri_strat_h]
-            #Ri_plume = [Ri_plume, Ri_plume_h]
         
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
@@ -297,7 +284,7 @@ for it in np.arange(nt):
         buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, ml, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_plot and salinity:
         b_ranges = ranges.copy()
-        buoyancy_dir = dense_tracer_analysis(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, ml, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
+        buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, ml, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
 print("All frames created.")
 # creating videos
 if turb_stats_plot:

@@ -102,17 +102,6 @@ def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_
     ax5.legend(loc='lower right', handlelength=0.9)
     ax5.set_ylim(-lx[2], 0)
 
-    # Ozmidov Lengthscale through time
-    #ax5.plot(time[:it+1]/ 3600 / 24, L_ozmidov_background, label = r"L$_{O, \text{stratified}}$")
-    #ax5.plot(time[:it+1]/ 3600 / 24, L_ozmidov_average, color = 'black', label = r"L$_{O, \text{average}}$")
-    #ax5.plot(time[:it+1]/ 3600 / 24, L_ozmidov_plume, color = 'red', label = r"L$_{O, \text{plume}}$")
-    #ax5.set_xlabel("Time [days]") 
-    #ax5.set_ylabel(r"L$_{O}$ [m]")
-    #ax5.set_title("Ozmidov Lengthscale")
-    #ax5.set_ylim(ranges['lengthscale'])
-    #ax5.legend(loc='upper right', handlelength=0.9)
-    #ax5.set_xlim([0, time.max() / 3600 / 24]) 
-
     # buoyancy 
     ax6.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
     ax6.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
@@ -202,7 +191,7 @@ def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
 ## dense tracer buoyancy analysis 
-def dense_tracer_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc, uw_fluc, vw_fluc, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, tracer_avg, rp, plume_depths, ws, rhos, bw_flucs, l_scale):
+def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc, uw_fluc, vw_fluc, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, tracer_avg, rp, plume_depths, ws, rhos, bw_flucs, l_scale):
     plume_depth_intrusion = plume_depths[0]
     plume_depth_neutral = plume_depths[1]
 
@@ -454,3 +443,242 @@ def dense_tracer_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
 
+## dense tracer buoyancy analysis via momentum
+def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, u_rms, v_rms, w_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, Q, M, F, B, wm, dm, bm, Ri, r_profile, b_center, plume_depths, ND = False):
+    plume_depth_intrusion = plume_depths[0]
+    plume_depth_neutral = plume_depths[1]
+
+    outdir = os.path.join(fig_folder, 'plume momentum analysis/')
+    os.makedirs(outdir, exist_ok=True)
+    td = time[it] / 3600 / 24
+    gridspec_kw={'height_ratios': [1, 1, 1, 1, 0.02]} # add space for universal legend
+    fig, ax = plt.subplots(5, 4, figsize=(12, 20), gridspec_kw=gridspec_kw)
+    for a in ax[4, :]:
+        a.remove()
+    fig.suptitle(f'{td:.2f} days', fontsize=12) 
+
+    ax1 = ax[0, 0]
+    ax2 = ax[0, 1]
+    ax3 = ax[0, 2]
+    ax4 = ax[0, 3]
+    ax5 = ax[1, 0]
+    ax6 = ax[1, 1]
+    ax7 = ax[1, 2]
+    ax8 = ax[1, 3]
+    ax9 = ax[2, 0] # Q - volume flux
+    ax10 = ax[2, 1] # M - momentum flux
+    ax11 = ax[2, 2] # F - buoyancy flux
+    ax12 = ax[2, 3] # B - buoyancy integral
+    ax13 = ax[3, 0] # wm - characteristic velocity
+    ax14 = ax[3, 1] # dm - characteristic length
+    ax15 = ax[3, 2] # bm - characteristic buoyancy
+    ax16 = ax[3, 3] # Ri - Richardson number
+
+    if ND:
+        ax1.set_ylabel(r"z/h$_{ml}$")
+        ax1.set_xlabel(r"u$_{i, rms}$/(h$_{ml} \sqrt{N^{2}}$)")
+        #ax2.set_ylabel(r"z/h$_{ml}$")
+        ax2.set_xlabel(r"S$(\text{h}_{ml} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
+        #ax3.set_ylabel(r"z/h$_{ml}$")
+        ax3.set_xlabel(r"b/(h$_{ml} N^{2}$)")
+        #ax4.set_ylabel(r"z/h$_{ml}$")
+        ax4.set_xlabel(r"S$'(\text{h}_{ml} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
+        ax5.set_ylabel(r"z/h$_{ml}$")
+        ax5.set_xlabel(r"r/h$_{ml}$") #(r"r/r$_{j}$")
+        #ax6.set_ylabel(r"z/h$_{ml}$")
+        ax6.set_xlabel(r"b'u'$_{i}$/(h$_{ml}^2 (N^{2})^{3/2}$)")
+        #ax7.set_ylabel(r"z/h$_{ml}$")
+        ax7.set_xlabel(r"b$_{rms}$/(h$_{ml} N^{2}$)")
+        #ax8.set_ylabel(r"z/h$_{ml}$")
+        ax8.set_xlabel(r"T$'$/T$_{0}$")
+    else:
+        ax1.set_ylabel("Depth [m]")
+        ax1.set_xlabel("[m/s]")
+        #ax2.set_ylabel("[m]")
+        ax2.set_xlabel("[g/kg]")
+        #ax3.set_ylabel("[m]")
+        ax3.set_xlabel(r"[m/s$^2$]")
+        #ax4.set_ylabel("[m]")
+        ax4.set_xlabel(r"[g/kg]")
+        ax5.set_ylabel("Depth [m]")
+        ax5.set_xlabel("[m]")
+        #ax6.set_ylabel("[m]")
+        ax6.set_xlabel(r"[m$^2$/s$^3$]")
+        #ax7.set_ylabel("[m]")
+        ax7.set_xlabel(r"[m/s$^2$]")
+        #ax8.set_ylabel("[m]")
+        ax8.set_xlabel(r"[C]")
+        ax9.set_xlabel("[m]")
+        ax9.set_xlabel(r"[m$^3$/s]")
+        ax10.set_xlabel(r"[m$^4$/s$^2$]")
+        ax11.set_xlabel(r"[m$^4$/s$^3$]")
+        ax12.set_xlabel(r"[m$^3$/s$^2$]")
+        ax13.set_xlabel(r"[m/s]")
+        ax14.set_xlabel(r"[m]")
+        ax15.set_xlabel(r"[m/s$^2$]")
+        ax16.set_xlabel(r"[-]")
+
+    # velocity rms
+    mld_handle = ax1.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    intrusion_handle = ax1.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    neutral_handle = ax1.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax1.plot(u_rms, z, label=r"$\langle$u$_{\text{rms}}\rangle_{\text{xy}}$", color = 'blue')
+    ax1.plot(v_rms, z, label=r"$\langle$v$_{\text{rms}}\rangle_{\text{xy}}$", color = 'green')
+    ax1.plot(w_rms, zf, label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = 'red')
+    ax1.set_title("Root Mean Square Velocities")
+    ax1.set_ylim(-lx[2], 0)
+    ax1.set_xlim(ranges['vel_rms'])
+    ax1.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
+    ax1.legend(loc='lower right')
+
+    # tracer profile 
+    ax2.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax2.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax2.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax2.plot(tracer_avg, z, color = 'black')
+    ax2.set_title('Salinity')
+    ax2.set_ylim(-lx[2], 0)
+    ax2.set_xlim(ranges['S'])
+    ax2.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
+
+    # buoyancy profiles
+    ax3.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax3.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax3.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax3.plot(b_avg, z, color = 'black', label = r"b$_{\text{average}}$")
+    ax3.plot(b_center, z, color = 'black', label = r"b$_{\text{centerline}}$", linestyle = 'dashed')
+    ax3.set_title("Buoyancy Profile")
+    ax3.set_ylim(-lx[2], 0)
+    ax3.set_xlim(ranges['b_avg'])
+    if ND:
+        ax3.legend(loc='lower right')
+    else:
+        ax3.legend(loc='upper left')
+    ax3.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
+
+    # temperature fluctuations 
+    ax4.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax4.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax4.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax4.plot(tracer_fluc, z, color = 'black')
+    ax4.set_title("Perturbed Salinity")
+    ax4.set_ylim(-lx[2], 0)
+    ax4.set_xlim(ranges['S_fluc'])
+    ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+
+    # plume radius
+    ax5.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax5.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax5.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax5.plot(r_profile, z, color = 'black')
+    ax5.set_title("Plume Radius with Depth")
+    ax5.set_ylim(-lx[2], 0)
+    ax5.set_xlim(0, lx[0]/2)
+
+    # perturbed buoyancy flux 
+    ax6.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax6.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax6.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax6.plot(bu_fluc_avg, z, color = 'blue', label = r"$\langle$b'u'$\rangle_{\text{xy}}$")
+    ax6.plot(bv_fluc_avg, z, color = 'green', label = r"$\langle$b'v'$\rangle_{\text{xy}}$")
+    ax6.plot(bw_fluc_avg, z, color = 'red', label = r"$\langle$b'w'$\rangle_{\text{xy}}$")
+    ax6.legend(loc='lower right')
+    ax6.set_title("Buoyancy Flux Fluctuations")
+    ax6.set_ylim(-lx[2], 0)
+    ax6.set_xlim(ranges['bw_fluc'])
+    ax6.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True) 
+
+    # buoyancy brms 
+    ax7.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax7.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax7.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax7.plot(b_rms, z, color = 'black')
+    ax7.set_title("Root Mean Square Buoyancy")
+    ax7.set_ylim(-lx[2], 0)
+    ax7.set_xlim(ranges['b_rms'])
+    ax7.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
+
+    # temperature fluctuations 
+    ax8.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax8.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax8.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax8.plot(T_fluc, z, color = 'black')
+    ax8.set_title("Perturbed Temperature")
+    ax8.set_ylim(-lx[2], 0)
+    ax8.set_xlim(ranges['T_fluc'])
+
+    # Q
+    ax9.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax9.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax9.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax9.plot(Q, z, color = 'black')
+    ax9.set_title("Volume Flux")
+    ax9.set_ylim(-lx[2], 0)
+    ax9.set_xlim(ranges['T_fluc'])
+
+    # M
+    ax10.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax10.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax10.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax10.plot(M, z, color = 'black')
+    ax10.set_title("Momentum Flux")
+    ax10.set_ylim(-lx[2], 0)
+    ax10.set_xlim(ranges['T_fluc'])
+
+    # F
+    ax11.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax11.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax11.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax11.plot(F, z, color = 'black')
+    ax11.set_title("Buoyancy Flux")
+    ax11.set_ylim(-lx[2], 0)
+    ax11.set_xlim(ranges['bw_fluc'])
+
+    # B
+    ax12.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax12.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax12.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax12.plot(B, z, color = 'black')
+    ax12.set_title("Buoyancy Integral")
+    ax12.set_ylim(-lx[2], 0)
+    ax12.set_xlim(ranges['T_fluc'])
+
+    # wm
+    ax13.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax13.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax13.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax13.plot(wm, z, color = 'red')
+    ax13.set_title("Characteristic Velocity")
+    ax13.set_ylim(-lx[2], 0)
+    ax13.set_xlim(ranges['w'])
+
+    # dm
+    ax14.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax14.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax14.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax14.plot(dm, z, color = 'black')
+    ax14.set_title("Characteristic Length")
+    ax14.set_ylim(-lx[2], 0)
+    ax14.set_xlim(ranges['w'])
+
+    # Ri
+    ax15.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax15.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax15.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    ax15.plot(Ri, z, color = 'black')
+    ax15.set_title("Richardson Number")
+    ax15.set_ylim(-lx[2], 0)
+    ax15.set_xlim(ranges['Ri'])
+
+    fig.legend(handles=[mld_handle, intrusion_handle, neutral_handle], labels=["MLD", "Intrusion Depth", "Neutral Buoyancy Depth"],
+            loc='lower center',
+            ncol=3,
+            bbox_to_anchor=(0.52, 0.015))
+
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"{name}_comparison_turb_stats_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it + 1} captured: {frame_path}")
+
+    return outdir # return the directory where frames are saved for video creation

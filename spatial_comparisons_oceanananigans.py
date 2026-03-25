@@ -7,7 +7,7 @@ from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format, turb_stats_multi, plume_spatial_analysis #, plume_analysis_multi
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
-from dense_plume_analysis import plume_contour_analysis
+from dense_plume_analysis import plume_tracer_analysis
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
@@ -249,7 +249,7 @@ for it in nt:
         
         # dense plume analysis
         if salinity:
-            center_xy_loc, centerline_index, rp_profile, plume_index = plume_contour_analysis(x, y, z[:, i], lx, nx, S, contour[i])
+            center_xy_loc, centerline_index, rp_profile, plume_index = plume_tracer_analysis(x, y, z[:, i], lx, nx, S, contour[i])
             r_profile[:, i] = rp_profile
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
