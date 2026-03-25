@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage import center_of_mass
 from general_analysis_functions import point_linear_interp
-from scipy.ndimage import label
+from scipy.ndimage import label, gaussian_filter
 from scipy.spatial import ConvexHull
 ### -------------------------NBJ FUNCTIONS------------------------- ###
 # mixed layer depth information
@@ -189,89 +189,66 @@ def plume_contour_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle
         return center_xy_loc, centerline_index, rp_profile, plume_index
     else:
         return None
-def plume_contour_analysis_momentum(lx, nx, u, v, w, b, b_fluc, bw_fluc, w_avg, b_avg, bw_fluc_avg, tracer_avg, surf_flux):
-    contour = 0.05
-    # finding centerline of plume 
-    x_center = lx[0]/2
-    y_center = lx[1]/2
-    nx_center = nx[0]//2
-    ny_center = nx[1]//2
-    center_idx = np.zeros((3, nx[2]+1)).astype(int)
-    center_idx[0, :] = nx_center
-    center_idx[1, :] = ny_center
-    center_idx[2, :] = np.arange(nx[2]+1).astype(int)
-
-    # finding relative max height of plume
-    rho_cl = rho_fluc[center_idx[0, :-1], center_idx[1, :-1], center_idx[2, :-1]] 
+def plume_analysis_momentum(centerline_index, center_xy_loc, nx, w, b, b_fluc, rho_fluc, X, Y):
+    # relative max height of plume
+    rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
     rho_cl_sign = np.sign(rho_cl)
     rho_cl_sign_change = np.diff(rho_cl_sign)
     idx_max_rho_sign = np.where(rho_cl_sign_change < 0)[0][-1]+1
     idx_neutral_rho_sign = np.where(rho_cl_sign_change > 0)[0][-1]+1
 
-    rho_contour = rho_cl*contour
-    w_cl = w[center_idx[0], center_idx[1], center_idx[2]] 
-    w_contour = w_cl*contour
-    bw_cl = bw_fluc[center_idx[0, :-1], center_idx[1, :-1], center_idx[2, :-1]] 
-    # finding area of plume at each height
+    # initializing arrays 
+    area_idx = np.zeros_like(rho_fluc).astype(bool)
     area = np.zeros(nx[2])
-    area_idx = np.zeros((nx[0], nx[1], nx[2]))
+    w_xy_avg = np.zeros(nx[2])
+    b_xy_avg = np.zeros(nx[2])
+    b_fluc_xy_avg = np.zeros(nx[2])
+    # horizontal area 
     for k in range(idx_max_rho_sign, nx[2]):
         rho_k = rho_fluc[:, :, k]
-        wk = w[:, :, k]
-        if k < idx_neutral_rho_sign: # looking for negative perturbed density
-            rho_sign = rho_k<rho_contour[k] 
-        elif k == idx_neutral_rho_sign: # looking for neutral perturbed density
-            w_sign = wk<=w_contour[k]
-            rho_sign = w_sign
-        else: # looking for positive perturbed density
-            rho_sign = rho_k>=rho_contour[k]
-        labeled, num_features = label(rho_sign, structure=[[0,1,0],[1,1,1],[0,1,0]])#np.ones([3,3]))#
-        center_label = labeled[nx_center, ny_center]
-        connected_rho_sign = labeled == center_label # extract all points that belong to the same connected component
-        x_idx, y_idx = np.where(connected_rho_sign)
+        if k < idx_neutral_rho_sign: # below neutral buoyancy
+            rho_sign = rho_k < 0.0
+        else: # above neutral buoyancy
+            rho_sign = rho_k >= 0.0
+        # label connected region around center
+        labeled, num_features = label(rho_sign, structure=[[0,1,0],[1,1,1],[0,1,0]])
+        center_label = labeled[centerline_index[0, k], centerline_index[1, k]]
+        connected_rho_sign = labeled == center_label
         area_idx[:, :, k] = connected_rho_sign
-        Xloc = X[x_idx, y_idx, k] - x_center
-        Yloc = Y[x_idx, y_idx, k] - y_center
+        # compute area 
+        x_idx, y_idx = np.where(connected_rho_sign)
+        Xloc = X[x_idx, y_idx, k] - center_xy_loc[0, k]
+        Yloc = Y[x_idx, y_idx, k] - center_xy_loc[1, k]
         points = np.stack([Xloc, Yloc], axis=1)
         hull = ConvexHull(points)
-        area[k] = hull.volume 
+        area[k] = hull.volume
+        # compute horizontal averages
+        w_xy_avg[k] = np.mean(w[area_idx[:, :, k]])
+        b_xy_avg[k] = np.mean(b[area_idx[:, :, k]])
+        b_fluc_xy_avg[k] = np.mean(b_fluc[area_idx[:, :, k]])
 
-    # finding volume flux
-    Q = area*w_avg
-    Qface = make_interp_spline(zf, Q, axis=-1, k=1)
-    Qc = Qface(z)
-    # finding momentum flux
-    M = area*w_avg**2 
-    Mface = make_interp_spline(zf, M, axis=-1, k=1)
-    Mc = Mface(z)
-    # finding buoyancy flux
-    F = area*wc_avg*b_avg 
-    # finding the buoyancy integral
-    B = area*b_avg 
+    # volume flux
+    Q = area*w_xy_avg
+    # momentum flux
+    M = area*w_xy_avg**2 
+    # buoyancy flux
+    F = area*w_xy_avg*b_xy_avg
+    F_perturb = area*b_fluc_xy_avg*w_xy_avg
+    # the buoyancy integral
+    B = area*b_xy_avg 
     # find characteristic w
     wm = M/Q
-    # finding characteristic width of plume
-    dm = Q / (M**0.5)
-    # finding characteristic buoyancy
-    bm = B*Mc/(Qc**2)
-    # finding Richardson
-    Ri = B*Qc/(Mc**1.5)
+    wm[np.isnan(wm)] = 0.0
+    # characteristic width of plume
+    dm = np.sqrt(area) # equivalent to dm = Q / (M**0.5)
+    # characteristic buoyancy
+    bm = B*M/(Q**2)
+    bm[np.isnan(bm)] = 0.0
+    # Richardson
+    Ri = B*Q/(M**1.5)
+    Ri[np.isnan(Ri)] = 0.0
+    return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx
 
-    max_flux_index = np.where(bw_fluc_avg == np.max(bw_fluc_avg))[0][0]
-    wp = w_avg[max_flux_index]
-    tracerp = tracer_avg[max_flux_index]
-
-    # starting from bottom of domain, sign_change = 2: negative to positive, sign_change = -2: positive to negative, 0: no change
-    bfluc_sign = np.sign(b_fluc)
-    bfluc_sign_change = np.diff(bfluc_sign) 
-    bw_sign = np.sign(bw_fluc)
-    bw_sign_change = np.diff(bw_sign) 
-    u_sign = np.sign(u)
-    u_sign_change = np.diff(u_sign) 
-    v_sign = np.sign(v)
-    v_sign_change = np.diff(v_sign) 
-    w_sign = np.sign(w)
-    w_sign_change = np.diff(w_sign) 
 # neutral buoyancy calculation 
 def neutral_buoyancy_loc(b_fluc, plume_index, centerline_index):
     if np.size(plume_index)==0:
