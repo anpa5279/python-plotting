@@ -452,7 +452,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
     gridspec_kw={'height_ratios': [1, 1, 1, 1, 0.02]} # add space for universal legend
-    fig, ax = plt.subplots(5, 4, figsize=(15, 20), gridspec_kw=gridspec_kw)
+    fig, ax = plt.subplots(5, 4, figsize=(15, 18), gridspec_kw=gridspec_kw)
     for a in ax[4, :]:
         a.remove()
     fig.suptitle(f'{td:.2f} days', fontsize=12) 

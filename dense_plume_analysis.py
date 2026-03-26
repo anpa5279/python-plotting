@@ -42,16 +42,6 @@ def centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, z, nx):
     # finding Ozmidov length scale of plume
     dbdz_plume_avg = np.mean(dbdz_center[max_index:])
 
-    # info at max tracer height
-    #max_w = w_center[max_index]
-    #max_b_fluc = b_fluc_center[max_index]
-    #max_rho_perturbed = rho_perturbed_center[max_index]
-
-    # info at neutral buoyancy height
-    #neutral_w = w_center[neutral_index]
-    #neutral_b_fluc = b_fluc_center[neutral_index]
-    #neutral_rho_perturbed = rho_perturbed_center[neutral_index]
-
     return neutral_index, max_index, dbdz_plume_avg
 
 def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_perturbed, nx, contour, centerline_index, r_max_profile, plume_index):
@@ -120,7 +110,7 @@ def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_perturbed, nx, c
     idx_rp_max = idx_rp_max[np.where(neural_vs_rp==np.min(neural_vs_rp))] 
     return idx_rp_max, idx_neutral_in_plume, idx_neutral_in_plume
 
-def plume_tracer_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle domain'):
+def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle domain'):
     if calc_option == 'middle domain':
         # finding centerline of plume 
         centerline_index = np.zeros((3, nx[2])).astype(int)
@@ -148,10 +138,9 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle 
             center_xy_loc[2, k] = z[k]
         centerline_index = np.round(centerline_index).astype(int)
     # finding plume bounds via contour on the centerline of the tracer
-    tracer_bnd = tracer[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]*contour
-    plume_contour = np.zeros_like(tracer).astype(bool)
-    for k in range(nx[2]):
-        plume_contour[:, :, k] = tracer[:, :, k] >= tracer_bnd[k]
+    contour = 0.05
+    tracer_contour = tracer[centerline_index[0, idx], centerline_index[0, idx], idx]*contour
+    plume_contour = tracer >= tracer_contour
     plume_index = np.where(plume_contour)
     edge_mask = plume_contour & (
         ~np.roll(plume_contour, 1, axis=0)

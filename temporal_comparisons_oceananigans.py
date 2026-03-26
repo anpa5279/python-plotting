@@ -49,7 +49,7 @@ T0 = 25
 S0 = 0 
 wp = 0.001
 Sj = np.array([0.05, 0.1, 0.15, 0.2]) #0.1 * np.ones(num_cases) # 
-Sflux = np.dot(Sj, wp)
+F_s = np.dot(Sj, wp)
 contour = np.dot(Sj, 0.05)
 # plotting prep
 color_opt, line_opt = plot_format(num_cases)
@@ -229,7 +229,7 @@ if ND:
         N2[i] = g  * dTdz[i] / T0
         b_scale[i] = mld[i] * N2[i]
         vel_scale[i] = mld[i] * np.sqrt(N2[i])
-        Sj[i] = Sflux[i] / (vel_scale[i]) #/ (np.sqrt(g  * rj)) #
+        Sj[i] = F_s[i] / (vel_scale[i]) #/ (np.sqrt(g  * rj)) #
         z[i, :] = z[i, :] / mld[i]
         zf[i, :] = zf[i, :] / mld[i]
     bflux_scale = b_scale * vel_scale

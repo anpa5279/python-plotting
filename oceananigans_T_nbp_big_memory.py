@@ -50,6 +50,8 @@ rho0 = 1026
 T0 = 25 
 S0 = 0 
 Sj = 0.1
+F_s = Sj*0.001
+rj = 10
 # plotting prep
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -160,9 +162,9 @@ for it in nt:
         drhodz = np.gradient(rho, z, axis=-1)
         b = -g*alpha*(T - T0)
     else:
-        rhoS = rho0 + rho0 * beta * (S - S0)
-        rhoT = rho0 - rho0 * alpha * (T - T0)
-        rho = rho0 - rho0 * alpha * (T - T0)+ rho0 * beta * (S - S0)
+        rhoS = rho0 * beta * (S - S0)
+        rhoT = - rho0 * alpha * (T - T0)
+        rho = rho0 + rhoS + rhoT
         drhodz = np.gradient(rho, z, axis=-1)
         b = g*alpha*(T - T0) - g*beta*(S - S0)
     # interpolate so all values are from the center, center, center of the grid cell
@@ -235,7 +237,8 @@ for it in nt:
         db_flucdz_avg = np.mean(db_flucdz, axis=(-3, -2))
         
         if salinity:
-            center_xy_loc, centerline_index, rp_profile, plume_index = plume_tracer_analysis(x, y, z, lx, nx, S, 0.05)
+            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
+            center_xy_loc, centerline_index, rp_profile, plume_index = plume_tracer_analysis(x, y, z, lx, nx, S, bw_idx)
             dbdx = np.mean(np.gradient(b, x, axis=0), axis=(-3, -2))
             dbdy = np.mean(np.gradient(b, y, axis=1), axis=(-3, -2))
             dbdz =  np.mean(np.gradient(b, z, axis=2), axis=(-3, -2))
