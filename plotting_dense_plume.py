@@ -106,7 +106,7 @@ def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_
     ax6.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
     ax6.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
     ax6.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
-    ax6.set_xlim(ranges['B'])
+    ax6.set_xlim(ranges['b'])
     ax6.plot(b_background, z, color='black', label = r"b$_{\text{stratified}}$")
     ax6.plot(b_avg, z, color='black', label = r"b$_{\text{average}}$")
     ax6.plot(b_center, z, color='red', label = r"b$_{\text{centerline}}$")
@@ -375,7 +375,7 @@ def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_
     ax7.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
     ax7.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
     ax7.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
-    ax7.set_xlim(ranges['B'])
+    ax7.set_xlim(ranges['b'])
     ax7.plot(b_background, z, color='black', label = r"b$_{\text{IC}}$")
     ax7.plot(b_avg, z, color='green', label = r"b$_{\text{average}}$")
     ax7.plot(b_center, z, color='red', label = r"b$_{\text{centerline}}$")
@@ -452,7 +452,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
     gridspec_kw={'height_ratios': [1, 1, 1, 1, 0.02]} # add space for universal legend
-    fig, ax = plt.subplots(5, 4, figsize=(12, 25), gridspec_kw=gridspec_kw)
+    fig, ax = plt.subplots(5, 4, figsize=(15, 20), gridspec_kw=gridspec_kw)
     for a in ax[4, :]:
         a.remove()
     fig.suptitle(f'{td:.2f} days', fontsize=12) 
@@ -632,7 +632,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax11.plot(F, z, color = 'black')
     ax11.set_title("Buoyancy Flux")
     ax11.set_ylim(-lx[2], 0)
-    ax11.set_xlim(xmin = ranges['F'][0]*10.0, xmax = ranges['F'][-1]*10.0)
+    ax11.set_xlim(xmin = ranges['F'][0], xmax = ranges['F'][-1])
 
     # B
     ax12.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -641,7 +641,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax12.plot(B, z, color = 'black')
     ax12.set_title("Buoyancy Integral")
     ax12.set_ylim(-lx[2], 0)
-    ax12.set_xlim(xmin = ranges['B'][0]*10.0, xmax = ranges['B'][-1]*10.0)
+    ax12.set_xlim(xmin = ranges['B'][0], xmax = ranges['B'][-1])
 
     # wm
     ax13.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")

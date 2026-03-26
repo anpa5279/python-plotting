@@ -21,7 +21,7 @@ def stratification_profile(z, dadz, ml):
 ## defining ranges for plotting
 def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges = {}
-    list_pqr = ['u', 'v', 'w', 'B', 'T', 'S', 'Pdynamic', 'Pstatic', 'rho', 
+    list_pqr = ['u', 'v', 'w', 'b', 'T', 'S', 'Pdynamic', 'Pstatic', 'rho', 
                 'vel_rms', 'b_rms', 
                 'b_avg', 'T_avg', 'vel_avg', 'lamb_avg',
                 'vel_restress', 'richardson', 
@@ -35,7 +35,7 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges['u_fluc'] = [-0.002, 0.002]
     ranges['v_fluc'] = [-0.002, 0.002]
     ranges['w_fluc'] = [-0.002, 0.002]
-    ranges['B'] = [-1.5*10**(-3), 10**(-5)]
+    ranges['b'] = [-1.5*10**(-3), 10**(-5)]
     ranges['T'] = [T0-(dTdz*lz)+0.2, T0 + 0.05]
     ranges['S'] = [0.0, Sj/2]
     ranges['vel'] = [-0.00035, 0.00035]
@@ -270,7 +270,7 @@ def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, 
 
     else:
         # buoyancy field
-        norm = mcolors.Normalize(vmin=ranges['B'][0], vmax=ranges['B'][-1])
+        norm = mcolors.Normalize(vmin=ranges['b'][0], vmax=ranges['b'][-1])
         mappable = cm.ScalarMappable(norm=norm)
         ax4.set(xlim=[0, lx[0]], ylim=[0, lx[1]], zlim=[-lx[2], 0])
         ax4.contourf(X[:, :, -1], Y[:, :, -1], b[:, :, -1], levels, zdir='z', offset=0, norm=norm)
@@ -379,7 +379,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf,
     ax2.set_aspect('equal')
     cbar  = fig.colorbar(mappable, ax=ax2, label=r"kg/m$^3$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
 
-    norm = mcolors.Normalize(vmin=ranges['B'][0], vmax=ranges['B'][-1])
+    norm = mcolors.Normalize(vmin=ranges['b'][0], vmax=ranges['b'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
     ax3.contourf(hor, z, b[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
     ax3.set_xlabel("[m]")

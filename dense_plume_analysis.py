@@ -147,37 +147,34 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, contour, calc_option='middle 
             center_xy_loc[1, k] = point_linear_interp(y[center_int[1]], y[center_int[1]+1], centerline_index[1][k], center_int[1], center_int[1]+1)
             center_xy_loc[2, k] = z[k]
         centerline_index = np.round(centerline_index).astype(int)
-    if calc_option == 'middle domain':
-        # finding plume bounds via contour on the centerline of the tracer
-        tracer_bnd = tracer[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]*contour
-        plume_contour = np.zeros_like(tracer).astype(bool)
-        for k in range(nx[2]):
-            plume_contour[:, :, k] = tracer[:, :, k] >= tracer_bnd[k]
-        plume_index = np.where(plume_contour)
-        edge_mask = plume_contour & (
-            ~np.roll(plume_contour, 1, axis=0)
-            | ~np.roll(plume_contour,-1, axis=0)
-            | ~np.roll(plume_contour, 1, axis=1)
-            | ~np.roll(plume_contour,-1, axis=1)
-        )
-        edge_index = np.where(edge_mask)
-        # find the radius of plume on xy plane
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        rp_profile = np.zeros(nx[2])
-        for k in np.arange(nx[2]):
-            hor_plane = np.where(edge_index[2]==k)[0]
-            if len(hor_plane)==0:
-                rp_profile[k] = 0.0
-            else:
-                r = np.zeros(len(hor_plane))
-                for i in range(len(hor_plane)):
-                    rx = np.abs(x[edge_index[0][hor_plane[i]]]) - center_xy_loc[0, k]
-                    ry = np.abs(y[edge_index[1][hor_plane[i]]]) - center_xy_loc[1, k]
-                    r[i] = np.sqrt(rx**2 + ry**2)
-                rp_profile[k] = np.mean(r)
-        return center_xy_loc, centerline_index, rp_profile, plume_index
-    else:
-        return None
+    # finding plume bounds via contour on the centerline of the tracer
+    tracer_bnd = tracer[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]*contour
+    plume_contour = np.zeros_like(tracer).astype(bool)
+    for k in range(nx[2]):
+        plume_contour[:, :, k] = tracer[:, :, k] >= tracer_bnd[k]
+    plume_index = np.where(plume_contour)
+    edge_mask = plume_contour & (
+        ~np.roll(plume_contour, 1, axis=0)
+        | ~np.roll(plume_contour,-1, axis=0)
+        | ~np.roll(plume_contour, 1, axis=1)
+        | ~np.roll(plume_contour,-1, axis=1)
+    )
+    edge_index = np.where(edge_mask)
+    # find the radius of plume on xy plane
+    X, Y = np.meshgrid(x, y, indexing='ij')
+    rp_profile = np.zeros(nx[2])
+    for k in np.arange(nx[2]):
+        hor_plane = np.where(edge_index[2]==k)[0]
+        if len(hor_plane)==0:
+            rp_profile[k] = 0.0
+        else:
+            r = np.zeros(len(hor_plane))
+            for i in range(len(hor_plane)):
+                rx = np.abs(x[edge_index[0][hor_plane[i]]]) - center_xy_loc[0, k]
+                ry = np.abs(y[edge_index[1][hor_plane[i]]]) - center_xy_loc[1, k]
+                r[i] = np.sqrt(rx**2 + ry**2)
+            rp_profile[k] = np.mean(r)
+    return center_xy_loc, centerline_index, rp_profile, plume_index
 def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, rho_fluc, X, Y):
     # relative max height of plume
     rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 

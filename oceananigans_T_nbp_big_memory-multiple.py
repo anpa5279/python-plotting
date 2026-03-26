@@ -56,7 +56,7 @@ ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = dTdz, Sj = Sj)
 ranges['w'] = [-1*10**(-2), 1*10**(-2)]
 ranges['restress'] = [-4*10**(-8), 4*10**(-8)]
 ranges['vel'] = [-1e-5, 1e-5]
-ranges['B'] = [-1.5*10**(-3), 5*10**(-4)]
+ranges['b'] = [-1.5*10**(-3), 5*10**(-4)]
 ranges['bw_fluc'] = [-2*10**(-8), 2*10**(-8)]
 
 # List JLD2 files

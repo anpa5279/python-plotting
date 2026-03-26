@@ -71,7 +71,7 @@ if xy_plot and salinity:
     #xy_ranges['rho'] = [rho0-0.01, rho0+0.1]
     xy_ranges['b_fluc'] = [-8*10**(-5), 8*10**(-5)]
     xy_ranges['rho_fluc'] = [-1*10**-3, 1*10**-3]
-    #xy_ranges['B'] = [-2.0*10**(-4), 2.0*10**(-4)]
+    #xy_ranges['b'] = [-2.0*10**(-4), 2.0*10**(-4)]
     xy_ranges['Pdynamic'] = [-1*10**(-3), 1*10**(-3)]
     xy_ranges['T'] = [T0-0.06, T0 + 0.06]
     xy_ranges['S'] = [0.0, 0.012]
@@ -81,14 +81,15 @@ ranges['w'] = [-1*10**(-2), 1*10**(-2)]
 ranges['w_fluc'] = [-0.003, 0.003]
 ranges['restress'] = [-4*10**(-8), 4*10**(-8)]
 ranges['vel'] = [-1e-5, 1e-5]
-ranges['B'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
+ranges['b'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
 ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
 ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
-ranges['Q'] = [-1*10**(-1), 1*10**(-1)]
-ranges['M'] = [-1*10**(-1), 1*10**(-1)]
-ranges['F'] = [-1*10**(-1), 1*10**(-1)]
-ranges['richarson'] = [0, 1*10**6]
+ranges['Q'] = [-1*10**(0), 1*10**(0)]
+ranges['M'] = [-1*10**(-2), 1*10**(-2)]
+ranges['F'] = [-1*10**(-3), 1*10**(-3)]
+ranges['B'] = [-1*10**(0), 1*10**(0)]
+ranges['richarson'] = [0, 1*10**10]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
@@ -294,6 +295,7 @@ for it in nt:
         else:
             Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, wc, b, b_fluc, rho_fluc, X, Y)
             max_index = np.min(area_idx[2])
+            rp_profile[0:max_index] = 0
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
         rho_perturbed_center = rho_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]]
