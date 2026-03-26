@@ -21,7 +21,7 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1'
 output_folder = folder #'figures and videos/'
-name = 'comparison-range-NBP-'
+name = 'w-area'
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -50,7 +50,8 @@ rho0 = 1026
 T0 = 25 
 S0 = 0 
 Sj = 0.1
-F_s = Sj*0.001
+wp = 0.001
+F_s = Sj*wp
 rj = 10
 # plotting prep
 # font for plotting 
@@ -91,7 +92,7 @@ ranges['Q'] = [-1*10**(0), 1*10**(0)]
 ranges['M'] = [-1*10**(-2), 1*10**(-2)]
 ranges['F'] = [-1*10**(-3), 1*10**(-3)]
 ranges['B'] = [-1*10**(0), 1*10**(0)]
-ranges['richarson'] = [0, 1*10**10]
+ranges['richardson'] = [0, 1*10**4]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
@@ -114,6 +115,11 @@ if salinity:
     alpha, beta = collect_temp_and_sal(fid, Nranks, salinity)
 else:
     alpha = collect_temp_and_sal(fid, Nranks, salinity)
+
+if buoyancy_momentum_analysis:
+    rho_mag_tol = np.floor(np.log10(dTdz*alpha*rho0))
+    w_mag_tol = np.floor(np.log10(wp))
+
 if rho_IC_perturb:
     name+='-rhoICperturbation-'
 name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'
@@ -281,24 +287,13 @@ for it in nt:
         
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
-
-        if it < 5:
-            below_plume = np.where(rp_profile==0)
-            max_index = np.where(rp_profile==rp_profile.max())[0][0]
-            neutral_index = max_index
-            Q = np.zeros(nx[2])
-            M = np.zeros(nx[2])
-            F = np.zeros(nx[2])
-            F_perturb = np.zeros(nx[2])
-            B = np.zeros(nx[2])
-            wm = np.zeros(nx[2])
-            dm = np.zeros(nx[2])
-            bm = np.zeros(nx[2])
-            Ri = np.zeros(nx[2])
+        
+        Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, wc, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol)
+        if np.sum(area_idx) == 0:
+            max_index = nx[2]-1
         else:
-            Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, wc, b, b_fluc, rho_fluc, X, Y)
             max_index = np.min(area_idx[2])
-            rp_profile[0:max_index] = 0
+
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
         rho_perturbed_center = rho_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]]
