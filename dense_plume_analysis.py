@@ -165,14 +165,44 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
             rp_profile[k] = np.mean(r)
     return center_xy_loc, centerline_index, rp_profile, plume_index
 def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol):
-    # index of plume points of interest
-    rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
-    rho_cl_sign = np.sign(rho_cl)
-    rho_cl_sign_change = np.diff(rho_cl_sign)
-    w_cl = w[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-    idx_neutral = np.where(rho_cl_sign_change > 0)[0]
-    idx_max =np.where(np.diff(np.sign(w_cl)) < 0)[0]
-    if np.size(idx_max) == 0: # early stages of plume development
+    # checking magnitude of values to help define bounds
+    rho_fluc_mag = np.abs(rho_fluc)
+    rho_fluc_mag_order = np.floor(np.log10(rho_fluc_mag))
+    rho_mag_cl = rho_fluc_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
+    w_mag = np.abs(w)
+    w_mag_order = np.floor(np.log10(w_mag))
+    w_mag_cl = w_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
+    n_rho_mags, rho_mag_counts = np.unique(rho_fluc_mag_order, return_counts=True)
+    n_w_mags, w_mag_counts = np.unique(w_mag_order, return_counts=True)
+    if np.sum(np.where(w_mag_cl == w_mag_tol)[0]) > 0:
+        # index of plume points of interest
+        rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
+        rho_cl_sign = np.sign(rho_cl)
+        rho_cl_sign_change = np.diff(rho_cl_sign)
+        w_cl = w[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
+        idx_neutral = np.where(rho_cl_sign_change > 0)[0]
+        idx_max =np.where(np.diff(np.sign(w_cl)) < 0)[0]
+        if np.size(idx_max) == 0: # early stages of plume development
+            idx_max = nx[2]-1
+            idx_neutral = idx_max
+            Q = np.zeros(nx[2])
+            M = np.zeros(nx[2])
+            F = np.zeros(nx[2])
+            F_perturb = np.zeros(nx[2])
+            B = np.zeros(nx[2])
+            wm = np.zeros(nx[2])
+            dm = np.zeros(nx[2])
+            bm = np.zeros(nx[2])
+            Ri = np.zeros(nx[2])
+            area_idx = np.zeros_like(rho_fluc).astype(bool)
+            return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
+        elif np.size(idx_max) != 0 and (np.size(idx_neutral) == 0):
+            idx_max = idx_max[-1] +1
+            idx_neutral = idx_max
+        else:
+            idx_neutral = idx_neutral[-1] +1
+            idx_max =idx_max[-1] +1 
+    else: # early stages of plume development
         idx_max = nx[2]-1
         idx_neutral = idx_max
         Q = np.zeros(nx[2])
@@ -185,24 +215,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, r
         bm = np.zeros(nx[2])
         Ri = np.zeros(nx[2])
         area_idx = np.zeros_like(rho_fluc).astype(bool)
-        return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_neutral
-    elif np.size(idx_max) != 0 and (np.size(idx_neutral) == 0 or idx_max[-1] > idx_neutral[0]):
-        idx_max = idx_max[-1] +1
-        idx_neutral = idx_max +1
-    else:
-        idx_neutral = idx_neutral[-1] +1
-        idx_max =idx_max[-1] +1 
-    
-    # checking magnitude of values to help define bounds
-    rho_fluc_mag = np.abs(rho_fluc)
-    rho_fluc_mag_order = np.floor(np.log10(rho_fluc_mag))
-    rho_mag_cl = rho_fluc_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-    w_mag = np.abs(w)
-    w_mag_order = np.floor(np.log10(w_mag))
-    w_mag_cl = w_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-    n_rho_mags, rho_mag_counts = np.unique(rho_fluc_mag_order, return_counts=True)
-    n_w_mags, w_mag_counts = np.unique(w_mag_order, return_counts=True)
-
+        return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
     # initializing arrays 
     area_idx = np.zeros_like(rho_fluc).astype(bool)
     area = np.zeros(nx[2])
@@ -221,9 +234,9 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, r
         area_combo_overlay = area_combo_option>=1
         if np.sum(area_combo_overlay) == 0:
             continue
-        area_idx[:, :, k] = area_combo_overlay#area_combo_overlay
+        area_idx[:, :, k] = area_rho_opt#area_combo_overlay
         # compute area 
-        x_idx, y_idx = np.where(area_combo_overlay)#area_combo_overlay
+        x_idx, y_idx = np.where(area_rho_opt)#area_combo_overlay
         Xloc = X[x_idx, y_idx, k] - center_xy_loc[0, k]
         Yloc = Y[x_idx, y_idx, k] - center_xy_loc[1, k]
         points = np.stack([Xloc, Yloc], axis=1)
@@ -256,7 +269,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, r
     Ri[np.isnan(Ri)] = 0.0
 
     area_idx = np.where(area_idx)
-    return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_neutral
+    return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
 
 # neutral buoyancy calculation 
 def neutral_buoyancy_loc(b_fluc, plume_index, centerline_index):

@@ -288,11 +288,7 @@ for it in nt:
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
         
-        Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, wc, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol)
-        if np.sum(area_idx) == 0:
-            max_index = nx[2]-1
-        else:
-            max_index = np.min(area_idx[2])
+        Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, wc, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol)
 
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
