@@ -31,7 +31,7 @@ stokes = False
 salinity = True
 
 # physical parameters
-ml = 30.0  # mixed layer depth in meters
+mld = 30.0  # mixed layer depth in meters
 g = 9.80665  # gravity in m/s^2
 dTdz = 0.01 # background temperature gradient in K/m
 rho0 = 1026
@@ -136,7 +136,7 @@ for it in np.arange(nt):
     if stokes:
         u = u - u_s
     
-    b_background = stratification_profile(z, alpha*g*dTdz, ml)
+    b_background = stratification_profile(z, alpha*g*dTdz, mld)
 
     if buoyancy_analysis_plot or turb_stats_plot or vert_slice_plot or xy_plot:
         # calculate means
@@ -207,7 +207,7 @@ for it in np.arange(nt):
             rp_list.append(rp_max)
             l_scale_list.append(length_ratios)
             centerline_index = np.round(centerline_index).astype(int)
-            mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, ml)
+            mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, mld)
         else:
             # centerline analysis
             u_center = u[int(nx[0]/2), int(nx[1]/2), :]
@@ -226,7 +226,7 @@ for it in np.arange(nt):
             rho_center = rho_total[int(nx[0]/2), int(nx[1]/2), :]
             rho_perturbed_center = rho_perturbed[int(nx[0]/2), int(nx[1]/2), :]
             bw_fluc_center = b_fluc_center*wc_center
-            mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, ml)
+            mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, mld)
         
             neutral_index, max_index, dbdz_plume_avg = centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, z, nx)
             z_intrusion = z[max_index]
@@ -281,10 +281,10 @@ for it in np.arange(nt):
         surface_dir = xy_plane_slices(time, it, ranges, output_folder, lx, X, Y, u, v, w, b, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho_total, rho_perturbed, debug)
     if buoyancy_analysis_plot and not salinity:
         b_ranges = ranges.copy()
-        buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, ml, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
+        buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_plot and salinity:
         b_ranges = ranges.copy()
-        buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, ml, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
+        buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
 print("All frames created.")
 # creating videos
 if turb_stats_plot:

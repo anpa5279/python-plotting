@@ -172,21 +172,21 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax7 = ax[1, 2] # average tracer at MLD through time
     ax8 = ax[1, 3] # w_rms at MLD through time 
     if ND:
-        ax1.set_ylabel(r"z/h$_{ml}$")
+        ax1.set_ylabel(r"z/h$_{mld}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"r$_{avg}$/h$_{ml}$") #(r"r$_{avg}$/r$_{j}$") #
+        ax2.set_ylabel(r"r$_{avg}$/h$_{mld}$") #(r"r$_{avg}$/r$_{j}$") #
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel(r"w/(h$_{ml} \sqrt{N^{2}})$")
+        ax3.set_ylabel(r"w/(h$_{mld} \sqrt{N^{2}})$")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
-        ax4.set_ylabel(r"b$'$/(h$_{ml} N^{2}$)")
+        ax4.set_ylabel(r"b$'$/(h$_{mld} N^{2}$)")
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"T$'$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"S$'(\text{h}_{ml} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)") #
+        ax6.set_ylabel(r"S$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"S$_{avg}(\text{h}_{ml} \sqrt{N^{2}}$)/(J$^{\text{S}}$)")# (r"S$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")#
+        ax7.set_ylabel(r"S$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)")# (r"S$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")#
         ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
-        ax8.set_ylabel(r"w$_{rms}$/(h$_{ml} \sqrt{N^{2}}$)")
+        ax8.set_ylabel(r"w$_{rms}$/(h$_{mld} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['vel_rms'][0], ymax = ranges['vel_rms'][-1])
     else:
         ax1.set_ylabel("[m]")
@@ -346,21 +346,21 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     ax8 = ax[1, 3]
 
     if ND:
-        ax1.set_ylabel(r"z/h$_{ml}$")
-        ax1.set_xlabel(r"u$_{i, rms}$/(h$_{ml} \sqrt{N^{2}}$)")
-        #ax2.set_ylabel(r"z/h$_{ml}$")
-        ax2.set_xlabel(r"S$(\text{h}_{ml} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
-        #ax3.set_ylabel(r"z/h$_{ml}$")
-        ax3.set_xlabel(r"b/(h$_{ml} N^{2}$)")
-        #ax4.set_ylabel(r"z/h$_{ml}$")
-        ax4.set_xlabel(r"S$'(\text{h}_{ml} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
-        ax5.set_ylabel(r"z/h$_{ml}$")
-        ax5.set_xlabel(r"r/h$_{ml}$") #(r"r/r$_{j}$")
-        #ax6.set_ylabel(r"z/h$_{ml}$")
-        ax6.set_xlabel(r"b'u'$_{i}$/(h$_{ml}^2 (N^{2})^{3/2}$)")
-        #ax7.set_ylabel(r"z/h$_{ml}$")
-        ax7.set_xlabel(r"b$_{rms}$/(h$_{ml} N^{2}$)")
-        #ax8.set_ylabel(r"z/h$_{ml}$")
+        ax1.set_ylabel(r"z/h$_{mld}$")
+        ax1.set_xlabel(r"u$_{i, rms}$/(h$_{mld} \sqrt{N^{2}}$)")
+        #ax2.set_ylabel(r"z/h$_{mld}$")
+        ax2.set_xlabel(r"S$(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
+        #ax3.set_ylabel(r"z/h$_{mld}$")
+        ax3.set_xlabel(r"b/(h$_{mld} N^{2}$)")
+        #ax4.set_ylabel(r"z/h$_{mld}$")
+        ax4.set_xlabel(r"S$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
+        ax5.set_ylabel(r"z/h$_{mld}$")
+        ax5.set_xlabel(r"r/h$_{mld}$") #(r"r/r$_{j}$")
+        #ax6.set_ylabel(r"z/h$_{mld}$")
+        ax6.set_xlabel(r"b'u'$_{i}$/(h$_{mld}^2 (N^{2})^{3/2}$)")
+        #ax7.set_ylabel(r"z/h$_{mld}$")
+        ax7.set_xlabel(r"b$_{rms}$/(h$_{mld} N^{2}$)")
+        #ax8.set_ylabel(r"z/h$_{mld}$")
         ax8.set_xlabel(r"T$'$/T$_{0}$")
     else:
         ax1.set_ylabel("Depth [m]")

@@ -5,9 +5,9 @@ from scipy.ndimage import label
 from scipy.spatial import ConvexHull
 ### -------------------------NBJ FUNCTIONS------------------------- ###
 # mixed layer depth information
-def mld_info(w, bw_fluc, rho_perturbed, z, ml): # inputs are 1d arrays
+def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
     # info at mixed layer depth
-    dz_ml = np.abs(z + ml)/ml
+    dz_ml = np.abs(z + mld)/mld
     mld_index = np.where(dz_ml==dz_ml.min())[0][-1]
     mld_w = w[mld_index]
     mld_bw_fluc = bw_fluc[mld_index]
@@ -118,8 +118,8 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
         center_xy_loc[0, :] = lx[0]/2
         center_xy_loc[1, :] = lx[1]/2
         center_xy_loc[2, :] = z
-        centerline_index[0, :] = nx[0]//2
-        centerline_index[1, :] = nx[1]//2
+        centerline_index[0, :] = nx[0]//2 - 1
+        centerline_index[1, :] = nx[1]//2 - 1
         centerline_index[2, :] = np.arange(nx[2]).astype(int)
     if calc_option == 'center of mass':
         # finding centerline of plume 
@@ -139,7 +139,7 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
         centerline_index = np.round(centerline_index).astype(int)
     # finding plume bounds via contour on the centerline of the tracer
     contour = 0.05
-    tracer_contour = tracer[centerline_index[0, idx], centerline_index[0, idx], idx]*contour
+    tracer_contour = tracer[centerline_index[0, idx], centerline_index[1, idx], idx]*contour
     plume_contour = tracer >= tracer_contour
     plume_index = np.where(plume_contour)
     edge_mask = plume_contour & (
@@ -164,17 +164,21 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
                 r[i] = np.sqrt(rx**2 + ry**2)
             rp_profile[k] = np.mean(r)
     return center_xy_loc, centerline_index, rp_profile, plume_index
-def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol):
+def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol):
     # checking magnitude of values to help define bounds
-    rho_fluc_mag = np.abs(rho_fluc)
-    rho_fluc_mag_order = np.floor(np.log10(rho_fluc_mag))
-    rho_mag_cl = rho_fluc_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
     w_mag = np.abs(w)
     w_mag_order = np.floor(np.log10(w_mag))
     w_mag_cl = w_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-    n_rho_mags, rho_mag_counts = np.unique(rho_fluc_mag_order, return_counts=True)
-    n_w_mags, w_mag_counts = np.unique(w_mag_order, return_counts=True)
-    if np.sum(np.where(w_mag_cl == w_mag_tol)[0]) > 0:
+
+    db_flucdz = np.gradient(b_fluc, z, axis=-1)
+    db_flucdx = np.gradient(b_fluc, x, axis=0)
+    db_flucdy = np.gradient(b_fluc, y, axis=1)
+
+    dbdz_mag_order = np.floor(np.log10(np.abs(db_flucdz)))
+    dbdz_mag_cl = dbdz_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
+    n_dbdz_mags, dbdz_mag_counts = np.unique(dbdz_mag_cl, return_counts=True)
+    dbdz_mag_tol = n_dbdz_mags[-2]
+    if np.sum(w_mag_cl == w_mag_tol) > 0:
         # index of plume points of interest
         rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
         rho_cl_sign = np.sign(rho_cl)
@@ -202,6 +206,14 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, r
         else:
             idx_neutral = idx_neutral[-1] +1
             idx_max =idx_max[-1] +1 
+            idx_rho_max = np.where(rho_cl_sign_change < 0)[0]
+            idx_diff = np.min(np.abs(idx_rho_max - idx_max))
+            idx_max_2 = idx_rho_max[idx_diff.argmin()]+1
+            idx_max_3 = np.where(dbdz_mag_cl == n_dbdz_mags[-2])[0][0]+1
+            if idx_max > idx_max_2:
+                idx_max = idx_max_2
+            if idx_max > idx_max_3:
+                idx_max = idx_max_3
     else: # early stages of plume development
         idx_max = nx[2]-1
         idx_neutral = idx_max
@@ -224,19 +236,25 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, w, b, b_fluc, r
     b_fluc_xy_avg = np.zeros(nx[2])
     # horizontal area 
     for k in range(idx_max, nx[2]):
-        rhok = rho_fluc[:, :, k]
-        wk = w[:, :, k]
-        rhok_mag = rho_fluc_mag_order[:, :, k]
-        area_rho_opt = (rhok_mag>= rho_mag_tol).astype(float)
-        wk_mag = w_mag_order[:, :, k]
-        area_w_opt = (wk_mag >= w_mag_tol).astype(float)
-        area_combo_option = area_rho_opt + area_w_opt
-        area_combo_overlay = area_combo_option>=1
-        if np.sum(area_combo_overlay) == 0:
+        db_flucdxk = db_flucdx[:, :, k]
+        db_flucdyk = db_flucdy[:, :, k]
+        db_fluc_dzk = db_flucdz[:, :, k]
+        db_horizontal = np.sqrt(db_flucdxk**2 + db_flucdyk**2)
+        db_flucdxk_mag = np.floor(np.log10(np.abs(db_flucdxk)))
+        db_flucdyk_mag = np.floor(np.log10(np.abs(db_flucdyk)))
+        db_fluc_dzk_mag = np.floor(np.log10(np.abs(db_fluc_dzk)))
+        db_hor_mag = np.floor(np.log10(np.abs(db_horizontal)))
+        area_dbhor_opt = (db_hor_mag >= dbdz_mag_tol).astype(float)
+        area_dbdx_opt = (db_flucdxk_mag >= dbdz_mag_tol).astype(float)
+        area_dbdy_opt = (db_flucdyk_mag >= dbdz_mag_tol).astype(float)
+        area_dbdz_opt = (db_fluc_dzk_mag >= dbdz_mag_tol).astype(float)
+        area_db_opt = area_dbhor_opt + area_dbdx_opt + area_dbdy_opt + area_dbdz_opt
+        if np.sum(area_db_opt) == 0:
             continue
-        area_idx[:, :, k] = area_rho_opt#area_combo_overlay
+        area_db_opt = (area_db_opt > 0)
+        area_idx[:, :, k] = area_db_opt
         # compute area 
-        x_idx, y_idx = np.where(area_rho_opt)#area_combo_overlay
+        x_idx, y_idx = np.where(area_db_opt)
         Xloc = X[x_idx, y_idx, k] - center_xy_loc[0, k]
         Yloc = Y[x_idx, y_idx, k] - center_xy_loc[1, k]
         points = np.stack([Xloc, Yloc], axis=1)

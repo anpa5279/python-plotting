@@ -27,12 +27,12 @@ def fluct2_mean(a, b, a_avg, b_avg):
 
     return ab_fluct_avg
 
-def stratification_profile(z, dadz, ml):
+def stratification_profile(z, dadz, mld):
     """Returns a linear stratification profile."""
     a = np.zeros(len(z))
     for k in range(len(z)):
-        if z[k] <= -ml:
-            a[k] = dadz * (z[k] + ml)  # linear increase from 0 at -ml to 0.05 at surface
+        if z[k] <= -mld:
+            a[k] = dadz * (z[k] + mld)  # linear increase from 0 at -mld to 0.05 at surface
         else:
             a[k] = 0.0  # constant below mixed layer
     return a
@@ -51,7 +51,7 @@ convergence_test = True
 with_halos = False
 
 # parameters
-ml = 30.0  # mixed layer depth in meters
+mld = 30.0  # mixed layer depth in meters
 g = 9.80665  # gravity in m/s^2
 alpha = 2.0e-4 
 dTdz = 0.01 
@@ -173,7 +173,7 @@ for caseindex, case in enumerate(cases):
     print(f"\tFace Interpolations completed")
 
     # prepping variables for plume statistics
-    b_background = stratification_profile(z[0:nx[2, caseindex], caseindex], alpha*g*dTdz, ml)
+    b_background = stratification_profile(z[0:nx[2, caseindex], caseindex], alpha*g*dTdz, mld)
     for it in np.arange(nt):
         b_nostrat[it, :, :, :] = b[it, :, :, :] - b_background
     b_nostrat_avg[:, 0:nx[2, caseindex], caseindex] = np.mean(b_nostrat, axis=(1, 2))

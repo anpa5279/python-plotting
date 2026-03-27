@@ -19,3 +19,25 @@ for i, field in enumerate(fields):
     ax[i].set_aspect('equal')
 
 plt.show()
+
+
+
+plt.rcParams.update({'font.size': 8})
+
+fig, ax = plt.subplots(1,3, figsize=(45, 4))  # taller figure
+ax = ax.ravel()
+
+fields = [b_fluc[127, 127, :], db_flucdz[127, 127, :], wc[127, 127, :]]
+titles = ['b_fluc', 'db_flucdz', 'wc']
+
+for i, field in enumerate(fields):
+    span = [field.min(), field.max()]
+    ax[i].plot(span, -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
+    ax[i].plot(span, z[idx_max]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
+    ax[i].plot(span, z[idx_neutral]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
+    field.astype(float)
+    ax[i].plot(field, z, linewidth = 0.5)
+    ax[i].set_ylim(-lx[-1], 0)
+    ax[i].set_title(titles[i])
+
+plt.show()

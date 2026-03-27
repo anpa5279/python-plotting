@@ -22,7 +22,7 @@ z = np.linspace(Lz, 0, Nz)
 X, Y, Z = np.meshgrid(x, y, z)
 alpha = 2.0e-4
 g = -9.80665 # m/s^2
-ml = -30 # m depth of mixed layer
+mld = -30 # m depth of mixed layer
 dTdz = 0.01
 b0 = -5.0e-2
 ############ PLOTTING ############
@@ -36,13 +36,13 @@ plt.rcParams['font.size'] = 12
 # initial conditions
 if plot_ics:
     ic_profile = np.zeros(Nz)
-    izi = int(ml/Lz * Nz)
+    izi = int(mld/Lz * Nz)
     dbdz = alpha * g * dTdz 
     print(izi)
     #for k in range(izi, Nz):
     #    ic_profile[k] = b0*norm_3d(L/2, L/2, z[k])
     for k in range(0, Nz-izi-1):
-        ic_profile[k] = -dbdz * (z[k] - ml)
+        ic_profile[k] = -dbdz * (z[k] - mld)
     plt.figure(figsize=(4, 4))
     plt.plot(ic_profile, z, color='black')
     plt.ylabel('Depth (m)')

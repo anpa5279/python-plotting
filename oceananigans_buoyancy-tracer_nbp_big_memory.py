@@ -31,7 +31,7 @@ with_halos = False
 stokes = False
 
 # physical parameters
-ml = 30.0  # mixed layer depth in meters
+mld = 30.0  # mixed layer depth in meters
 g = 9.80665  # gravity in m/s^2
 alpha = 2.0e-4 
 dTdz = 0.01 # background temperature gradient in K/m
@@ -105,7 +105,7 @@ for it in range(nt):
     if stokes:
         u = u - u_s
     
-    b_background = stratification_profile(z, alpha*g*dTdz, ml)
+    b_background = stratification_profile(z, alpha*g*dTdz, mld)
 
     if buoyancy_analysis or turb_stats_plot:
         rho = ((b)*rho0)/(-g) + rho0
@@ -184,7 +184,7 @@ for it in range(nt):
         rho_center = rho[int(nx[0]/2), int(nx[1]/2), :]
         rho_perturbed_center = rho_perturbed[int(nx[0]/2), int(nx[1]/2), :]
         
-        neutral_index, max_index, b_center, w_center, dbdz_plume_avg, z_max, z_neutral, max_w, max_b_fluc, max_rho_perturbed, neutral_w, neutral_b_fluc, neutral_rho_perturbed, mld_w, mld_b_fluc, mld_rho_perturbed = centerline_analysis_buoyancy(wc_center, b_center, b_fluc_center, dbdz_center, rho_perturbed_center, z, nx, ml)
+        neutral_index, max_index, b_center, w_center, dbdz_plume_avg, z_max, z_neutral, max_w, max_b_fluc, max_rho_perturbed, neutral_w, neutral_b_fluc, neutral_rho_perturbed, mld_w, mld_b_fluc, mld_rho_perturbed = centerline_analysis_buoyancy(wc_center, b_center, b_fluc_center, dbdz_center, rho_perturbed_center, z, nx, mld)
         
         # ozmidov length scale
         #epsilon =visc_dissipation_rate(visc, u, v, wc, dx)
@@ -245,7 +245,7 @@ for it in range(nt):
         b_ranges = ranges.copy()
         b_ranges['w'] = [-1.2*10**(-1), 1.2*10**(-1)]
         b_ranges['lengthscale'] = [0, 0.3]
-        buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, ml, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, b_neutral, b_intrusion, b_mld)
+        buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, b_neutral, b_intrusion, b_mld)
 print("All frames created.")
 # creating videos
 if turb_stats_plot:
