@@ -566,14 +566,14 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax4.set_xlim(ranges['S_fluc'])
     ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
-    # plume radius
+    # tracer plume radius
     ax5.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
     ax5.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
     ax5.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
     ax5.plot(r_profile, z, color = 'black')
     ax5.set_title("Tracer Plume Radius with Depth")
     ax5.set_ylim(-lx[2], 0)
-    ax5.set_xlim(0, lx[0]/2)
+    ax5.set_xlim(0, lx[0]/4)
 
     # perturbed buoyancy flux 
     ax6.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
@@ -625,12 +625,12 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax10.set_ylim(-lx[2], 0)
     ax10.set_xlim(ranges['M'])
 
-    # F
+    # F perturbed 
     ax11.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
     ax11.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
     ax11.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
     ax11.plot(F, z, color = 'black')
-    ax11.set_title("Buoyancy Flux")
+    ax11.set_title("Buoyancy Perturbed Flux")
     ax11.set_ylim(-lx[2], 0)
     ax11.set_xlim(xmin = ranges['F'][0], xmax = ranges['F'][-1])
 
@@ -659,7 +659,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax14.plot(dm, z, color = 'black')
     ax14.set_title("Characteristic Length")
     ax14.set_ylim(-lx[2], 0)
-    ax14.set_xlim(xmin = 0, xmax = lx[0]/2)
+    ax14.set_xlim(xmin = 0, xmax = lx[0]/4)
 
     # Ri
     ax15.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")

@@ -27,7 +27,7 @@ name = 'w-area'
 rho_IC_perturb = False
 
 # flags for what to plot
-video = False
+video = True
 
 video_3d_flag = False
 turb_stats_plot = False
@@ -88,10 +88,10 @@ ranges['b'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
 ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
 ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
-ranges['Q'] = [-1*10**(0), 1*10**(0)]
-ranges['M'] = [-1*10**(-2), 1*10**(-2)]
-ranges['F'] = [-1*10**(-3), 1*10**(-3)]
-ranges['B'] = [-1*10**(0), 1*10**(0)]
+ranges['Q'] = [-2*10**(0), 2*10**(0)]
+ranges['M'] = [-5*10**(-2), 5*10**(-2)]
+ranges['F'] = [-1*10**(-5), 1*10**(-5)]
+ranges['B'] = [-1*10**(-1), 1*10**(-1)]
 ranges['richardson'] = [0, 1*10**4]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
@@ -354,7 +354,7 @@ for it in nt:
     if plume_plot:
         plume_dir = plume_spatial_analysis(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, rp_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
     if buoyancy_momentum_analysis:
-        momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
+        momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F_perturb, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
 print("All frames created.")
 # creating videos
 if video:

@@ -3,8 +3,8 @@ plt.rcParams.update({'font.size': 8})
 fig, ax = plt.subplots(2,3, figsize=(45, 6))  # taller figure
 ax = ax.ravel()
 
-fields = [area_rho_opt, area_w_opt, area_combo_option, area_combo_overlay]
-titles = ['area_rho_opt', 'area_w_opt', 'area_combo_option', 'area_combo_overlay']
+fields = [area_idx[:, :, idx_max], area_idx[:, :, idx_neutral], area_idx[:, :, mld_index], area_idx[:, :, bw_idx], area_idx[:, :, bw_idx+10]]
+titles = ['max', 'neutral', 'mld', 'max bw', 'max bw + 10']
 
 for i, field in enumerate(fields):
     field.astype(float)
