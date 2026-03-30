@@ -244,11 +244,11 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         b_fluc_k = b_fluc[:, :, k]
         db_flucdxk = db_flucdx[:, :, k]
         db_flucdyk = db_flucdy[:, :, k]
-        db_fluc_dzk = db_flucdz[:, :, k]
+        db_flucdzk = db_flucdz[:, :, k]
         db_horizontal = np.sqrt(db_flucdxk**2 + db_flucdyk**2)
         db_flucdxk_mag = np.floor(np.log10(np.abs(db_flucdxk)))
         db_flucdyk_mag = np.floor(np.log10(np.abs(db_flucdyk)))
-        db_fluc_dzk_mag = np.floor(np.log10(np.abs(db_fluc_dzk)))
+        db_fluc_dzk_mag = np.floor(np.log10(np.abs(db_flucdzk)))
         db_hor_mag = np.floor(np.log10(np.abs(db_horizontal)))
         area_dbhor_opt = (db_hor_mag >= dbdz_mag_tol).astype(float)
         area_dbdx_opt = (db_flucdxk_mag >= dbdz_mag_tol).astype(float)
@@ -288,16 +288,15 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         bm[k] = B[k]*M[k]/(Q[k]**2)
         # Richardson
         Ri[k] = B[k]*Q[k]/(M[k]**1.5)
-    Q_sign = np.sign(Q)
-    Q_sign_change = np.diff(Q_sign)
-    idx_neutral = np.where(Q_sign_change < 0)[0]
+    Q_min = np.abs(Q[idx_max:nx[2]]).min()
+    idx_neutral = np.where(np.abs(Q) == Q_min)[0]
     if len(idx_neutral) > 1:
-        max_Ri_idx = np.where(Ri==np.max(Ri))
-        #idx_diff = np.abs(max_Ri_idx - idx_neutral)
-        idx_neutral = max_Ri_idx #idx_rho_max[idx_diff.argmin()] + 1 
+        Ri_sign = np.sign(Ri)
+        Ri_sign_change = np.diff(Ri_sign)
+        idx_Ri_neutral = np.where(Ri_sign_change < 0)[0]
+        idx_neutral = idx_Ri_neutral + 1 
     else:
         idx_neutral = idx_neutral[0]+1
-
     area_idx = np.where(area_idx)
     return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
 
