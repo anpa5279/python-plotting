@@ -77,9 +77,9 @@ elif Nranks > 1 and not stokes:
 else:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
 if salinity:
-    alpha, beta = collect_temp_and_sal(fid, Nranks, salinity)
+    alpha, beta = collect_temp_and_sal(fid, salinity)
 else:
-    alpha = collect_temp_and_sal(fid, Nranks, salinity)
+    alpha = collect_temp_and_sal(fid, salinity)
 if rho_IC_perturb:
     name+='-rhoICperturbation-'
 name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'

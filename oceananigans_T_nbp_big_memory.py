@@ -21,7 +21,7 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
 output_folder = folder #'figures and videos/'
-name = 'w-mag-opt-'
+name = ''
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -29,12 +29,12 @@ rho_IC_perturb = False
 # flags for what to plot
 video = True
 
-video_3d_flag = False
+video_3d_flag = True
 turb_stats_plot = False
 vert_slice_plot = False
 xy_plot = False
 buoyancy_analysis_plot = False
-buoyancy_momentum_analysis = True
+buoyancy_momentum_analysis = False
 plume_plot = False
 
 # flags for how to read data
@@ -117,8 +117,8 @@ else:
     alpha = collect_temp_and_sal(fid, salinity)
 
 if buoyancy_momentum_analysis:
-    rho_mag_tol = np.floor(np.log10(dTdz*alpha*rho0))
     w_mag_tol = np.floor(np.log10(wp))
+    dbdz_mag_tol = dTdz*alpha*g
 
 if rho_IC_perturb:
     name+='-rhoICperturbation-'
@@ -285,7 +285,7 @@ for it in nt:
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
         
-        Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol)
+        Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b, b_fluc, rho_fluc, X, Y, dbdz_mag_tol, w_mag_tol)
 
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]

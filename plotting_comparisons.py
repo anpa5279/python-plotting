@@ -174,7 +174,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     if ND:
         ax1.set_ylabel(r"z/h$_{mld}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"r$_{avg}$/h$_{mld}$") #(r"r$_{avg}$/r$_{j}$") #
+        ax2.set_ylabel(r"r$_{avg}$/r$_{j}$") #(r"r$_{avg}$/h$_{mld}$") #
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
         ax3.set_ylabel(r"w/(h$_{mld} \sqrt{N^{2}})$")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
@@ -182,9 +182,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"T$'$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"S$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)") #
+        ax6.set_ylabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"S$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)")# (r"S$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")#
+        ax7.set_ylabel(r"C$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")#
         ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
         ax8.set_ylabel(r"w$_{rms}$/(h$_{mld} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['vel_rms'][0], ymax = ranges['vel_rms'][-1])
@@ -279,9 +279,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     # tracer perturbations 
     for i in range(num_cases):
         if i == 0:
-            ax6.plot(time/ 3600 / 24, tracer_mld[:, i], label = r"S$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], label = r"S$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], label = r"S$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+            ax6.plot(time/ 3600 / 24, tracer_mld[:, i], label = r"C$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], label = r"C$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
+            ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], label = r"C$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
         else:
             ax6.plot(time/ 3600 / 24, tracer_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
             ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
@@ -294,7 +294,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     for i in range(num_cases):
         ax7.plot(time/ 3600 / 24, tracer_avg[:, i], linewidth = 0.75, color = color_opt[i])
     ax7.set_xlabel("Time [days]")
-    ax7.set_title(r"S$_{\text{avg}}$ at MLD", size = 10)
+    ax7.set_title(r"C$_{\text{avg}}$ at MLD", size = 10)
     ax7.ticklabel_format(axis='y', style='sci', scilimits=(-1,1), useMathText=True)
     ax7.set_xlim([0, time.max() / 3600 / 24])
     # root mean square w at MLD 
@@ -349,11 +349,11 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
         ax1.set_ylabel(r"z/h$_{mld}$")
         ax1.set_xlabel(r"u$_{i, rms}$/(h$_{mld} \sqrt{N^{2}}$)")
         #ax2.set_ylabel(r"z/h$_{mld}$")
-        ax2.set_xlabel(r"S$(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
+        ax2.set_xlabel(r"C$(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"C$\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
         #ax3.set_ylabel(r"z/h$_{mld}$")
         ax3.set_xlabel(r"b/(h$_{mld} N^{2}$)")
         #ax4.set_ylabel(r"z/h$_{mld}$")
-        ax4.set_xlabel(r"S$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"S$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
+        ax4.set_xlabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
         ax5.set_ylabel(r"z/h$_{mld}$")
         ax5.set_xlabel(r"r/h$_{mld}$") #(r"r/r$_{j}$")
         #ax6.set_ylabel(r"z/h$_{mld}$")

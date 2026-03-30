@@ -107,9 +107,9 @@ for i, folder in enumerate(folders):
         time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
         #u_s = stokes_exp(z)
     if salinity:
-        alpha, beta = collect_temp_and_sal(fid, Nranks, salinity)
+        alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
-        alpha = collect_temp_and_sal(fid, Nranks, salinity)
+        alpha = collect_temp_and_sal(fid, salinity)
     t_save.append(t_save_temp)
 
 if video:

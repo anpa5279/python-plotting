@@ -164,7 +164,7 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
                 r[i] = np.sqrt(rx**2 + ry**2)
             rp_profile[k] = np.mean(r)
     return center_xy_loc, centerline_index, rp_profile, plume_index
-def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, b_fluc, rho_fluc, X, Y, rho_mag_tol, w_mag_tol):
+def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, b_fluc, rho_fluc, X, Y, dbdz_mag_tol, w_mag_tol):
     # checking magnitude of values to help define bounds
     w_mag = np.abs(w)
     w_mag_order = np.floor(np.log10(w_mag))
@@ -246,14 +246,10 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         db_flucdyk = db_flucdy[:, :, k]
         db_flucdzk = db_flucdz[:, :, k]
         db_horizontal = np.sqrt(db_flucdxk**2 + db_flucdyk**2)
-        db_flucdxk_mag = np.floor(np.log10(np.abs(db_flucdxk)))
-        db_flucdyk_mag = np.floor(np.log10(np.abs(db_flucdyk)))
-        db_fluc_dzk_mag = np.floor(np.log10(np.abs(db_flucdzk)))
-        db_hor_mag = np.floor(np.log10(np.abs(db_horizontal)))
-        area_dbhor_opt = (db_hor_mag >= dbdz_mag_tol).astype(float)
-        area_dbdx_opt = (db_flucdxk_mag >= dbdz_mag_tol).astype(float)
-        area_dbdy_opt = (db_flucdyk_mag >= dbdz_mag_tol).astype(float)
-        area_dbdz_opt = (db_fluc_dzk_mag >= dbdz_mag_tol).astype(float)
+        area_dbhor_opt = (np.abs(db_horizontal) >= dbdz_mag_tol).astype(float)
+        area_dbdx_opt = (np.abs(db_flucdxk) >= dbdz_mag_tol).astype(float)
+        area_dbdy_opt = (np.abs(db_flucdyk) >= dbdz_mag_tol).astype(float)
+        area_dbdz_opt = (np.abs(db_flucdzk) >= dbdz_mag_tol).astype(float)
         area_db_opt = area_dbhor_opt + area_dbdx_opt + area_dbdy_opt + area_dbdz_opt
         #area_w_opt = (w_mag_order[:, :, k] >= w_mag_tol).astype(float)
         area_opt = area_db_opt #+ area_w_opt
@@ -288,8 +284,9 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         bm[k] = B[k]*M[k]/(Q[k]**2)
         # Richardson
         Ri[k] = B[k]*Q[k]/(M[k]**1.5)
-    Q_min = np.abs(Q[idx_max:nx[2]]).min()
-    idx_neutral = np.where(np.abs(Q) == Q_min)[0]
+    Q_sign = np.sign(Q)
+    Q_sign_change = np.diff(Q_sign)
+    idx_neutral = np.where(Q_sign_change < 0)[0]
     if len(idx_neutral) > 1:
         Ri_sign = np.sign(Ri)
         Ri_sign_change = np.diff(Ri_sign)

@@ -22,7 +22,7 @@ case_names = [r'S$_{f} = -5.0*10^{-5}$', r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = -
 #[r'S$_{f} = -5.0*10^{-5}$', r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = -1.5*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='mld-only-average-rp-Sj-4'
+name_uni ='average-rp-Sj'
 
 num_cases = len(case_names)
 folders = []
@@ -88,9 +88,9 @@ for i, folder in enumerate(folders):
         time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
         #u_s = stokes_exp(z)
     if salinity:
-        alpha, beta = collect_temp_and_sal(fid, Nranks, salinity)
+        alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
-        alpha = collect_temp_and_sal(fid, Nranks, salinity)
+        alpha = collect_temp_and_sal(fid, salinity)
     t_save.append(t_save_temp)
 
 nt = len(t_save[0])
@@ -181,7 +181,8 @@ for it in range(nt):
         w_rms = w2_fluc_avg**0.5
 
         # plume analysis 
-        center_xy_loc_temp, centerline_index, r_profile, plume_index = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, contour[i])#, 'center of mass')
+        bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
+        center_xy_loc_temp, centerline_index, r_profile, plume_index = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, bw_idx)#, 'center of mass')
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
         neutral_index = neutral_buoyancy_loc(b_fluc, plume_index, centerline_index)
@@ -276,9 +277,9 @@ if plume_analysis_plot and ND:
         z[:, i] = z[:, i] / mld[i]
         zf[:, i] = zf[:, i] / mld[i]
 
-        r_mld[:, i] = r_mld[:, i] / mld[i] # / rj #
-        r_neutral[:, i] = r_neutral[:, i] / mld[i] # / rj #
-        r_hmax[:, i] = r_hmax[:, i] / mld[i] # / rj #
+        r_mld[:, i] = r_mld[:, i] / rj # / mld[i] # 
+        r_neutral[:, i] = r_neutral[:, i] / rj # / mld[i] # 
+        r_hmax[:, i] = r_hmax[:, i] / rj #/ mld[i] # 
 
     lx_plot= np.array(lx) / np.min(mld)
     mld_plot = np.ones(num_cases)

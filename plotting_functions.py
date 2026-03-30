@@ -260,7 +260,7 @@ def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, 
         norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
         mappable = cm.ScalarMappable(norm=norm)
         ax4.set(xlim=[0, lx[0]], ylim=[0, lx[1]], zlim=[-lx[2], 0])
-        ax4.contourf(X[:, :, -1], Y[:, :, -1], T[:, :, -1], levels, zdir='z', offset=0, norm=norm)
+        ax4.contourf(X[:, :, -1], Y[:, :, -1], T[:, :, -1], 50, zdir='z', offset=0, norm=norm)
         ax4.contourf(X[-1, :, :], T[-1, :, :], Z[-1, :, :], levels, zdir='y', offset=0, norm=norm)
         ax4.contourf(T[:, 0, :], Y[:, 0, :], Z[:, 0, :], levels, zdir='x', offset=lx[0], norm=norm)
         ax4.set_title(r"Temperature")
@@ -282,6 +282,7 @@ def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, 
         cbar = fig.colorbar(mappable, ax=ax4, label=r"m/s$^{2}$", location='bottom', orientation='horizontal', shrink=0.75)
         cbar.formatter.set_powerlimits((-3, 2))
         cbar.update_ticks()
+    
     if S.size != 0:
         norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1])
         mappable = cm.ScalarMappable(norm=norm)
