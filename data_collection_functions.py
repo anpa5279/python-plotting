@@ -31,7 +31,7 @@ def collect_time_outputs(file, Nranks, stokes=False):
     else:
         return time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff
 # collecting thermal expansion and haline contraction coefficients
-def collect_temp_and_sal(file, Nranks, salinity=False):
+def collect_temp_and_sal(file, salinity=False):
     with h5py.File(file, 'r') as f:
         alpha = f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
         if salinity:

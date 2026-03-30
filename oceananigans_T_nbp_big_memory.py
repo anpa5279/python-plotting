@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
 output_folder = folder #'figures and videos/'
 name = 'w-mag-opt-'
 
@@ -27,14 +27,14 @@ name = 'w-mag-opt-'
 rho_IC_perturb = False
 
 # flags for what to plot
-video = True
+video = False
 
 video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = False
-xy_plot = True
+xy_plot = False
 buoyancy_analysis_plot = False
-buoyancy_momentum_analysis = False
+buoyancy_momentum_analysis = True
 plume_plot = False
 
 # flags for how to read data
@@ -112,9 +112,9 @@ elif Nranks > 1 and stokes:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
     u_s = stokes_exp(z)
 if salinity:
-    alpha, beta = collect_temp_and_sal(fid, Nranks, salinity)
+    alpha, beta = collect_temp_and_sal(fid, salinity)
 else:
-    alpha = collect_temp_and_sal(fid, Nranks, salinity)
+    alpha = collect_temp_and_sal(fid, salinity)
 
 if buoyancy_momentum_analysis:
     rho_mag_tol = np.floor(np.log10(dTdz*alpha*rho0))
@@ -154,11 +154,7 @@ if buoyancy_analysis_plot or turb_stats_plot or buoyancy_momentum_analysis:
     rp_list = []
 for it in nt:
     # Load data from files
-    if Nranks == 1 and not salinity:
-        u, v, w, T, Pdynamic, Pstatic = collect_fields(folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
-    elif Nranks == 1 and salinity:
-        u, v, w, T, S, Pdynamic, Pstatic = collect_fields(folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
-    elif Nranks > 1 and not salinity:
+    if not salinity:
         u, v, w, T, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
     else:
         u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
@@ -228,8 +224,8 @@ for it in nt:
         b_fluc = b - b_background
     elif (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis) and not rho_IC_perturb:
         # calculating density 
-        rho_perturbed = ((b - b_avg)*rho0)/(-g)
         b_fluc = b - b_avg
+        rho_perturbed = ((b_fluc)*rho0)/(-g)
 
     # buoyancy analysis 
     if buoyancy_analysis_plot or turb_stats_plot or buoyancy_momentum_analysis:
@@ -341,11 +337,14 @@ for it in nt:
     if vert_slice_plot:
         plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, X_zf, Y, Y_zf, Z, Z_zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho, rho_perturbed, b, T, S)
     if xy_plot and salinity:
-        loc = "z[250]"
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, 250, loc, T, S)
+        loc = "mld"
+        loc_idx = mld_index
+        if loc_idx >(nx[2]-1):
+            loc_idx = nx[2] - 1
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, loc_idx, loc, T, S)
     elif xy_plot and not salinity:
-        loc = "z[250]"
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, 250, loc, T)
+        loc = "max height"
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, max_index, loc, T)
     if buoyancy_analysis_plot and not salinity:
         b_ranges = ranges.copy()
         buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
