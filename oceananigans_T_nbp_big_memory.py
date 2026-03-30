@@ -21,7 +21,7 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1'
 output_folder = folder #'figures and videos/'
-name = 'w-area'
+name = 'w-mag-opt-'
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -32,9 +32,9 @@ video = True
 video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = False
-xy_plot = False
+xy_plot = True
 buoyancy_analysis_plot = False
-buoyancy_momentum_analysis = True
+buoyancy_momentum_analysis = False
 plume_plot = False
 
 # flags for how to read data

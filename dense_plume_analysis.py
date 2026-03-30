@@ -200,12 +200,15 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
             Ri = np.zeros(nx[2])
             area_idx = np.zeros_like(rho_fluc).astype(bool)
             return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
-        elif np.size(idx_max) != 0 and (np.size(idx_neutral) == 0):
-            idx_max = idx_max[-1] +1
-            idx_neutral = idx_max
         else:
             idx_neutral = idx_neutral[-1] +1
             idx_max =idx_max[-1] +1 
+            idx_rho_max = np.where(rho_cl_sign_change < 0)[0]
+            idx_diff = np.abs(idx_rho_max - idx_max)
+            idx_max_2 = idx_rho_max[idx_diff.argmin()] + 1 
+            idx_max_3 = np.where(w_mag_cl>=w_mag_tol)[0][0]
+            if (idx_max > idx_max_2) or (idx_max > idx_max_3):
+                idx_max = np.min([idx_max_2, idx_max_3])
     else: # early stages of plume development
         idx_max = nx[2]-1
         idx_neutral = idx_max
@@ -250,12 +253,14 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         area_dbdy_opt = (db_flucdyk_mag >= dbdz_mag_tol).astype(float)
         area_dbdz_opt = (db_fluc_dzk_mag >= dbdz_mag_tol).astype(float)
         area_db_opt = area_dbhor_opt + area_dbdx_opt + area_dbdy_opt + area_dbdz_opt
-        area_db_opt = (area_db_opt > 0)
-        if np.sum(area_db_opt) == 0:
+        area_w_opt = (w_mag_order[:, :, k] >= w_mag_tol).astype(float)
+        area_opt = area_db_opt + area_w_opt
+        area_opt = area_opt>0
+        if np.sum(area_opt) == 0:
             continue
-        area_idx[:, :, k] = area_db_opt
+        area_idx[:, :, k] = area_opt
         # compute area 
-        x_idx, y_idx = np.where(area_db_opt)
+        x_idx, y_idx = np.where(area_opt)
         Xloc = X[x_idx, y_idx, k] - center_xy_loc[0, k]
         Yloc = Y[x_idx, y_idx, k] - center_xy_loc[1, k]
         points = np.stack([Xloc, Yloc], axis=1)
@@ -263,26 +268,24 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         area[k] = hull.volume
         # compute horizontal averages
         w_xy_avg[k] = np.mean(w[area_idx[:, :, k]])
+        wm[k] = w_xy_avg[k] # characteristic w, wm[k] = M[k]/Q[k]
         b_xy_avg[k] = np.mean(b[area_idx[:, :, k]])
         b_fluc_xy_avg[k] = np.mean(b_fluc[area_idx[:, :, k]])
         # volume flux
-        Q = area*w_xy_avg
+        Q[k] = area[k]*w_xy_avg[k]
         # momentum flux
-        M = area*w_xy_avg**2 
+        M[k] = area[k]*w_xy_avg[k]**2 
         # buoyancy flux
-        F = area*w_xy_avg*b_xy_avg
-        F_perturb = area*b_fluc_xy_avg*w_xy_avg
+        F[k] = area[k]*w_xy_avg[k]*b_xy_avg[k]
+        F_perturb[k] = area[k]*b_fluc_xy_avg[k]*w_xy_avg[k]
         # the buoyancy integral
-        B = area*b_xy_avg 
-        # find characteristic w
-        wm = M/Q
-        wm[np.isnan(wm)] = 0.0
+        B[k] = area[k]*b_xy_avg[k]
         # characteristic width of plume
-        dm = np.sqrt(area) # equivalent to dm = Q / (M**0.5)
+        dm[k] = np.sqrt(area[k]) # equivalent to dm = Q / (M**0.5)
         # characteristic buoyancy
-        bm = B*M/(Q**2)
+        bm[k] = B[k]*M[k]/(Q[k]**2)
         # Richardson
-        Ri = B*Q/(M**1.5)
+        Ri[k] = B[k]*Q[k]/(M[k]**1.5)
 
     area_idx = np.where(area_idx)
     return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
