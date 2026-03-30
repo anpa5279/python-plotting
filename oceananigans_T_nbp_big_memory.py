@@ -88,11 +88,11 @@ ranges['b'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
 ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
 ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
-ranges['Q'] = [-2*10**(0), 2*10**(0)]
-ranges['M'] = [-5*10**(-2), 5*10**(-2)]
-ranges['F'] = [-1*10**(-5), 1*10**(-5)]
-ranges['B'] = [-4*10**(-1), 4*10**(-1)]
-ranges['richardson'] = [0, 1*10**4]
+ranges['Q'] = [-3*10**(0), 3*10**(0)]
+ranges['M'] = [-1*10**(-1), 1*10**(-1)]
+ranges['F'] = [-2*10**(-4), 2*10**(-4)]
+ranges['B'] = [-1*10**(-1), 1*10**(-1)]
+ranges['richardson'] = [-1*10**5, 1*10**5]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)

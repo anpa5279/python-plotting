@@ -184,7 +184,6 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         rho_cl_sign = np.sign(rho_cl)
         rho_cl_sign_change = np.diff(rho_cl_sign)
         w_cl = w[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-        idx_neutral = np.where(rho_cl_sign_change > 0)[0]
         idx_max =np.where(np.diff(np.sign(w_cl)) < 0)[0]
         if np.size(idx_max) == 0: # early stages of plume development
             idx_max = nx[2]-1
@@ -201,14 +200,13 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
             area_idx = np.zeros_like(rho_fluc).astype(bool)
             return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
         else:
-            idx_neutral = idx_neutral[-1] +1
             idx_max =idx_max[-1] +1 
             idx_rho_max = np.where(rho_cl_sign_change < 0)[0]
             idx_diff = np.abs(idx_rho_max - idx_max)
             idx_max_2 = idx_rho_max[idx_diff.argmin()] + 1 
-            idx_max_3 = np.where(w_mag_cl>=w_mag_tol)[0][0]
-            if (idx_max > idx_max_2) or (idx_max > idx_max_3):
-                idx_max = np.min([idx_max_2, idx_max_3])
+            #idx_max_3 = np.where(w_mag_cl>=w_mag_tol)[0][0]
+            if (idx_max > idx_max_2):# or (idx_max > idx_max_3):
+                idx_max = idx_max_2 #np.min([idx_max_2, idx_max_3])
     else: # early stages of plume development
         idx_max = nx[2]-1
         idx_neutral = idx_max
@@ -257,8 +255,8 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         area_dbdy_opt = (db_flucdyk_mag >= dbdz_mag_tol).astype(float)
         area_dbdz_opt = (db_fluc_dzk_mag >= dbdz_mag_tol).astype(float)
         area_db_opt = area_dbhor_opt + area_dbdx_opt + area_dbdy_opt + area_dbdz_opt
-        area_w_opt = (w_mag_order[:, :, k] >= w_mag_tol).astype(float)
-        area_opt = area_db_opt + area_w_opt
+        #area_w_opt = (w_mag_order[:, :, k] >= w_mag_tol).astype(float)
+        area_opt = area_db_opt #+ area_w_opt
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
             continue
@@ -290,6 +288,15 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         bm[k] = B[k]*M[k]/(Q[k]**2)
         # Richardson
         Ri[k] = B[k]*Q[k]/(M[k]**1.5)
+    Q_sign = np.sign(Q)
+    Q_sign_change = np.diff(Q_sign)
+    idx_neutral = np.where(Q_sign_change < 0)[0]
+    if len(idx_neutral) > 1:
+        max_Ri_idx = np.where(Ri==np.max(Ri))
+        #idx_diff = np.abs(max_Ri_idx - idx_neutral)
+        idx_neutral = max_Ri_idx #idx_rho_max[idx_diff.argmin()] + 1 
+    else:
+        idx_neutral = idx_neutral[0]+1
 
     area_idx = np.where(area_idx)
     return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
