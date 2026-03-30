@@ -240,6 +240,10 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
     Ri = np.zeros(nx[2])
     # horizontal area 
     for k in range(idx_max, nx[2]):
+        #collecting values of interest at each horizontal plane
+        wk = w[:, :, k]
+        bk = b[:, :, k]
+        b_fluc_k = b_fluc[:, :, k]
         db_flucdxk = db_flucdx[:, :, k]
         db_flucdyk = db_flucdy[:, :, k]
         db_fluc_dzk = db_flucdz[:, :, k]
@@ -267,10 +271,10 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         hull = ConvexHull(points)
         area[k] = hull.volume
         # compute horizontal averages
-        w_xy_avg[k] = np.mean(w[area_idx[:, :, k]])
+        w_xy_avg[k] = np.mean(wk[area_idx[:, :, k]])
         wm[k] = w_xy_avg[k] # characteristic w, wm[k] = M[k]/Q[k]
-        b_xy_avg[k] = np.mean(b[area_idx[:, :, k]])
-        b_fluc_xy_avg[k] = np.mean(b_fluc[area_idx[:, :, k]])
+        b_xy_avg[k] = np.mean(bk[area_idx[:, :, k]])
+        b_fluc_xy_avg[k] = np.mean(b_fluc_k[area_idx[:, :, k]])
         # volume flux
         Q[k] = area[k]*w_xy_avg[k]
         # momentum flux

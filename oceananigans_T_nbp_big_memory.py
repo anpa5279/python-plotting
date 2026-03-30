@@ -27,7 +27,7 @@ name = 'w-mag-opt-'
 rho_IC_perturb = False
 
 # flags for what to plot
-video = False
+video = True
 
 video_3d_flag = False
 turb_stats_plot = False
@@ -91,7 +91,7 @@ ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
 ranges['Q'] = [-2*10**(0), 2*10**(0)]
 ranges['M'] = [-5*10**(-2), 5*10**(-2)]
 ranges['F'] = [-1*10**(-5), 1*10**(-5)]
-ranges['B'] = [-1*10**(-1), 1*10**(-1)]
+ranges['B'] = [-4*10**(-1), 4*10**(-1)]
 ranges['richardson'] = [0, 1*10**4]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
