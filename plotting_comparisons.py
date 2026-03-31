@@ -218,7 +218,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax1.set_title("Plume Depths", size = 10)
     #ax1.set_xlabel("Time [days]") 
     ax1.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
-    ax1.set_xlim([0, time.max() / 3600 / 24])
+    ax1.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # radius of plume 
     for i in range(num_cases):
         if i == 0:
@@ -229,7 +229,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
             ax2.plot(time/ 3600 / 24, r_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
             ax2.plot(time[start_neutral[i]::]/ 3600 / 24, r_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
             ax2.plot(time/ 3600 / 24, r_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-    ax2.set_xlim([0, time.max() / 3600 / 24])
+    ax2.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax2.set_title("Plume Radii", size = 10)
     #ax2.set_xlabel("Time [days]") 
     ax2.legend(loc='upper left', labelspacing = 0.25, handlelength=0.75)
@@ -246,7 +246,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     #ax3.set_xlabel("Time [days]") 
     ax3.set_title("Vertical Velocity", size = 10)
     ax3.legend(loc='upper right', labelspacing = 0.25, handlelength=0.75)
-    ax3.set_xlim([0, time.max() / 3600 / 24]) 
+    ax3.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24]) 
     # buoyancy perturbations 
     for i in range(num_cases):
         if i == 0:
@@ -260,7 +260,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     #ax4.set_xlabel("Time [days]") 
     ax4.set_title("Perturbed Buoyancy", size = 10)
     ax4.legend(loc='upper right', labelspacing = 0.25, handlelength=0.75)
-    ax4.set_xlim([0, time.max() / 3600 / 24])
+    ax4.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax4.ticklabel_format(axis='y', style='sci', scilimits=(-1,1), useMathText=True)
     # temperature perturbations 
     for i in range(num_cases):
@@ -275,7 +275,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax5.set_xlabel("Time [days]") 
     ax5.set_title("Perturbed Temperature", size = 10)
     ax5.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
-    ax5.set_xlim([0, time.max() / 3600 / 24])
+    ax5.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # tracer perturbations 
     for i in range(num_cases):
         if i == 0:
@@ -289,21 +289,21 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax6.set_xlabel("Time [days]") 
     ax6.set_title("Perturbed Tracer", size = 10)
     ax6.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
-    ax6.set_xlim([0, time.max() / 3600 / 24])
+    ax6.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # average salinity at MLD
     for i in range(num_cases):
         ax7.plot(time/ 3600 / 24, tracer_avg[:, i], linewidth = 0.75, color = color_opt[i])
     ax7.set_xlabel("Time [days]")
     ax7.set_title(r"C$_{\text{avg}}$ at MLD", size = 10)
     ax7.ticklabel_format(axis='y', style='sci', scilimits=(-1,1), useMathText=True)
-    ax7.set_xlim([0, time.max() / 3600 / 24])
+    ax7.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # root mean square w at MLD 
     for i in range(num_cases):
         ax8.plot(time/ 3600 / 24, w_rms[:, i], linewidth = 0.75, color = color_opt[i])
     ax8.set_xlabel("Time [days]")
     ax8.set_title(r"w$_{rms}$ at MLD", size = 10)
     ax8.ticklabel_format(axis='y', style='sci', scilimits=(-1,1), useMathText=True)
-    ax8.set_xlim([0, time.max() / 3600 / 24])
+    ax8.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # --- Save Frame ---
     frame_path = os.path.join(outdir, f"{name}_temporal_comparison.png")
     plt.savefig(frame_path)

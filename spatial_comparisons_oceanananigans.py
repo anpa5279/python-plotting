@@ -11,18 +11,18 @@ from dense_plume_analysis import plume_tracer_analysis
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
+folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 #['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures')
-case_names = [r'S$_{f} = -5.0*10^{-5}$', r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = -1.5*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
-#[r'S$_{f} = -5.0*10^{-5}$', r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = -1.5*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
+case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
+#[r'J$^{\text{C}} = -5.0*10^{-5}$', r'J$^{\text{C}} = -1.0*10^{-4}$', r'J$^{\text{C}} = -1.5*10^{-4}$', r'J$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='mld-only-average-rp-Sj'
+name_uni ='MLD'
 
 num_cases = len(case_names)
 folders = []
@@ -249,7 +249,9 @@ for it in nt:
         
         # dense plume analysis
         if salinity:
-            center_xy_loc, centerline_index, rp_profile, plume_index = plume_tracer_analysis(x, y, z[:, i], lx, nx, S, contour[i])
+            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
+            center_xy_loc, centerline_index, rp_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z[:, i], lx, nx, S, bw_idx)
+            contour[i] = S_contour
             r_profile[:, i] = rp_profile
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]

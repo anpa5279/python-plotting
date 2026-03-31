@@ -121,7 +121,7 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
         centerline_index[0, :] = nx[0]//2 - 1
         centerline_index[1, :] = nx[1]//2 - 1
         centerline_index[2, :] = np.arange(nx[2]).astype(int)
-    if calc_option == 'center of mass':
+    elif calc_option == 'center of mass':
         # finding centerline of plume 
         centerline_index = np.zeros((3, nx[2]))
         center_xy_loc = np.zeros((3, nx[2]))

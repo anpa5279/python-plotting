@@ -19,7 +19,7 @@ folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', '
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures')
 case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-#[r'S$_{f} = -5.0*10^{-5}$', r'S$_{f} = -1.0*10^{-4}$', r'S$_{f} = -1.5*10^{-4}$', r'S$_{f} = - 2.0*10^{-4}$']
+#[r'J$^{\text{C}} = -5.0*10^{-5}$', r'J$^{\text{C}} = -1.0*10^{-4}$', r'J$^{\text{C}} = -1.5*10^{-4}$', r'J$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
 name_uni ='average-rp-MLD'
