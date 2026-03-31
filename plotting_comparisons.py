@@ -172,9 +172,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax7 = ax[1, 2] # average tracer at MLD through time
     ax8 = ax[1, 3] # w_rms at MLD through time 
     if ND:
-        ax1.set_ylabel(r"z/h$_{mld}$")
+        ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"r$_{avg}$/r$_{j}$") #(r"r$_{avg}$/h$_{mld}$") #
+        ax2.set_ylabel(r"r$_{avg}$/r$_{j}$") #(r"r$_{avg}$/h$_{\text{MLD}}$") #
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
         ax3.set_ylabel(r"w/(h$_{mld} \sqrt{N^{2}})$")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
@@ -182,9 +182,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"T$'$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)") #
+        ax6.set_ylabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"C$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")#
+        ax7.set_ylabel(r"C$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
         ax8.set_ylabel(r"w$_{rms}$/(h$_{mld} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['vel_rms'][0], ymax = ranges['vel_rms'][-1])
@@ -208,7 +208,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     # Depth of plume through time 
     for i in range(num_cases):
         if i == 0:
-            ax1.plot(time/ 3600 / 24, -mld[i]*np.ones(len(time)), label = "MLD", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld[i]*np.ones(len(time)), label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
             ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], label = r"h$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
             ax1.plot(time/ 3600 / 24, h_max[:, i], label = r"h$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
         else: 
@@ -287,7 +287,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
             ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
             ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
     ax6.set_xlabel("Time [days]") 
-    ax6.set_title("Perturbed Salinity", size = 10)
+    ax6.set_title("Perturbed Tracer", size = 10)
     ax6.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
     ax6.set_xlim([0, time.max() / 3600 / 24])
     # average salinity at MLD
@@ -346,21 +346,21 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     ax8 = ax[1, 3]
 
     if ND:
-        ax1.set_ylabel(r"z/h$_{mld}$")
+        ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_xlabel(r"u$_{i, rms}$/(h$_{mld} \sqrt{N^{2}}$)")
-        #ax2.set_ylabel(r"z/h$_{mld}$")
-        ax2.set_xlabel(r"C$(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"C$\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
-        #ax3.set_ylabel(r"z/h$_{mld}$")
+        #ax2.set_ylabel(r"z/h$_{\text{MLD}}$")
+        ax2.set_xlabel(r"C$(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")
+        #ax3.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax3.set_xlabel(r"b/(h$_{mld} N^{2}$)")
-        #ax4.set_ylabel(r"z/h$_{mld}$")
-        ax4.set_xlabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{S}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{S}}$)")
-        ax5.set_ylabel(r"z/h$_{mld}$")
-        ax5.set_xlabel(r"r/h$_{mld}$") #(r"r/r$_{j}$")
-        #ax6.set_ylabel(r"z/h$_{mld}$")
+        #ax4.set_ylabel(r"z/h$_{\text{MLD}}$")
+        ax4.set_xlabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")
+        ax5.set_ylabel(r"z/h$_{\text{MLD}}$")
+        ax5.set_xlabel(r"r/h$_{\text{MLD}}$") #(r"r/r$_{j}$")
+        #ax6.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax6.set_xlabel(r"b'u'$_{i}$/(h$_{mld}^2 (N^{2})^{3/2}$)")
-        #ax7.set_ylabel(r"z/h$_{mld}$")
+        #ax7.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax7.set_xlabel(r"b$_{rms}$/(h$_{mld} N^{2}$)")
-        #ax8.set_ylabel(r"z/h$_{mld}$")
+        #ax8.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax8.set_xlabel(r"T$'$/T$_{0}$")
     else:
         ax1.set_ylabel("Depth [m]")
@@ -399,7 +399,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     # tracer profile 
     for i in range(num_cases):
         ax2.plot(tracer_avg[:, i], z[:, i], color = color_opt[i], linestyle='solid')
-    ax2.set_title('Salinity')
+    ax2.set_title('Tracer')
     ax2.set_ylim(-lx[2], 0)
     ax2.set_xlim(ranges['S'])
     ax2.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
@@ -424,7 +424,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     # temperature fluctuations 
     for i in range(num_cases):
         ax4.plot(tracer_fluc[:, i], z[:, i], color = color_opt[i], linestyle='solid')
-    ax4.set_title("Perturbed Salinity")
+    ax4.set_title("Perturbed Tracer")
     ax4.set_ylim(-lx[2], 0)
     ax4.set_xlim(ranges['S_fluc'])
     ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)

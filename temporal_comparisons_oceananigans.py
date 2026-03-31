@@ -124,7 +124,7 @@ S_mld_avg = np.zeros((nt, num_cases))
 w_mld_rms = np.zeros((nt, num_cases))
 
 start_neutral = np.zeros(num_cases).astype(int)
-for it in range(nt):
+for it in range(5, nt):
     h_neutral_temp = np.zeros(num_cases)
     r_neutral_temp = np.zeros(num_cases)
     w_neutral_temp = np.zeros(num_cases)
@@ -182,7 +182,7 @@ for it in range(nt):
 
         # plume analysis 
         bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-        center_xy_loc_temp, centerline_index, r_profile, plume_index = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, bw_idx)#, 'center of mass')
+        center_xy_loc_temp, centerline_index, r_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, bw_idx)#, 'center of mass')
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
         neutral_index = neutral_buoyancy_loc(b_fluc, plume_index, centerline_index)

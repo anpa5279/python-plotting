@@ -170,10 +170,6 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
     w_mag_order = np.floor(np.log10(w_mag))
     w_mag_cl = w_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
 
-    db_flucdz = np.gradient(b_fluc, z, axis=-1)
-    db_flucdx = np.gradient(b_fluc, x, axis=0)
-    db_flucdy = np.gradient(b_fluc, y, axis=1)
-
     if np.sum(w_mag_cl == w_mag_tol) > 0:
         # index of plume points of interest
         rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
@@ -232,13 +228,8 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         #collecting values of interest at each horizontal plane
         wk = w[:, :, k].reshape(nx[0], nx[1])
         b_fluc_k = b_fluc[:, :, k].reshape(nx[0], nx[1])
-        db_flucdxk = db_flucdx[:, :, k].reshape(nx[0], nx[1])
-        db_flucdyk = db_flucdy[:, :, k].reshape(nx[0], nx[1])
-        #db_flucdzk = db_flucdz[:, :, k].reshape(nx[0], nx[1])
-        db_horizontal = np.sqrt(db_flucdxk**2 + db_flucdyk**2)
-        area_dbhor_opt = (np.abs(db_horizontal) >= dbdz_tol).astype(float)
         area_bk = (np.abs(b_fluc_k) >= b_tol).astype(float)
-        area_opt = area_dbhor_opt + area_bk
+        area_opt = area_bk
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
             idx_max = idx_max + 1

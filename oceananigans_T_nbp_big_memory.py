@@ -21,7 +21,7 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
 output_folder = folder #'figures and videos/'
-name = 'dbhor-only-binary-fill-b_fluc_only'
+name = 'bflucarea-b_fluc_only'
 
 # flags to analyze data 
 rho_IC_perturb = False
