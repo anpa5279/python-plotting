@@ -27,12 +27,12 @@ name = 'ware-binary-fill-b_fluc_only'
 rho_IC_perturb = False
 
 # flags for what to plot
-video = True
+video = False
 
 video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = False
-xy_plot = True
+xy_plot = False
 buoyancy_analysis_plot = False
 buoyancy_momentum_analysis = True
 plume_plot = False

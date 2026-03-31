@@ -199,9 +199,8 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
             idx_rho_max = np.where(rho_cl_sign_change < 0)[0]
             idx_diff = np.abs(idx_rho_max - idx_max)
             idx_max_2 = idx_rho_max[idx_diff.argmin()] + 1 
-            #idx_max_3 = np.where(w_mag_cl>=w_mag_tol)[0][0]
-            if (idx_max > idx_max_2):# or (idx_max > idx_max_3):
-                idx_max = idx_max_2 #np.min([idx_max_2, idx_max_3])
+            if (idx_max > idx_max_2):
+                idx_max = idx_max_2 
     else: # early stages of plume development
         idx_max = nx[2]-1
         idx_neutral = idx_max
@@ -246,8 +245,12 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         area_opt = area_db_opt + area_w_opt
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
+            idx_max = idx_max + 1
             continue
         area_opt = binary_fill_holes(area_opt)
+        if np.all(wk[area_opt]>0): # if there is no negative w, then we are not in the plume yet
+            idx_max = idx_max + 1
+            continue
         area_idx[:, :, k] = area_opt
         # compute area 
         x_idx, y_idx = np.where(area_opt)
@@ -258,7 +261,6 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         area[k] = hull.volume
         # compute horizontal averages
         w_xy_avg[k] = np.mean(wk[area_idx[:, :, k]])
-        wm[k] = w_xy_avg[k] # characteristic w, wm[k] = M[k]/Q[k]
         b_fluc_xy_avg[k] = np.mean(b_fluc_k[area_idx[:, :, k]])
         # volume flux
         Q[k] = area[k]*w_xy_avg[k]
@@ -268,8 +270,10 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         F[k] = area[k]*b_fluc_xy_avg[k]*w_xy_avg[k]
         # the buoyancy integral
         B[k] = area[k]*b_fluc_xy_avg[k]
-        # characteristic width of plume
-        dm[k] = np.sqrt(area[k]) # equivalent to dm = Q / (M**0.5)
+        # characteristic w, wm[k] = M[k]/Q[k]
+        wm[k] = w_xy_avg[k] 
+        # characteristic width of plume, dm = Q / (M**0.5)
+        dm[k] = np.sqrt(area[k])
         # characteristic buoyancy
         bm[k] = B[k]*M[k]/(Q[k]**2)
         # Richardson
