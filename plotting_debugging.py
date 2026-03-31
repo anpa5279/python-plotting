@@ -3,8 +3,8 @@ plt.rcParams.update({'font.size': 8})
 fig, ax = plt.subplots(2,3, figsize=(45, 6))  # taller figure
 ax = ax.ravel()
 
-fields = [area_idx[:, :, idx_max], area_idx[:, :, idx_neutral], area_idx[:, :, mld_index], area_idx[:, :, bw_idx], area_idx[:, :, bw_idx+10]]
-titles = ['max', 'neutral', 'mld', 'max bw', 'max bw + 10']
+fields = [wk, b_fluc_k, db_flucdxk, db_flucdyk, area_opt]
+titles = ['w', 'b_fluc', 'db_flucdx', 'db_flucdy', 'area_opt']
 
 for i, field in enumerate(fields):
     field.astype(float)
@@ -20,7 +20,8 @@ for i, field in enumerate(fields):
 
 plt.show()
 
-
+#fields = [area_idx[:, :, idx_max], area_idx[:, :, idx_neutral], area_idx[:, :, mld_index], area_idx[:, :, mld_index+2], area_idx[:, :, idx_neutral-1], area_idx[:, :, mld_index+50]]
+#titles = ['max', 'neutral', 'mld', 'mld+2', 'neutral-1', 'mld+50']
 
 plt.rcParams.update({'font.size': 8})
 

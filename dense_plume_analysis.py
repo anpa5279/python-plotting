@@ -163,8 +163,8 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
                 ry = np.abs(y[edge_index[1][hor_plane[i]]]) - center_xy_loc[1, k]
                 r[i] = np.sqrt(rx**2 + ry**2)
             rp_profile[k] = np.mean(r)
-    return center_xy_loc, centerline_index, rp_profile, plume_index
-def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_fluc, rho_fluc, X, Y, dbdz_tol, w_mag_tol):
+    return center_xy_loc, centerline_index, rp_profile, plume_index, tracer_contour
+def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_fluc, rho_fluc, X, Y, dbdz_tol, b_tol, w_mag_tol):
     # checking magnitude of values to help define bounds
     w_mag = np.abs(w)
     w_mag_order = np.floor(np.log10(w_mag))
@@ -234,15 +234,11 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         b_fluc_k = b_fluc[:, :, k].reshape(nx[0], nx[1])
         db_flucdxk = db_flucdx[:, :, k].reshape(nx[0], nx[1])
         db_flucdyk = db_flucdy[:, :, k].reshape(nx[0], nx[1])
-        db_flucdzk = db_flucdz[:, :, k].reshape(nx[0], nx[1])
+        #db_flucdzk = db_flucdz[:, :, k].reshape(nx[0], nx[1])
         db_horizontal = np.sqrt(db_flucdxk**2 + db_flucdyk**2)
         area_dbhor_opt = (np.abs(db_horizontal) >= dbdz_tol).astype(float)
-        area_dbdx_opt = (np.abs(db_flucdxk) >= dbdz_tol).astype(float)
-        area_dbdy_opt = (np.abs(db_flucdyk) >= dbdz_tol).astype(float)
-        area_dbdz_opt = (np.abs(db_flucdzk) >= dbdz_tol).astype(float)
-        area_db_opt = area_dbhor_opt + area_dbdx_opt + area_dbdy_opt + area_dbdz_opt
-        area_w_opt = (w_mag_order[:, :, k] >= w_mag_tol).astype(float)
-        area_opt = area_db_opt + area_w_opt
+        area_bk = (np.abs(b_fluc_k) >= b_tol).astype(float)
+        area_opt = area_dbhor_opt + area_bk
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
             idx_max = idx_max + 1
@@ -260,8 +256,8 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         hull = ConvexHull(points)
         area[k] = hull.volume
         # compute horizontal averages
-        w_xy_avg[k] = np.mean(wk[area_idx[:, :, k]])
-        b_fluc_xy_avg[k] = np.mean(b_fluc_k[area_idx[:, :, k]])
+        w_xy_avg[k] = np.mean(wk[area_opt])
+        b_fluc_xy_avg[k] = np.mean(b_fluc_k[area_opt])
         # volume flux
         Q[k] = area[k]*w_xy_avg[k]
         # momentum flux
@@ -283,15 +279,14 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
     idx_neutral = np.where(Q_sign_change < 0)[0]+1
     if len(idx_neutral) > 1:
         idx_diff = np.abs(idx_neutral - idx_max)
-        idx_diff.argmin()
-        idx_neutral = np.delete(idx_neutral, np.where(idx_diff==idx_diff.argmin())[0][0])
+        if np.min(idx_diff) < 5:
+            idx_neutral = np.delete(idx_neutral, np.where(idx_diff==idx_diff.argmin())[0])
         if len(idx_neutral) > 1:
             Ri_sign = np.sign(Ri)
             Ri_sign_change = np.diff(Ri_sign)
             idx_Ri_neutral = np.where(Ri_sign_change < 0)[0] + 1
             idx_diff = np.abs(idx_Ri_neutral - idx_max)
-            idx_diff.argmin()
-            idx_Ri_neutral = np.delete(idx_Ri_neutral, np.where(idx_diff==idx_diff.argmin())[0][0])
+            idx_Ri_neutral = np.delete(idx_Ri_neutral, np.where(idx_diff==idx_diff.argmin())[0])
             idx_neutral_2D = np.tile(idx_neutral, (np.size(idx_Ri_neutral), 1)).T
             idx_diff = np.abs(idx_Ri_neutral - idx_neutral_2D)
             idx_neutral = idx_neutral_2D[np.where(idx_diff==idx_diff.min())]

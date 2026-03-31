@@ -21,7 +21,7 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
 output_folder = folder #'figures and videos/'
-name = 'ware-binary-fill-b_fluc_only'
+name = 'dbhor-only-binary-fill-b_fluc_only'
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -241,7 +241,7 @@ for it in nt:
         
         if salinity:
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-            center_xy_loc, centerline_index, rp_profile, plume_index = plume_tracer_analysis(x, y, z, lx, nx, S, bw_idx)
+            center_xy_loc, centerline_index, rp_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z, lx, nx, S, bw_idx)
             dbdx = np.mean(np.gradient(b, x, axis=0), axis=(-3, -2))
             dbdy = np.mean(np.gradient(b, y, axis=1), axis=(-3, -2))
             dbdz =  np.mean(np.gradient(b, z, axis=2), axis=(-3, -2))
@@ -285,7 +285,7 @@ for it in nt:
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
         
-        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b_fluc, rho_fluc, X, Y, dbdz_tol, w_mag_tol)
+        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b_fluc, rho_fluc, X, Y, dbdz_tol, g*beta*S_contour, w_mag_tol)
 
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
@@ -343,7 +343,7 @@ for it in nt:
             loc_idx = nx[2] - 1
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, loc_idx, loc, T, S)
     elif xy_plot and not salinity:
-        loc = "max height"
+        loc = "max height + 5"
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, max_index, loc, T)
     if buoyancy_analysis_plot and not salinity:
         b_ranges = ranges.copy()
