@@ -21,7 +21,7 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
 output_folder = folder #'figures and videos/'
-name = ''
+name = 'binary-fill-b_fluc_only'
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -29,12 +29,12 @@ rho_IC_perturb = False
 # flags for what to plot
 video = True
 
-video_3d_flag = True
+video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = False
 xy_plot = False
 buoyancy_analysis_plot = False
-buoyancy_momentum_analysis = False
+buoyancy_momentum_analysis = True
 plume_plot = False
 
 # flags for how to read data
@@ -88,10 +88,10 @@ ranges['b'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
 ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
 ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
-ranges['Q'] = [-3*10**(0), 3*10**(0)]
-ranges['M'] = [-1*10**(-1), 1*10**(-1)]
-ranges['F'] = [-2*10**(-4), 2*10**(-4)]
-ranges['B'] = [-1*10**(-1), 1*10**(-1)]
+ranges['Q'] = [-3.5*10**(0), 3.5*10**(0)]
+ranges['M'] = [-2*10**(-1), 2*10**(-1)]
+ranges['F'] = [-2.5*10**(-4), 2.5*10**(-4)]
+ranges['B'] = [-8*10**(-2), 8*10**(-2)]
 ranges['richardson'] = [-1*10**5, 1*10**5]
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
@@ -118,7 +118,7 @@ else:
 
 if buoyancy_momentum_analysis:
     w_mag_tol = np.floor(np.log10(wp))
-    dbdz_mag_tol = dTdz*alpha*g
+    dbdz_tol = dTdz*alpha*g
 
 if rho_IC_perturb:
     name+='-rhoICperturbation-'
@@ -285,7 +285,7 @@ for it in nt:
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
         
-        Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b, b_fluc, rho_fluc, X, Y, dbdz_mag_tol, w_mag_tol)
+        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b, b_fluc, rho_fluc, X, Y, dbdz_tol, w_mag_tol)
 
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
@@ -353,7 +353,7 @@ for it in nt:
     if plume_plot:
         plume_dir = plume_spatial_analysis(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, rp_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
     if buoyancy_momentum_analysis:
-        momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F_perturb, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
+        momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
 print("All frames created.")
 # creating videos
 if video:

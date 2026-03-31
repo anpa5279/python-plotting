@@ -174,10 +174,6 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
     db_flucdx = np.gradient(b_fluc, x, axis=0)
     db_flucdy = np.gradient(b_fluc, y, axis=1)
 
-    dbdz_mag_order = np.floor(np.log10(np.abs(db_flucdz)))
-    dbdz_mag_cl = dbdz_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-    n_dbdz_mags, dbdz_mag_counts = np.unique(dbdz_mag_cl, return_counts=True)
-    dbdz_tol = n_dbdz_mags[-2]
     if np.sum(w_mag_cl == w_mag_tol) > 0:
         # index of plume points of interest
         rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
@@ -198,7 +194,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
             bm = np.zeros(nx[2])
             Ri = np.zeros(nx[2])
             area_idx = np.zeros_like(rho_fluc).astype(bool)
-            return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
+            return Q, M, F, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
         else:
             idx_max =idx_max[-1] +1 
             idx_rho_max = np.where(rho_cl_sign_change < 0)[0]
@@ -220,7 +216,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         bm = np.zeros(nx[2])
         Ri = np.zeros(nx[2])
         area_idx = np.zeros_like(rho_fluc).astype(bool)
-        return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
+        return Q, M, F, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
     # initializing arrays 
     area_idx = np.zeros_like(rho_fluc).astype(bool)
     area = np.zeros(nx[2])
@@ -239,12 +235,12 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
     # horizontal area 
     for k in range(idx_max, nx[2]):
         #collecting values of interest at each horizontal plane
-        wk = w[:, :, k]
-        bk = b[:, :, k]
-        b_fluc_k = b_fluc[:, :, k]
-        db_flucdxk = db_flucdx[:, :, k]
-        db_flucdyk = db_flucdy[:, :, k]
-        db_flucdzk = db_flucdz[:, :, k]
+        wk = w[:, :, k].reshape(nx[0], nx[1])
+        bk = b[:, :, k].reshape(nx[0], nx[1])
+        b_fluc_k = b_fluc[:, :, k].reshape(nx[0], nx[1])
+        db_flucdxk = db_flucdx[:, :, k].reshape(nx[0], nx[1])
+        db_flucdyk = db_flucdy[:, :, k].reshape(nx[0], nx[1])
+        db_flucdzk = db_flucdz[:, :, k].reshape(nx[0], nx[1])
         db_horizontal = np.sqrt(db_flucdxk**2 + db_flucdyk**2)
         area_dbhor_opt = (np.abs(db_horizontal) >= dbdz_tol).astype(float)
         area_dbdx_opt = (np.abs(db_flucdxk) >= dbdz_tol).astype(float)
@@ -256,6 +252,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
             continue
+        area_opt = binary_fill_holes(area_opt)
         area_idx[:, :, k] = area_opt
         # compute area 
         x_idx, y_idx = np.where(area_opt)
@@ -274,10 +271,9 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         # momentum flux
         M[k] = area[k]*w_xy_avg[k]**2 
         # buoyancy flux
-        F[k] = area[k]*w_xy_avg[k]*b_xy_avg[k]
-        F_perturb[k] = area[k]*b_fluc_xy_avg[k]*w_xy_avg[k]
+        F[k] = area[k]*b_fluc_xy_avg[k]*w_xy_avg[k]
         # the buoyancy integral
-        B[k] = area[k]*b_xy_avg[k]
+        B[k] = area[k]*b_fluc_xy_avg[k]
         # characteristic width of plume
         dm[k] = np.sqrt(area[k]) # equivalent to dm = Q / (M**0.5)
         # characteristic buoyancy
@@ -295,7 +291,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
     else:
         idx_neutral = idx_neutral[0]+1
     area_idx = np.where(area_idx)
-    return Q, M, F, F_perturb, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
+    return Q, M, F, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
 
 # neutral buoyancy calculation 
 def neutral_buoyancy_loc(b_fluc, plume_index, centerline_index):
