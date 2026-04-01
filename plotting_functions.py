@@ -341,15 +341,15 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf,
     fig.suptitle(plane + f', {td:.2f} days', y = 0.9, fontsize=12)
 
     levels = 500
-    ax1 = ax[0, 0]
-    ax2 = ax[0, 1]
-    ax3 = ax[0, 2]
+    ax5 = ax[0, 0] # typically ax1
+    ax1 = ax[0, 1] # typically ax2
+    ax2 = ax[0, 2] # typically ax3
     ax4 = ax[0, 3]
-    ax5 = ax[1, 0]
+    ax9 = ax[1, 0] # typically ax5 
     ax6 = ax[1, 1]
     ax7 = ax[1, 2]
     ax8 = ax[1, 3]
-    ax9 = ax[2, 0]
+    ax3 = ax[2, 0] # typically ax9
     ax10 = ax[2, 1]
     ax11 = ax[2, 2]
     ax12 = ax[2, 3]
@@ -358,7 +358,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf,
     mappable = cm.ScalarMappable(norm=norm)
     ax1.contourf(hor, z, rho[x_data, y_data, :], levels, norm=norm)
     ax1.set_xlabel("[m]")
-    ax1.set_ylabel("Depth [m]")
+    #ax1.set_ylabel("Depth [m]")
     ax1.set_title("Density")
     ax1.set_ylim(-lx[2], 0)
     ax1.set_xlim(hor_range)
@@ -373,7 +373,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf,
     mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
     ax2.contourf(hor, z, rho_perturbed[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
     ax2.set_xlabel("[m]")
-    ax2.set_ylabel("Depth [m]")
+    #ax2.set_ylabel("Depth [m]")
     ax2.set_title("Perturbed Density")
     ax2.set_ylim(-lx[2], 0)
     ax2.set_xlim(hor_range)

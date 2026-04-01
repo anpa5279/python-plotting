@@ -490,7 +490,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
         #ax7.set_ylabel(r"z/h$_{mld}$")
         ax7.set_xlabel(r"b$_{rms}$/(h$_{mld} N^{2}$)")
         #ax8.set_ylabel(r"z/h$_{mld}$")
-        ax8.set_xlabel(r"T$'$/T$_{0}$")
+        ax8.set_xlabel(r"T'/T$_{0}$")
     else:
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")

@@ -22,7 +22,7 @@ case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']
 #[r'J$^{\text{C}} = -5.0*10^{-5}$', r'J$^{\text{C}} = -1.0*10^{-4}$', r'J$^{\text{C}} = -1.5*10^{-4}$', r'J$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='MLD'
+name_uni = "b'w-MLD-test"
 
 num_cases = len(case_names)
 folders = []
@@ -39,6 +39,7 @@ ND = False
 with_halos = False
 stokes = False * np.ones(num_cases) 
 salinity = True
+S_temporal = True
 
 video = True
 if num_cases > 1:
@@ -85,32 +86,82 @@ plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
 plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 
 # collecting model informations for all cases
+# collecting model informations for all cases
 t_save = []
 mld_idx = []
-for i, folder in enumerate(folders):
-    # List JLD2 files
-    dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-    Nranks = len(dtn)
-    if Nranks > 1:
-        dtn = []
-        for file in np.arange(Nranks):
-            dtn.append(f'fields_rank{file}.jld2')
-    # Read model information
-    fid = os.path.join(folder, dtn[0])
-    if Nranks == 1 and not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
-    elif Nranks == 1 and stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
-    elif Nranks > 1 and not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
-    else:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
-        #u_s = stokes_exp(z)
-    if salinity:
-        alpha, beta = collect_temp_and_sal(fid, salinity)
-    else:
-        alpha = collect_temp_and_sal(fid, salinity)
-    t_save.append(t_save_temp)
+
+if S_temporal and salinity:
+    S_contour = np.zeros(num_cases)
+    for i, folder in enumerate(folders):
+        # List JLD2 files
+        dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+        Nranks = len(dtn)
+        if Nranks > 1:
+            dtn = []
+            for file in np.arange(Nranks):
+                dtn.append(f'fields_rank{file}.jld2')
+        # Read model information
+        fid = os.path.join(folder, dtn[0])
+        if Nranks == 1 and not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        elif Nranks == 1 and stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+        elif Nranks > 1 and not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        else:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+            #u_s = stokes_exp(z)
+        if salinity:
+            alpha, beta = collect_temp_and_sal(fid, salinity)
+        else:
+            alpha = collect_temp_and_sal(fid, salinity)
+        t_save.append(t_save_temp)
+
+        nt = len(t_save_temp)
+        n = 0.0
+        S_sum = 0.0
+        for it in range(10, nt):
+
+            # Load data from files
+            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+            if stokes[i]:
+                u = u - u_s
+
+            rho_total = rho0 - rho0 * alpha * (T - T0)+ rho0 * beta * (S - S0)
+            b = g*alpha*(T - T0) - g*beta*(S - S0)
+            w_face = make_interp_spline(zf, w, axis=-1, k=1)
+            wc = w_face(z)
+            b_avg = np.mean(b, axis=(-3, -2))
+            wc_avg = np.mean(wc, axis=(-3, -2))
+            bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
+            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
+            center_xy_loc_temp, centerline_index, r_profile, plume_index, S_contour_temp = plume_tracer_analysis(x, y, z, lx, nx, S, idx = bw_idx, contour = 0.1)
+            S_sum += S_contour_temp
+            n += 1
+        S_contour[i] = S_sum/n
+        print(f"Case {case_names[i]}: S_contour = {S_contour[i]}")
+
+else:
+    for i, folder in enumerate(folders):
+        # List JLD2 files
+        dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+        Nranks = len(dtn)
+        if Nranks > 1:
+            dtn = []
+            for file in np.arange(Nranks):
+                dtn.append(f'fields_rank{file}.jld2')
+        # Read model information
+        fid = os.path.join(folder, dtn[0])
+        if not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        else:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+            #u_s = stokes_exp(z)
+        if salinity:
+            alpha, beta = collect_temp_and_sal(fid, salinity)
+        else:
+            alpha = collect_temp_and_sal(fid, salinity)
+        t_save.append(t_save_temp)
 
 if video:
     nt = len(t_save[0])
@@ -239,7 +290,7 @@ for it in nt:
         bu_fluc, bu_fluc_avg[:, i] = ab_fluc_mean(b, u, b_avg[:, i], u_avg[:, i])
         bv_fluc, bv_fluc_avg[:, i] = ab_fluc_mean(b, v, b_avg[:, i], v_avg[:, i])
         bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, wc, b_avg[:, i], wc_avg[:, i])
-        
+  
         # rms fluctuations
         u_rms[:, i] = u2_fluc_avg**0.5
         v_rms[:, i] = v2_fluc_avg**0.5
@@ -250,8 +301,7 @@ for it in nt:
         # dense plume analysis
         if salinity:
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-            center_xy_loc, centerline_index, rp_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z[:, i], lx, nx, S, bw_idx)
-            contour[i] = S_contour
+            center_xy_loc, centerline_index, rp_profile, plume_index, S_contour_temp = plume_tracer_analysis(x, y, z[:, i], lx, nx, S, tracer_contour = S_contour[i])
             r_profile[:, i] = rp_profile
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]

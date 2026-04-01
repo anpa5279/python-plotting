@@ -110,7 +110,7 @@ def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_perturbed, nx, c
     idx_rp_max = idx_rp_max[np.where(neural_vs_rp==np.min(neural_vs_rp))] 
     return idx_rp_max, idx_neutral_in_plume, idx_neutral_in_plume
 
-def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle domain'):
+def plume_tracer_analysis(x, y, z, lx, nx, tracer, tracer_contour = [], idx = [], contour = [], calc_option='middle domain'):
     if calc_option == 'middle domain':
         # finding centerline of plume 
         centerline_index = np.zeros((3, nx[2])).astype(int)
@@ -138,8 +138,8 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
             center_xy_loc[2, k] = z[k]
         centerline_index = np.round(centerline_index).astype(int)
     # finding plume bounds via contour on the centerline of the tracer
-    contour = 0.05
-    tracer_contour = tracer[centerline_index[0, idx], centerline_index[1, idx], idx]*contour
+    if np.size(tracer_contour) == 0:
+        tracer_contour = np.max(tracer[centerline_index[0, :], centerline_index[1, :], idx])*contour
     plume_contour = tracer >= tracer_contour
     plume_index = np.where(plume_contour)
     edge_mask = plume_contour & (
@@ -164,7 +164,7 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, idx, calc_option='middle doma
                 r[i] = np.sqrt(rx**2 + ry**2)
             rp_profile[k] = np.mean(r)
     return center_xy_loc, centerline_index, rp_profile, plume_index, tracer_contour
-def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_fluc, rho_fluc, X, Y, dbdz_tol, b_tol, w_mag_tol):
+def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, b_fluc, rho_fluc, X, Y, dbdz_tol, b_tol, w_mag_tol):
     # checking magnitude of values to help define bounds
     w_mag = np.abs(w)
     w_mag_order = np.floor(np.log10(w_mag))
@@ -227,9 +227,11 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
     for k in range(idx_max, nx[2]):
         #collecting values of interest at each horizontal plane
         wk = w[:, :, k].reshape(nx[0], nx[1])
+        wmagk = w_mag_order[:, :, k]
         b_fluc_k = b_fluc[:, :, k].reshape(nx[0], nx[1])
         area_bk = (np.abs(b_fluc_k) >= b_tol).astype(float)
-        area_opt = area_bk
+        area_wmag = (wmagk >= w_mag_tol).astype(float)
+        area_opt = area_bk + area_wmag
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
             idx_max = idx_max + 1
@@ -249,14 +251,15 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
         # compute horizontal averages
         w_xy_avg[k] = np.mean(wk[area_opt])
         b_fluc_xy_avg[k] = np.mean(b_fluc_k[area_opt])
+        b_xy_avg = np.mean(b[:, :, k][area_opt])
         # volume flux
         Q[k] = area[k]*w_xy_avg[k]
         # momentum flux
         M[k] = area[k]*w_xy_avg[k]**2 
         # buoyancy flux
-        F[k] = area[k]*b_fluc_xy_avg[k]*w_xy_avg[k]
+        F[k] = area[k]*b_xy_avg*w_xy_avg[k]
         # the buoyancy integral
-        B[k] = area[k]*b_fluc_xy_avg[k]
+        B[k] = area[k]*b_xy_avg
         # characteristic w, wm[k] = M[k]/Q[k]
         wm[k] = w_xy_avg[k] 
         # characteristic width of plume, dm = Q / (M**0.5)
@@ -268,20 +271,22 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b_f
     Q_sign = np.sign(Q)
     Q_sign_change = np.diff(Q_sign)
     idx_neutral = np.where(Q_sign_change < 0)[0]+1
-    if len(idx_neutral) > 1:
+    if np.size(idx_neutral) > 1:
         idx_diff = np.abs(idx_neutral - idx_max)
         if np.min(idx_diff) < 5:
             idx_neutral = np.delete(idx_neutral, np.where(idx_diff==idx_diff.argmin())[0])
-        if len(idx_neutral) > 1:
+        if np.size(idx_neutral) > 1:
             Ri_sign = np.sign(Ri)
             Ri_sign_change = np.diff(Ri_sign)
             idx_Ri_neutral = np.where(Ri_sign_change < 0)[0] + 1
             idx_diff = np.abs(idx_Ri_neutral - idx_max)
-            idx_Ri_neutral = np.delete(idx_Ri_neutral, np.where(idx_diff==idx_diff.argmin())[0])
+            if np.min(idx_diff) < 5:
+                idx_Ri_neutral = np.delete(idx_Ri_neutral, np.where(idx_diff==idx_diff.argmin())[0])
             idx_neutral_2D = np.tile(idx_neutral, (np.size(idx_Ri_neutral), 1)).T
             idx_diff = np.abs(idx_Ri_neutral - idx_neutral_2D)
             idx_neutral = idx_neutral_2D[np.where(idx_diff==idx_diff.min())]
-
+            if np.size(idx_neutral) > 0:
+                idx_neutral = idx_neutral[-1]
     area_idx = np.where(area_idx)
     return Q, M, F, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
 

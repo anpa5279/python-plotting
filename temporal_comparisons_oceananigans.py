@@ -5,7 +5,7 @@ from scipy.interpolate import make_interp_spline
 
 from plotting_functions import plot_ranges
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from plotting_comparisons import plot_format, plume_temporal_analysis 
+from plotting_comparisons import plot_format, plume_temporal_analysis, mld_temporal_analysis
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_analysis, neutral_buoyancy_loc
 
@@ -32,12 +32,16 @@ output_folder = universal_folder
 
 # flags for what to plot
 plume_analysis_plot = True
+mld_analysis_plot = True
 ND = True
 
 # flags for how to read data
 with_halos = False
 stokes = False * np.ones(num_cases) # [False, True]
 salinity = True
+S_temporal = True
+mld_transient = False
+
 
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
@@ -50,7 +54,7 @@ S0 = 0
 wp = 0.001
 Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2]) #
 F_s = np.dot(Sj, wp)
-contour = np.dot(Sj, 0.05)
+
 # plotting prep
 color_opt, line_opt = plot_format(num_cases)
 # font for plotting 
@@ -68,32 +72,78 @@ plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 # collecting model informations for all cases
 t_save = []
 mld_idx = []
-for i, folder in enumerate(folders):
-    # List JLD2 files
-    dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-    Nranks = len(dtn)
-    if Nranks > 1:
-        dtn = []
-        for file in np.arange(Nranks):
-            dtn.append(f'fields_rank{file}.jld2')
-    # Read model information
-    fid = os.path.join(folder, dtn[0])
-    if Nranks == 1 and not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
-    elif Nranks == 1 and stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
-    elif Nranks > 1 and not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
-    else:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
-        #u_s = stokes_exp(z)
-    if salinity:
-        alpha, beta = collect_temp_and_sal(fid, salinity)
-    else:
-        alpha = collect_temp_and_sal(fid, salinity)
-    t_save.append(t_save_temp)
+if S_temporal and salinity:
+    S_contour = np.zeros(num_cases)
+    for i, folder in enumerate(folders):
+        # List JLD2 files
+        dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+        Nranks = len(dtn)
+        if Nranks > 1:
+            dtn = []
+            for file in np.arange(Nranks):
+                dtn.append(f'fields_rank{file}.jld2')
+        # Read model information
+        fid = os.path.join(folder, dtn[0])
+        if Nranks == 1 and not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        elif Nranks == 1 and stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+        elif Nranks > 1 and not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        else:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+            #u_s = stokes_exp(z)
+        if salinity:
+            alpha, beta = collect_temp_and_sal(fid, salinity)
+        else:
+            alpha = collect_temp_and_sal(fid, salinity)
+        t_save.append(t_save_temp)
 
-nt = len(t_save[0])
+        nt = len(t_save_temp)
+        n = 0.0
+        S_sum = 0.0
+        for it in range(10, nt):
+
+            # Load data from files
+            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+            if stokes[i]:
+                u = u - u_s
+
+            rho_total = rho0 - rho0 * alpha * (T - T0)+ rho0 * beta * (S - S0)
+            b = g*alpha*(T - T0) - g*beta*(S - S0)
+            w_face = make_interp_spline(zf, w, axis=-1, k=1)
+            wc = w_face(z)
+            b_avg = np.mean(b, axis=(-3, -2))
+            wc_avg = np.mean(wc, axis=(-3, -2))
+            bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
+            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
+            center_xy_loc_temp, centerline_index, r_profile, plume_index, S_contour_temp = plume_tracer_analysis(x, y, z, lx, nx, S, idx = bw_idx, contour = 0.1)
+            S_sum += S_contour_temp
+            n += 1
+        S_contour[i] = S_sum/n
+        print(f"Case {case_names[i]}: S_contour = {S_contour[i]}")
+
+else:
+    for i, folder in enumerate(folders):
+        # List JLD2 files
+        dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+        Nranks = len(dtn)
+        if Nranks > 1:
+            dtn = []
+            for file in np.arange(Nranks):
+                dtn.append(f'fields_rank{file}.jld2')
+        # Read model information
+        fid = os.path.join(folder, dtn[0])
+        if not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        else:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+            #u_s = stokes_exp(z)
+        if salinity:
+            alpha, beta = collect_temp_and_sal(fid, salinity)
+        else:
+            alpha = collect_temp_and_sal(fid, salinity)
+        t_save.append(t_save_temp)
 
 z = z*np.ones([num_cases, nx[2]])
 zf = zf*np.ones([num_cases, nx[2]+1])
@@ -102,29 +152,31 @@ lx_plot = lx
 for i in range(num_cases):
     mld_idx.append(np.argmin(np.abs(z[i, :]+mld[i])))
 
-# preallocate arrays for temporal analysis
-h_neutral = np.zeros((nt, num_cases))
-h_max = np.zeros((nt, num_cases))
-r_neutral = np.zeros((nt, num_cases))
-r_mld = np.zeros((nt, num_cases))
-r_hmax = np.zeros((nt, num_cases))
-w_neutral = np.zeros((nt, num_cases))
-w_mld = np.zeros((nt, num_cases))
-w_hmax = np.zeros((nt, num_cases))
-b_neutral = np.zeros((nt, num_cases))
-b_mld = np.zeros((nt, num_cases))
-b_hmax = np.zeros((nt, num_cases))
-T_neutral = np.zeros((nt, num_cases))
-T_mld = np.zeros((nt, num_cases))
-T_hmax = np.zeros((nt, num_cases))
-S_neutral = np.zeros((nt, num_cases))
-S_mld = np.zeros((nt, num_cases))
-S_hmax = np.zeros((nt, num_cases))
-S_mld_avg = np.zeros((nt, num_cases))
-w_mld_rms = np.zeros((nt, num_cases))
-
 start_neutral = np.zeros(num_cases).astype(int)
-for it in range(5, nt):
+n_skip = 0
+time = time[n_skip:]
+# preallocate arrays for temporal analysis
+h_neutral = np.zeros((nt-n_skip, num_cases))
+h_max = np.zeros((nt-n_skip, num_cases))
+r_neutral = np.zeros((nt-n_skip, num_cases))
+r_mld = np.zeros((nt-n_skip, num_cases))
+r_hmax = np.zeros((nt-n_skip, num_cases))
+w_neutral = np.zeros((nt-n_skip, num_cases))
+w_mld = np.zeros((nt-n_skip, num_cases))
+w_hmax = np.zeros((nt-n_skip, num_cases))
+b_neutral = np.zeros((nt-n_skip, num_cases))
+b_mld = np.zeros((nt-n_skip, num_cases))
+b_hmax = np.zeros((nt-n_skip, num_cases))
+T_neutral = np.zeros((nt-n_skip, num_cases))
+T_mld = np.zeros((nt-n_skip, num_cases))
+T_hmax = np.zeros((nt-n_skip, num_cases))
+S_neutral = np.zeros((nt-n_skip, num_cases))
+S_mld = np.zeros((nt-n_skip, num_cases))
+S_hmax = np.zeros((nt-n_skip, num_cases))
+Tw_mld_avg = np.zeros((nt-n_skip, num_cases))
+Sw_mld_avg = np.zeros((nt-n_skip, num_cases))
+
+for it in range(n_skip, nt):
     h_neutral_temp = np.zeros(num_cases)
     r_neutral_temp = np.zeros(num_cases)
     w_neutral_temp = np.zeros(num_cases)
@@ -173,16 +225,15 @@ for it in range(5, nt):
         T_fluc = T - T_avg
         S_fluc = S - S_avg
 
+        T_fluc_w_avg = np.mean(T_fluc * wc, axis=(-3, -2))
+        S_fluc_w_avg = np.mean(S_fluc * wc, axis=(-3, -2))
+
         w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
         #rho_fluc_avg, rho2_fluc, rho2_fluc_avg = a2_fluc_mean(rho_fluc)
         bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
 
-        # rms fluctuations
-        w_rms = w2_fluc_avg**0.5
-
         # plume analysis 
-        bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-        center_xy_loc_temp, centerline_index, r_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, bw_idx)#, 'center of mass')
+        center_xy_loc_temp, centerline_index, r_profile, plume_index, S_contour_temp = plume_tracer_analysis(x, y, z[i, :], lx, nx, S, tracer_contour=S_contour[i])#, 'center of mass')
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
         neutral_index = neutral_buoyancy_loc(b_fluc, plume_index, centerline_index)
@@ -190,30 +241,30 @@ for it in range(5, nt):
 
         # find vertical and horizontal lengths and correlated values
         if np.size(neutral_index)!=0: # neutral plume in current case, apply data to matrices
-            h_neutral[it, i] = z[i, neutral_index]
-            r_neutral[it, i] = r_profile[neutral_index]
-            w_neutral[it, i] = w[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-            b_neutral[it, i] = b_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-            T_neutral[it, i] = T_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-            S_neutral[it, i] = S_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+            h_neutral[it - n_skip,  i] = z[i, neutral_index]
+            r_neutral[it - n_skip,  i] = r_profile[neutral_index]
+            w_neutral[it - n_skip,  i] = w[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+            b_neutral[it - n_skip,  i] = b_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+            T_neutral[it - n_skip,  i] = T_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+            S_neutral[it - n_skip,  i] = S_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
         else: # neutral plume does not exist in current case, update neutral starting point and leave matrices be
             start_neutral[i] += 1 
 
-        h_max[it, i] = z[i, plume_bottom_index]
-        r_mld[it, i] = r_profile[mld_idx[i]]
-        r_hmax[it, i] = r_profile[plume_bottom_index]
-        w_mld[it, i] = w[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        w_hmax[it, i] = w[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
-        b_mld[it, i] = b_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        b_hmax[it, i] = b_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
-        S_mld_avg[it, i] = S_avg[mld_idx[i]]
-        w_mld_rms[it, i] = w_rms[mld_idx[i]]
+        h_max[it - n_skip,  i] = z[i, plume_bottom_index]
+        r_mld[it - n_skip,  i] = r_profile[mld_idx[i]]
+        r_hmax[it - n_skip,  i] = r_profile[plume_bottom_index]
+        w_mld[it - n_skip,  i] = w[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
+        w_hmax[it - n_skip,  i] = w[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
+        b_mld[it - n_skip,  i] = b_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
+        b_hmax[it - n_skip,  i] = b_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
+        Sw_mld_avg[it - n_skip,  i] = S_fluc_w_avg[mld_idx[i]]
+        Tw_mld_avg[it - n_skip,  i] = T_fluc_w_avg[mld_idx[i]]
 
-        T_mld[it, i] = T_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        T_hmax[it, i] = T_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
+        T_mld[it - n_skip,  i] = T_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
+        T_hmax[it - n_skip,  i] = T_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
 
-        S_mld[it, i] = S_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        S_hmax[it, i] = S_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
+        S_mld[it - n_skip,  i] = S_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
+        S_hmax[it - n_skip,  i] = S_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
 
         dTdz_temp = np.mean(np.gradient(T, z[i, :], axis=2), axis = (-3, -2))
 
@@ -244,20 +295,20 @@ if plume_analysis_plot and ND:
     ranges['w'] = [-wmax, wmax]
     bflucmax = np.max(np.abs([b_mld, b_hmax, b_neutral])) * tol
     ranges['b_fluc'] = [-bflucmax, bflucmax]
-    wrms_max = np.max(w_mld_rms) * tol
-    ranges['vel_rms'] = [0, wrms_max]
-    Smax = np.max(S_mld_avg) * tol
-    ranges['S'] = [0, Smax]
+    Tw_max = np.max(np.abs(Tw_mld_avg)) * tol
+    ranges['Tw_fluc'] = [0, Tw_max]
+    Sw_max = np.max(np.abs(Sw_mld_avg)) * tol
+    ranges['Sw_fluc'] = [-Sw_max, Sw_max]
     rmax = np.max(np.abs([r_mld, r_hmax, r_neutral])) * tol
     ranges['radius'] = [0, rmax]
     Sfluc_max = np.max(np.abs([S_mld, S_hmax, S_neutral])) * tol
     ranges['S_fluc'] = [-Sfluc_max, Sfluc_max]
     Tfluc_max = np.max(np.abs([T_mld, T_hmax, T_neutral])) * tol
     ranges['T_fluc'] = [-Tfluc_max, Tfluc_max]
-    plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name_uni[3::], lx_plot, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, S_mld, S_neutral, S_hmax, S_mld_avg, w_mld_rms)
+    plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name_uni[3::], lx_plot, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, S_mld, S_neutral, S_hmax, Sw_mld_avg, Tw_mld_avg)
     for i in range(num_cases):
-        S_mld_avg[:, i] = S_mld_avg[:, i] / Sj[i]
-        w_mld_rms[:, i] = w_mld_rms[:, i] / vel_scale[i]
+        Sw_mld_avg[:, i] = Sw_mld_avg[:, i] / F_s[i]
+        Tw_mld_avg[:, i] = Tw_mld_avg[:, i] / vel_scale[i] / T0
 
         h_neutral[:, i] = h_neutral[:, i] / mld[i]
         h_max[:, i] = h_max[:, i] / mld[i]
@@ -270,9 +321,9 @@ if plume_analysis_plot and ND:
         b_neutral[:, i] = b_neutral[:, i] / b_scale[i]
         b_hmax[:, i] = b_hmax[:, i] / b_scale[i]
 
-        S_mld[:, i] = S_mld[:, i] / Sj[i]
-        S_neutral[:, i] = S_neutral[:, i] / Sj[i]
-        S_hmax[:, i] = S_hmax[:, i] / Sj[i]
+        S_mld[:, i] = S_mld[:, i] * vel_scale[i] / F_s[i]
+        S_neutral[:, i] = S_neutral[:, i] * vel_scale[i] / F_s[i]
+        S_hmax[:, i] = S_hmax[:, i] * vel_scale[i] / F_s[i]
 
         z[:, i] = z[:, i] / mld[i]
         zf[:, i] = zf[:, i] / mld[i]
@@ -296,10 +347,9 @@ wmax = np.max(np.abs([w_mld, w_hmax, w_neutral])) * tol
 ranges['w'] = [-wmax, wmax]
 bflucmax = np.max(np.abs([b_mld, b_hmax, b_neutral])) * tol
 ranges['b_fluc'] = [-bflucmax, bflucmax]
-wrms_max = np.max(w_mld_rms) * tol
-ranges['vel_rms'] = [0, wrms_max]
-Smax = np.max(S_mld_avg) * tol
-ranges['S'] = [0, Smax]
+ranges['Tw_fluc'] = [-Tw_max, Tw_max]
+Smax = np.max(Sw_mld_avg) * tol
+ranges['Sw_fluc'] = [-Smax, Smax]
 rmax = np.max(np.abs([r_mld, r_hmax, r_neutral])) * tol
 ranges['radius'] = [0, rmax]
 Sfluc_max = np.max(np.abs([S_mld, S_hmax, S_neutral])) * tol
@@ -309,4 +359,4 @@ ranges['T_fluc'] = [-Tfluc_max, Tfluc_max]
 
 ############ PLOTTING ############
 if plume_analysis_plot:
-    plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name_uni, lx_plot, start_neutral, mld_plot, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, S_mld, S_neutral, S_hmax, S_mld_avg, w_mld_rms, ND)
+    plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name_uni, lx_plot, start_neutral, mld_plot, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, S_mld, S_neutral, S_hmax, Sw_mld_avg, Tw_mld_avg, ND)

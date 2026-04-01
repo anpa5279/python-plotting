@@ -5,13 +5,13 @@ from matplotlib import cm
 
 plt.rcParams.update({'font.size': 8})
 
-fig, ax = plt.subplots(1,3, figsize=(45, 6))  # taller figure
+fig, ax = plt.subplots(1,4, figsize=(45, 6))  # taller figure
 ax = ax.ravel()
-
-fields = [wk[:, :], b_fluc_k[:, :], area_opt[:, :]]
-titles = ['w', 'b_fluc', 'area_opt']
-ranges = [(-0.01, 0.01), (-6.5*10**(-5), 6.5*10**(-5)), (0, 1)]
-levels = [100, 100, 2]
+#(np.min(w_mag_order[:, :, k]), np.max(w_mag_order[:, :, k]))
+fields = [wk[:, :], w_mag_order[:, :, k], b_fluc_k[:, :], area_opt[:, :]]
+titles = ['w', 'w_mag_order', 'b_fluc', 'area_opt']
+ranges = [(-0.01, 0.01), (-5, -2), (-6.5*10**(-5), 6.5*10**(-5)), (0, 1)]
+levels = [100, np.unique(w_mag_order[:, :, k]), 100, 2]
 
 for i, field in enumerate(fields):
     field.astype(float)

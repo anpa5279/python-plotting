@@ -21,13 +21,13 @@ def stokes_exp(z):
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
 output_folder = folder #'figures and videos/'
-name = 'bflucarea-b_fluc_only'
+name = 'b_proper_b_fluc_and_w_mag_area'#'SvsT'
 
 # flags to analyze data 
 rho_IC_perturb = False
 
 # flags for what to plot
-video = False
+video = True
 
 video_3d_flag = False
 turb_stats_plot = False
@@ -80,19 +80,23 @@ if xy_plot and salinity:
     xy_ranges['S'] = [0.0, 0.012]
     #xy_ranges['w'] = [-5*10**(-3), 5*10**(-3)]
 
-ranges['w'] = [-1*10**(-2), 1*10**(-2)]
+ranges['w'] = [-2*10**(-2), 2*10**(-2)]
 ranges['w_fluc'] = [-0.003, 0.003]
 ranges['restress'] = [-4*10**(-8), 4*10**(-8)]
 ranges['vel'] = [-1e-5, 1e-5]
 ranges['b'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
-ranges['rho'] = [rho0-0.02, rho0+0.17]#[rho0-0.02, rho0+0.9] #
+ranges['rho'] = [rho0-0.02, rho0+0.14]#[rho0-0.02, rho0+0.9] #
 ranges['S'] = [0.0, 0.05]
-ranges['T'] = [T0-0.7, T0 + 0.05]# [T0-3.4, T0 + 0.05]#
+ranges['T'] = [T0-0.65, T0 + 0.02]# [T0-3.4, T0 + 0.05]#
 ranges['Q'] = [-3.5*10**(0), 3.5*10**(0)]
 ranges['M'] = [-2*10**(-1), 2*10**(-1)]
 ranges['F'] = [-2.5*10**(-4), 2.5*10**(-4)]
 ranges['B'] = [-8*10**(-2), 8*10**(-2)]
 ranges['richardson'] = [-1*10**5, 1*10**5]
+ranges['u'] = [-5*10**(-4), 5*10**(-4)]
+ranges['u_fluc'] = ranges['u']
+ranges['v'] = [-4*10**(-3), 4*10**(-3)]
+
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
@@ -241,7 +245,7 @@ for it in nt:
         
         if salinity:
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-            center_xy_loc, centerline_index, rp_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z, lx, nx, S, bw_idx)
+            center_xy_loc, centerline_index, rp_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z, lx, nx, S, idx = bw_idx, contour = 0.05)
             dbdx = np.mean(np.gradient(b, x, axis=0), axis=(-3, -2))
             dbdy = np.mean(np.gradient(b, y, axis=1), axis=(-3, -2))
             dbdz =  np.mean(np.gradient(b, z, axis=2), axis=(-3, -2))
@@ -284,8 +288,8 @@ for it in nt:
         
             intrusion = np.array(z_intrusion)
             neutral = np.array(z_neutral)
-        
-        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b_fluc, rho_fluc, X, Y, dbdz_tol, g*beta*S_contour, w_mag_tol)
+        #b_difference = g*(rho_avg-rhoS-rho0)/rho0 #g*alpha*(T_fluc) - g*beta*(S - S0)
+        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, wc, b, b_fluc, rho_fluc, X, Y, dbdz_tol, g*beta*S_contour, w_mag_tol)
 
         wc_center = wc[centerline_index[0], centerline_index[1], centerline_index[2]]
         bw_fluc_center = b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
