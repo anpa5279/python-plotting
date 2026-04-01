@@ -19,9 +19,9 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1/'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.2/'
 output_folder = folder #'figures and videos/'
-name = 'b_proper_w_mag_area'#'SvsT'
+name = 'hydrosymposium-'#'SvsT'
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -31,10 +31,10 @@ video = True
 
 video_3d_flag = False
 turb_stats_plot = False
-vert_slice_plot = False
+vert_slice_plot = True
 xy_plot = False
 buoyancy_analysis_plot = False
-buoyancy_momentum_analysis = True
+buoyancy_momentum_analysis = False
 plume_plot = False
 
 # flags for how to read data
@@ -49,7 +49,7 @@ dTdz = 0.01 # background temperature gradient in K/m
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = 0.1
+Sj = 0.2
 wp = 0.001
 F_s = Sj*wp
 rj = 10
@@ -93,7 +93,7 @@ ranges['M'] = [-2*10**(-1), 2*10**(-1)]
 ranges['F'] = [-2.5*10**(-4), 2.5*10**(-4)]
 ranges['B'] = [-8*10**(-2), 8*10**(-2)]
 ranges['richardson'] = [-1*10**5, 1*10**5]
-ranges['u'] = [-5*10**(-4), 5*10**(-4)]
+ranges['u'] = [-2*10**(-2), 2*10**(-2)]
 ranges['u_fluc'] = ranges['u']
 ranges['v'] = [-4*10**(-3), 4*10**(-3)]
 

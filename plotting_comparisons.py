@@ -176,17 +176,17 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
         ax2.set_ylabel(r"r$_{avg}$/r$_{j}$") #(r"r$_{avg}$/h$_{\text{MLD}}$") #
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel(r"w/(h$_{mld} \sqrt{N^{2}})$")
+        ax3.set_ylabel(r"w/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}})$")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
-        ax4.set_ylabel(r"b'/(h$_{mld} N^{2}$)")
+        ax4.set_ylabel(r"b'/(h$_{\mathrm{MLD}_0} N^{2}$)")
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel(r"T'/T$_{0}$")
+        ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"C'$_{avg}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)") #
+        ax6.set_ylabel(r"C'$_{avg}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"C'w$_{avg}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(J$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")#
+        ax7.set_ylabel(r"C'w$_{avg}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
-        ax8.set_ylabel(r"T'w$_{\text{avg}}$/(h$_{mld} \sqrt{N^{2}}$)")
+        ax8.set_ylabel(r"T'w$_{\text{avg}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
     else:
         ax1.set_ylabel("[m]")
@@ -197,22 +197,22 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
         ax4.set_ylabel(r"[m/s$^2$]")
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel("[C]")
+        ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$[$^{\circ}$C]")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"[g/kg]")
+        ax6.set_ylabel(r"$\langle$C$'\rangle_{\text{xy}}$[g/kg]")
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"[g/kg]")
+        ax7.set_ylabel(r"$\langle$C$'\text{w}\rangle_{\text{xy}}$[g/kg]")
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
-        ax8.set_ylabel(r"[C * m/s]")
+        ax8.set_ylabel(r"[$^{\circ}$C * m/s]")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
     # Depth of plume through time 
     for i in range(num_cases):
         if i == 0:
-            ax1.plot(time/ 3600 / 24, -mld[i]*np.ones(len(time)), label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld[:, i], label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
             ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], label = r"h$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
             ax1.plot(time/ 3600 / 24, h_max[:, i], label = r"h$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
         else: 
-            ax1.plot(time/ 3600 / 24, -mld[i]*np.ones(len(time)), linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
             ax1.plot(time/ 3600 / 24, h_max[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
             ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
     ax1.set_title("Plume Depths", size = 10)
@@ -232,7 +232,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax2.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax2.set_title("Plume Radii", size = 10)
     #ax2.set_xlabel("Time [days]") 
-    ax2.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
+    ax2.legend(loc='upper left', labelspacing = 0.25, handlelength=0.75)
     # vertical velocity
     for i in range(num_cases):
         if i == 0:
@@ -348,31 +348,31 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     ax8 = ax[1, 3]
 
     if ND:
-        ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax1.set_xlabel(r"u$_{i, rms}$/(h$_{mld} \sqrt{N^{2}}$)")
+        ax1.set_ylabel(r"z/h$_{\text{MLD}}$") #h$_{\mathrm{MLD}_0}$
+        ax1.set_xlabel(r"u$_{i, rms}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         #ax2.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax2.set_xlabel(r"C$(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")
+        ax2.set_xlabel(r"$\langle$C$_{\text{rms}}\rangle_{\text{xy}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")
         #ax3.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax3.set_xlabel(r"b/(h$_{mld} N^{2}$)")
+        ax3.set_xlabel(r"b/(h$_{\mathrm{MLD}_0} N^{2}$)")
         #ax4.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax4.set_xlabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")
+        ax4.set_xlabel(r"C$'_{\text{centerline}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")
         ax5.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax5.set_xlabel(r"r/h$_{\text{MLD}}$") #(r"r/r$_{j}$")
+        ax5.set_xlabel(r"r/r$_{j}$")#(r"r/h$_{\text{MLD}}$") #
         #ax6.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax6.set_xlabel(r"b'u'$_{i}$/(h$_{mld}^2 (N^{2})^{3/2}$)")
+        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0}^2 (N^{2})^{3/2}$)")
         #ax7.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax7.set_xlabel(r"b$_{rms}$/(h$_{mld} N^{2}$)")
+        ax7.set_xlabel(r"b$_{rms}$/(h$_{\mathrm{MLD}_0} N^{2}$)")
         #ax8.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax8.set_xlabel(r"T'/T$_{0}$")
+        ax8.set_xlabel(r"T$'_{\text{centerline}}$/T$_{0}$")
     else:
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")
         #ax2.set_ylabel("[m]")
-        ax2.set_xlabel("[g/kg]")
+        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}}$[g/kg]")
         #ax3.set_ylabel("[m]")
         ax3.set_xlabel(r"[m/s$^2$]")
         #ax4.set_ylabel("[m]")
-        ax4.set_xlabel(r"[g/kg]")
+        ax4.set_xlabel(r"C$'_{\text{centerline}}$[g/kg]")
         ax5.set_ylabel("Depth [m]")
         ax5.set_xlabel("[m]")
         #ax6.set_ylabel("[m]")
@@ -380,7 +380,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
         #ax7.set_ylabel("[m]")
         ax7.set_xlabel(r"[m/s$^2$]")
         #ax8.set_ylabel("[m]")
-        ax8.set_xlabel(r"[C]")
+        ax8.set_xlabel(r"T$'_{\text{centerline}}$[$^{\circ}$ C]")
 
     # velocity rms
     for i in range(num_cases):
@@ -396,7 +396,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     ax1.set_ylim(-lx[2], 0)
     ax1.set_xlim(ranges['vel_rms'])
     ax1.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    ax1.legend(loc='lower right')
+    ax1.legend(loc='upper left')
 
     # tracer profile 
     for i in range(num_cases):
@@ -409,7 +409,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     # buoyancy profiles
     for i in range(num_cases):
         if i == 0:
-            ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], label = r"b$_{\text{average}}$", linestyle='solid')
+            ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], label = r"$\langle$b$\rangle_{\text{xy}}", linestyle='solid')
             ax3.plot(b_center[:, i], z[:, i], color = color_opt[i], label = r"b$_{\text{centerline}}$", linestyle='dashed')
         else:
             ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], linestyle='solid')
@@ -477,7 +477,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
 
     return outdir # return the directory where frames are saved for video creation
 
-def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, mld, mld0, bw_mld, Tw_mld, tracerw_mld, w_rms, ND = False):
+def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, mld, mld0, bw_mld, Tw_mld, tracerw_mld, tracer_ratio, w_rms, ND = False):
     num_cases = len(case_names)
     if num_cases==1:
         fig, ax = plt.subplots(2, 3, figsize=(10, 5))
@@ -487,7 +487,7 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
         outdir = os.path.join(fig_folder, 'comparison MLD analysis/')
         os.makedirs(outdir, exist_ok=True)
         gridspec_kw={'height_ratios': [1, 1, 0.1]} # add space for universal legend
-        fig, ax = plt.subplots(3, 4, figsize=(12, 6.5), gridspec_kw=gridspec_kw)
+        fig, ax = plt.subplots(3, 3, figsize=(12, 6.5), gridspec_kw=gridspec_kw)
         for a in ax[2, :]:
             a.remove()
         case_handles = [
@@ -502,7 +502,7 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
     ax1 = ax[0, 0] # MLD depth through time 
     ax2 = ax[0, 1] # tracer flux average at the MLD through time
     ax3 = ax[0, 2] # Temperature flux average at the MLD through time
-    ax4 = ax[1, 0] # vertical buoyancy flux average at the MLD through time
+    ax4 = ax[1, 0] # vertical buoyancy flux average at the MLD through time 
     ax5 = ax[1, 1] # ratio of tracer in the mixed layer 
     ax6 = ax[1, 2] # w_rms at MLD through time
 
@@ -510,36 +510,36 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
         ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
         ax2.set_ylabel(r"C$_{plume}$w/F$^{\text{C}}$") 
-        ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel(r"T'w$_{\text{plume}}$/(h$_{mld} \sqrt{N^{2}}$)")
-        ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
-        ax4.set_ylabel(r"b'/(h$_{mld} N^{2}$)")
-        ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel(r"T'/T$_{0}$")
-        ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"w'$\text{rms}$/(h$_{mld} \sqrt{N^{2}})$") 
-        ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
+        ax2.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
+        ax3.set_ylabel(r"T'w$_{\text{plume}}$/(T$_{0}$h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
+        ax3.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
+        ax4.set_ylabel(r"b'w/(h$_{\mathrm{MLD}_0}^2 (N^{2})^{3/2}$)")
+        ax4.set_ylim(ymin = ranges['bw_fluc'][0], ymax = ranges['bw_fluc'][-1])
+        ax5.set_ylabel(r"M$_{ML}$/M$_{total}$")
+        ax5.set_ylim(ymin = ranges['mass_ratio'][0], ymax = ranges['mass_ratio'][-1])
+        ax6.set_ylabel(r"w$_{\text{rms}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}})$") 
+        ax6.set_ylim(ymin = ranges['vel_rms'][0], ymax = ranges['vel_rms'][-1])
     else:
         ax1.set_ylabel("[m]")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel("[m]")
-        ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel("[m/s]")
-        ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
-        ax4.set_ylabel(r"[m/s$^2$]")
-        ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel("[C]")
-        ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"[g/kg]")
-        ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
+        ax2.set_ylabel("[g/kg m/s]")
+        ax2.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
+        ax3.set_ylabel(r"$^{\circ}$C$\cdot$/s]")
+        ax3.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
+        ax4.set_ylabel(r"[m$^2$/s$^3$]")
+        ax4.set_ylim(ymin = ranges['bw_fluc'][0], ymax = ranges['bw_fluc'][-1])
+        ax5.set_ylabel(r"M$_{ML}$/M$_{total}$")
+        ax5.set_ylim(ymin = ranges['mass_ratio'][0], ymax = ranges['mass_ratio'][-1])
+        ax6.set_ylabel("[m/s]")
+        ax6.set_ylim(ymin = ranges['vel_rms'][0], ymax = ranges['vel_rms'][-1])
     # Depth of plume through time 
     for i in range(num_cases):
         if i == 0:
-            ax1.plot(time/ 3600 / 24, -mld0[i]*np.ones(len(time)), label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax1.plot(time/ 3600 / 24, mld[:, i], label = r"MLD$_{\text{t=0}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld0[i]*np.ones(len(time)), label = r"MLD$_{\text{t=0}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld[:, i], label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
         else: 
             ax1.plot(time/ 3600 / 24, -mld0[i]*np.ones(len(time)), linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax1.plot(time/ 3600 / 24, mld[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
     ax1.set_title("MLD temporal change", size = 10)
     ax1.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
     ax1.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
@@ -548,7 +548,6 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
         ax2.plot(time/ 3600 / 24, tracerw_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
     ax2.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax2.set_title("Vertical Trace Flux", size = 10)
-    ax2.legend(loc='upper left', labelspacing = 0.25, handlelength=0.75)
     # Temperature flux average at the MLD through time
     for i in range(num_cases):
         ax3.plot(time/ 3600 / 24, Tw_mld[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
@@ -565,15 +564,14 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
     for i in range(num_cases):
         ax5.plot(time/ 3600 / 24, tracer_ratio[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
     ax5.set_xlabel("Time [days]") 
-    ax5.set_title("Tracer within Mixed Layer", size = 10)
+    ax5.set_title("MLD Tracer Ratio", size = 10)
     ax5.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax5.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     # w_rms at MLD through time
     for i in range(num_cases):
         ax6.plot(time/ 3600 / 24, w_rms[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
     ax6.set_xlabel("Time [days]") 
-    ax6.set_title("Perturbed Tracer", size = 10)
-    ax6.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
+    ax6.set_title(r"w$_{\text{rms}}$", size = 10)
     ax6.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax6.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     # --- Save Frame ---
