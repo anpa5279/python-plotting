@@ -182,12 +182,12 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"T'/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)") #
+        ax6.set_ylabel(r"C'$_{avg}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"C$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")#
-        ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
-        ax8.set_ylabel(r"Cw$_{\text{avg}}$/(h$_{mld} \sqrt{N^{2}}$)")
-        ax8.set_ylim(ymin = ranges['w_fluc'][0], ymax = ranges['w_fluc'][-1])
+        ax7.set_ylabel(r"C'w$_{avg}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(J$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")#
+        ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
+        ax8.set_ylabel(r"T'w$_{\text{avg}}$/(h$_{mld} \sqrt{N^{2}}$)")
+        ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
     else:
         ax1.set_ylabel("[m]")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
@@ -202,9 +202,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax6.set_ylabel(r"[g/kg]")
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
         ax7.set_ylabel(r"[g/kg]")
-        ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
-        ax8.set_ylabel(r"[m/s]")
-        ax8.set_ylim(ymin = ranges['w_fluc'][0], ymax = ranges['w_fluc'][-1])
+        ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
+        ax8.set_ylabel(r"[C * m/s]")
+        ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
     # Depth of plume through time 
     for i in range(num_cases):
         if i == 0:
@@ -232,7 +232,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     ax2.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax2.set_title("Plume Radii", size = 10)
     #ax2.set_xlabel("Time [days]") 
-    ax2.legend(loc='upper left', labelspacing = 0.25, handlelength=0.75)
+    ax2.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
     # vertical velocity
     for i in range(num_cases):
         if i == 0:
@@ -477,10 +477,10 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
 
     return outdir # return the directory where frames are saved for video creation
 
-def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
+def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, mld, mld0, bw_mld, Tw_mld, tracerw_mld, w_rms, ND = False):
     num_cases = len(case_names)
     if num_cases==1:
-        fig, ax = plt.subplots(2, 4, figsize=(12, 5))
+        fig, ax = plt.subplots(2, 3, figsize=(10, 5))
         outdir = os.path.join(fig_folder, 'MLD analysis/')
         os.makedirs(outdir, exist_ok=True)
     else:
@@ -498,32 +498,27 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
                 loc='lower center',
                 ncol=num_cases,
                 bbox_to_anchor=(0.52, 0.015))
-    #fig.tight_layout()
+
     ax1 = ax[0, 0] # MLD depth through time 
-    ax2 = ax[0, 1] # plume flux average at the MLD through time
-    ax3 = ax[0, 2] # vertical velocity at depth through time
-    ax4 = ax[0, 3] # perturbed buoyancy at depth through time
-    ax5 = ax[1, 0] # perturbed Temperature at depth through time
-    ax6 = ax[1, 1] # perturbed tracer at depth through time
-    ax7 = ax[1, 2] # average tracer at MLD through time
-    ax8 = ax[1, 3] # w_avg at MLD through time 
+    ax2 = ax[0, 1] # tracer flux average at the MLD through time
+    ax3 = ax[0, 2] # Temperature flux average at the MLD through time
+    ax4 = ax[1, 0] # vertical buoyancy flux average at the MLD through time
+    ax5 = ax[1, 1] # ratio of tracer in the mixed layer 
+    ax6 = ax[1, 2] # w_rms at MLD through time
+
     if ND:
         ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"r$_{avg}$/r$_{j}$") #(r"r$_{avg}$/h$_{\text{MLD}}$") #
+        ax2.set_ylabel(r"C$_{plume}$w/F$^{\text{C}}$") 
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel(r"w/(h$_{mld} \sqrt{N^{2}})$")
+        ax3.set_ylabel(r"T'w$_{\text{plume}}$/(h$_{mld} \sqrt{N^{2}}$)")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
         ax4.set_ylabel(r"b'/(h$_{mld} N^{2}$)")
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"T'/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"C$'(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)") #
+        ax6.set_ylabel(r"w'$\text{rms}$/(h$_{mld} \sqrt{N^{2}})$") 
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"C$_{avg}(\text{h}_{mld} \sqrt{N^{2}}$)/(J$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(J$^{\text{C}}$)")#
-        ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
-        ax8.set_ylabel(r"Cw$_{\text{avg}}$/(h$_{mld} \sqrt{N^{2}}$)")
-        ax8.set_ylim(ymin = ranges['w_fluc'][0], ymax = ranges['w_fluc'][-1])
     else:
         ax1.set_ylabel("[m]")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
@@ -537,113 +532,52 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
         ax6.set_ylabel(r"[g/kg]")
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"[g/kg]")
-        ax7.set_ylim(ymin = ranges['S'][0], ymax = ranges['S'][-1])
-        ax8.set_ylabel(r"[m/s]")
-        ax8.set_ylim(ymin = ranges['w_fluc'][0], ymax = ranges['w_fluc'][-1])
     # Depth of plume through time 
     for i in range(num_cases):
         if i == 0:
-            ax1.plot(time/ 3600 / 24, -mld[i]*np.ones(len(time)), label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], label = r"h$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax1.plot(time/ 3600 / 24, h_max[:, i], label = r"h$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, -mld0[i]*np.ones(len(time)), label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, mld[:, i], label = r"MLD$_{\text{t=0}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
         else: 
-            ax1.plot(time/ 3600 / 24, -mld[i]*np.ones(len(time)), linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax1.plot(time/ 3600 / 24, h_max[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-    ax1.set_title("Plume Depths", size = 10)
-    #ax1.set_xlabel("Time [days]") 
+            ax1.plot(time/ 3600 / 24, -mld0[i]*np.ones(len(time)), linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
+            ax1.plot(time/ 3600 / 24, mld[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+    ax1.set_title("MLD temporal change", size = 10)
     ax1.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
     ax1.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    # radius of plume 
+    # tracer flux average at the MLD through time
     for i in range(num_cases):
-        if i == 0:
-            ax2.plot(time/ 3600 / 24, r_mld[:, i], label = r"r$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax2.plot(time[start_neutral[i]::]/ 3600 / 24, r_neutral[start_neutral[i]::, i], label = r"r$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax2.plot(time/ 3600 / 24, r_hmax[:, i], label = r"r$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else: 
-            ax2.plot(time/ 3600 / 24, r_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax2.plot(time[start_neutral[i]::]/ 3600 / 24, r_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax2.plot(time/ 3600 / 24, r_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+        ax2.plot(time/ 3600 / 24, tracerw_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
     ax2.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    ax2.set_title("Plume Radii", size = 10)
-    #ax2.set_xlabel("Time [days]") 
+    ax2.set_title("Vertical Trace Flux", size = 10)
     ax2.legend(loc='upper left', labelspacing = 0.25, handlelength=0.75)
-    # vertical velocity
+    # Temperature flux average at the MLD through time
     for i in range(num_cases):
-        if i == 0:
-            ax3.plot(time/ 3600 / 24, w_mld[:, i], label = r"w$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax3.plot(time[start_neutral[i]::]/ 3600 / 24, w_neutral[start_neutral[i]::, i], label = r"w$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax3.plot(time/ 3600 / 24, w_hmax[:, i],label = r"w$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax3.plot(time/ 3600 / 24, w_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax3.plot(time[start_neutral[i]::]/ 3600 / 24, w_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax3.plot(time/ 3600 / 24, w_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-    #ax3.set_xlabel("Time [days]") 
-    ax3.set_title("Vertical Velocity", size = 10)
-    ax3.legend(loc='upper right', labelspacing = 0.25, handlelength=0.75)
+        ax3.plot(time/ 3600 / 24, Tw_mld[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
+    ax3.set_title("Vertical Temperature Flux", size = 10)
     ax3.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24]) 
-    # buoyancy perturbations 
+    # vertical buoyancy flux average at the MLD through time
     for i in range(num_cases):
-        if i == 0:
-            ax4.plot(time/ 3600 / 24, b_mld[:, i], label = r"b$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax4.plot(time[start_neutral[i]::]/ 3600 / 24, b_neutral[start_neutral[i]::, i], label = r"b$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax4.plot(time/ 3600 / 24, b_hmax[:, i], label = r"b$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax4.plot(time/ 3600 / 24, b_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax4.plot(time/ 3600 / 24, b_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax4.plot(time[start_neutral[i]::]/ 3600 / 24, b_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-    #ax4.set_xlabel("Time [days]") 
-    ax4.set_title("Perturbed Buoyancy", size = 10)
-    ax4.legend(loc='upper right', labelspacing = 0.25, handlelength=0.75)
+        ax4.plot(time/ 3600 / 24, bw_mld[:, i], linewidth = 0.75, color = color_opt[i])
+    ax4.set_xlabel("Time [days]") 
+    ax4.set_title("Perturbed Buoyancy Flux", size = 10)
     ax4.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax4.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    # temperature perturbations 
+    # ratio of tracer in the mixed layer  
     for i in range(num_cases):
-        if i == 0:
-            ax5.plot(time/ 3600 / 24, T_mld[:, i], label = r"T$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax5.plot(time[start_neutral[i]::]/ 3600 / 24, T_neutral[start_neutral[i]::, i], label = r"T$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax5.plot(time/ 3600 / 24, T_hmax[:, i], label = r"T$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax5.plot(time/ 3600 / 24, T_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax5.plot(time/ 3600 / 24, T_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax5.plot(time[start_neutral[i]::]/ 3600 / 24, T_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
+        ax5.plot(time/ 3600 / 24, tracer_ratio[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
     ax5.set_xlabel("Time [days]") 
-    ax5.set_title("Perturbed Temperature", size = 10)
-    ax5.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
+    ax5.set_title("Tracer within Mixed Layer", size = 10)
     ax5.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax5.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    # tracer perturbations 
+    # w_rms at MLD through time
     for i in range(num_cases):
-        if i == 0:
-            ax6.plot(time/ 3600 / 24, tracer_mld[:, i], label = r"C$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], label = r"C$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], label = r"C$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax6.plot(time/ 3600 / 24, tracer_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
+        ax6.plot(time/ 3600 / 24, w_rms[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
     ax6.set_xlabel("Time [days]") 
     ax6.set_title("Perturbed Tracer", size = 10)
     ax6.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
     ax6.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     ax6.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    # average salinity at MLD
-    for i in range(num_cases):
-        ax7.plot(time/ 3600 / 24, tracerw_fluc_avg[:, i], linewidth = 0.75, color = color_opt[i])
-    ax7.set_xlabel("Time [days]")
-    ax7.set_title(r"C'w$_{\text{avg}}$ at MLD", size = 10)
-    ax7.ticklabel_format(axis='y', scilimits=(-1,1), useMathText=True)
-    ax7.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    # root mean square w at MLD 
-    for i in range(num_cases):
-        ax8.plot(time/ 3600 / 24, Tw_fluc_avg[:, i], linewidth = 0.75, color = color_opt[i])
-    ax8.set_xlabel("Time [days]")
-    ax8.set_title(r"T'w$_{avg}$ at MLD", size = 10)
-    ax8.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    ax8.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_temporal_comparison.png")
+    frame_path = os.path.join(outdir, f"{name}_ml_temporal_comparison.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)

@@ -229,9 +229,9 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         wk = w[:, :, k].reshape(nx[0], nx[1])
         wmagk = w_mag_order[:, :, k]
         b_fluc_k = b_fluc[:, :, k].reshape(nx[0], nx[1])
-        area_bk = (np.abs(b_fluc_k) >= b_tol).astype(float)
+        #area_bk = (np.abs(b_fluc_k) >= b_tol).astype(float)
         area_wmag = (wmagk >= w_mag_tol).astype(float)
-        area_opt = area_bk + area_wmag
+        area_opt = area_wmag#area_bk + 
         area_opt = area_opt>0
         if np.sum(area_opt) == 0:
             idx_max = idx_max + 1

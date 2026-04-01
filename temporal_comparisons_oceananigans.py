@@ -11,18 +11,18 @@ from dense_plume_analysis import plume_tracer_analysis, neutral_buoyancy_loc
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
-#[beta = default S0 = 0.05, 'beta = default S0 = 0.1', beta = default S0 = 0.15, 'beta = default S0 = 0.2']
+folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
+#['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures')
-case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-#[r'J$^{\text{C}} = -5.0*10^{-5}$', r'J$^{\text{C}} = -1.0*10^{-4}$', r'J$^{\text{C}} = -1.5*10^{-4}$', r'J$^{\text{C}} = - 2.0*10^{-4}$']
+case_names = [r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
+#[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='average-rp-MLD'
+name_uni ='Sw_max-average-rp-Sj'
 
 num_cases = len(case_names)
 folders = []
@@ -32,14 +32,14 @@ output_folder = universal_folder
 
 # flags for what to plot
 plume_analysis_plot = True
-mld_analysis_plot = True
+mld_analysis_plot = False
 ND = True
 
 # flags for how to read data
 with_halos = False
 stokes = False * np.ones(num_cases) # [False, True]
 salinity = True
-S_temporal = True
+temporal_avg = True
 mld_transient = False
 
 
@@ -48,11 +48,11 @@ rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
 dTdz = 0.01 * np.ones(num_cases) # np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
 rho0 = 1026
-mld = np.array([20, 30, 40]) # 30 * np.ones(num_cases) # 
+mld = 30 * np.ones(num_cases) # np.array([20, 30, 40]) # 
 T0 = 25
 S0 = 0 
 wp = 0.001
-Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2]) #
+Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 0.1 * np.ones(num_cases) # 
 F_s = np.dot(Sj, wp)
 
 # plotting prep
@@ -72,8 +72,9 @@ plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 # collecting model informations for all cases
 t_save = []
 mld_idx = []
-if S_temporal and salinity:
+if temporal_avg and salinity:
     S_contour = np.zeros(num_cases)
+    w_contour = np.zeros(num_cases)
     for i, folder in enumerate(folders):
         # List JLD2 files
         dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
@@ -98,10 +99,18 @@ if S_temporal and salinity:
         else:
             alpha = collect_temp_and_sal(fid, salinity)
         t_save.append(t_save_temp)
-
+        centerline_index = np.zeros((3, nx[2])).astype(int)
+        center_xy_loc = np.zeros((3, nx[2]))
+        center_xy_loc[0, :] = lx[0]/2
+        center_xy_loc[1, :] = lx[1]/2
+        center_xy_loc[2, :] = z
+        centerline_index[0, :] = nx[0]//2 - 1
+        centerline_index[1, :] = nx[1]//2 - 1
+        centerline_index[2, :] = np.arange(nx[2]).astype(int)
         nt = len(t_save_temp)
         n = 0.0
         S_sum = 0.0
+        w_sum = 0.0
         for it in range(10, nt):
 
             # Load data from files
@@ -117,10 +126,12 @@ if S_temporal and salinity:
             wc_avg = np.mean(wc, axis=(-3, -2))
             bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-            center_xy_loc_temp, centerline_index, r_profile, plume_index, S_contour_temp = plume_tracer_analysis(x, y, z, lx, nx, S, idx = bw_idx, contour = 0.1)
-            S_sum += S_contour_temp
+            contour = 0.1
+            S_sum += np.max(S[centerline_index[0, :], centerline_index[1, :], bw_idx])*contour
+            w_sum += np.min(w[centerline_index[0, :], centerline_index[1, :], bw_idx])*contour
             n += 1
         S_contour[i] = S_sum/n
+        w_contour[i] = w_sum/n
         print(f"Case {case_names[i]}: S_contour = {S_contour[i]}")
 
 else:
@@ -237,36 +248,41 @@ for it in range(n_skip, nt):
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
         neutral_index = neutral_buoyancy_loc(b_fluc, plume_index, centerline_index)
-        plume_bottom_index = np.min(plume_index[2])
+        max_index = np.min(plume_index[2])
 
         # find vertical and horizontal lengths and correlated values
-        if np.size(neutral_index)!=0: # neutral plume in current case, apply data to matrices
-            h_neutral[it - n_skip,  i] = z[i, neutral_index]
-            r_neutral[it - n_skip,  i] = r_profile[neutral_index]
-            w_neutral[it - n_skip,  i] = w[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-            b_neutral[it - n_skip,  i] = b_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-            T_neutral[it - n_skip,  i] = T_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-            S_neutral[it - n_skip,  i] = S_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
-        else: # neutral plume does not exist in current case, update neutral starting point and leave matrices be
-            start_neutral[i] += 1 
+        if plume_analysis_plot:
+            if np.size(neutral_index)!=0: # neutral plume in current case, apply data to matrices
+                h_neutral[it - n_skip,  i] = z[i, neutral_index]
+                r_neutral[it - n_skip,  i] = r_profile[neutral_index]
+                w_neutral[it - n_skip,  i] = w[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+                b_neutral[it - n_skip,  i] = b_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+                T_neutral[it - n_skip,  i] = T_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+                S_neutral[it - n_skip,  i] = S_fluc[centerline_index[0][neutral_index], centerline_index[1][neutral_index], neutral_index]
+            else: # neutral plume does not exist in current case, update neutral starting point and leave matrices be
+                start_neutral[i] += 1 
 
-        h_max[it - n_skip,  i] = z[i, plume_bottom_index]
+        h_max[it - n_skip,  i] = z[i, max_index]
+        r_hmax[it - n_skip,  i] = r_profile[max_index]
+        w_hmax[it - n_skip,  i] = w[centerline_index[0][max_index], centerline_index[1][max_index], max_index]
+        b_hmax[it - n_skip,  i] = b_fluc[centerline_index[0][max_index], centerline_index[1][max_index], max_index] 
+        T_hmax[it - n_skip,  i] = T_fluc[centerline_index[0][max_index], centerline_index[1][max_index], max_index]
+        S_hmax[it - n_skip,  i] = S_fluc[centerline_index[0][max_index], centerline_index[1][max_index], max_index]
+
         r_mld[it - n_skip,  i] = r_profile[mld_idx[i]]
-        r_hmax[it - n_skip,  i] = r_profile[plume_bottom_index]
         w_mld[it - n_skip,  i] = w[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        w_hmax[it - n_skip,  i] = w[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
         b_mld[it - n_skip,  i] = b_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        b_hmax[it - n_skip,  i] = b_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
         Sw_mld_avg[it - n_skip,  i] = S_fluc_w_avg[mld_idx[i]]
         Tw_mld_avg[it - n_skip,  i] = T_fluc_w_avg[mld_idx[i]]
 
+        if mld_transient:
+            dbdz = np.gradient(b_avg, z[i, :])
+            mld_opt = np.where(dbdz > dTdz[i]*alpha*g)[0]
+            mld_idx[i]
+
         T_mld[it - n_skip,  i] = T_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        T_hmax[it - n_skip,  i] = T_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
-
         S_mld[it - n_skip,  i] = S_fluc[centerline_index[0][mld_idx[i]], centerline_index[1][mld_idx[i]], mld_idx[i]]
-        S_hmax[it - n_skip,  i] = S_fluc[centerline_index[0][plume_bottom_index], centerline_index[1][plume_bottom_index], plume_bottom_index]
 
-        dTdz_temp = np.mean(np.gradient(T, z[i, :], axis=2), axis = (-3, -2))
 
     print(f"Time step {it} out of {nt} complete.")
 
@@ -296,7 +312,7 @@ if plume_analysis_plot and ND:
     bflucmax = np.max(np.abs([b_mld, b_hmax, b_neutral])) * tol
     ranges['b_fluc'] = [-bflucmax, bflucmax]
     Tw_max = np.max(np.abs(Tw_mld_avg)) * tol
-    ranges['Tw_fluc'] = [0, Tw_max]
+    ranges['Tw_fluc'] = [-Tw_max, Tw_max]
     Sw_max = np.max(np.abs(Sw_mld_avg)) * tol
     ranges['Sw_fluc'] = [-Sw_max, Sw_max]
     rmax = np.max(np.abs([r_mld, r_hmax, r_neutral])) * tol
@@ -321,9 +337,9 @@ if plume_analysis_plot and ND:
         b_neutral[:, i] = b_neutral[:, i] / b_scale[i]
         b_hmax[:, i] = b_hmax[:, i] / b_scale[i]
 
-        S_mld[:, i] = S_mld[:, i] * vel_scale[i] / F_s[i]
-        S_neutral[:, i] = S_neutral[:, i] * vel_scale[i] / F_s[i]
-        S_hmax[:, i] = S_hmax[:, i] * vel_scale[i] / F_s[i]
+        S_mld[:, i] = S_mld[:, i] / S_contour[i] #* vel_scale[i] / F_s[i]
+        S_neutral[:, i] = S_neutral[:, i] / S_contour[i] #* vel_scale[i] / F_s[i]
+        S_hmax[:, i] = S_hmax[:, i] / S_contour[i] #* vel_scale[i] / F_s[i]
 
         z[:, i] = z[:, i] / mld[i]
         zf[:, i] = zf[:, i] / mld[i]
@@ -347,9 +363,10 @@ wmax = np.max(np.abs([w_mld, w_hmax, w_neutral])) * tol
 ranges['w'] = [-wmax, wmax]
 bflucmax = np.max(np.abs([b_mld, b_hmax, b_neutral])) * tol
 ranges['b_fluc'] = [-bflucmax, bflucmax]
+Tw_max = np.max(np.abs(Tw_mld_avg)) * tol
 ranges['Tw_fluc'] = [-Tw_max, Tw_max]
-Smax = np.max(Sw_mld_avg) * tol
-ranges['Sw_fluc'] = [-Smax, Smax]
+Sw_max = np.max(np.abs(Sw_mld_avg)) * tol
+ranges['Sw_fluc'] = [-Sw_max, Sw_max]
 rmax = np.max(np.abs([r_mld, r_hmax, r_neutral])) * tol
 ranges['radius'] = [0, rmax]
 Sfluc_max = np.max(np.abs([S_mld, S_hmax, S_neutral])) * tol
