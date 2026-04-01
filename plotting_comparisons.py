@@ -67,9 +67,9 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
     # velocity rms
     for i in range(num_cases):
         if i == 0:
-            ax2.plot(u_rms[i, :], z, label=r"$\langle$u$_{rms}$$\rangle_{\text{xy}}$", color = color_opt[i], linestyle=line_opt[i])
-            ax2.plot(v_rms[i, :], z, label=r"$\langle$v$_{rms}$$\rangle_{\text{xy}}$", color = color_opt[i], linestyle=line_opt[i])
-            ax2.plot(w_rms[i, :], zf, label=r"$\langle$w$_{rms}$$\rangle_{\text{xy}}$", color = color_opt[i], linestyle=line_opt[i])
+            ax2.plot(u_rms[i, :], z, label=r"$\langle$u$_{rms}\rangle_{\text{xy}}$", color = color_opt[i], linestyle=line_opt[i])
+            ax2.plot(v_rms[i, :], z, label=r"$\langle$v$_{rms}\rangle_{\text{xy}}$", color = color_opt[i], linestyle=line_opt[i])
+            ax2.plot(w_rms[i, :], zf, label=r"$\langle$w$_{rms}\rangle_{\text{xy}}$", color = color_opt[i], linestyle=line_opt[i])
         else:
             ax2.plot(u_rms[i, :], z, color = color_opt[i], linestyle=line_opt[i])
             ax2.plot(v_rms[i, :], z, color = color_opt[i], linestyle=line_opt[i])
@@ -174,7 +174,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     if ND:
         ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"r$_{avg}$/r$_{j}$") #(r"r$_{avg}$/h$_{\text{MLD}}$") #
+        ax2.set_ylabel(r"$\langle$r$\rangle_{\text{xy}}$/r$_{j}$") #(r"$\langle$r$\rangle_{\text{xy}}$/h$_{\text{MLD}}$") #
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
         ax3.set_ylabel(r"w/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}})$")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
@@ -182,11 +182,11 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"C'$_{avg}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)") #
+        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"C'w$_{avg}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"C$_{avg}\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")#
+        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
-        ax8.set_ylabel(r"T'w$_{\text{avg}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
+        ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
     else:
         ax1.set_ylabel("[m]")
@@ -197,13 +197,13 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
         ax4.set_ylabel(r"[m/s$^2$]")
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$[$^{\circ}$C]")
+        ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$ [$^{\circ}$C]")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"$\langle$C$'\rangle_{\text{xy}}$[g/kg]")
+        ax6.set_ylabel(r"$\langle$C$'\rangle_{\text{xy}}$ [g/kg]")
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"$\langle$C$'\text{w}\rangle_{\text{xy}}$[g/kg]")
+        ax7.set_ylabel(r"$\langle$C$'\text{w}\rangle_{\text{xy}}$ [g/kg]")
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
-        ax8.set_ylabel(r"[$^{\circ}$C * m/s]")
+        ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$ [$^{\circ}$C $\cdot$ m/s]")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
     # Depth of plume through time 
     for i in range(num_cases):
@@ -296,14 +296,14 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     for i in range(num_cases):
         ax7.plot(time/ 3600 / 24, tracerw_fluc_avg[:, i], linewidth = 0.75, color = color_opt[i])
     ax7.set_xlabel("Time [days]")
-    ax7.set_title(r"C'w$_{\text{avg}}$ at MLD", size = 10)
+    ax7.set_title(r"$\langle$C$'$w$\rangle_{\text{xy}}$ at MLD", size = 10)
     ax7.ticklabel_format(axis='y', scilimits=(-1,1), useMathText=True)
     ax7.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # root mean square w at MLD 
     for i in range(num_cases):
         ax8.plot(time/ 3600 / 24, Tw_fluc_avg[:, i], linewidth = 0.75, color = color_opt[i])
     ax8.set_xlabel("Time [days]")
-    ax8.set_title(r"T'w$_{avg}$ at MLD", size = 10)
+    ax8.set_title(r"$\langle$T$'$w$\rangle_{\text{xy}}$ at MLD", size = 10)
     ax8.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     ax8.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
     # --- Save Frame ---
@@ -368,11 +368,11 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")
         #ax2.set_ylabel("[m]")
-        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}}$[g/kg]")
+        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}}$ [g/kg]")
         #ax3.set_ylabel("[m]")
         ax3.set_xlabel(r"[m/s$^2$]")
         #ax4.set_ylabel("[m]")
-        ax4.set_xlabel(r"C$'_{\text{centerline}}$[g/kg]")
+        ax4.set_xlabel(r"C$'_{\text{centerline}}$ [g/kg]")
         ax5.set_ylabel("Depth [m]")
         ax5.set_xlabel("[m]")
         #ax6.set_ylabel("[m]")
@@ -380,7 +380,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
         #ax7.set_ylabel("[m]")
         ax7.set_xlabel(r"[m/s$^2$]")
         #ax8.set_ylabel("[m]")
-        ax8.set_xlabel(r"T$'_{\text{centerline}}$[$^{\circ}$ C]")
+        ax8.set_xlabel(r"T$'_{\text{centerline}}$ [$^{\circ}$ C]")
 
     # velocity rms
     for i in range(num_cases):
@@ -396,7 +396,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     ax1.set_ylim(-lx[2], 0)
     ax1.set_xlim(ranges['vel_rms'])
     ax1.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    ax1.legend(loc='upper left')
+    ax1.legend(loc='lower right')
 
     # tracer profile 
     for i in range(num_cases):
@@ -409,7 +409,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     # buoyancy profiles
     for i in range(num_cases):
         if i == 0:
-            ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], label = r"$\langle$b$\rangle_{\text{xy}}", linestyle='solid')
+            ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], label = r"$\langle$b$\rangle_{\text{xy}}$", linestyle='solid')
             ax3.plot(b_center[:, i], z[:, i], color = color_opt[i], label = r"b$_{\text{centerline}}$", linestyle='dashed')
         else:
             ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], linestyle='solid')
@@ -616,7 +616,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, zf, cases_s
             # RMS buoyancy 
             ax[0, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # RMS w
-            ax[0, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], zf[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}$$\rangle_{\text{xy}}$")
+            ax[0, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], zf[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}rangle_{\text{xy}}$")
             # RMS buoyancy flux 
             ax[0, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # buoyancy profile
@@ -624,7 +624,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, zf, cases_s
             # RMS buoyancy 
             ax[2, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # RMS w 
-            ax[2, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], zf[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}$$\rangle_{\text{xy}}$")
+            ax[2, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], zf[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}\rangle_{\text{xy}}$")
             # RMS buoyancy flux 
             ax[2, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
         elif ver[caseindex] and not hor[caseindex]:
