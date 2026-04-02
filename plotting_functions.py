@@ -7,14 +7,10 @@ import imageio.v2 as imageio
 import matplotlib.ticker as mticker
 ### -------------------------PROFILES------------------------- ###
 ## stratification profile
-def stratification_profile(z, dadz, mld):
+def stratification_profile(z, a0, dadz, mld):
     """Returns a linear stratification profile."""
-    a = np.zeros(len(z))
-    for k in range(len(z)):
-        if z[k] <= -mld:
-            a[k] = dadz * (z[k] + mld) 
-        else:
-            a[k] = 0.0  # constant above mixed layer
+    a = a0 * np.ones(len(z))
+    a[z<mld] = a0 + dadz * (z[z<mld] - mld)
     return a
 
 ### -------------------------PLOTTING PREP FUNCTIONS------------------------- ###

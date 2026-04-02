@@ -436,7 +436,7 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
         ax5.plot(r_profile[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax5.set_title("Plume Radius with Depth")
     ax5.set_ylim(-lx[2], 0)
-    ax5.set_xlim(0, lx[0]/2)
+    ax5.set_xlim(0, lx[0]/4)
 
     # perturbed buoyancy flux 
     for i in range(num_cases):

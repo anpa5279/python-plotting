@@ -110,34 +110,30 @@ def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_perturbed, nx, c
     idx_rp_max = idx_rp_max[np.where(neural_vs_rp==np.min(neural_vs_rp))] 
     return idx_rp_max, idx_neutral_in_plume, idx_neutral_in_plume
 
-def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour = [], idx = [], contour = []):
-    if np.size(tracer_contour) == 0:
-        tracer_contour = np.max(tracer[centerline_index[0, :], centerline_index[1, :], idx])*contour
+def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour=None, idx=None, contour=None):
+
+    # --- contour threshold ---
+    if tracer_contour is None or np.size(tracer_contour) == 0:
+        tracer_contour = np.max(tracer[
+            centerline_index[0, :],
+            centerline_index[1, :],
+            idx
+        ]) * contour
+
     plume_contour = tracer >= tracer_contour
-    plume_index = np.where(plume_contour)
-    edge_mask = plume_contour & (
-        ~np.roll(plume_contour, 1, axis=0)
-        | ~np.roll(plume_contour,-1, axis=0)
-        | ~np.roll(plume_contour, 1, axis=1)
-        | ~np.roll(plume_contour,-1, axis=1)
-    )
-    edge_index = np.where(edge_mask)
-    centerx = x[centerline_index[0, :]]
-    centery = y[centerline_index[1, :]]
-    # find the radius of plume on xy plane
-    X, Y = np.meshgrid(x, y, indexing='ij')
+    xi, yi, zi = np.where(plume_contour)
+    plume_index = (xi, yi, zi)
+
+    centerx = x[centerline_index[0, zi]]
+    centery = y[centerline_index[1, zi]]
+
+    r = np.sqrt((x[xi] - centerx)**2 + (y[yi] - centery)**2)
+    counts = np.bincount(zi, minlength=nx[2])
+    sums   = np.bincount(zi, weights=r, minlength=nx[2])
+
     rp_profile = np.zeros(nx[2])
-    for k in np.arange(nx[2]):
-        hor_plane = np.where(edge_index[2]==k)[0]
-        if len(hor_plane)==0:
-            rp_profile[k] = 0.0
-        else:
-            r = np.zeros(len(hor_plane))
-            for i in range(len(hor_plane)):
-                rx = np.abs(x[edge_index[0][hor_plane[i]]]) - centerx[k]
-                ry = np.abs(y[edge_index[1][hor_plane[i]]]) - centery[k]
-                r[i] = np.sqrt(rx**2 + ry**2)
-            rp_profile[k] = np.mean(r)
+    mask = counts > 0
+    rp_profile[mask] = sums[mask] / counts[mask]
     return rp_profile, plume_index, tracer_contour
 
 def plume_tracer_analysis(x, y, z, lx, nx, tracer, tracer_contour = [], idx = [], contour = [], calc_option='middle domain'):

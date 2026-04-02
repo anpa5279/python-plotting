@@ -5,24 +5,24 @@ from scipy.interpolate import make_interp_spline
 
 from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from plotting_comparisons import plot_format, turb_stats_multi, plume_spatial_analysis #, plume_analysis_multi
+from plotting_comparisons import plot_format, turb_stats_multi, plume_spatial_analysis
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m'] 
+folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 #['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures')
-case_names =[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
+case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']  
 #[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni = "contour-0.1-Sj-test"
+name_uni = "contour-0.15-MLD-test"
 
 num_cases = len(case_names)
 folders = []
@@ -40,7 +40,7 @@ with_halos = False
 stokes = False * np.ones(num_cases) 
 salinity = True
 
-video = True
+video = False
 if num_cases > 1:
     fig_folder = os.path.join(universal_folder, 'comparison figures', 'comparison plume analysis')
 else:
@@ -52,25 +52,24 @@ if video:
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.01 * np.ones(num_cases) # np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
+dTdz = 0.01 * np.ones(num_cases) #  np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
 rho0 = 1026
-mld = 30 * np.ones(num_cases) # np.array([20, 30, 40]) # 
+mld = np.array([20, 30, 40]) # 30 * np.ones(num_cases) # 
 T0 = 25.0
 S0 = 0 
 wp = 0.001
-Sj = np.array([0.05, 0.1, 0.15, 0.2])# 0.1 * np.ones(num_cases) # 
+Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2])# 
 F_s = np.dot(Sj, wp)
 if np.size(Sj) == 1:
     contour = np.dot(Sj * np.ones(num_cases), 0.05)
 else:
     contour = np.dot(Sj, 0.05)
-S_contour = [0.003995705848735615, 0.003602588163919859, 0.0032189606877616704] # for MLD variations contour = 0.1
-#[0.0019978529243678076, 0.0018012940819599295, 0.0016214803438808352] # for MLD variations contour = 0.05
-#[0.0018012940819599295, 0.0020081853313120113, 0.0021349217736009118] #for dTdz variations contour = 0.05
-#[0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034] # for Sj variations contour = 0.05
-#[0.003602588163919859, 0.003995705848735615, 0.0042189206877616705] # for dTdz variations contour = 0.1
-#[0.003995705848735615, 0.003602588163919859, 0.0032189606877616704] # for MLD variations contour = 0.1
-#np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 2) # for Sj variations contour = 0.1
+
+S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
+#np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
+#np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
+#np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
+S_contour = S_value*0.15 
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))

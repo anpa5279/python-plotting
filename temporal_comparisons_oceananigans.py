@@ -9,18 +9,18 @@ from dense_plume_analysis import plume_tracer_radius, neutral_buoyancy_loc
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
+folder_names =['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
-case_names = [r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
+case_names = [r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni ='contour-0.15-Sj'
+name_uni ='contour-0.15-dTdz'
 
 num_cases = len(case_names)
 folders = []
@@ -47,18 +47,18 @@ if mld_analysis_plot:
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.01 * np.ones(num_cases) # np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
+dTdz = np.array([0.01, 0.05, 0.1]) # 0.01 * np.ones(num_cases) # background temperature gradient in K/m
 rho0 = 1026
 mld = 30 * np.ones(num_cases) # np.array([20, 30, 40]) # 
 T0 = 25
 S0 = 0 
 wp = 0.001
-Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 0.1 * np.ones(num_cases) # 
+Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2]) # 
 F_s = np.dot(Sj, wp)
 
-S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
+S_value = np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
 #np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
-#[0.03602588163919859, 0.03995705848735615, 0.042189206877616705] # for dTdz variations
+#np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
 #np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
 S_contour = S_value*0.15 
 
@@ -210,6 +210,7 @@ for it in range(nt):
         r_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour[i])
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
+            r_profile = np.zeros(nx[2])
         neutral_index = neutral_buoyancy_loc(b_fluc, plume_index, centerline_index)
         max_index = np.min(plume_index[2])
 
