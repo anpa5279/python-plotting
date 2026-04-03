@@ -8,7 +8,7 @@ from general_analysis_functions import a2_fluc_mean, ab_fluc_mean, richardson_nu
 from dense_plume_analysis import mld_info, centerline_analysis_buoyancy, plume_momentum_analysis, plume_tracer_analysis
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
-from plotting_comparisons import plume_spatial_analysis
+from plotting_comparisons import plume_vertical_spatial_plot
 def stokes_exp(z):
     g_Earth = 9.80665
     wavelength = 60.0 #m
@@ -355,7 +355,7 @@ for it in nt:
     if buoyancy_analysis_plot and salinity:
         buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
     if plume_plot:
-        plume_dir = plume_spatial_analysis(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, rp_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
+        plume_dir = plume_vertical_spatial_plot(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, rp_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
     if buoyancy_momentum_analysis:
         momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
 print("All frames created.")

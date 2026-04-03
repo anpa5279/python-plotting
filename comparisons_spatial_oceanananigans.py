@@ -5,7 +5,7 @@ from scipy.interpolate import make_interp_spline
 
 from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from plotting_comparisons import plot_format, turb_stats_multi, plume_spatial_analysis
+from plotting_comparisons import plot_format, turb_stats_multi, plume_vertical_spatial_plot
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_radius
 
@@ -274,7 +274,7 @@ for it in nt:
     if turb_stats_plot:
         turb_stat_dir = turb_stats_multi(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg)
     if plume_analysis_plot:
-        buoyancy_dir = plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
+        buoyancy_dir = plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
     if ND:
         ############ NONDIMENSIONALIZATION ############
         for i in range(num_cases):
@@ -294,7 +294,7 @@ for it in nt:
         if turb_stats_plot:
             turb_stat_dir_nd = turb_stats_multi(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg, ND)
         if plume_analysis_plot:
-            buoyancy_dir_nd = plume_spatial_analysis(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND)
+            buoyancy_dir_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND)
 print("All frames created.")
 # creating videos
 if video:

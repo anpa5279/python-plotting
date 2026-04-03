@@ -141,6 +141,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
 
     return outdir # return the directory where frames are saved for video creation
 ### ---------------------- DENSE PLUME ----------------------------- ###
+### temporal analysis ###
 def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
     num_cases = len(case_names)
     if num_cases==1:
@@ -311,8 +312,8 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.savefig(frame_path)
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
-
-def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False):
+### spatial vertical analysis ###
+def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False, z_nd = r"z/h$_{\text{MLD}}$"):
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 4, figsize=(12, 8))
@@ -348,21 +349,21 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     ax8 = ax[1, 3]
 
     if ND:
-        ax1.set_ylabel(r"z/h$_{\text{MLD}}$") #h$_{\mathrm{MLD}_0}$
+        ax1.set_ylabel(z_nd) #h$_{\mathrm{MLD}_0}$
         ax1.set_xlabel(r"u$_{i, rms}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
-        #ax2.set_ylabel(r"z/h$_{\text{MLD}}$")
+        #ax2.set_ylabel(z_nd)
         ax2.set_xlabel(r"$\langle$C$_{\text{rms}}\rangle_{\text{xy}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")
-        #ax3.set_ylabel(r"z/h$_{\text{MLD}}$")
+        #ax3.set_ylabel(z_nd)
         ax3.set_xlabel(r"b/(h$_{\mathrm{MLD}_0} N^{2}$)")
-        #ax4.set_ylabel(r"z/h$_{\text{MLD}}$")
+        #ax4.set_ylabel(z_nd)
         ax4.set_xlabel(r"C$'_{\text{centerline}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")
-        ax5.set_ylabel(r"z/h$_{\text{MLD}}$")
+        ax5.set_ylabel(z_nd)
         ax5.set_xlabel(r"r/r$_{j}$")#(r"r/h$_{\text{MLD}}$") #
-        #ax6.set_ylabel(r"z/h$_{\text{MLD}}$")
+        #ax6.set_ylabel(z_nd)
         ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0}^2 (N^{2})^{3/2}$)")
-        #ax7.set_ylabel(r"z/h$_{\text{MLD}}$")
+        #ax7.set_ylabel(z_nd)
         ax7.set_xlabel(r"b$_{rms}$/(h$_{\mathrm{MLD}_0} N^{2}$)")
-        #ax8.set_ylabel(r"z/h$_{\text{MLD}}$")
+        #ax8.set_ylabel(z_nd)
         ax8.set_xlabel(r"T$'_{\text{centerline}}$/T$_{0}$")
     else:
         ax1.set_ylabel("Depth [m]")
@@ -476,7 +477,134 @@ def plume_spatial_analysis(time, it, ranges, color_opt, fig_folder, case_names, 
     print(f"Time step {it + 1} captured: {frame_path}")
 
     return outdir # return the directory where frames are saved for video creation
+### spatial horizontal analysis ###
+def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
+    num_cases = len(case_names)
+    if num_cases==0:
+        fig, ax = plt.subplots(2, 3, figsize=(12, 7))
+        outdir = os.path.join(fig_folder, name)
+        os.makedirs(outdir, exist_ok=True)
+    else:
+        outdir = os.path.join(fig_folder, name)
+        os.makedirs(outdir, exist_ok=True)
+        gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
+        fig, ax = plt.subplots(3, 3, figsize=(12, 9), gridspec_kw=gridspec_kw)
+        for a in ax[2, :]:
+            a.remove()
+        case_handles = [
+            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
+            for i in range(num_cases)
+        ]
 
+        fig.legend(handles=case_handles,
+                loc='lower center',
+                ncol=num_cases,
+                bbox_to_anchor=(0.52, 0.015))
+
+    td = time[it] / 3600 / 24
+    fig.suptitle(f'{td:.2f} days', fontsize=12)
+
+    ax1 = ax[0, 0] # u, v, w thourgh centerline
+    ax2 = ax[0, 1] # vertical velocity flux through centerline
+    ax3 = ax[0, 2] # tracer through centerline
+    ax4 = ax[1, 0] # perturbed buoyancy through centerline 
+    ax5 = ax[1, 1] # buoyancy flux through centerline
+    ax6 = ax[1, 2] # temperature through centerline
+
+    if ND:
+        ax1.set_xlabel(r"y/r$_{j}$") 
+        ax1.set_ylabel(r"u$_{i}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
+        ax2.set_xlabel(r"y/r$_{j}$")
+        ax2.set_ylabel(r"(u$_{i} \cdot$ w)/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)") 
+        ax3.set_xlabel(r"y/r$_{j}$")
+        ax3.set_ylabel(r"C$_{\text{centerline}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") 
+        ax4.set_xlabel(r"y/r$_{j}$")
+        ax4.set_ylabel(r"b$'$/(h$_{\mathrm{MLD}_0} N^{2}$)")
+        ax5.set_xlabel(r"y/r$_{j}$")
+        ax5.set_ylabel(r"b'w'/(h$_{\mathrm{MLD}_0}^2 (N^{2})^{3/2}$)")
+        ax6.set_xlabel(r"y/r$_{j}$")
+        ax6.set_ylabel(r"T$_{\text{centerline}}$/T$_{0}$")
+    else:
+        ax1.set_xlabel("x [m]")
+        ax1.set_ylabel("[m/s]")
+        ax2.set_xlabel("x [m]")
+        ax2.set_ylabel(r"b'u'$_{i}$ [m$^2$/s$^3$]")
+        ax3.set_xlabel("x [m]")
+        ax3.set_ylabel(r"C$_{\text{centerline}}$ [g/kg]")
+        ax4.set_xlabel("x [m]")
+        ax4.set_ylabel(r"[m/s$^2$]")
+        ax5.set_xlabel("x [m]")
+        ax5.set_ylabel(r"b'w' [m$^2$/s$^3$]")
+        ax6.set_xlabel("x [m]")
+        ax6.set_ylabel(r"T$_{\text{centerline}}$ [$^{\circ}$ C]")
+
+    # velocity
+    for i in range(num_cases):
+        if i == 0:
+            ax1.plot(y, u[:, i], label=r"u$_{\text{centerline}}$", color = color_opt[i], linestyle='dotted')
+            ax1.plot(y, v[:, i], label=r"v$_{\text{centerline}}$", color = color_opt[i], linestyle='dashed')
+            ax1.plot(y, w[:, i], label=r"w$_{\text{centerline}}$", color = color_opt[i], linestyle='solid')
+        else:
+            ax1.plot(y, u[:, i], color = color_opt[i], linestyle='dotted')
+            ax1.plot(y, v[:, i], color = color_opt[i], linestyle='dashed')
+            ax1.plot(y, w[:, i], color = color_opt[i], linestyle='solid')
+    ax1.set_title("Velocity")
+    ax1.set_xlim(0, lx[1])
+    ax1.set_ylim(ranges['w'])
+    ax1.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
+    ax1.legend(loc='lower right')
+
+    # velocity vertical flux through centerline
+    for i in range(num_cases):
+        if i == 0:
+            ax2.plot(y, bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
+            ax2.plot(y, bv_fluc[:, i], color = color_opt[i], label = r"b$'$v$'_{\text{centerline}}$", linestyle='dashed')
+        else:
+            ax2.plot(y, bu_fluc[:, i], color = color_opt[i], linestyle='dotted')
+            ax2.plot(y, bv_fluc[:, i], color = color_opt[i], linestyle='dashed')
+    ax2.set_title('Horizontal Buoyancy Flux Fluctuations')
+    ax2.set_xlim(0, lx[1])
+    ax2.set_ylim(ymin = ranges['bw_fluc'][0]*10**(-1), ymax = ranges['bw_fluc'][1]*10**(-1))
+    ax2.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
+
+    # tracer  
+    for i in range(num_cases):
+        ax3.plot(y, tracer[:, i], color = color_opt[i], linestyle='solid')
+    ax3.set_title("Tracer")
+    ax3.set_xlim(0, lx[1])
+    ax3.set_ylim(ranges['S'])
+    ax3.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
+
+    # Perturbed buoyancy 
+    for i in range(num_cases):
+        ax4.plot(y, b_center[:, i], color = color_opt[i], linestyle='solid')
+    ax4.set_title("Perturbed Buoyancy")
+    ax4.set_xlim(0, lx[1])
+    ax4.set_ylim(ranges['b_fluc'])
+    ax4.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
+    # perturbed buoyancy flux 
+    for i in range(num_cases):
+        ax5.plot(y, bw_fluc[:, i], color = color_opt[i], linestyle='solid')
+    ax5.set_title("Vertical Buoyancy Flux Fluctuations")
+    ax5.set_xlim(0, lx[1])
+    ax5.set_ylim(ranges['bw_fluc'])
+    ax5.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True) 
+
+    # temperature  
+    for i in range(num_cases):
+        ax6.plot(y, T[:, i], color = color_opt[i], linestyle='solid')
+    ax6.set_title("Temperature")
+    ax6.set_xlim(0, lx[1])
+    ax6.set_ylim(ranges['T'])
+
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"{name}_comparison_turb_stats_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it + 1} captured: {frame_path}")
+
+    return outdir # return the directory where frames are saved for video creation
+### transient MLD analysis ###
 def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, mld, mld0, bw_mld, Tw_mld, tracerw_mld, tracer_ratio, w_rms, ND = False):
     num_cases = len(case_names)
     if num_cases==1:

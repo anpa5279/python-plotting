@@ -9,14 +9,14 @@ from dense_plume_analysis import plume_tracer_radius, neutral_buoyancy_loc
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
+folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
-case_names = [r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
+case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
@@ -37,7 +37,7 @@ ND = True
 with_halos = False
 stokes = False * np.ones(num_cases) # [False, True]
 salinity = True
-temporal_avg = False
+temporal_avg = True
 mld_transient = False
 
 if mld_analysis_plot:
@@ -104,6 +104,57 @@ centerline_index = np.zeros((3, nx[2])).astype(int)
 centerline_index[0, :] = nx[0]//2 - 1
 centerline_index[1, :] = nx[1]//2 - 1
 centerline_index[2, :] = np.arange(nx[2]).astype(int)
+if temporal_avg and salinity:
+    S_contour = np.zeros(num_cases)
+    w_contour = np.zeros(num_cases)
+    for i, folder in enumerate(folders):
+        # List JLD2 files
+        dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+        Nranks = len(dtn)
+        if Nranks > 1:
+            dtn = []
+            for file in np.arange(Nranks):
+                dtn.append(f'fields_rank{file}.jld2')
+        # Read model information
+        fid = os.path.join(folder, dtn[0])
+        if Nranks == 1 and not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        elif Nranks == 1 and stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+        elif Nranks > 1 and not stokes[i]:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        else:
+            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+            #u_s = stokes_exp(z)
+        if salinity:
+            alpha, beta = collect_temp_and_sal(fid, salinity)
+        else:
+            alpha = collect_temp_and_sal(fid, salinity)
+        t_save.append(t_save_temp)
+        centerline_index = np.zeros((3, nx[2])).astype(int)
+        center_xy_loc = np.zeros((3, nx[2]))
+        center_xy_loc[0, :] = lx[0]/2
+        center_xy_loc[1, :] = lx[1]/2
+        center_xy_loc[2, :] = z
+        centerline_index[0, :] = nx[0]//2 - 1
+        centerline_index[1, :] = nx[1]//2 - 1
+        centerline_index[2, :] = np.arange(nx[2]).astype(int)
+        nt = len(t_save_temp)
+        n = 0.0
+        S_sum = 0.0
+        w_sum = 0.0
+        for it in range(10, nt):
+
+            # Load data from files
+            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+            if stokes[i]:
+                u = u - u_s
+            wc = 0.5 * (w[..., :-1] + w[..., 1:])
+            w_sum += np.mean(w[centerline_index[0, :], centerline_index[1, :], :])
+            n += 1
+        S_contour[i] = S_sum/n
+        w_contour[i] = w_sum/n
+        print(f"Case {case_names[i]}: w_contour = {w_contour[i]}")
 nt = len(t_save_temp)
 
 z = z*np.ones([num_cases, nx[2]])
