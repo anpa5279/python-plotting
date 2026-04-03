@@ -541,15 +541,15 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     # velocity
     for i in range(num_cases):
         if i == 0:
-            ax1.plot(y, u[:, i], label=r"u$_{\text{centerline}}$", color = color_opt[i], linestyle='dotted')
-            ax1.plot(y, v[:, i], label=r"v$_{\text{centerline}}$", color = color_opt[i], linestyle='dashed')
-            ax1.plot(y, w[:, i], label=r"w$_{\text{centerline}}$", color = color_opt[i], linestyle='solid')
+            ax1.plot((y - lx[1]/2), u[:, i], label=r"u$_{\text{centerline}}$", color = color_opt[i], linestyle='dotted')
+            ax1.plot((y - lx[1]/2), v[:, i], label=r"v$_{\text{centerline}}$", color = color_opt[i], linestyle='dashed')
+            ax1.plot((y - lx[1]/2), w[:, i], label=r"w$_{\text{centerline}}$", color = color_opt[i], linestyle='solid')
         else:
-            ax1.plot(y, u[:, i], color = color_opt[i], linestyle='dotted')
-            ax1.plot(y, v[:, i], color = color_opt[i], linestyle='dashed')
-            ax1.plot(y, w[:, i], color = color_opt[i], linestyle='solid')
+            ax1.plot((y - lx[1]/2), u[:, i], color = color_opt[i], linestyle='dotted')
+            ax1.plot((y - lx[1]/2), v[:, i], color = color_opt[i], linestyle='dashed')
+            ax1.plot((y - lx[1]/2), w[:, i], color = color_opt[i], linestyle='solid')
     ax1.set_title("Velocity")
-    ax1.set_xlim(0, lx[1])
+    ax1.set_xlim(-lx[1]/2, lx[1]/2)
     ax1.set_ylim(ranges['w'])
     ax1.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     ax1.legend(loc='lower right')
@@ -557,48 +557,48 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     # velocity vertical flux through centerline
     for i in range(num_cases):
         if i == 0:
-            ax2.plot(y, bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
-            ax2.plot(y, bv_fluc[:, i], color = color_opt[i], label = r"b$'$v$'_{\text{centerline}}$", linestyle='dashed')
+            ax2.plot((y - lx[1]/2), bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
+            ax2.plot((y - lx[1]/2), bv_fluc[:, i], color = color_opt[i], label = r"b$'$v$'_{\text{centerline}}$", linestyle='dashed')
         else:
-            ax2.plot(y, bu_fluc[:, i], color = color_opt[i], linestyle='dotted')
-            ax2.plot(y, bv_fluc[:, i], color = color_opt[i], linestyle='dashed')
+            ax2.plot((y - lx[1]/2), bu_fluc[:, i], color = color_opt[i], linestyle='dotted')
+            ax2.plot((y - lx[1]/2), bv_fluc[:, i], color = color_opt[i], linestyle='dashed')
     ax2.set_title('Horizontal Buoyancy Flux Fluctuations')
-    ax2.set_xlim(0, lx[1])
+    ax2.set_xlim(-lx[1]/2, lx[1]/2)
     ax2.set_ylim(ymin = ranges['bw_fluc'][0]*10**(-1), ymax = ranges['bw_fluc'][1]*10**(-1))
     ax2.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
 
     # tracer  
     for i in range(num_cases):
-        ax3.plot(y, tracer[:, i], color = color_opt[i], linestyle='solid')
+        ax3.plot((y - lx[1]/2), tracer[:, i], color = color_opt[i], linestyle='solid')
     ax3.set_title("Tracer")
-    ax3.set_xlim(0, lx[1])
+    ax3.set_xlim(-lx[1]/2, lx[1]/2)
     ax3.set_ylim(ranges['S'])
     ax3.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
 
     # Perturbed buoyancy 
     for i in range(num_cases):
-        ax4.plot(y, b_center[:, i], color = color_opt[i], linestyle='solid')
+        ax4.plot((y - lx[1]/2), b_center[:, i], color = color_opt[i], linestyle='solid')
     ax4.set_title("Perturbed Buoyancy")
-    ax4.set_xlim(0, lx[1])
+    ax4.set_xlim(-lx[1]/2, lx[1]/2)
     ax4.set_ylim(ranges['b_fluc'])
     ax4.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     # perturbed buoyancy flux 
     for i in range(num_cases):
-        ax5.plot(y, bw_fluc[:, i], color = color_opt[i], linestyle='solid')
+        ax5.plot((y - lx[1]/2), bw_fluc[:, i], color = color_opt[i], linestyle='solid')
     ax5.set_title("Vertical Buoyancy Flux Fluctuations")
-    ax5.set_xlim(0, lx[1])
+    ax5.set_xlim(-lx[1]/2, lx[1]/2)
     ax5.set_ylim(ranges['bw_fluc'])
     ax5.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True) 
 
     # temperature  
     for i in range(num_cases):
-        ax6.plot(y, T[:, i], color = color_opt[i], linestyle='solid')
+        ax6.plot((y - lx[1]/2), T[:, i], color = color_opt[i], linestyle='solid')
     ax6.set_title("Temperature")
-    ax6.set_xlim(0, lx[1])
+    ax6.set_xlim(-lx[1]/2, lx[1]/2)
     ax6.set_ylim(ranges['T'])
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_comparison_turb_stats_{it:04d}.png")
+    frame_path = os.path.join(outdir, f"{name}_hor_centerline_comparisons_{it:04d}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
