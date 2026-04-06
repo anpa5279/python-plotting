@@ -523,7 +523,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
         ax5.set_xlabel(r"y/r$_{j}$")
         ax5.set_ylabel(r"b'w'/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)")
         ax6.set_xlabel(r"y/r$_{j}$")
-        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g r}_{j}}$}$/T$_{0}$")
+        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g r}_{j}}}$/(F$^{\text{C}}\beta$dT/dz r$_j$))")
     else:
         ax1.set_xlabel("x [m]")
         ax1.set_ylabel("[m/s]")

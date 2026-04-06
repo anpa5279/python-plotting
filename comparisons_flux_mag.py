@@ -149,12 +149,15 @@ if ND:
 
     nd_ranges = ranges.copy()
     nd_ranges['vel_rms'] = nd_ranges['vel_rms'] / np.min(vel_scale)
+    nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
     nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(bflux_scale)
     nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
+    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
     nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(F_T_scale)
+    nd_ranges['T'] = nd_ranges['T'] / np.min(T_scale)
 
 start_neutral = np.zeros(num_cases).astype(int)
 for it in nt:

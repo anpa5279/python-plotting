@@ -123,7 +123,7 @@ if plot_1d_y:
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
 
 ############ NONDIMENSIONALIZATION ############
-if ND:  
+if ND:
     name_nd = 'ND_' + name_uni
 
     z_nd = (z - mld) * dTdz / T0
@@ -145,12 +145,15 @@ if ND:
 
     nd_ranges = ranges.copy()
     nd_ranges['vel_rms'] = nd_ranges['vel_rms'] / np.min(vel_scale)
+    nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
     nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(bflux_scale)
     nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
+    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
     nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(F_T_scale)
+    nd_ranges['T'] = nd_ranges['T'] / np.min(T_scale)
 
 
 start_neutral = np.zeros(num_cases).astype(int)
