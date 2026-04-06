@@ -59,7 +59,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
     ax1.set_xlabel("[m/s]")
     ax1.set_ylabel("Depth [m]")
     ax1.set_title('Velocity Profiles')
-    ax1.set_ylim(-lx[2], 0)
+    ax1.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax1.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     ax1.set_xlim(ranges['vel'])
     ax1.legend(loc='lower right', handlelength=0.75)
@@ -76,7 +76,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
             ax2.plot(w_rms[i, :], zf, color = color_opt[i], linestyle=line_opt[i])
     ax2.set_xlabel("[m/s]")
     ax2.set_title("Root Mean Square Velocities")
-    ax2.set_ylim(-lx[2], 0)
+    ax2.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax2.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     ax2.set_xlim(ranges['vel_rms'])
     ax2.legend(loc='lower right', handlelength=0.75)
@@ -93,7 +93,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
             ax3.plot(vw_fluc[i, :], z, color = color_opt[i], linestyle=line_opt[i])
     ax3.set_xlabel(r"[m$^2$/s$^2$]")
     ax3.set_title("Reynolds Stresses")
-    ax3.set_ylim(-lx[2], 0)
+    ax3.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax3.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     ax3.set_xlim(ranges['restress'])
     ax3.legend(loc='lower right', handlelength=0.75)
@@ -104,7 +104,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
     ax4.set_ylabel("Depth [m]")
     ax4.set_title("Density Profiles")
     ax4.set_xlabel(r"[kg/m$^3$]")
-    ax4.set_ylim(-lx[2], 0)
+    ax4.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax4.set_xlim(ranges['rho'])
 
     # perturbed buoyancy flux 
@@ -120,7 +120,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
     ax5.legend(loc='lower right', handlelength=0.75)
     ax5.set_xlabel(r"[m$^{2}$/s$^{3}$]")
     ax5.set_title("Buoyancy Flux Fluctuations")
-    ax5.set_ylim(-lx[2], 0)
+    ax5.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax5.set_xlim(ranges['bw_fluc'])
     ax5.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
 
@@ -129,7 +129,7 @@ def turb_stats_multi(time, it, ranges, color_opt, line_opt, fig_folder, case_nam
         ax6.plot(b_rms[i, :], z, color = color_opt[i], linestyle=line_opt[i])
     ax6.set_xlabel(r"[m/s$^2$]")
     ax6.set_title("Root Mean Square Buoyancy")
-    ax6.set_ylim(-lx[2], 0)
+    ax6.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax6.set_xlim(ranges['b_rms'])
     ax6.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -313,7 +313,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
 ### spatial vertical analysis ###
-def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False, z_nd = r"z/h$_{\text{MLD}}$"):
+def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False):
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 4, figsize=(12, 8))
@@ -349,38 +349,27 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     ax8 = ax[1, 3]
 
     if ND:
-        ax1.set_ylabel(z_nd) #h$_{\mathrm{MLD}_0}$
-        ax1.set_xlabel(r"u$_{i, rms}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
-        #ax2.set_ylabel(z_nd)
-        ax2.set_xlabel(r"$\langle$C$_{\text{rms}}\rangle_{\text{xy}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")
-        #ax3.set_ylabel(z_nd)
-        ax3.set_xlabel(r"b/(h$_{\mathrm{MLD}_0} N^{2}$)")
-        #ax4.set_ylabel(z_nd)
-        ax4.set_xlabel(r"C$'_{\text{centerline}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")
+        z_nd = r"(z - h$_{\mathrm{MLD}_0}$) dT/dz T$_{0}$"
+        ax1.set_ylabel(z_nd) 
+        ax1.set_xlabel(r"u$_{i}$/(F$^{\text{C}} \beta$ dT/dz r$_j$ T$_{0}$)")
+        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}} \sqrt{g r_{j}}$/(F$^{\text{C}}$)")
+        ax3.set_xlabel(r"b/(g dT/dz r$_{j}$/T$_{0}$)")
+        ax4.set_xlabel(r"C'$_{\text{centerline}} \sqrt{g r_{j}}$/(F$^{\text{C}}$)") 
         ax5.set_ylabel(z_nd)
-        ax5.set_xlabel(r"r/r$_{j}$")#(r"r/h$_{\text{MLD}}$") #
-        #ax6.set_ylabel(z_nd)
-        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0}^2 (N^{2})^{3/2}$)")
-        #ax7.set_ylabel(z_nd)
-        ax7.set_xlabel(r"b$_{rms}$/(h$_{\mathrm{MLD}_0} N^{2}$)")
-        #ax8.set_ylabel(z_nd)
-        ax8.set_xlabel(r"T$'_{\text{centerline}}$/T$_{0}$")
+        ax5.set_xlabel(r"r/r$_{j}$")
+        ax6.set_xlabel(r"$\langle$b' u'$_{i}\rangle_{xy}$/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)")
+        ax7.set_xlabel(r"b$_{rms}$/(g dT/dz r$_{j}$/T$_{0}$)")
+        ax8.set_xlabel(r"T'$_{\text{centerline}}\sqrt{\text{g r}_{j}}$/(F$^{\text{C}}\beta$dT/dz r$_j$)")
     else:
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")
-        #ax2.set_ylabel("[m]")
         ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}}$ [g/kg]")
-        #ax3.set_ylabel("[m]")
         ax3.set_xlabel(r"[m/s$^2$]")
-        #ax4.set_ylabel("[m]")
         ax4.set_xlabel(r"C$'_{\text{centerline}}$ [g/kg]")
         ax5.set_ylabel("Depth [m]")
         ax5.set_xlabel("[m]")
-        #ax6.set_ylabel("[m]")
         ax6.set_xlabel(r"[m$^2$/s$^3$]")
-        #ax7.set_ylabel("[m]")
         ax7.set_xlabel(r"[m/s$^2$]")
-        #ax8.set_ylabel("[m]")
         ax8.set_xlabel(r"T$'_{\text{centerline}}$ [$^{\circ}$ C]")
 
     # velocity rms
@@ -394,7 +383,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
             ax1.plot(v_rms[:, i], z[:, i], color = color_opt[i], linestyle='dashed')
             ax1.plot(w_rms[:, i], zf[:, i], color = color_opt[i], linestyle='solid')
     ax1.set_title("Root Mean Square Velocities")
-    ax1.set_ylim(-lx[2], 0)
+    ax1.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax1.set_xlim(ranges['vel_rms'])
     ax1.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     ax1.legend(loc='lower right')
@@ -403,7 +392,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     for i in range(num_cases):
         ax2.plot(tracer_avg[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax2.set_title('Tracer')
-    ax2.set_ylim(-lx[2], 0)
+    ax2.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax2.set_xlim(ranges['S'])
     ax2.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -416,19 +405,16 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
             ax3.plot(b_avg[:, i], z[:, i], color = color_opt[i], linestyle='solid')
             ax3.plot(b_center[:, i], z[:, i], color = color_opt[i], linestyle='dashed')
     ax3.set_title("Buoyancy Profile")
-    ax3.set_ylim(-lx[2], 0)
+    ax3.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax3.set_xlim(ranges['b_avg'])
-    if ND:
-        ax3.legend(loc='lower right')
-    else:
-        ax3.legend(loc='upper left')
+    ax3.legend(loc='upper left')
     ax3.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # temperature fluctuations 
     for i in range(num_cases):
         ax4.plot(tracer_fluc[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax4.set_title("Perturbed Tracer")
-    ax4.set_ylim(-lx[2], 0)
+    ax4.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax4.set_xlim(ranges['S_fluc'])
     ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -436,7 +422,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     for i in range(num_cases):
         ax5.plot(r_profile[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax5.set_title("Plume Radius with Depth")
-    ax5.set_ylim(-lx[2], 0)
+    ax5.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax5.set_xlim(0, lx[0]/4)
 
     # perturbed buoyancy flux 
@@ -451,7 +437,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
             ax6.plot(bw_fluc_avg[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax6.legend(loc='lower right')
     ax6.set_title("Buoyancy Flux Fluctuations")
-    ax6.set_ylim(-lx[2], 0)
+    ax6.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax6.set_xlim(ranges['bw_fluc'])
     ax6.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
 
@@ -459,7 +445,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     for i in range(num_cases):
         ax7.plot(b_rms[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax7.set_title("Root Mean Square Buoyancy")
-    ax7.set_ylim(-lx[2], 0)
+    ax7.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax7.set_xlim(ranges['b_rms'])
     ax7.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -467,11 +453,12 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     for i in range(num_cases):
         ax8.plot(T_fluc[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax8.set_title("Perturbed Temperature")
-    ax8.set_ylim(-lx[2], 0)
+    ax8.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
     ax8.set_xlim(ranges['T_fluc'])
+    ax8.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_comparison_turb_stats_{it:04d}.png")
+    frame_path = os.path.join(outdir, f"{name}_comparison_vert_buoyancy_{it:04d}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
@@ -523,7 +510,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
         ax5.set_xlabel(r"y/r$_{j}$")
         ax5.set_ylabel(r"b'w'/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)")
         ax6.set_xlabel(r"y/r$_{j}$")
-        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g r}_{j}}}$/(F$^{\text{C}}\beta$dT/dz r$_j$))")
+        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g r}_{j}}}$/(F$^{\text{C}}\beta$dT/dz r$_j$)")
     else:
         ax1.set_xlabel("x [m]")
         ax1.set_ylabel("[m/s]")

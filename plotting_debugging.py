@@ -50,3 +50,30 @@ for i, field in enumerate(fields):
     ax[i].set_title(titles[i])
 
 plt.show()
+
+# ND testing
+z_nd = (z)# + (F_s /F_s[0] - 1)*mld) / rj
+testS = S_avg[:, 0]
+testS2 = S_avg[:, 2]
+testT = T_fluc_center[:, 0]
+testT2 = T_fluc_center[:, 2]
+testz = (z[:, 0] - z[182, 0])
+testz2 = (z[:, 2] - z[158, 2])
+plt.rcParams.update({'font.size': 8})
+
+fig, ax = plt.subplots(1,2, figsize=(45, 4))  # taller figure
+ax = ax.ravel()
+
+fields = [testT, testT2]
+zs = [testz, testz2]
+titles = [case_names[0], case_names[2]]
+
+for i, field in enumerate(fields):
+    span = [field.min(), field.max()]
+    field.astype(float)
+    ax[0].plot(field, zs[i], linewidth = 0.5, label = titles[i])
+
+ax[0].set_ylim(ymin = np.min(zs), ymax = np.max(zs))
+ax[0].legend(loc='lower right')
+
+plt.show()

@@ -19,8 +19,8 @@ fig_folder = os.path.join(universal_folder, 'comparison figures', 'Flux comparis
 num_cases = len(case_names)
 
 # flags for what to plot
-plot_1d_z = False
-plot_1d_y = True
+plot_1d_z = True
+plot_1d_y = False
 ND = True
 
 # flags for how to read data
@@ -51,13 +51,15 @@ S_contour = S_value*0.15
 w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
-ranges['S'] = [0, 9*10**(-2)]
+ranges['S'] = [0, 1*10**(-3)]#[0, 9*10**(-2)]
 ranges['vel_rms'] = [0, 4*10**-3]
-ranges['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
+ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)] #[-2*10**(-5), 2*10**(-5)]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
 ranges['w'] = [-0.1, 0.1]
-ranges['T'] = [24.9, 25.02]
+#ranges['T'] = [24.9, 25.02]
+ranges['S_fluc'] = [-5*10**(-2), 5*10**(-2)]
+ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
 color_opt, line_opt = plot_format(num_cases)
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -125,18 +127,20 @@ for i in range(num_cases):
 if plot_1d_y:
     hor_idx = mld_idx
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
-
+if plot_1d_z:
+    name_uni = "centerline or average"
 ############ NONDIMENSIONALIZATION ############
 if ND: 
     name_nd = 'ND_' + name_uni
 
-    z_nd = (z - mld) * dTdz / T0
-    zf_nd = (zf - mld) * dTdz / T0
-    y_nd = y / rj
     N2 = g * dTdz / T0
+
+    z_nd = (z + mld) * dTdz / T0 # (z + (F_s * beta / (np.sqrt(N2))))/rj #
+    zf_nd = (zf + mld) * dTdz / T0 # (zf - F_s * beta / np.sqrt(rj * g))/rj #
+    y_nd = y / rj
     vel_scale = F_s * beta * dTdz / T0 * rj
-    b_scale = F_s * beta * np.sqrt(N2)
-    bflux_scale = F_s * beta * g * np.sqrt(rj * dTdz / T0)
+    b_scale = N2 * rj
+    F_b_scale = F_s * beta * g * np.sqrt(rj * dTdz / T0)
     T_scale = dTdz * F_s * beta * rj / np.sqrt(rj*g)
     S_scale = F_s / np.sqrt(rj*g)
     F_T_scale = beta * F_s * T0
@@ -151,12 +155,12 @@ if ND:
     nd_ranges['vel_rms'] = nd_ranges['vel_rms'] / np.min(vel_scale)
     nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
-    nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(bflux_scale)
+    nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(F_b_scale)
     nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
     nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
-    nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(F_T_scale)
+    nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(T_scale)
     nd_ranges['T'] = nd_ranges['T'] / np.min(T_scale)
 
 start_neutral = np.zeros(num_cases).astype(int)
@@ -279,28 +283,28 @@ for it in nt:
     if ND:
         ############ PLOTTING ############
         if plot_1d_z:
-            bv_fluc_avg = bv_fluc_avg/bflux_scale
-            bu_fluc_avg = bu_fluc_avg/bflux_scale
-            bw_fluc_avg = bw_fluc_avg/bflux_scale
+            bv_fluc_avg = bv_fluc_avg/F_b_scale
+            bu_fluc_avg = bu_fluc_avg/F_b_scale
+            bw_fluc_avg = bw_fluc_avg/F_b_scale
             S_avg = S_avg/S_scale
             b_avg = b_avg/b_scale
             b_rms = b_rms/b_scale
             b_center = b_center/b_scale
-            T_fluc_center = T_fluc_center / F_T_scale
-            S_fluc_center = S_fluc_center / F_s
+            T_fluc_center = T_fluc_center / T_scale
+            S_fluc_center = S_fluc_center / S_scale
             r_profile = r_profile / rj
             u_rms = u_rms/vel_scale
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
-            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, r"(z-\text{h}_{mld})/\text{h}_{mld}")
+            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND)
         if plot_1d_y:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
             w_hor = w_hor/vel_scale
             b_fluc_hor = b_fluc_hor/b_scale
-            bu_fluc_hor = bu_fluc_hor/bflux_scale
-            bv_fluc_hor = bv_fluc_hor/bflux_scale
-            bw_fluc_hor = bw_fluc_hor/bflux_scale
+            bu_fluc_hor = bu_fluc_hor/F_b_scale
+            bv_fluc_hor = bv_fluc_hor/F_b_scale
+            bw_fluc_hor = bw_fluc_hor/F_b_scale
             T_hor = T_hor / T_scale
             S_hor = S_hor / S_scale
             buoyancy_dir_y_nd = plume_horizontal_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, y_nd, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor, ND)
@@ -311,13 +315,13 @@ for it in nt:
             buoyancy_dir_y = plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
 print("All frames created.")
 # creating videos
-if video:
+if video and not ND:
     if plot_1d_z:
         create_video(buoyancy_dir_z, fig_folder, name_uni, 'buoyancy_analysis')
     if plot_1d_y:
         create_video(buoyancy_dir_y, fig_folder, name_uni, 'buoyancy_analysis')
-if video and ND:
+elif video and ND:
     if plot_1d_z:
-        create_video(buoyancy_dir_z_nd, fig_folder, name_uni, 'buoyancy_analysis')
+        create_video(buoyancy_dir_z_nd, fig_folder, name_nd, 'buoyancy_analysis')
     if plot_1d_y:
         create_video(buoyancy_dir_y_nd, fig_folder, name_nd, 'buoyancy_analysis')

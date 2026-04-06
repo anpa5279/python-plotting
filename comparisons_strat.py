@@ -134,7 +134,7 @@ if ND:
     N2 = g * dTdz / T0
     vel_scale = F_s * beta * dTdz / T0 * rj
     b_scale = F_s * beta * np.sqrt(N2)
-    bflux_scale = F_s * beta * g * np.sqrt(rj * dTdz / T0)
+    F_b_scale = F_s * beta * g * np.sqrt(rj * dTdz / T0)
     T_scale = dTdz * F_s * beta * rj / np.sqrt(rj*g)
     S_scale = F_s / np.sqrt(rj*g)
     F_T_scale = beta * F_s * T0
@@ -149,7 +149,7 @@ if ND:
     nd_ranges['vel_rms'] = nd_ranges['vel_rms'] / np.min(vel_scale)
     nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
-    nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(bflux_scale)
+    nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(F_b_scale)
     nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
     nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
@@ -277,9 +277,9 @@ for it in nt:
     if ND:
         ############ PLOTTING ############
         if plot_1d_z:
-            bv_fluc_avg = bv_fluc_avg/bflux_scale
-            bu_fluc_avg = bu_fluc_avg/bflux_scale
-            bw_fluc_avg = bw_fluc_avg/bflux_scale
+            bv_fluc_avg = bv_fluc_avg/F_b_scale
+            bu_fluc_avg = bu_fluc_avg/F_b_scale
+            bw_fluc_avg = bw_fluc_avg/F_b_scale
             S_avg = S_avg/S_scale
             b_avg = b_avg/b_scale
             b_rms = b_rms/b_scale
@@ -296,9 +296,9 @@ for it in nt:
             v_hor = v_hor/vel_scale
             w_hor = w_hor/vel_scale
             b_fluc_hor = b_fluc_hor/b_scale
-            bu_fluc_hor = bu_fluc_hor/bflux_scale
-            bv_fluc_hor = bv_fluc_hor/bflux_scale
-            bw_fluc_hor = bw_fluc_hor/bflux_scale
+            bu_fluc_hor = bu_fluc_hor/F_b_scale
+            bv_fluc_hor = bv_fluc_hor/F_b_scale
+            bw_fluc_hor = bw_fluc_hor/F_b_scale
             T_hor = T_hor / T_scale
             S_hor = S_hor / S_scale
             buoyancy_dir_y_nd = plume_horizontal_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, y_nd, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor, ND)
