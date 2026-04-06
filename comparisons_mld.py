@@ -123,32 +123,34 @@ if plot_1d_y:
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
 
 ############ NONDIMENSIONALIZATION ############
-if ND: 
+if ND:  
     name_nd = 'ND_' + name_uni
 
-    z_nd = (z - mld) * dTdz * F_s / 1000.0 / (T0 * np.sqrt(rj*g))
-    zf_nd = (zf - mld) * dTdz * F_s / 1000.0 / (T0 * np.sqrt(rj*g))
+    z_nd = (z - mld) * dTdz / T0
+    zf_nd = (zf - mld) * dTdz / T0
     y_nd = y / rj
-    vel_scale = F_s / 1000.0
-    b_scale = F_s / 1000.0 * np.sqrt(rj*g) * dTdz / T0
-    bflux_scale = vel_scale * b_scale
-    T_scale = dTdz * F_s / 1000.0 * rj / np.sqrt(rj*g)
+    N2 = g * dTdz / T0
+    vel_scale = F_s * beta * dTdz / T0 * rj
+    b_scale = F_s * beta * np.sqrt(N2)
+    bflux_scale = F_s * beta * g * np.sqrt(rj * dTdz / T0)
+    T_scale = dTdz * F_s * beta * rj / np.sqrt(rj*g)
     S_scale = F_s / np.sqrt(rj*g)
-    F_T_scale = vel_scale * T_scale
-    lx_nd= (np.array(lx) - mld)/ rj
+    F_T_scale = beta * F_s * T0
+    F_S_scale = F_s * np.sqrt(rj * dTdz / T0)
+    y_nd = y / rj
+    lx_nd = np.zeros(3)
+    lx_nd[0:2]= np.array(lx[0:2])/ rj
+    lx_nd[-1] = np.max((lx[-1] - mld) * dTdz / T0)
+
 
     nd_ranges = ranges.copy()
     nd_ranges['vel_rms'] = nd_ranges['vel_rms'] / np.min(vel_scale)
-    nd_ranges['vel'] = nd_ranges['vel'] / np.min(vel_scale)
-    nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
     nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(bflux_scale)
     nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
-    nd_ranges['T_fluc'] = nd_ranges['T_fluc'] /  np.min(F_T_scale)
-    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
-    nd_ranges['T'] = nd_ranges['T'] / np.min(T_scale)
+    nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(F_T_scale)
 
 
 start_neutral = np.zeros(num_cases).astype(int)

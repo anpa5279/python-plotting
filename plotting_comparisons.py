@@ -504,26 +504,26 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     td = time[it] / 3600 / 24
     fig.suptitle(f'{td:.2f} days', fontsize=12)
 
-    ax1 = ax[0, 0] # u, v, w thourgh centerline
-    ax2 = ax[0, 1] # vertical velocity flux through centerline
-    ax3 = ax[0, 2] # tracer through centerline
-    ax4 = ax[1, 0] # perturbed buoyancy through centerline 
-    ax5 = ax[1, 1] # buoyancy flux through centerline
-    ax6 = ax[1, 2] # temperature through centerline
+    ax1 = ax[0, 0] # u, v, w through horizontal centerline
+    ax2 = ax[0, 1] # horizontal buoyancy flux through horizontal centerline
+    ax3 = ax[0, 2] # tracer through horizontal centerline
+    ax4 = ax[1, 0] # perturbed buoyancy through horizontal centerline
+    ax5 = ax[1, 1] # vertical buoyancy flux through horizontal centerline
+    ax6 = ax[1, 2] # temperature through horizontal centerline
 
     if ND:
         ax1.set_xlabel(r"y/r$_{j}$") 
-        ax1.set_ylabel(r"u$_{i}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
+        ax1.set_ylabel(r"u$_{i}$/(F$^{\text{C}} \beta$ dT/dz r$_j$ T$_{0}$)") 
         ax2.set_xlabel(r"y/r$_{j}$")
-        ax2.set_ylabel(r"(u$_{i} \cdot$ w)/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)") 
+        ax2.set_ylabel(r"(b' u'$_{i}$)/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)") 
         ax3.set_xlabel(r"y/r$_{j}$")
-        ax3.set_ylabel(r"C$_{\text{centerline}}(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") 
+        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{g r_{j}}$/(F$^{\text{C}}$)") 
         ax4.set_xlabel(r"y/r$_{j}$")
-        ax4.set_ylabel(r"b$'$/(h$_{\mathrm{MLD}_0} N^{2}$)")
+        ax4.set_ylabel(r"b'/(F$^{\text{C}} \beta \sqrt{\text{g dT/dz r}_j/\text{T}_{0}}$)")
         ax5.set_xlabel(r"y/r$_{j}$")
-        ax5.set_ylabel(r"b'w'/(h$_{\mathrm{MLD}_0}^2 (N^{2})^{3/2}$)")
+        ax5.set_ylabel(r"b'w'/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)")
         ax6.set_xlabel(r"y/r$_{j}$")
-        ax6.set_ylabel(r"T$_{\text{centerline}}$/T$_{0}$")
+        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g r}_{j}}$}$/T$_{0}$")
     else:
         ax1.set_xlabel("x [m]")
         ax1.set_ylabel("[m/s]")
@@ -554,7 +554,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     ax1.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     ax1.legend(loc='lower right')
 
-    # velocity vertical flux through centerline
+    # velocity vertical flux 
     for i in range(num_cases):
         if i == 0:
             ax2.plot((y - lx[1]/2), bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
