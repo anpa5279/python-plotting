@@ -18,9 +18,9 @@ fig_folder = os.path.join(universal_folder, 'comparison figures', 'MLD compariso
 num_cases = len(case_names)
 
 # flags for what to plot
-plot_1d_z = False
-plot_1d_y = True
-ND = False
+plot_1d_z = True
+plot_1d_y = False
+ND = True
 
 # flags for how to read data
 with_halos = False
@@ -123,14 +123,14 @@ for i in range(num_cases):
 
 if plot_1d_y:
     ranges_hor = ranges.copy()
-    ranges['S'] = [0, 9*10**(-2)]
-    ranges['vel_rms'] = [0, 4*10**-3]
-    ranges['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
-    ranges['b_flux'] = [-1*10**(-5), 1*10**(-5)]
-    ranges['b_rms'] = [0, 1.5*10**(-5)]
-    ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
-    ranges['w'] = [-0.1, 0.1]
-    ranges['T'] = [24.9, 25.02]
+    ranges_hor['S'] = [0, 9*10**(-2)]
+    ranges_hor['vel_rms'] = [0, 4*10**-3]
+    ranges_hor['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
+    ranges_hor['b_flux'] = [-1*10**(-5), 1*10**(-5)]
+    ranges_hor['b_rms'] = [0, 1.5*10**(-5)]
+    ranges_hor['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
+    ranges_hor['w'] = [-0.1, 0.1]
+    ranges_hor['T'] = [24.9, 25.02]
     hor_idx = np.array(mld_idx) - 20
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
 
@@ -149,7 +149,7 @@ if ND:
     zf_nd = (zf+mld)*mld**(1/3)/(Ln**(4/3))#
     y_nd = y / rj
     vel_scale = F_s * beta
-    b_scale = N2 * rj
+    b_scale = F_s * beta * np.sqrt(rj * g) / rj
     b_perturbed_scale = F_s * beta * np.sqrt(rj * g) / rj
     F_b_scale = F_s * beta * g
     T_scale = T0 * F_s * beta / np.sqrt(rj*g)
