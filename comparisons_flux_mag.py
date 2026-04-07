@@ -143,7 +143,7 @@ if plot_1d_z:
 if ND: 
     name_nd = 'ND_' + name_uni
 
-    N2 = g * dTdz / (T0 + 273.15)
+    N2 = g * alpha * dTdz #g * dTdz / (T0 + 273.15)
     area = (2*rj)**2
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)

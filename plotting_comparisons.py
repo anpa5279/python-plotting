@@ -358,7 +358,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
         ax5.set_xlabel(r"r $\sqrt{\text{g r}_{j}}$/(F$^{\text{C}} \beta$r$_{j}$)")
         ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{xy}$/(F$^{\text{C}} \beta$ g)")
         ax7.set_xlabel(r"b$_{rms}$r$_j$/(F$^{\text{C}}\beta\sqrt{\text{g r}_{j}}$)")
-        ax8.set_xlabel(r"T'$_{\text{centerline}}\sqrt{\text{g r}_{j}}$/(F$^{\text{C}}\beta$T$_{0}$)")
+        ax8.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\sqrt{\text{g r}_{j}}$/(F$^{\text{C}}\beta$)")
     else:
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")
