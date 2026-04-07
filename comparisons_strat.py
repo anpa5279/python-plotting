@@ -162,7 +162,7 @@ if ND:
 
     y_nd = y / rj
     lx_nd = np.zeros(3)
-    lx_nd[0:2]= np.array(lx[0:2])/ hor_scale
+    lx_nd[0:2]= np.array(lx[0:2])/ np.min(hor_scale)
     lx_nd[-1] = np.max((lx[-1] - mld) * dTdz * alpha)
 
 
