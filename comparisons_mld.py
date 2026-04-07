@@ -130,9 +130,11 @@ if ND:
     name_nd = 'ND_' + name_uni
 
     N2 = g * dTdz / T0
-
-    z_nd = (z + mld) * dTdz / T0 # (z + (F_s * beta / (np.sqrt(N2))))/rj #
-    zf_nd = (zf + mld) * dTdz / T0 # (zf - F_s * beta / np.sqrt(rj * g))/rj #
+    area = (2*rj)**2
+    F0 = area * beta * F_s
+    Ln =(F0/N2**(3/2))**(1/4)
+    z_nd = (z+mld)*mld**(1/3)/(Ln**(4/3))
+    zf_nd = (zf+mld)*mld**(1/3)/(Ln**(4/3))#
     y_nd = y / rj
     vel_scale = F_s * beta
     b_scale = N2 * rj
@@ -322,7 +324,7 @@ for it in nt:
             u_rms = u_rms/vel_scale
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
-            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND)
+            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
         if plot_1d_y:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
