@@ -13,7 +13,7 @@ universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-B
 folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 case_names = [r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 
-name_uni = ""
+name_uni = "updated_analysis"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'Flux comparison figures')
 
 num_cases = len(case_names)
@@ -138,10 +138,11 @@ if ND:
     z_nd = (z + mld) * dTdz / T0 # (z + (F_s * beta / (np.sqrt(N2))))/rj #
     zf_nd = (zf + mld) * dTdz / T0 # (zf - F_s * beta / np.sqrt(rj * g))/rj #
     y_nd = y / rj
-    vel_scale = F_s * beta * dTdz / T0 * rj
+    vel_scale = F_s * beta
     b_scale = N2 * rj
-    F_b_scale = F_s * beta * g * np.sqrt(rj * dTdz / T0)
-    T_scale = dTdz * F_s * beta * rj / np.sqrt(rj*g)
+    b_perturbed_scale = F_s * beta * np.sqrt(rj * g) / rj
+    F_b_scale = F_s * beta * g
+    T_scale = T0 * F_s * beta / np.sqrt(rj*g)
     S_scale = F_s / np.sqrt(rj*g)
     F_T_scale = beta * F_s * T0
     F_S_scale = F_s * np.sqrt(rj * dTdz / T0)
@@ -156,8 +157,8 @@ if ND:
     nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
     nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(F_b_scale)
-    nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
-    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
+    nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_perturbed_scale)
+    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_perturbed_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
     nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(T_scale)
@@ -288,7 +289,7 @@ for it in nt:
             bw_fluc_avg = bw_fluc_avg/F_b_scale
             S_avg = S_avg/S_scale
             b_avg = b_avg/b_scale
-            b_rms = b_rms/b_scale
+            b_rms = b_rms/b_perturbed_scale
             b_center = b_center/b_scale
             T_fluc_center = T_fluc_center / T_scale
             S_fluc_center = S_fluc_center / S_scale
@@ -301,7 +302,7 @@ for it in nt:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
             w_hor = w_hor/vel_scale
-            b_fluc_hor = b_fluc_hor/b_scale
+            b_fluc_hor = b_fluc_hor/b_perturbed_scale
             bu_fluc_hor = bu_fluc_hor/F_b_scale
             bv_fluc_hor = bv_fluc_hor/F_b_scale
             bw_fluc_hor = bw_fluc_hor/F_b_scale

@@ -313,7 +313,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
 ### spatial vertical analysis ###
-def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False):
+def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/r$_{j}$"):
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 4, figsize=(12, 8))
@@ -349,17 +349,16 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     ax8 = ax[1, 3]
 
     if ND:
-        z_nd = r"(z - h$_{\mathrm{MLD}_0}$) dT/dz T$_{0}$"
         ax1.set_ylabel(z_nd) 
-        ax1.set_xlabel(r"u$_{i}$/(F$^{\text{C}} \beta$ dT/dz r$_j$ T$_{0}$)")
-        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}} \sqrt{g r_{j}}$/(F$^{\text{C}}$)")
+        ax1.set_xlabel(r"u$_{i}$/(F$^{\text{C}} \beta$)")
+        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}} \sqrt{\text{g r}_{j}}$/(F$^{\text{C}}$)")
         ax3.set_xlabel(r"b/(g dT/dz r$_{j}$/T$_{0}$)")
-        ax4.set_xlabel(r"C'$_{\text{centerline}} \sqrt{g r_{j}}$/(F$^{\text{C}}$)") 
+        ax4.set_xlabel(r"C'$_{\text{centerline}} \sqrt{\text{g r}_{j}}$/(F$^{\text{C}}$)") 
         ax5.set_ylabel(z_nd)
-        ax5.set_xlabel(r"r/r$_{j}$")
-        ax6.set_xlabel(r"$\langle$b' u'$_{i}\rangle_{xy}$/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)")
-        ax7.set_xlabel(r"b$_{rms}$/(g dT/dz r$_{j}$/T$_{0}$)")
-        ax8.set_xlabel(r"T'$_{\text{centerline}}\sqrt{\text{g r}_{j}}$/(F$^{\text{C}}\beta$dT/dz r$_j$)")
+        ax5.set_xlabel(r"r $\sqrt{\text{g r}_{j}}$/(F$^{\text{C}} \beta$r$_{j}$)")
+        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{xy}$/(F$^{\text{C}} \beta$ g)")
+        ax7.set_xlabel(r"b$_{rms}$r$_j$(F$^{\text{C}}\beta\sqrt{\text{g r}_{j}}$)")
+        ax8.set_xlabel(r"T'$_{\text{centerline}}\sqrt{\text{g r}_{j}}$/(F$^{\text{C}}\beta$T$_{0}$)")
     else:
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")
@@ -504,7 +503,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
         ax2.set_xlabel(r"y/r$_{j}$")
         ax2.set_ylabel(r"(b' u'$_{i}$)/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)") 
         ax3.set_xlabel(r"y/r$_{j}$")
-        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{g r_{j}}$/(F$^{\text{C}}$)") 
+        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{\text{g r}_{j}}$/(F$^{\text{C}}$)") 
         ax4.set_xlabel(r"y/r$_{j}$")
         ax4.set_ylabel(r"b'/(F$^{\text{C}} \beta \sqrt{\text{g dT/dz r}_j/\text{T}_{0}}$)")
         ax5.set_xlabel(r"y/r$_{j}$")
