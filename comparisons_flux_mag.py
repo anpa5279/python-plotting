@@ -22,6 +22,7 @@ num_cases = len(case_names)
 plot_1d_z = False
 plot_1d_y = True
 ND = False
+transient_mld = True
 
 # flags for how to read data
 with_halos = False
@@ -49,6 +50,7 @@ F_s = np.dot(Sj, wp)
 S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
 S_contour = S_value*0.15 
 w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
+
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
 ranges['S'] = [0, 1*10**(-3)]#[0, 9*10**(-2)]
@@ -60,6 +62,7 @@ ranges['w'] = [-0.1, 0.1]
 #ranges['T'] = [24.9, 25.02]
 ranges['S_fluc'] = [-5*10**(-2), 5*10**(-2)]
 ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
+
 color_opt, line_opt = plot_format(num_cases)
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -131,14 +134,15 @@ if plot_1d_y:
     ranges_hor['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
     ranges_hor['b_flux'] = [-1*10**(-5), 1*10**(-5)]
     ranges_hor['b_rms'] = [0, 1.5*10**(-5)]
-    ranges_hor['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
+    ranges_hor['b_fluc'] = [-5*10**(-4), 5*10**(-4)]
     ranges_hor['w'] = [-0.1, 0.1]
-    ranges_hor['T'] = [24.9, 25.02]
+    ranges_hor['T'] = [23.5, 25.5]
     hor_idx = np.array(mld_idx)
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
 
 if plot_1d_z:
-    name_uni = "centerline or average"
+    name_uni +="_centerline or average"
+
 ############ NONDIMENSIONALIZATION ############
 if ND: 
     name_nd = 'ND_' + name_uni
@@ -148,7 +152,7 @@ if ND:
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
     z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
-    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))#
+    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
     y_nd = y / rj
     vel_scale = F_s * beta
     b_scale = F_s * beta * np.sqrt(rj * g) / rj
@@ -184,7 +188,6 @@ for it in nt:
     wc_avg = np.zeros((nx[2], num_cases))
     T_avg = np.zeros((nx[2], num_cases))
     b_avg = np.zeros((nx[2], num_cases))
-    rho_avg = np.zeros((nx[2], num_cases))
     b_rms = np.zeros((nx[2], num_cases))
     u_fluc_avg = np.zeros((nx[2], num_cases))
     v_fluc_avg = np.zeros((nx[2], num_cases))
@@ -241,7 +244,6 @@ for it in nt:
         w_avg[:, i] = np.mean(w, axis=(-3, -2))
         wc_avg[:, i] = np.mean(wc, axis=(-3, -2))
         b_avg[:, i] = np.mean(b, axis=(-3, -2))
-        rho_avg[:, i] = np.mean(rho_total, axis=(-3, -2))
         S_avg[:, i] = np.mean(S, axis=(-3, -2))
         T_avg[:, i] = np.mean(T, axis=(-3, -2))
 
@@ -267,13 +269,11 @@ for it in nt:
         bu_fluc, bu_fluc_avg[:, i] = ab_fluc_mean(b, u, b_avg[:, i], u_avg[:, i])
         bv_fluc, bv_fluc_avg[:, i] = ab_fluc_mean(b, v, b_avg[:, i], v_avg[:, i])
         bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, wc, b_avg[:, i], wc_avg[:, i])
-        if plot_1d_z:
-            # rms fluctuations
-            u_rms[:, i] = u2_fluc_avg**0.5
-            v_rms[:, i] = v2_fluc_avg**0.5
-            w_rms[:, i] = w2_fluc_avg**0.5
-            b_rms[:, i] = b2_fluc_avg**0.5
-        
+
+        if transient_mld:
+            dbdz = np.gradient(b_avg[:, i], z[:, i])
+            mld_idx[i] = np.min(np.where(dbdz <= 0.01*N2[i]))
+            mld[i] = -z[mld_idx[i], i]
         # collecting data for plotting
         if plot_1d_z and salinity:
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
@@ -282,6 +282,11 @@ for it in nt:
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
             S_fluc_center[:, i] = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
+            # rms fluctuations
+            u_rms[:, i] = u2_fluc_avg**0.5
+            v_rms[:, i] = v2_fluc_avg**0.5
+            w_rms[:, i] = w2_fluc_avg**0.5
+            b_rms[:, i] = b2_fluc_avg**0.5
         if plot_1d_y:
             u_hor[:, i] = u[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
             v_hor[:, i] = v[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
@@ -294,8 +299,13 @@ for it in nt:
             S_hor[:, i] = S[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
     ############ NONDIMENSIONALIZATION ############
     if ND:
+        if transient_mld:
+            Ln =(F0/N2**(3/2))**(1/4)
+            z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
+            zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
+            lx_nd[-1] = np.max((lx[-1] - mld) * dTdz * alpha)
         ############ PLOTTING ############
-        if plot_1d_z:
+        if plot_1d_z and salinity:
             bv_fluc_avg = bv_fluc_avg/F_b_scale
             bu_fluc_avg = bu_fluc_avg/F_b_scale
             bw_fluc_avg = bw_fluc_avg/F_b_scale
@@ -310,7 +320,7 @@ for it in nt:
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
             buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
-        if plot_1d_y:
+        if plot_1d_y and salinity:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
             w_hor = w_hor/vel_scale
@@ -326,15 +336,16 @@ for it in nt:
             buoyancy_dir_z = plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
         if plot_1d_y:
             buoyancy_dir_y = plume_horizontal_spatial_plot(time, it, ranges_hor, color_opt, fig_folder, case_names, name_uni, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
+
 print("All frames created.")
 # creating videos
-if video and not ND:
-    if plot_1d_z:
-        create_video(buoyancy_dir_z, fig_folder, name_uni, 'buoyancy_analysis')
-    if plot_1d_y:
-        create_video(buoyancy_dir_y, fig_folder, name_uni, 'buoyancy_analysis')
-elif video and ND:
+if video and ND:
     if plot_1d_z:
         create_video(buoyancy_dir_z_nd, fig_folder, name_nd, 'buoyancy_analysis')
     if plot_1d_y:
         create_video(buoyancy_dir_y_nd, fig_folder, name_nd, 'buoyancy_analysis')
+elif video:
+    if plot_1d_z:
+        create_video(buoyancy_dir_z, fig_folder, name_uni, 'buoyancy_analysis')
+    if plot_1d_y:
+        create_video(buoyancy_dir_y, fig_folder, name_uni, 'buoyancy_analysis')

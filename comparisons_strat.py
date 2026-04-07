@@ -13,7 +13,7 @@ universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-B
 folder_names =['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 case_names =[r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
 
-name_uni = ""
+name_uni = "transient mld"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'strat comparison figures')
 
 num_cases = len(case_names)
@@ -23,6 +23,7 @@ num_cases = len(case_names)
 plot_1d_z = True
 plot_1d_y = False
 ND = True
+transient_mld = True
 
 # flags for how to read data
 with_halos = False
@@ -137,7 +138,7 @@ if plot_1d_y:
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
 
 if plot_1d_z:
-    name_uni = "centerline or average"
+    name_uni +="_centerline or average"
 
 ############ NONDIMENSIONALIZATION ############
 if ND: 
@@ -148,7 +149,7 @@ if ND:
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
     z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
-    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))#
+    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
     y_nd = y / rj
     vel_scale = F_s * beta
     b_scale = F_s * beta * np.sqrt(rj * g) / rj
@@ -184,7 +185,6 @@ for it in nt:
     wc_avg = np.zeros((nx[2], num_cases))
     T_avg = np.zeros((nx[2], num_cases))
     b_avg = np.zeros((nx[2], num_cases))
-    rho_avg = np.zeros((nx[2], num_cases))
     b_rms = np.zeros((nx[2], num_cases))
     u_fluc_avg = np.zeros((nx[2], num_cases))
     v_fluc_avg = np.zeros((nx[2], num_cases))
@@ -241,7 +241,6 @@ for it in nt:
         w_avg[:, i] = np.mean(w, axis=(-3, -2))
         wc_avg[:, i] = np.mean(wc, axis=(-3, -2))
         b_avg[:, i] = np.mean(b, axis=(-3, -2))
-        rho_avg[:, i] = np.mean(rho_total, axis=(-3, -2))
         S_avg[:, i] = np.mean(S, axis=(-3, -2))
         T_avg[:, i] = np.mean(T, axis=(-3, -2))
 
@@ -267,13 +266,11 @@ for it in nt:
         bu_fluc, bu_fluc_avg[:, i] = ab_fluc_mean(b, u, b_avg[:, i], u_avg[:, i])
         bv_fluc, bv_fluc_avg[:, i] = ab_fluc_mean(b, v, b_avg[:, i], v_avg[:, i])
         bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, wc, b_avg[:, i], wc_avg[:, i])
-        if plot_1d_z:
-            # rms fluctuations
-            u_rms[:, i] = u2_fluc_avg**0.5
-            v_rms[:, i] = v2_fluc_avg**0.5
-            w_rms[:, i] = w2_fluc_avg**0.5
-            b_rms[:, i] = b2_fluc_avg**0.5
-        
+
+        if transient_mld:
+            dbdz = np.gradient(b_avg[:, i], z[:, i])
+            mld_idx[i] = np.min(np.where(dbdz <= 0.01*N2[i]))
+            mld[i] = -z[mld_idx[i], i]
         # collecting data for plotting
         if plot_1d_z and salinity:
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
@@ -282,6 +279,11 @@ for it in nt:
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
             S_fluc_center[:, i] = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
+            # rms fluctuations
+            u_rms[:, i] = u2_fluc_avg**0.5
+            v_rms[:, i] = v2_fluc_avg**0.5
+            w_rms[:, i] = w2_fluc_avg**0.5
+            b_rms[:, i] = b2_fluc_avg**0.5
         if plot_1d_y:
             u_hor[:, i] = u[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
             v_hor[:, i] = v[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
@@ -294,36 +296,13 @@ for it in nt:
             S_hor[:, i] = S[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
     ############ NONDIMENSIONALIZATION ############
     if ND:
+        if transient_mld:
+            Ln =(F0/N2**(3/2))**(1/4)
+            z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
+            zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
+            lx_nd[-1] = np.max((lx[-1] - mld) * dTdz * alpha)
         ############ PLOTTING ############
-        if plot_1d_z:
-            # rms fluctuations
-            u_rms[:, i] = u2_fluc_avg**0.5
-            v_rms[:, i] = v2_fluc_avg**0.5
-            w_rms[:, i] = w2_fluc_avg**0.5
-            b_rms[:, i] = b2_fluc_avg**0.5
-        
-        # collecting data for plotting
         if plot_1d_z and salinity:
-            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-            rp_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour[i]) # plume analysis
-            r_profile[:, i] = rp_profile
-            b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
-            T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-            S_fluc_center[:, i] = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-        if plot_1d_y:
-            u_hor[:, i] = u[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            v_hor[:, i] = v[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            w_hor[:, i] = w[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            b_fluc_hor[:, i] = b_fluc[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            bu_fluc_hor[:, i] = bu_fluc[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            bv_fluc_hor[:, i] = bv_fluc[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            bw_fluc_hor[:, i] = bw_fluc[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            T_hor[:, i] = T[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-            S_hor[:, i] = S[centerline_index[0, hor_idx[i]], :, hor_idx[i]]
-    ############ NONDIMENSIONALIZATION ############
-    if ND:
-        ############ PLOTTING ############
-        if plot_1d_z:
             bv_fluc_avg = bv_fluc_avg/F_b_scale
             bu_fluc_avg = bu_fluc_avg/F_b_scale
             bw_fluc_avg = bw_fluc_avg/F_b_scale
@@ -338,7 +317,7 @@ for it in nt:
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
             buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
-        if plot_1d_y:
+        if plot_1d_y and salinity:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
             w_hor = w_hor/vel_scale
