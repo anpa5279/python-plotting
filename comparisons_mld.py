@@ -131,7 +131,7 @@ if ND:
 
     N2 = g * dTdz / T0
     area = (2*rj)**2
-    F0 = area * beta * F_s
+    F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
     z_nd = (z+mld)*mld**(1/3)/(Ln**(4/3))
     zf_nd = (zf+mld)*mld**(1/3)/(Ln**(4/3))#
