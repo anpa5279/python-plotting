@@ -47,13 +47,12 @@ w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.044
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
-ranges['S'] = [0, 1*10**(-3)]#[0, 9*10**(-2)]
+ranges['S'] = [0, 1*10**(-3)]
 ranges['vel_rms'] = [0, 4*10**-3]
-ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)] #[-2*10**(-5), 2*10**(-5)]
+ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
 ranges['w'] = [-0.1, 0.1]
-#ranges['T'] = [24.9, 25.02]
 ranges['S_fluc'] = [-5*10**(-2), 5*10**(-2)]
 ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
 
