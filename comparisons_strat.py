@@ -58,6 +58,7 @@ ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
 ranges['w'] = [-0.1, 0.1]
 ranges['S_fluc'] = [-5*10**(-2), 5*10**(-2)]
 ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
+ranges['b_avg'] = [-1.5*10**(-2), 1.0*10**(-5)]
 
 color_opt, line_opt = plot_format(num_cases)
 # font for plotting 
