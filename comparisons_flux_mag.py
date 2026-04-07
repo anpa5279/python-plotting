@@ -55,7 +55,7 @@ w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.0447
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
 ranges['S'] = [0, 1*10**(-3)]
 ranges['vel_rms'] = [0, 4*10**-3]
-ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)] 
+ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
 ranges['w'] = [-0.1, 0.1]
@@ -147,23 +147,25 @@ if ND:
     name_nd = 'ND_' + name_uni
 
     N2 = g * alpha * dTdz #g * dTdz / (T0 + 273.15)
+    Fr_flux = F_s * beta / np.sqrt(rj * g)
+    vel_scale = Fr_flux * np.sqrt(rj * g)
+    b_scale = Fr_flux * g
+    F_b_scale = Fr_flux * g**(3/2) * rj**(1/2)
+    T_scale = 1/alpha * Fr_flux
+    S_scale = Fr_flux / beta
+    F_T_scale = beta * F_s / alpha
+    F_S_scale = F_s * np.sqrt(rj * dTdz * alpha)
+    hor_scale = rj * Fr_flux
+
     area = (2*rj)**2
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
     z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
     zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
-    y_nd = y / rj
-    vel_scale = F_s * beta
-    b_scale = F_s * beta * np.sqrt(rj * g) / rj
-    b_perturbed_scale = F_s * beta * np.sqrt(rj * g) / rj
-    F_b_scale = F_s * beta * g
-    T_scale = 1/alpha * F_s * beta / np.sqrt(rj*g)
-    S_scale = F_s / np.sqrt(rj*g)
-    F_T_scale = beta * F_s * 1/alpha
-    F_S_scale = F_s * np.sqrt(rj * dTdz * alpha)
+
     y_nd = y / rj
     lx_nd = np.zeros(3)
-    lx_nd[0:2]= np.array(lx[0:2])/ rj
+    lx_nd[0:2]= np.array(lx[0:2])/ hor_scale
     lx_nd[-1] = np.max((lx[-1] - mld) * dTdz * alpha)
 
 
@@ -172,8 +174,8 @@ if ND:
     nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
     nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
     nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(F_b_scale)
-    nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_perturbed_scale)
-    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_perturbed_scale)
+    nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
+    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
     nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
     nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(T_scale)
@@ -310,11 +312,11 @@ for it in nt:
             bw_fluc_avg = bw_fluc_avg/F_b_scale
             S_avg = S_avg/S_scale
             b_avg = b_avg/b_scale
-            b_rms = b_rms/b_perturbed_scale
+            b_rms = b_rms/b_scale
             b_center = b_center/b_scale
             T_fluc_center = T_fluc_center / T_scale
             S_fluc_center = S_fluc_center / S_scale
-            r_profile = r_profile / rj
+            r_profile = r_profile / hor_scale
             u_rms = u_rms/vel_scale
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
@@ -323,7 +325,7 @@ for it in nt:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
             w_hor = w_hor/vel_scale
-            b_fluc_hor = b_fluc_hor/b_perturbed_scale
+            b_fluc_hor = b_fluc_hor/b_scale
             bu_fluc_hor = bu_fluc_hor/F_b_scale
             bv_fluc_hor = bv_fluc_hor/F_b_scale
             bw_fluc_hor = bw_fluc_hor/F_b_scale

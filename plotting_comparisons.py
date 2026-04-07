@@ -350,15 +350,15 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
 
     if ND:
         ax1.set_ylabel(z_nd) 
-        ax1.set_xlabel(r"u$_{i}$/(F$^{\text{C}} \beta$)")
-        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}} \sqrt{\text{g r}_{j}}$/(F$^{\text{C}}$)")
-        ax3.set_xlabel(r"br$_j$/(F$^{\text{C}}\beta\sqrt{\text{g r}_{j}}$)")
-        ax4.set_xlabel(r"C'$_{\text{centerline}} \sqrt{\text{g r}_{j}}$/(F$^{\text{C}}$)") 
+        ax1.set_xlabel(r"u$_{i}$/(Fr$_{flux}\sqrt{\text{g r}_{j}}$)")
+        ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}} \beta$/(Fr$_{flux}$)")
+        ax3.set_xlabel(r"b/(Fr$_{flux}$g)")
+        ax4.set_xlabel(r"C'$_{\text{centerline}} \beta$/(Fr$_{flux}$)") 
         ax5.set_ylabel(z_nd)
-        ax5.set_xlabel(r"r $\sqrt{\text{g r}_{j}}$/(F$^{\text{C}} \beta$r$_{j}$)")
-        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{xy}$/(F$^{\text{C}} \beta$ g)")
-        ax7.set_xlabel(r"b$_{rms}$r$_j$/(F$^{\text{C}}\beta\sqrt{\text{g r}_{j}}$)")
-        ax8.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\sqrt{\text{g r}_{j}}$/(F$^{\text{C}}\beta$)")
+        ax5.set_xlabel(r"r/(Fr$_{flux}$r$_{j}$)")
+        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{xy}$/(Fr$_{flux}\sqrt{\text{g}^3 \text{r}_{j}}$)")
+        ax7.set_xlabel(r"b$_{rms}$/(Fr$_{flux}$g)")
+        ax8.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha$)/(Fr$_{flux}$)")
     else:
         ax1.set_ylabel("Depth [m]")
         ax1.set_xlabel("[m/s]")
