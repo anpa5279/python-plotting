@@ -145,21 +145,21 @@ if ND:
     area = (2*rj)**2
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
-    z_nd = (z+mld)*mld**(1/3)/(Ln**(4/3))
-    zf_nd = (zf+mld)*mld**(1/3)/(Ln**(4/3))#
+    z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
+    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))#
     y_nd = y / rj
     vel_scale = F_s * beta
     b_scale = F_s * beta * np.sqrt(rj * g) / rj
     b_perturbed_scale = F_s * beta * np.sqrt(rj * g) / rj
     F_b_scale = F_s * beta * g
-    T_scale = T0 * F_s * beta / np.sqrt(rj*g)
+    T_scale = 1/alpha * F_s * beta / np.sqrt(rj*g)
     S_scale = F_s / np.sqrt(rj*g)
-    F_T_scale = beta * F_s * T0
-    F_S_scale = F_s * np.sqrt(rj * dTdz / T0)
+    F_T_scale = beta * F_s * 1/alpha
+    F_S_scale = F_s * np.sqrt(rj * dTdz * alpha)
     y_nd = y / rj
     lx_nd = np.zeros(3)
     lx_nd[0:2]= np.array(lx[0:2])/ rj
-    lx_nd[-1] = np.max((lx[-1] - mld) * dTdz / T0)
+    lx_nd[-1] = np.max((lx[-1] - mld) * dTdz * alpha)
 
 
     nd_ranges = ranges.copy()
