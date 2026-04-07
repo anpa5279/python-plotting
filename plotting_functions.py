@@ -18,6 +18,7 @@ def stratification_profile(z, a0, dadz, mld):
 def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges = {}
     list_pqr = ['u', 'v', 'w', 'b', 'T', 'S', 'Pdynamic', 'Pstatic', 'rho', 
+                'b_flux', 
                 'vel_rms', 'b_rms', 
                 'b_avg', 'T_avg', 'vel_avg', 'lamb_avg',
                 'vel_restress', 'vel_flux', 'richardson', 
@@ -46,6 +47,7 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges['lamb_avg'] = [-4*10**(-6), 4*10**(-6)]
     ranges['b_rms'] = [0, 2*10**(-5)]
     ranges['bw_fluc'] = [-1*10**(-8), 1*10**(-8)]
+    ranges['b_flux'] = [-1*10**(-8), 1*10**(-8)]
     ranges['b_fluc'] = [-1*10**(-4), 1*10**(-4)]
     ranges['lengthscale'] = [0, 0.4]
     ranges['rho'] = [rho0-0.02, rho0+0.15]

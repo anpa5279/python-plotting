@@ -20,9 +20,9 @@ num_cases = len(case_names)
 
 
 # flags for what to plot
-plot_1d_z = True
-plot_1d_y = False
-ND = True
+plot_1d_z = False
+plot_1d_y = True
+ND = False
 
 # flags for how to read data
 with_halos = False
@@ -124,14 +124,26 @@ for i in range(num_cases):
     mld_idx.append(np.argmin(np.abs(z[:, i]+mld[i])))
 
 if plot_1d_y:
-    hor_idx = mld_idx
+    ranges_hor = ranges.copy()
+    ranges['S'] = [0, 9*10**(-2)]
+    ranges['vel_rms'] = [0, 4*10**-3]
+    ranges['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
+    ranges['b_flux'] = [-1*10**(-5), 1*10**(-5)]
+    ranges['b_rms'] = [0, 1.5*10**(-5)]
+    ranges['b_fluc'] = [-5*10**(-4), 5*10**(-4)]
+    ranges['w'] = [-0.1, 0.1]
+    ranges['T'] = [23.5, 25.5]
+    hor_idx = np.array(mld_idx) - 20
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
+
+if plot_1d_z:
+    name_uni = "centerline or average"
 
 ############ NONDIMENSIONALIZATION ############
 if ND: 
     name_nd = 'ND_' + name_uni
 
-    N2 = g * dTdz / T0
+    N2 = g * dTdz / (T0 + 273.15)
     area = (2*rj)**2
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)

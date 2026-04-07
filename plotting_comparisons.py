@@ -540,7 +540,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     ax1.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     ax1.legend(loc='lower right')
 
-    # velocity vertical flux 
+    # horizontal buoyancy flux 
     for i in range(num_cases):
         if i == 0:
             ax2.plot((y - lx[1]/2), bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
@@ -550,7 +550,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
             ax2.plot((y - lx[1]/2), bv_fluc[:, i], color = color_opt[i], linestyle='dashed')
     ax2.set_title('Horizontal Buoyancy Flux Fluctuations')
     ax2.set_xlim(-lx[1]/2, lx[1]/2)
-    ax2.set_ylim(ymin = ranges['bw_fluc'][0]*10**(-1), ymax = ranges['bw_fluc'][1]*10**(-1))
+    ax2.set_ylim(ymin = ranges['b_flux'][0], ymax = ranges['b_flux'][1])
     ax2.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
 
     # tracer  
