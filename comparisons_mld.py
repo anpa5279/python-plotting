@@ -12,7 +12,7 @@ from dense_plume_analysis import plume_tracer_radius
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
 folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']  
-name_uni = ""
+name_uni = "transient-mld-fixed-dbdz5mag-7-sqrt(N)"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'MLD comparison figures')
 
 num_cases = len(case_names)
@@ -21,6 +21,7 @@ num_cases = len(case_names)
 plot_1d_z = True
 plot_1d_y = False
 ND = True
+transient_mld = True
 
 # flags for how to read data
 with_halos = False

@@ -12,8 +12,7 @@ from dense_plume_analysis import plume_tracer_radius
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
 folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 case_names = [r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
-
-name_uni = "updated_analysis"
+name_uni = "transient-mld-fixed-dbdz5mag-7-sqrt(N)"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'Flux comparison figures')
 
 num_cases = len(case_names)
@@ -21,7 +20,7 @@ num_cases = len(case_names)
 # flags for what to plot
 plot_1d_z = False
 plot_1d_y = True
-ND = False
+ND = True
 transient_mld = True
 
 # flags for how to read data
