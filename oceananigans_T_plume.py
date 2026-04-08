@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.2 no noise/'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1 dTdz = 0.005/'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -45,11 +45,11 @@ salinity = True
 # physical parameters
 mld = 30.0  # mixed layer depth in meters
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.01 # background temperature gradient in K/m
+dTdz = 0.005 # background temperature gradient in K/m
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = 0.2
+Sj = 0.1
 wp = 0.001
 F_s = Sj*wp
 rj = 10

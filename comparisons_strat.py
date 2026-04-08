@@ -10,10 +10,10 @@ from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
-case_names =[r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
+folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
+case_names =[r'dT/dz = 0.005', r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
 
-name_uni = "transient mld -rj"
+name_uni = "transient mld -l_scale - fix dbdz"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'strat comparison figures')
 
 num_cases = len(case_names)
@@ -34,7 +34,7 @@ video = True
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
-dTdz = np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
+dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
 rho0 = 1026
 mld = 30 * np.ones(num_cases) # 
 T0 = 25.0
@@ -43,9 +43,9 @@ wp = 0.001
 Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2])# 
 F_s = np.dot(Sj, wp)
 
-S_value = np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
+S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
 S_contour = S_value*0.15 
-w_avg_centerline = np.array([-0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
+w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
@@ -143,24 +143,25 @@ if plot_1d_z:
 if ND: 
     name_nd = 'ND_' + name_uni
 
+    area = (2*rj)**2
+    l_scale = np.sqrt(area)
     N2 = g * alpha * dTdz #g * dTdz / (T0 + 273.15)
-    Fr_flux = F_s * beta / np.sqrt(rj * g)
-    vel_scale = Fr_flux * np.sqrt(rj * g)
+    Fr_flux = F_s * beta / np.sqrt(l_scale * g)
+    vel_scale = Fr_flux * np.sqrt(l_scale * g)
     b_scale = Fr_flux * g
-    F_b_scale = Fr_flux * g**(3/2) * rj**(1/2)
+    F_b_scale = Fr_flux * g**(3/2) * l_scale**(1/2)
     T_scale = 1/alpha * Fr_flux
     S_scale = Fr_flux / beta
     F_T_scale = beta * F_s / alpha
-    F_S_scale = F_s * np.sqrt(rj * dTdz * alpha)
-    hor_scale = rj * Fr_flux
+    F_S_scale = F_s * np.sqrt(l_scale * dTdz * alpha)
+    hor_scale = l_scale * Fr_flux
 
-    area = (2*rj)**2
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
     z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
     zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
 
-    y_nd = y / rj
+    y_nd = y / l_scale
     lx_nd = np.zeros(3)
     lx_nd[0:2]= np.array(lx[0:2])/ np.min(hor_scale)
     lx_nd[-1] = np.max((lx[-1] - mld) * dTdz * alpha)
@@ -197,6 +198,7 @@ for it in nt:
     bu_fluc_avg = np.zeros((nx[2], num_cases))
     bv_fluc_avg = np.zeros((nx[2], num_cases))
     bw_fluc_avg = np.zeros((nx[2], num_cases))
+    dbdz = np.zeros((nx[2], num_cases))
     if plot_1d_z:
         u_rms = np.zeros((nx[2], num_cases))
         v_rms = np.zeros((nx[2], num_cases))
@@ -268,9 +270,13 @@ for it in nt:
         bv_fluc, bv_fluc_avg[:, i] = ab_fluc_mean(b, v, b_avg[:, i], v_avg[:, i])
         bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, wc, b_avg[:, i], wc_avg[:, i])
 
-        if transient_mld:
-            dbdz = np.gradient(b_avg[:, i], z[:, i])
-            mld_idx[i] = np.min(np.where(dbdz <= 0.01*N2[i]))
+        if transient_mld and it != 0:
+            dbdz[:, i] = np.gradient(b_avg[:, i], z[:, i])
+            dbdz_tol = dbdz[:, i] <= 0.01*(1.0*10**(-5))
+            if np.any(dbdz_tol):
+                mld_idx[i] = np.min(np.where(dbdz_tol))
+            else:
+                mld_idx[i] = nx[2] - 1
             mld[i] = -z[mld_idx[i], i]
         # collecting data for plotting
         if plot_1d_z and salinity:
@@ -317,7 +323,8 @@ for it in nt:
             u_rms = u_rms/vel_scale
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
-            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
+            print(f"it = {it}, mld_idx = {mld_idx}, mld = {mld}, dbdz at mld = {dbdz[mld_idx, np.arange(num_cases)]}")
+            #buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
         if plot_1d_y and salinity:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
@@ -334,7 +341,6 @@ for it in nt:
             buoyancy_dir_z = plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
         if plot_1d_y:
             buoyancy_dir_y = plume_horizontal_spatial_plot(time, it, ranges_hor, color_opt, fig_folder, case_names, name_uni, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
-
 print("All frames created.")
 # creating videos
 if video and ND:

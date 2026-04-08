@@ -9,14 +9,14 @@ from dense_plume_analysis import plume_tracer_radius, neutral_buoyancy_loc
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
+folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 #['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
 #['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
 #['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
-#['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
+#['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
-case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
+case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 #[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
 #[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
@@ -47,7 +47,7 @@ if mld_analysis_plot:
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
-dTdz = np.array([0.01, 0.05, 0.1]) # 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # 0.01 * np.ones(num_cases) # background temperature gradient in K/m
 rho0 = 1026
 mld = 30 * np.ones(num_cases) # np.array([20, 30, 40]) # 
 T0 = 25
@@ -56,7 +56,7 @@ wp = 0.001
 Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2]) # 
 F_s = np.dot(Sj, wp)
 
-S_value = np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
+S_value = np.array([0.0, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
 #np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
 #np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
 #np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
@@ -147,14 +147,18 @@ if temporal_avg and salinity:
 
             # Load data from files
             u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
-            if stokes[i]:
-                u = u - u_s
             wc = 0.5 * (w[..., :-1] + w[..., 1:])
             w_sum += np.mean(w[centerline_index[0, :], centerline_index[1, :], :])
+            b = g*alpha*(T - T0) - g*beta*(S - S0)
+            b_avg = np.mean(b, axis=(-3, -2))
+            wc_avg = np.mean(wc, axis=(-3, -2))
+            bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
+            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
+            S_sum += np.mean(S[centerline_index[0, :], centerline_index[1, :], bw_idx])
             n += 1
         S_contour[i] = S_sum/n
         w_contour[i] = w_sum/n
-        print(f"Case {case_names[i]}: w_contour = {w_contour[i]}")
+        print(f"Case {case_names[i]}: w_contour = {w_contour[i]}, S_contour = {S_contour[i]}")
 nt = len(t_save_temp)
 
 z = z*np.ones([num_cases, nx[2]])

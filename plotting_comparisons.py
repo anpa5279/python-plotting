@@ -175,7 +175,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     if ND:
         ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"$\langle$r$\rangle_{\text{xy}}$/r$_{j}$") #(r"$\langle$r$\rangle_{\text{xy}}$/h$_{\text{MLD}}$") #
+        ax2.set_ylabel(r"$\langle$r$\rangle_{\text{xy}}$/l$_{j}$") #(r"$\langle$r$\rangle_{\text{xy}}$/h$_{\text{MLD}}$") #
         ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
         ax3.set_ylabel(r"w/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}})$")
         ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
@@ -183,9 +183,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)") #
+        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{l}_{j}}$/(F$^{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_j}$/(F$^{\text{C}}$)")#
+        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{l}_{j}}$/(F$^{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
         ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
@@ -313,7 +313,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
 ### spatial vertical analysis ###
-def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/r$_{j}$"):
+def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, zf, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 4, figsize=(12, 8))
@@ -350,13 +350,13 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
 
     if ND:
         ax1.set_ylabel(z_nd) 
-        ax1.set_xlabel(r"u$_{i}$/(Fr$_{flux}\sqrt{\text{g r}_{j}}$)")
+        ax1.set_xlabel(r"u$_{i}$/(Fr$_{flux}\sqrt{\text{g l}_{j}}$)")
         ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}} \beta$/(Fr$_{flux}$)")
         ax3.set_xlabel(r"b/(Fr$_{flux}$g)")
         ax4.set_xlabel(r"C'$_{\text{centerline}} \beta$/(Fr$_{flux}$)") 
         ax5.set_ylabel(z_nd)
-        ax5.set_xlabel(r"r/(Fr$_{flux}$r$_{j}$)")
-        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{xy}$/(Fr$_{flux}\sqrt{\text{g}^3 \text{r}_{j}}$)")
+        ax5.set_xlabel(r"r/(Fr$_{flux}$l$_{j}$)")
+        ax6.set_xlabel(r"$\langle$b'u'$_{i}\rangle_{xy}$/(Fr$_{flux}\sqrt{\text{g}^3 \text{l}_{j}}$)")
         ax7.set_xlabel(r"b$_{rms}$/(Fr$_{flux}$g)")
         ax8.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha$)/(Fr$_{flux}$)")
     else:
@@ -498,18 +498,18 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     ax6 = ax[1, 2] # temperature through horizontal centerline
 
     if ND:
-        ax1.set_xlabel(r"y/r$_{j}$") 
-        ax1.set_ylabel(r"u$_{i}$/(F$^{\text{C}} \beta$ dT/dz r$_j$ T$_{0}$)") 
-        ax2.set_xlabel(r"y/r$_{j}$")
-        ax2.set_ylabel(r"(b' u'$_{i}$)/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)") 
-        ax3.set_xlabel(r"y/r$_{j}$")
-        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{\text{g r}_{j}}$/(F$^{\text{C}}$)") 
-        ax4.set_xlabel(r"y/r$_{j}$")
-        ax4.set_ylabel(r"b'/(F$^{\text{C}} \beta \sqrt{\text{g dT/dz r}_j/\text{T}_{0}}$)")
-        ax5.set_xlabel(r"y/r$_{j}$")
-        ax5.set_ylabel(r"b'w'/(F$^{\text{C}} \beta$ g dT/dz r$_j$/T$_{0}$)")
-        ax6.set_xlabel(r"y/r$_{j}$")
-        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g r}_{j}}}$/(F$^{\text{C}}\beta$dT/dz r$_j$)")
+        ax1.set_xlabel(r"y/l$_{j}$") 
+        ax1.set_ylabel(r"u$_{i}$/(F$^{\text{C}} \beta$ dT/dz l$_{j}$ T$_{0}$)") 
+        ax2.set_xlabel(r"y/l$_{j}$")
+        ax2.set_ylabel(r"(b' u'$_{i}$)/(F$^{\text{C}} \beta$ g dT/dz l$_{j}$/T$_{0}$)") 
+        ax3.set_xlabel(r"y/l$_{j}$")
+        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{\text{g l}_{j}}$/(F$^{\text{C}}$)") 
+        ax4.set_xlabel(r"y/l$_{j}$")
+        ax4.set_ylabel(r"b'/(F$^{\text{C}} \beta \sqrt{\text{g dT/dz l}_{j}/\text{T}_{0}}$)")
+        ax5.set_xlabel(r"y/l$_{j}$")
+        ax5.set_ylabel(r"b'w'/(F$^{\text{C}} \beta$ g dT/dz l$_{j}$/T$_{0}$)")
+        ax6.set_xlabel(r"y/l$_{j}$")
+        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g l}_{j}}}$/(F$^{\text{C}}\beta$dT/dz l$_{j}$)")
     else:
         ax1.set_xlabel("x [m]")
         ax1.set_ylabel("[m/s]")
