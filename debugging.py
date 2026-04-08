@@ -159,9 +159,9 @@ for i in range(num_cases):
     ax1.plot(time/60/60/24, depth_fixed[:, i], color = color_opt[i])
     ax1.plot(time/60/60/24, depth_N2_half[:, i], color = color_opt[i], linestyle='--')
     ax1.plot(time/60/60/24, depth_N2_tenth[:, i], color = color_opt[i], linestyle=':')
-    ax2.plot(time/60/60/24, dbdz_fixed[:, i], color = color_opt[i])
-    ax2.plot(time/60/60/24, dbdz_N2_half[:, i], color = color_opt[i], linestyle='--')
-    ax2.plot(time/60/60/24, dbdz_N2_tenth[:, i], color = color_opt[i], linestyle=':')
+    ax2.semilogy(time/60/60/24, dbdz_fixed[:, i], color = color_opt[i])
+    ax2.semilogy(time/60/60/24, dbdz_N2_half[:, i], color = color_opt[i], linestyle='--')
+    ax2.semilogy(time/60/60/24, dbdz_N2_tenth[:, i], color = color_opt[i], linestyle=':')
 
 plt.show()
 

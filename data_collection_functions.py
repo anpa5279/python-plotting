@@ -24,9 +24,8 @@ def collect_time_outputs(file, Nranks, stokes=False):
         yf = f['grid/yᵃᶠᵃ'][hx[1]:-hx[1]]
         zf = f['grid/z/cᵃᵃᶠ'][hx[2]:-hx[2]]
     if stokes:
-        #u_f =np.array(f["IC/"]["friction_velocity"])
-        u_f = []
-        u_s  = []#=np.array(f["IC/"]["stokes_velocity"])
+        u_f =np.array(f["IC/"]["friction_velocity"])
+        u_s = np.array(f["IC/"]["stokes_velocity"])
         return time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s
     else:
         return time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff
