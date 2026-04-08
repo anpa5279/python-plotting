@@ -8,7 +8,7 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius, neutral_buoyancy_loc
 
 # selecting cases to comparse
-variations = 'strat' # 'MLD', 'flux'
+variations = 'strat' # 'MLD', 'flux', 'strat'
 if variations == 'strat':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  

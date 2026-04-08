@@ -135,6 +135,7 @@ if plot_1d_y:
 
 if plot_1d_z:
     name_uni +="_centerline or average"
+
 ############ NONDIMENSIONALIZATION ############
 if ND: 
     name_nd = 'ND_' + name_uni
@@ -142,7 +143,7 @@ if ND:
     area = (2*rj)**2 
     l_area = np.sqrt(area)
     N2 = g * alpha * dTdz 
-    N2_scale = N2/g*l_area
+    N2_scale = (N2/g*l_area)**(1/4)
     Fr_flux = F_s * beta / np.sqrt(l_area * g)
     vel_scale = Fr_flux * np.sqrt(l_area * g) / N2_scale
     b_scale = N2_scale * Fr_flux * g
@@ -269,7 +270,7 @@ for it in nt:
 
         if transient_mld and it != 0:
             dbdz[:, i] = np.gradient(b_avg[:, i], z[:, i])
-            dbdz_tol = dbdz[:, i] <= (1.0*10**(-6))
+            dbdz_tol = dbdz[:, i] <= (5.0*10**(-7))
             if np.any(dbdz_tol):
                 mld_idx[i] = np.min(np.where(dbdz_tol))
             else:
@@ -321,7 +322,7 @@ for it in nt:
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
             #print(f"it = {it}, mld_idx = {mld_idx}, mld = {mld}, dbdz at mld = {dbdz[mld_idx, np.arange(num_cases)]}")
-            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
+            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{MLD}$)h$_{MLD}^{1/3}$/L$_N^{4/3}$")
         if plot_1d_y and salinity:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale

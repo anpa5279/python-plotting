@@ -9,22 +9,33 @@ from plotting_comparisons import plot_format, turb_stats_multi, plume_vertical_s
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_radius
 
+# selecting cases to comparse
+variations = 'strat' # 'MLD', 'flux', 'strat'
+if variations == 'strat':
+    folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
+    case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
+    num_cases = len(case_names)
+    dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
+    mld = 30 * np.ones(num_cases) 
+    Sj = 0.1 * np.ones(num_cases) 
+elif variations == 'MLD':
+    folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
+    case_names =[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']
+    num_cases = len(case_names)
+    dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+    mld = np.array([20, 30, 40])
+    Sj = 0.1 * np.ones(num_cases) 
+elif variations == 'flux':
+    folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
+    case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
+    num_cases = len(case_names)
+    dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+    mld = 30 * np.ones(num_cases) 
+    Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
-folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
-#['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
-#['beta = default S0 = 0.1', 'beta = default S0 = 0.1 with Langmuir']
-#['beta = default S0 = 0.1 with wind stress', 'beta = default S0 = 0.1']
-#['beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
-#['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
-fig_folder = os.path.join(universal_folder, 'comparison figures')
-case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']  
-#[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
-#[r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10'] 
-#[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m'] 
-name_uni = "contour-0.15-MLD-test"
-
-num_cases = len(case_names)
+fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
+name_uni ='contour-0.15-dTdz'
 folders = []
 for name in folder_names:
     folders.append(os.path.join(universal_folder, name))
@@ -32,44 +43,22 @@ output_folder = universal_folder
 
 # flags for what to plot
 plume_analysis_plot = True
-turb_stats_plot = False
-ND = False
+mld_analysis_plot = False
+ND = True
 
 # flags for how to read data
 with_halos = False
-stokes = False * np.ones(num_cases) 
 salinity = True
 
-video = False
-if num_cases > 1:
-    fig_folder = os.path.join(universal_folder, 'comparison figures', 'comparison plume analysis')
-else:
-    fig_folder = os.path.join(universal_folder, 'plume analysis')
-if video:
-    fig_folder = os.path.join(fig_folder, name_uni)
-    os.makedirs(fig_folder, exist_ok=True)
 
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.01 * np.ones(num_cases) #  np.array([0.01, 0.05, 0.1]) # background temperature gradient in K/m
 rho0 = 1026
-mld = np.array([20, 30, 40]) # 30 * np.ones(num_cases) # 
-T0 = 25.0
+T0 = 25
 S0 = 0 
 wp = 0.001
-Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2])# 
 F_s = np.dot(Sj, wp)
-if np.size(Sj) == 1:
-    contour = np.dot(Sj * np.ones(num_cases), 0.05)
-else:
-    contour = np.dot(Sj, 0.05)
-
-S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
-#np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
-#np.array([0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations
-#np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
-S_contour = S_value*0.15 
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
@@ -294,7 +283,7 @@ for it in nt:
         if turb_stats_plot:
             turb_stat_dir_nd = turb_stats_multi(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg, ND)
         if plume_analysis_plot:
-            buoyancy_dir_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)h$_{\mathrm{MLD}_0}^{1/3}$/L$_N^{4/3}$")
+            buoyancy_dir_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{MLD}$)h$_{MLD}^{1/3}$/L$_N^{4/3}$")
 print("All frames created.")
 # creating videos
 if video:
