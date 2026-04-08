@@ -18,7 +18,6 @@ fig_folder = os.path.join(universal_folder, 'comparison figures', 'strat compari
 
 num_cases = len(case_names)
 
-
 # flags for what to plot
 plot_1d_z = True
 plot_1d_y = False

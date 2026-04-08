@@ -13,7 +13,7 @@ from general_analysis_functions import a2_fluc_mean, ozmidov_length, centerline_
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/b tracer for NBP/with closure Re 3000/continuous source/varied buoyancy flux/b0 = -4E-1/'
-output_folder = folder #'figures and videos/'
+output_folder = os.path.join(folder, "plotting outputs") 
 name = 'Ri-NBP-'
 
 # flags to analyze data 

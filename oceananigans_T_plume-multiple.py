@@ -11,7 +11,7 @@ from data_collection_functions import collect_time_outputs, collect_fields, coll
 
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1'
-output_folder = folder #'figures and videos/'
+output_folder = os.path.join(folder, "plotting outputs") 
 name = 'plume-function-NBP-'
 
 # flags to analyze data 

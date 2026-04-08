@@ -331,7 +331,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf,
         uflucrange = ranges['u_fluc']
         vflucrange = [ranges['v_fluc'][0]*smaller, ranges['v_fluc'][-1]*smaller]
 
-    outdir = os.path.join(fig_folder, 'velocity and NBP plane slices/', plane)
+    outdir = os.path.join(fig_folder, 'vertical plane slices/', plane)
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
 
@@ -548,7 +548,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf,
     return outdir # return the directory where frames are saved for video creation
 ## surface plane slices 
 def xy_plane_slices(time, it, ranges, fig_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, idx_loc, plane, T = np.array([]), S = np.array([])):
-    outdir = os.path.join(fig_folder, 'velocity and NBP plane slices/', 'XY plane slice at ' + plane)
+    outdir = os.path.join(fig_folder, 'horizontal plane slices/', 'XY plane slice at ' + plane)
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
 

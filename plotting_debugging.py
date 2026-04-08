@@ -77,3 +77,38 @@ ax[0].set_ylim(ymin = np.min(zs), ymax = np.max(zs))
 ax[0].legend(loc='lower right')
 
 plt.show()
+
+# FFT testing 
+plt.rcParams.update({'font.size': 16})
+
+fig, ax = plt.subplots(2, 3, dpi=150, figsize=(30, 12))
+ax = ax.ravel()
+titles = ['b', 'T', 'S', 'u', 'v', 'wc']
+
+for i, var in enumerate([b, T, S, u, v, wc]):
+    var_prime = var - np.mean(var, axis=(0,1))[..., np.newaxis]
+    rms_list = []
+    L_list = []
+    for k in range(nx[2]):
+        var_hat = np.fft.fft2(var_prime[:,:,k])
+        E = 0.5 * np.abs(var_hat)**2
+        var_rms = np.sqrt(E.sum())
+        rms_list.append(var_rms)
+        kx = np.fft.fftfreq(nx[0], dx[0]) * 2*np.pi
+        ky = np.fft.fftfreq(nx[1], dx[1]) * 2*np.pi
+        k_h = np.sqrt(kx[:,None]**2 + ky[None,:]**2)
+        k_mean = (E.ravel() * k_h.ravel()).sum() / E.sum()
+        L_list.append(2*np.pi / k_mean)
+    var_rms = np.array(rms_list)
+    L_dom = np.array(L_list)
+    var_nd = np.mean(var, axis=(0,1)) / var_rms
+    z_temp = z[:, -1] / L_dom
+    ax[i].plot(var_nd, z_temp, linewidth=2)
+    ax[i].set_ylabel('z / L_dom', fontsize=18)
+    ax[i].grid(True)
+    ax[i].set_title(titles[i])
+
+plt.tight_layout()
+plt.show()
+
+

@@ -19,9 +19,9 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.2/'
-output_folder = folder #'figures and videos/'
-name = 'hydrosymposium-'#'SvsT'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.2 no noise/'
+output_folder = os.path.join(folder, "plotting outputs") 
+name = ""
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -32,7 +32,7 @@ video = True
 video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = True
-xy_plot = False
+xy_plot = True
 buoyancy_analysis_plot = False
 buoyancy_momentum_analysis = False
 plume_plot = False
@@ -180,7 +180,7 @@ for it in nt:
     if stokes:
         u = u - u_s
     
-    b_background = stratification_profile(z, alpha*g*dTdz, mld)
+    b_background = stratification_profile(z, 0, alpha*g*dTdz, mld)
     # calculate means
     u_avg = np.mean(u, axis=(-3, -2))
     v_avg = np.mean(v, axis=(-3, -2))
@@ -341,8 +341,8 @@ for it in nt:
     if vert_slice_plot:
         plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, X_zf, Y, Y_zf, Z, Z_zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho, rho_perturbed, b, T, S)
     if xy_plot and salinity:
-        loc = "max height +1"
-        loc_idx = max_index + 1
+        loc = "n = 230, z = " + str(np.round(z[230], 2)) + " m"
+        loc_idx = 230
         if loc_idx >(nx[2]-1):
             loc_idx = nx[2] - 1
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, loc_idx, loc, T, S)
