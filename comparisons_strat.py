@@ -13,7 +13,7 @@ universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-B
 folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 case_names =[r'dT/dz = 0.005', r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
 
-name_uni = "transient-mld-fixed-5mag-7-Rithird"
+name_uni = "transient-mld-N2*0.01-Rithird"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'strat comparison figures')
 
 num_cases = len(case_names)
@@ -272,7 +272,7 @@ for it in nt:
 
         if transient_mld and it != 0:
             dbdz[:, i] = np.gradient(b_avg[:, i], z[:, i])
-            dbdz_tol = dbdz[:, i] <= (5.0*10**(-7))#dbdz[:, i] <= 0.01*N2[i]#(5.0*10**(-7))
+            dbdz_tol = dbdz[:, i] <= 0.01*N2[i]#dbdz[:, i] <= (5.0*10**(-7))#
             if np.any(dbdz_tol):
                 mld_idx[i] = np.min(np.where(dbdz_tol))
             else:
