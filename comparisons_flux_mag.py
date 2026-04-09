@@ -12,7 +12,7 @@ from dense_plume_analysis import plume_tracer_radius
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
 folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
 case_names = [r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
-name_uni = "transient-mld-fixed-dbdz5mag-7-sqrt(N)"
+name_uni = "transient-mld-fixed-5mag-7-Rithird"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'Flux comparison figures')
 
 num_cases = len(case_names)
@@ -147,13 +147,13 @@ if ND:
     area = (2*rj)**2 
     l_area = np.sqrt(area)
     N2 = g * alpha * dTdz 
-    N2_scale = (N2/g*l_area)**(1/4)
+    Ri_g = (N2/g*l_area)**(1/3)
     Fr_flux = F_s * beta / np.sqrt(l_area * g)
-    vel_scale = Fr_flux * np.sqrt(l_area * g) / N2_scale
-    b_scale = N2_scale * Fr_flux * g
-    F_b_scale = Fr_flux * g**(3/2) * l_area**(1/2)
-    T_scale = N2_scale * Fr_flux / alpha
-    S_scale = N2_scale * Fr_flux / beta
+    vel_scale = np.sqrt(l_area * g) / Ri_g #Fr_flux * 
+    b_scale = Ri_g / Fr_flux * g
+    F_b_scale = b_scale * vel_scale
+    T_scale = Ri_g * Fr_flux / alpha
+    S_scale = Ri_g * Fr_flux / beta
     F_T_scale = beta * F_s / alpha
     F_S_scale = F_s * np.sqrt(l_area * dTdz * alpha)
     hor_scale = l_area * Fr_flux
@@ -274,7 +274,7 @@ for it in nt:
 
         if transient_mld and it != 0:
             dbdz[:, i] = np.gradient(b_avg[:, i], z[:, i])
-            dbdz_tol = dbdz[:, i] <= (5.0*10**(-7))
+            dbdz_tol = dbdz[:, i] <= (5.0*10**(-7))#dbdz[:, i] <= 0.01*N2[i]#(5.0*10**(-7))
             if np.any(dbdz_tol):
                 mld_idx[i] = np.min(np.where(dbdz_tol))
             else:

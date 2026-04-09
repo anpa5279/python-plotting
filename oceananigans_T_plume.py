@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.1 dTdz = 0.005/'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.2 no noise/'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -31,7 +31,7 @@ video = True
 
 video_3d_flag = False
 turb_stats_plot = False
-vert_slice_plot = True
+vert_slice_plot = False
 xy_plot = True
 buoyancy_analysis_plot = False
 buoyancy_momentum_analysis = False
@@ -106,15 +106,12 @@ if Nranks > 1:
         dtn.append(f'fields_rank{file}.jld2')
 # Read model information
 fid = os.path.join(folder, dtn[0])
-if Nranks == 1 and not stokes:
+if not stokes:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes)
-elif Nranks == 1 and stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
-elif Nranks > 1 and not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes)
-elif Nranks > 1 and stokes:
+elif stokes:
     time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
     u_s = stokes_exp(z)
+
 if salinity:
     alpha, beta = collect_temp_and_sal(fid, salinity)
 else:
@@ -131,7 +128,7 @@ print(name)
 # getting mld index location 
 
 dz_ml = np.abs(z + mld)/mld
-mld_index = np.where(dz_ml==dz_ml.min())[0][-1]
+mld_idx = np.where(dz_ml==dz_ml.min())[0][-1]
 
 if video:
     nt = np.arange(len(t_save))
@@ -201,26 +198,26 @@ for it in nt:
     T_fluc = T - T_avg
 
     # calcualte reynolds stresses
-    u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
-    v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
-    w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-    wc_fluc_avg, wc2_fluc, wc2_fluc_avg = a2_fluc_mean(wc_fluc)
-    rho_fluc_avg, rho2_fluc, rho2_fluc_avg = a2_fluc_mean(rho_fluc)
-    uv_fluc, uv_fluc_avg = ab_fluc_mean(u, v, u_avg, v_avg)
     uw_fluc, uw_fluc_avg = ab_fluc_mean(u, wc, u_avg, wc_avg)
     vw_fluc, vw_fluc_avg = ab_fluc_mean(v, wc, v_avg, wc_avg)
 
-    b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg, b_avg)
     bu_fluc, bu_fluc_avg = ab_fluc_mean(b, u, b_avg, u_avg)
     bv_fluc, bv_fluc_avg = ab_fluc_mean(b, v, b_avg, v_avg)
     bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
     
-    # rms fluctuations
-    u_rms = u2_fluc_avg**0.5
-    v_rms = v2_fluc_avg**0.5
-    w_rms = w2_fluc_avg**0.5
-    wc_rms = wc2_fluc_avg**0.5
-    b_rms = b2_fluc_avg**0.5
+    if turb_stats_plot or plume_plot or buoyancy_momentum_analysis:
+        u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
+        v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
+        w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
+        wc_fluc_avg, wc2_fluc, wc2_fluc_avg = a2_fluc_mean(wc_fluc)
+        uv_fluc, uv_fluc_avg = ab_fluc_mean(u, v, u_avg, v_avg)
+        b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg, b_avg)
+        # rms fluctuations
+        u_rms = u2_fluc_avg**0.5
+        v_rms = v2_fluc_avg**0.5
+        w_rms = w2_fluc_avg**0.5
+        wc_rms = wc2_fluc_avg**0.5
+        b_rms = b2_fluc_avg**0.5
 
     if (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis) and rho_IC_perturb:
         # calculating density 
@@ -242,7 +239,6 @@ for it in nt:
         db_flucdz = np.gradient(b_fluc, z, axis=-1)
         db_flucdz_avg = np.mean(db_flucdz, axis=(-3, -2))
 
-        
         if salinity:
             bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
             center_xy_loc, centerline_index, rp_profile, plume_index, S_contour = plume_tracer_analysis(x, y, z, lx, nx, S, idx = bw_idx, contour = 0.05)
@@ -269,7 +265,7 @@ for it in nt:
             rho_center = rho[int(nx[0]/2), int(nx[1]/2), :]
             rho_perturbed_center = rho_perturbed[int(nx[0]/2), int(nx[1]/2), :]
             bw_fluc_center = b_fluc_center*wc_center
-            mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, mld)
+            mld_idx, w_mld, mld_bw_fluc, rho_mld = mld_info(w_center, bw_fluc_center, rho_perturbed_center, z, mld)
         
             neutral_index, max_index, dbdz_plume_avg = centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, z, nx)
             z_intrusion = z[max_index]
@@ -303,7 +299,7 @@ for it in nt:
         bw_neutral = bw_fluc_center[neutral_index]
         rho_intrusion = rho_perturbed_center[max_index]
         rho_neutral = rho_perturbed_center[neutral_index]
-        mld_index, w_mld, mld_bw_fluc, rho_mld = mld_info(wc_center, bw_fluc_center, rho_perturbed_center, z, mld)
+        mld_idx, w_mld, mld_bw_fluc, rho_mld = mld_info(wc_center, bw_fluc_center, rho_perturbed_center, z, mld)
         # appending plume statistics to lists
         depth_intrusion_list.append(z_intrusion)
         depth_neutral_list.append(z_neutral)
@@ -341,13 +337,13 @@ for it in nt:
     if vert_slice_plot:
         plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, X_zf, Y, Y_zf, Z, Z_zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho, rho_perturbed, b, T, S)
     if xy_plot and salinity:
-        loc = "n = 230, z = " + str(np.round(z[230], 2)) + " m"
-        loc_idx = 230
+        loc = "mld"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
+        loc_idx = mld_idx
         if loc_idx >(nx[2]-1):
             loc_idx = nx[2] - 1
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, loc_idx, loc, T, S)
     elif xy_plot and not salinity:
-        loc = "max height + 5"
+        loc = ""
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, max_index, loc, T)
     if buoyancy_analysis_plot and not salinity:
         b_ranges = ranges.copy()

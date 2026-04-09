@@ -8,11 +8,11 @@ from scipy.spatial import ConvexHull
 def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
     # info at mixed layer depth
     dz_ml = np.abs(z + mld)/mld
-    mld_index = np.where(dz_ml==dz_ml.min())[0][-1]
-    mld_w = w[mld_index]
-    mld_bw_fluc = bw_fluc[mld_index]
-    mld_rho_perturbed = rho_perturbed[mld_index]
-    return mld_index, mld_w, mld_bw_fluc, mld_rho_perturbed
+    mld_idx = np.where(dz_ml==dz_ml.min())[0][-1]
+    mld_w = w[mld_idx]
+    mld_bw_fluc = bw_fluc[mld_idx]
+    mld_rho_perturbed = rho_perturbed[mld_idx]
+    return mld_idx, mld_w, mld_bw_fluc, mld_rho_perturbed
 # depth at which plume is neutrally buoyant
 def z_s_analytical(rhoB, rho0, dbdz, g, mld):
     dbdz_norm = dbdz/g

@@ -104,7 +104,7 @@ for it in range(nt):
         b_avg = np.mean(b, axis=(-3, -2))
 
         dbdz = np.gradient(b_avg, z)
-        fixed_tol = dbdz <= 0.01*(1.0*10**(-5))
+        fixed_tol = dbdz <= (5.0*10**(-7))
         if np.any(fixed_tol):
             fixed_idx = np.min(np.where(fixed_tol))
         else:
@@ -129,7 +129,7 @@ for it in range(nt):
         depth_N2_tenth[it, i] = z[N2_tenth_idx]
     print(f"Completed time step {it+1}/{nt}")
 
-tols = ['Fixed Threshold', '1/2 N2 Threshold', '1/10 N2 Threshold'] 
+tols = [r'5 $\times$ 10$^{-7}$', '1/2 N2 Threshold', '1/10 N2 Threshold'] 
 labels = case_names + tols
 line_opt = ['solid'] * num_cases + line_opt[0:len(tols)]
 color_opt += ['black'] * len(tols)
@@ -162,7 +162,7 @@ for i in range(num_cases):
     ax2.semilogy(time/60/60/24, dbdz_fixed[:, i], color = color_opt[i])
     ax2.semilogy(time/60/60/24, dbdz_N2_half[:, i], color = color_opt[i], linestyle='--')
     ax2.semilogy(time/60/60/24, dbdz_N2_tenth[:, i], color = color_opt[i], linestyle=':')
-
+ax2.set_ylim(1e-8, 1e-4)
 plt.show()
 
 

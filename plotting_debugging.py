@@ -28,7 +28,7 @@ for i, field in enumerate(fields):
 
 plt.show()
 
-#fields = [area_idx[:, :, idx_max], area_idx[:, :, idx_neutral], area_idx[:, :, mld_index], area_idx[:, :, mld_index+2], area_idx[:, :, idx_neutral-1], area_idx[:, :, mld_index+50]]
+#fields = [area_idx[:, :, idx_max], area_idx[:, :, idx_neutral], area_idx[:, :, mld_idx], area_idx[:, :, mld_idx+2], area_idx[:, :, idx_neutral-1], area_idx[:, :, mld_idx+50]]
 #titles = ['max', 'neutral', 'mld', 'mld+2', 'neutral-1', 'mld+50']
 
 plt.rcParams.update({'font.size': 8})
