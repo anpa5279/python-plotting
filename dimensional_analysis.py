@@ -7,10 +7,10 @@ from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_radius
-from dimensional_analysis_functions import plot_rig_exponents
+from dimensional_analysis_functions import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
 
 # output name 
-contour_bound = 0.15
+contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
 # flags for what to plot
 ND = True
@@ -241,7 +241,7 @@ for it in nt:
 
         if transient_mld and it != 0:
             dbdz[:, i] = np.gradient(b_avg[:, i], z[:, i])
-            dbdz_tol = dbdz[:, i] <= 0.01*N2[i]#dbdz[:, i] <= (5.0*10**(-7))#
+            dbdz_tol = dbdz[:, i] <= (5.0*10**(-7))
             if np.any(dbdz_tol):
                 mld_idx[i] = np.min(np.where(dbdz_tol))
             else:
@@ -279,6 +279,8 @@ for it in nt:
         w_rms = w_rms/vel_scale
     ############ PLOTTING ############
     Rig_outdir = plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+    Fr_outdir = plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+    mld_outdir = plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/lj, case_names)
 # creating video
 if video:
     create_video(Rig_outdir, fig_folder, name_uni, 'Ri_g_NDanalysis')
