@@ -58,7 +58,7 @@ rj = 10.0
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/with noise'
-fig_folder = os.path.join(universal_folder, 'ND analysis', variations, 'contour 0.15')
+fig_folder = os.path.join(universal_folder, 'ND analysis', variations, name_uni)
 folders = []
 for name in folder_names:
     folders.append(os.path.join(universal_folder, name))
@@ -84,17 +84,6 @@ ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
 ranges['b_avg'] = [-1.5*10**(-2), 1.0*10**(-5)]
 
 color_opt, line_opt = plot_format(num_cases)
-# font for plotting 
-plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
-plt.rcParams['font.serif'] = 'cmr10'
-plt.rcParams['font.sans-serif'] = 'cmss10'
-plt.rcParams['font.monospace'] = 'cmtt10'
-plt.rcParams["axes.formatter.use_mathtext"] = True 
-plt.rcParams['font.size'] = 10
-plt.rcParams['mathtext.fontset'] = 'custom'
-plt.rcParams['mathtext.rm'] = 'DejaVu Serif'
-plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
-plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 
 # collecting model informations for all cases
 t_save = []
