@@ -9,11 +9,11 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/with noise'
 folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
 case_names =[r'dT/dz = 0.005', r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
 
-name_uni = "transient-mld-N2*0.01-Rithird"
+name_uni = "transient-mld-Turner1986-N2*0.01-Rithird"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'strat comparison figures')
 
 num_cases = len(case_names)
@@ -135,9 +135,6 @@ if plot_1d_y:
     hor_idx = np.array(mld_idx)
     name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
 
-if plot_1d_z:
-    name_uni +="_centerline or average"
-
 ############ NONDIMENSIONALIZATION ############
 if ND: 
     name_nd = 'ND_' + name_uni
@@ -158,8 +155,12 @@ if ND:
 
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
-    z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
-    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
+    if transient_mld:
+        z_nd = (z+mld)/(Ln)
+        zf_nd = (zf+mld)/(Ln)
+    else:
+        z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
+        zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
 
     y_nd = y / l_area
     lx_nd = np.zeros(3)

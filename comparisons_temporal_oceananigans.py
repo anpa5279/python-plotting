@@ -24,6 +24,9 @@ if variations == 'strat':
     dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
     mld = 30 * np.ones(num_cases) 
     Sj = 0.1 * np.ones(num_cases) 
+    S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
+    S_contour = S_value*0.15 
+    w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
 elif variations == 'MLD':
     folder_names =['beta = default S0 = 0.1 MLD = 20m', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 MLD = 40m']
     case_names =[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']
@@ -31,6 +34,9 @@ elif variations == 'MLD':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = np.array([20, 30, 40])
     Sj = 0.1 * np.ones(num_cases) 
+    S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
+    S_contour = S_value*0.15 
+    w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
 elif variations == 'flux':
     folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
     case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
@@ -38,7 +44,9 @@ elif variations == 'flux':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = 30 * np.ones(num_cases) 
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 
-
+    S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
+    S_contour = S_value*0.15 
+    w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
 
 # flags for how to read data
 with_halos = False
@@ -48,7 +56,7 @@ temporal_avg = True
 mld_transient = False
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/with noise'
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
 folders = []
 for name in folder_names:
