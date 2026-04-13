@@ -9,8 +9,8 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/with noise'
-folder_names =['beta = default S0 = 0.05', 'beta = default S0 = 0.1', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2']
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
+folder_names =['beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
 case_names = [r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
 name_uni = "transient-mld-fixed-5mag-7-Rithird"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'Flux comparison figures')
@@ -39,16 +39,16 @@ rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
 dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
 rho0 = 1026
-mld = 30 * np.ones(num_cases) # mixed layer depth in m
+mld = 60 * np.ones(num_cases) # mixed layer depth in m
 T0 = 25.0
 S0 = 0 
 wp = 0.001
 Sj = np.array([0.05, 0.1, 0.15, 0.2])# 
 F_s = np.dot(Sj, wp)
 
-S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
+# with noise and closure cases: S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
 S_contour = S_value*0.15 
-w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
+# with noise and closure cases: w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))

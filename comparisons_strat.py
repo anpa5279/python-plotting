@@ -9,8 +9,8 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/with noise'
-folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
+folder_names =['beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60'] 
 case_names =[r'dT/dz = 0.005', r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
 
 name_uni = "transient-mld-Turner1986-N2*0.01-Rithird"
@@ -36,16 +36,16 @@ rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
 dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
 rho0 = 1026
-mld = 30 * np.ones(num_cases) # 
+mld = 60 * np.ones(num_cases) # 
 T0 = 25.0
 S0 = 0 
 wp = 0.001
 Sj = 0.1 * np.ones(num_cases) # np.array([0.05, 0.1, 0.15, 0.2])# 
 F_s = np.dot(Sj, wp)
 
-S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
+# with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
 S_contour = S_value*0.15 
-w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
+# with noise and closure cases: w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
