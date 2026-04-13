@@ -9,7 +9,7 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet'
 folder_names =['beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60'] 
 case_names =[r'dT/dz = 0.005', r'dT/dz = 0.01', r'dT/dz = 0.05', r'dT/dz = 0.10'] 
 

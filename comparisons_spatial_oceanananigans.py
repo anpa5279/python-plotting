@@ -33,7 +33,7 @@ elif variations == 'flux':
     mld = 60 * np.ones(num_cases) 
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet'
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
 name_uni ='contour-0.15-dTdz'
 folders = []

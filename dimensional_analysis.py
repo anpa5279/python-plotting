@@ -63,7 +63,7 @@ F_s = np.dot(Sj, wp)
 rj = 10.0
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet'
 fig_folder = os.path.join(universal_folder, 'ND analysis', variations, name_uni)
 folders = []
 for name in folder_names:

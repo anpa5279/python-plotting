@@ -1,4 +1,5 @@
 import os
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
@@ -19,9 +20,9 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/beta = default S0 = 0.15 dTdz = 0.01 MLD = 60/'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet/beta = default S0 = 0.05 dTdz = 0.01 MLD = 60/'
 output_folder = os.path.join(folder, "plotting outputs") 
-name = ""
+name = "comparison_ranges-"
 
 # flags to analyze data 
 rho_IC_perturb = False
@@ -43,16 +44,16 @@ stokes = False
 salinity = True
 
 # physical parameters
-mld = 30.0  # mixed layer depth in meters
+nums = re.findall(r' -?\d*\.?\d+', folder)
+mld = float(nums[-1]) # mixed layer depth in meters
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.005 # background temperature gradient in K/m
+dTdz = float(nums[-2]) # background temperature gradient in K/m
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = 0.1
+Sj = float(nums[-3]) # salinity of the source in PSU
 wp = 0.001
 F_s = Sj*wp
-rj = 10
 # plotting prep
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -69,33 +70,24 @@ plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = dTdz, Sj = Sj)
 
 # plot ranges
+ranges['w'] = [-2*10**(-2), 2*10**(-2)]
+ranges['w_fluc'] = [-2*10**(-2), 2*10**(-2)]
+ranges['vel'] = [-1e-5, 1e-5]
+ranges['b'] = [-8.0*10**(-4), 8.0*10**(-4)]
+ranges['rho'] = [rho0-0.01, rho0+0.1]
+ranges['S'] = [0.0, 0.05]
+ranges['T'] = [T0-0.4, T0 + 0.02]
+ranges['u_fluc'] = ranges['u']
+
 if xy_plot and salinity:
     xy_ranges = ranges.copy()
-    #xy_ranges['rho'] = [rho0-0.01, rho0+0.1]
-    xy_ranges['b_fluc'] = [-8*10**(-5), 8*10**(-5)]
+    xy_ranges['b_fluc'] = [-2*10**(-5), 2*10**(-5)]
     xy_ranges['rho_fluc'] = [-1*10**-3, 1*10**-3]
-    #xy_ranges['b'] = [-2.0*10**(-4), 2.0*10**(-4)]
-    xy_ranges['Pdynamic'] = [-1*10**(-3), 1*10**(-3)]
-    xy_ranges['T'] = [T0-0.06, T0 + 0.06]
+    xy_ranges['Pdynamic'] = [-1*10**(-4), 1*10**(-4)]
+    xy_ranges['T'] = [T0-0.04, T0 + 0.01]
     xy_ranges['S'] = [0.0, 0.012]
-    #xy_ranges['w'] = [-5*10**(-3), 5*10**(-3)]
-
-ranges['w'] = [-2*10**(-2), 2*10**(-2)]
-ranges['w_fluc'] = [-0.003, 0.003]
-ranges['restress'] = [-4*10**(-8), 4*10**(-8)]
-ranges['vel'] = [-1e-5, 1e-5]
-ranges['b'] = [-2.0*10**(-3), 2.0*10**(-3)]#[-1.0*10**(-2), 1.0*10**(-2)]#
-ranges['rho'] = [rho0-0.02, rho0+0.14]#[rho0-0.02, rho0+0.9] #
-ranges['S'] = [0.0, 0.05]
-ranges['T'] = [T0-0.65, T0 + 0.02]# [T0-3.4, T0 + 0.05]#
-ranges['Q'] = [-3.5*10**(0), 3.5*10**(0)]
-ranges['M'] = [-2*10**(-1), 2*10**(-1)]
-ranges['F'] = [-2.5*10**(-4), 2.5*10**(-4)]
-ranges['B'] = [-8*10**(-2), 8*10**(-2)]
-ranges['richardson'] = [-1*10**5, 1*10**5]
-ranges['u'] = [-2*10**(-2), 2*10**(-2)]
-ranges['u_fluc'] = ranges['u']
-ranges['v'] = [-4*10**(-3), 4*10**(-3)]
+    xy_ranges['u'] = [-5*10**(-4), 5*10**(-4)]
+    xy_ranges['v'] = xy_ranges['u']
 
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
@@ -346,8 +338,7 @@ for it in nt:
         loc = ""
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, max_index, loc, T)
     if buoyancy_analysis_plot and not salinity:
-        b_ranges = ranges.copy()
-        buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
+        buoyancy_dir = buoyancy_analysis(time, it, ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_plot and salinity:
         buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
     if buoyancy_momentum_analysis:
