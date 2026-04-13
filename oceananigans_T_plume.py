@@ -19,7 +19,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/beta = default S0 = 0.2 no noise/'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/beta = default S0 = 0.15 dTdz = 0.01 MLD = 60/'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -31,11 +31,10 @@ video = True
 
 video_3d_flag = False
 turb_stats_plot = False
-vert_slice_plot = False
+vert_slice_plot = True
 xy_plot = True
 buoyancy_analysis_plot = False
 buoyancy_momentum_analysis = False
-plume_plot = False
 
 # flags for how to read data
 with_halos = False
@@ -108,9 +107,9 @@ if Nranks > 1:
 # Read model information
 fid = os.path.join(folder, dtn[0])
 if not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes, closure)
 elif stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
     u_s = stokes_exp(z)
 
 if salinity:
@@ -206,7 +205,7 @@ for it in nt:
     bv_fluc, bv_fluc_avg = ab_fluc_mean(b, v, b_avg, v_avg)
     bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
     
-    if turb_stats_plot or plume_plot or buoyancy_momentum_analysis:
+    if turb_stats_plot or buoyancy_momentum_analysis:
         u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
         v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
         w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
@@ -351,8 +350,6 @@ for it in nt:
         buoyancy_dir = buoyancy_analysis(time, it, b_ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_plot and salinity:
         buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
-    if plume_plot:
-        plume_dir = plume_vertical_spatial_plot(time, it, ranges, line_opt, output_folder, case_names, name, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, rp_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms)
     if buoyancy_momentum_analysis:
         momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
 print("All frames created.")

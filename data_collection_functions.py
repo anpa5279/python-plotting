@@ -21,7 +21,7 @@ def collect_time_outputs(file, Nranks, stokes=False, closure=True):
         else:
             visc = 0.0
             diff = 0.0
-        x = dx[0]/2 + np.arange(nx[0]) * dx[0]
+        x = f['grid/xᶜᵃᵃ'][hx[0]] + np.arange(nx[0]) * dx[0]
         y = f['grid/yᵃᶜᵃ'][hx[1]:-hx[1]]
         z = f['grid/z/cᵃᵃᶜ'][hx[2]:-hx[2]]
         xf = np.arange(nx[0]) * dx[0]
