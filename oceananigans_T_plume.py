@@ -39,6 +39,7 @@ plume_plot = False
 
 # flags for how to read data
 with_halos = False
+closure = False
 stokes = False
 salinity = True
 

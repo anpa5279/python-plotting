@@ -24,21 +24,21 @@ if variations == 'strat':
     dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = 0.1 * np.ones(num_cases) 
-    # with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
+    S_value = [0.005202084553938343, 0.005010973297310681, 0.005283282089196569, 0.005173444793047881] # with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
     S_contour = S_value*0.15 
     # with noise and closure cases: w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
 elif variations == 'MLD':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.01 MLD = 50', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 70']
-    case_names =[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']
+    case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = np.array([50, 60, 70])
     Sj = 0.1 * np.ones(num_cases) 
-    # with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
+    S_value = [0.005574689291054047, 0.005010973297310681, 0.004682995795255769] # with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
     S_contour = S_value*0.15 
     # with noise and closure cases: w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
 elif variations == 'flux':
-    folder_names =['beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
+    folder_names =['beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
     case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
@@ -50,6 +50,7 @@ elif variations == 'flux':
 
 # flags for how to read data
 with_halos = False
+closure = False
 stokes = False * np.ones(num_cases) 
 salinity = True
 mld_transient = False

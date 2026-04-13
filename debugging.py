@@ -22,6 +22,7 @@ num_cases = len(case_names)
 
 # flags for how to read data
 with_halos = False
+closure = False
 salinity = True
 
 # physical parameters
@@ -66,7 +67,7 @@ for i, folder in enumerate(folders):
             dtn.append(f'fields_rank{file}.jld2')
     # Read model information
     fid = os.path.join(folder, dtn[0])
-    time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, False)
+    time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes=False, closure=closure)
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:

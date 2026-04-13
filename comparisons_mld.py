@@ -11,7 +11,7 @@ from dense_plume_analysis import plume_tracer_radius
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
 folder_names =['beta = default S0 = 0.1 dTdz = 0.01 MLD = 50', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 70']
-case_names = [r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']  
+case_names = [r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']  
 name_uni = "transient-mld-fixed-5mag-7-Rithird"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'MLD comparison figures')
 
@@ -25,6 +25,7 @@ transient_mld = True
 
 # flags for how to read data
 with_halos = False
+closure = False
 stokes = False * np.ones(num_cases) 
 salinity = True
 

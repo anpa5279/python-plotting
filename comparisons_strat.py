@@ -26,6 +26,7 @@ transient_mld = True
 
 # flags for how to read data
 with_halos = False
+closure = False
 stokes = False * np.ones(num_cases) 
 salinity = True
 

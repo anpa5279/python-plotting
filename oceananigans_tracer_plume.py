@@ -36,6 +36,7 @@ video_3d_flag = True
 turb_stats_video = True
 plot_dense_scalar = False
 with_halos = False
+closure = False
 
 # Parameters
 T0 = 25.0

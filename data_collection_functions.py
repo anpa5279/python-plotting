@@ -4,7 +4,7 @@ import h5py
 
 ### -------------------------EXTRACTING DATA------------------------- ###
 ## collecting model information
-def collect_time_outputs(file, Nranks, stokes=False):
+def collect_time_outputs(file, Nranks, stokes=False, closure=True):
     with h5py.File(file, 'r') as f:
         timeseries_group = [g for g in f.keys() if 'timeseries' in g][0]
         t_group = f[timeseries_group + '/t']
@@ -15,8 +15,12 @@ def collect_time_outputs(file, Nranks, stokes=False):
         hx = [f['grid/Hx'][()], f['grid/Hy'][()], f['grid/Hz'][()]]
         lx = [f['grid/Lx'][()] * Nranks, f['grid/Ly'][()], f['grid/Lz'][()]]
         dx = [f['grid/Δxᶜᵃᵃ'][()], f['grid/Δyᵃᶜᵃ'][()], f['grid/z/Δᵃᵃᶜ'][()]]
-        visc = f['closure/ν'][()]
-        diff= f['closure/κ']
+        if closure:
+            visc = f['closure/ν'][()]
+            diff= f['closure/κ']
+        else:
+            visc = 0.0
+            diff = 0.0
         x = dx[0]/2 + np.arange(nx[0]) * dx[0]
         y = f['grid/yᵃᶜᵃ'][hx[1]:-hx[1]]
         z = f['grid/z/cᵃᵃᶜ'][hx[2]:-hx[2]]
@@ -109,6 +113,7 @@ def collect_fields_distributed(Nranks, folder, dtn, t_save, hx, nx, temperature=
         T = np.zeros((nx[0], nx[1], nx[2]))
         S = np.zeros((nx[0], nx[1], nx[2])) 
         for r in range(Nranks):
+            #print(dtn[r])
             u_dist, v_dist, w_dist, T_dist, S_dist, P_d_dist, P_s_dist = collect_fields(folder, dtn[r], t_save, hx, temperature, salinity, with_halos)
             u[xrange, :, :] = u_dist
             v[xrange, :, :] = v_dist

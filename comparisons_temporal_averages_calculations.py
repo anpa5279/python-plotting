@@ -1,14 +1,10 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-from plotting_functions import plot_ranges
-from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from plotting_comparisons import plot_format, plume_temporal_analysis, mld_temporal_analysis
+from general_analysis_functions import ab_fluc_mean
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal
-from dense_plume_analysis import plume_tracer_radius, neutral_buoyancy_loc
 
 # selecting cases to comparse
-variations = 'strat' # 'MLD', 'flux', 'strat'
+variations = 'flux' # 'MLD', 'flux', 'strat'
 if variations == 'strat':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -18,13 +14,13 @@ if variations == 'strat':
     Sj = 0.1 * np.ones(num_cases) 
 elif variations == 'MLD':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.01 MLD = 50', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 70']
-    case_names =[r'MLD = 20m', r'MLD = 30m', r'MLD = 40m']
+    case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = np.array([50, 60, 70])
     Sj = 0.1 * np.ones(num_cases) 
 elif variations == 'flux':
-    folder_names =['beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
+    folder_names =['beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
     case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
@@ -46,6 +42,7 @@ ND = True
 
 # flags for how to read data
 with_halos = False
+closure = False
 salinity = True
 
 
@@ -71,7 +68,7 @@ for i, folder in enumerate(folders):
             dtn.append(f'fields_rank{file}.jld2')
     # Read model information
     fid = os.path.join(folder, dtn[0])
-    time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, False)
+    time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes=False, closure=closure)
 
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
@@ -96,7 +93,7 @@ for i, folder in enumerate(folders):
             dtn.append(f'fields_rank{file}.jld2')
     # Read model information
     fid = os.path.join(folder, dtn[0])
-    time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, False)
+    time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes=False, closure=closure)
     
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
