@@ -183,9 +183,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{l}_{j}}$/(F$^{\text{C}}$)") #
+        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_{j}}$/(F$^{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{l}_{j}}$/(F$^{\text{C}}$)")#
+        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_{j}}$/(F$^{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
         ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
@@ -356,7 +356,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
         ax4.set_xlabel(r"(C'$_{\text{centerline}} \beta$)Ri$_{g}^{-1/3}$Fr$_{flux}^{-1}$") 
         ax5.set_ylabel(z_nd)
         ax5.set_xlabel(r"(r/l$_{j}$)Fr$_{flux}^{-1}$")
-        ax6.set_xlabel(r"($\langle$b'u'$_{i}\rangle_{xy}$/$\sqrt{\text{g}^3 \text{l}_{j}}$)Fr$_{flux}^{-1}$")
+        ax6.set_xlabel(r"($\langle$b'u'$_{i}\rangle_{xy}$/$\sqrt{\text{g}^3 \text{r}_{j}}$)Fr$_{flux}^{-1}$")
         ax7.set_xlabel(r"(b$_{rms}$/g)(Ri$_{g}^{1/3}$)Fr$_{flux}^{-1}$")
         ax8.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha$)Ri$_{g}^{-1/3}$Fr$_{flux}^{-1}$")
     else:

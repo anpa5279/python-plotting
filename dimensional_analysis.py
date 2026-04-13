@@ -1,30 +1,28 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
-from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_radius
-from dimensional_analysis_functions import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
+from dimensional_analysis_functions import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents, plot_combo_exponents
 
 # output name 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
 # flags for what to plot
 ND = True
-video = False
+all_steps = False
 mld_transient = True
 # manually select which plotting flags if not the component being varied by default
 strat_flag = False
 flux_flag = False
 mld_flag = False
 
-exponents = [-1/4, -1/8, 0, 1/8, 1/4] # for plotting reference lines with different exponents, set to empty array to not plot any
+exponents = []# for plotting reference lines with different exponents, set to empty array to not plot any
 
 # selecting cases to compare
-variations = 'MLD' # 'MLD', 'flux', 'strat'
+variations = 'strat' # 'MLD', 'flux', 'strat', 'combo'
 if variations == 'strat':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -32,7 +30,7 @@ if variations == 'strat':
     dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = 0.1 * np.ones(num_cases) 
-    S_value = [0.005202084553938343, 0.005010973297310681, 0.005283282089196569, 0.005173444793047881]# with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
+    S_value = np.array([0.005202084553938343, 0.005010973297310681, 0.005283282089196569, 0.005173444793047881])# with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
     S_contour = S_value*contour_bound
     # with noise and closure cases: w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
 elif variations == 'MLD':
@@ -42,7 +40,7 @@ elif variations == 'MLD':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = np.array([50, 60, 70])
     Sj = 0.1 * np.ones(num_cases) 
-    S_value = [0.005574689291054047, 0.005010973297310681, 0.004682995795255769]# with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
+    S_value = np.array([0.005574689291054047, 0.005010973297310681, 0.004682995795255769]) # with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
     S_contour = S_value*contour_bound
     # with noise and closure cases: w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
 elif variations == 'flux':
@@ -52,19 +50,47 @@ elif variations == 'flux':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) 
-    S_value = [0.0031834305308354204, 0.005010973297310681, 0.006362182592469852, 0.008358286212836368] # with noise and closure cases: S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
+    S_value = np.array([0.0031834305308354204, 0.005010973297310681, 0.006362182592469852, 0.008358286212836368]) # with noise and closure cases: S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
     S_contour = S_value*contour_bound
     # with noise and closure cases: w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
-rho0 = 1026
+elif variations == 'combo':
+    folder_names =['beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 
+                   'beta = default S0 = 0.1 dTdz = 0.01 MLD = 50', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 70', 
+                   'beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60',
+                   'beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
+    case_names =[r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.01', 
+                 r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 50m, dTdz = 0.01', r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 70m, dTdz = 0.01', 
+                 r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.005', r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.05', r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.1', 
+                 r'F$^{\text{C}} = -5.0*10^{-5}$, MLD = 60m, dTdz = 0.01', r'F$^{\text{C}} = -1.5*10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$^{\text{C}} = - 2.0*10^{-4}$, MLD = 60m, dTdz = 0.01']
+    num_cases = len(case_names)
+    dTdz = np.array([0.01, 
+                     0.01, 0.01, 
+                     0.005, 0.05, 0.1,
+                     0.01, 0.01, 0.01]) # background temperature gradient in K/m
+    mld = np.array([60, 
+                    50, 70, 
+                    60, 60, 60,
+                    60, 60, 60])
+    Sj = np.array([0.1, 
+                   0.1, 0.1, 
+                   0.1, 0.1, 0.1,
+                   0.05, 0.15, 0.2]) 
+    S_value = np.array([0.005010973297310681, 
+                        0.005574689291054047, 0.004682995795255769, 
+                        0.005202084553938343, 0.005283282089196569, 0.005173444793047881,
+                        0.0031834305308354204, 0.006362182592469852, 0.008358286212836368]) 
+    S_contour = S_value*contour_bound
+
 T0 = 25.0
 g = 9.80665  # gravity in m/s^2
 wp = 0.001
 F_s = np.dot(Sj, wp)
-rj = 10.0
+rj = 5.0
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet'
 fig_folder = os.path.join(universal_folder, 'ND analysis', variations, name_uni)
+os.makedirs(fig_folder, exist_ok=True)
 folders = []
 for name in folder_names:
     folders.append(os.path.join(universal_folder, name))
@@ -74,21 +100,9 @@ transient_mld = True
 
 # flags for how to read data
 with_halos = False
-closure = False
+closure = False * np.ones(num_cases) 
 stokes = False * np.ones(num_cases) 
 salinity = True
-
-# plotting prep
-ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
-ranges['S'] = [0, 1*10**(-3)]
-ranges['vel_rms'] = [0, 4*10**-3]
-ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)]
-ranges['b_rms'] = [0, 1.5*10**(-5)]
-ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
-ranges['w'] = [-0.1, 0.1]
-ranges['S_fluc'] = [-5*10**(-2), 5*10**(-2)]
-ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
-ranges['b_avg'] = [-1.5*10**(-2), 1.0*10**(-5)]
 
 color_opt, line_opt = plot_format(num_cases)
 
@@ -109,9 +123,9 @@ for i, folder in enumerate(folders):
     # Read model information
     fid = os.path.join(folder, dtn[0])
     if not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
     else:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
@@ -127,7 +141,7 @@ centerline_index[0, :] = nx[0]//2 - 1
 centerline_index[1, :] = nx[1]//2 - 1
 centerline_index[2, :] = np.arange(nx[2]).astype(int)
 
-if video:
+if all_steps:
     nt = len(t_save[0])
     nt = np.arange(0, nt)
 else:
@@ -146,38 +160,24 @@ if ND:
     name_nd = 'ND_' + name_uni
 
     area = (2*rj)**2 
-    lj = np.sqrt(area)
     N2 = g * alpha * dTdz 
-    Ri_g = (N2/g*lj)
-    Fr_flux = F_s * beta / np.sqrt(lj * g)
-    vel_scale = np.sqrt(lj * g)
+    Ri_g = (N2/g*rj)
+    Fr_flux = F_s * beta / np.sqrt(rj * g)
+    vel_scale = np.sqrt(rj * g)
     b_scale = g
     F_b_scale = b_scale * vel_scale
     T_scale = 1/alpha
     S_scale =  1/beta
     F_T_scale = beta * F_s / alpha
     F_S_scale = F_s
-    hor_scale = lj
+    hor_scale = rj
 
     F0 = area * beta * g * F_s
     Ln =(F0/N2**(3/2))**(1/4)
-    z_nd = (z+mld)/(Ln)#(z+mld)*(mld)**(1/3)/(Ln**(4/3))
-    zf_nd = (zf+mld)/(Ln)#(zf+mld)*(mld)**(1/3)/(Ln**(4/3))
+    z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))#(z+mld)/(Ln)#
+    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))#(zf+mld)/(Ln)#
 
-    y_nd = y / lj
-
-
-    nd_ranges = ranges.copy()
-    nd_ranges['vel_rms'] = nd_ranges['vel_rms'] / np.min(vel_scale)
-    nd_ranges['w'] = nd_ranges['w'] / np.min(vel_scale)
-    nd_ranges['b_avg'] = nd_ranges['b_avg'] / np.min(b_scale)
-    nd_ranges['bw_fluc'] = nd_ranges['bw_fluc'] / np.min(F_b_scale)
-    nd_ranges['b_rms'] = nd_ranges['b_rms'] / np.min(b_scale)
-    nd_ranges['b_fluc'] = nd_ranges['b_fluc'] / np.min(b_scale)
-    nd_ranges['S'] = nd_ranges['S'] / np.min(S_scale)
-    nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
-    nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(T_scale)
-    nd_ranges['T'] = nd_ranges['T'] / np.min(T_scale)
+    y_nd = y / rj
 
 start_neutral = np.zeros(num_cases).astype(int)
 for it in nt:
@@ -285,20 +285,20 @@ for it in nt:
         v_rms = v_rms/vel_scale
         w_rms = w_rms/vel_scale
     ############ PLOTTING ############
-    if np.size(exponents)==0:
-        if variations == 'strat' or strat_flag:
-            Rig_outdir = plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
-        if variations == 'flux' or flux_flag:
-            Fr_outdir = plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
-        if variations == 'MLD' or mld_flag:
-            mld_outdir = plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/lj, case_names)
+    if variations == 'combo':
+        plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, Fr_flux, mld/rj, case_names)
     else:
-        if variations == 'strat' or strat_flag:
-            Rig_outdir = plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
-        if variations == 'flux' or flux_flag:
-            Fr_outdir = plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
-        if variations == 'MLD' or mld_flag:
-            mld_outdir = plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/lj, case_names, exponents = exponents)
-# creating video
-if video:
-    create_video(Rig_outdir, fig_folder, name_uni, 'Ri_g_NDanalysis')
+        if np.size(exponents)==0:
+            if variations == 'strat' or strat_flag:
+                plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+            if variations == 'flux' or flux_flag:
+                plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+            if variations == 'MLD' or mld_flag:
+                plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
+        else:
+            if variations == 'strat' or strat_flag:
+                plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+            if variations == 'flux' or flux_flag:
+                plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+            if variations == 'MLD' or mld_flag:
+                plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)

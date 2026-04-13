@@ -8,8 +8,8 @@ from plotting_functions import stratification_profile, plot_ranges, turb_stats, 
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean, richardson_number
 from dense_plume_analysis import mld_info, centerline_analysis_buoyancy, plume_momentum_analysis, plume_tracer_analysis
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
-from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
-from plotting_comparisons import plume_vertical_spatial_plot
+from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal
+
 def stokes_exp(z):
     g_Earth = 9.80665
     wavelength = 60.0 #m

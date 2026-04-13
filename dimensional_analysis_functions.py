@@ -5,8 +5,6 @@ from matplotlib.lines import Line2D
 
 def plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Ri_g, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
-    outdir = os.path.join(fig_folder, "ND strat influence")
-    os.makedirs(outdir, exist_ok=True)
     scale = np.ones(7) 
     scale[-1] = 0.02
     gridspec_kw={'height_ratios': scale}
@@ -32,77 +30,76 @@ def plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
     for ax, exp in zip(axes[0, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
-            ax.plot(w_rms[:, i] / (correction), 
+            ax.plot(w_rms[:, i] * (correction), 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot Ri_g^{{{exp}}}$', fontsize = 16)
+        ax.set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot Ri_g^{exp}$', fontsize = 16)
     #axes[0, 0].legend()
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
-            ax.plot(b_center[:, i] / (correction), 
+            ax.plot(b_center[:, i] *(correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r'$b_{centerline}/g \cdot Ri_g^{{{exp}}}$', fontsize = 16)
+        ax.set_xlabel(r'$b_{centerline}/g \cdot Ri_g^{exp}$', fontsize = 16)
     #axes[1, 0].legend()
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
-            ax.plot(bw[:, i] / (correction), 
+            ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{l}_{j}})\cdot Ri_g^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{r}_{j}})\cdot Ri_g^{exp}$", fontsize = 16)
     #axes[2, 0].legend()
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
-            ax.plot(rp[:, i] / (correction), 
+            ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"(r/l$_{j})\cdot Ri_g^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"(r/l$_{j})\cdot Ri_g^{exp}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
-            ax.plot(T[:, i] / (correction), 
+            ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot Ri_g^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot Ri_g^{exp}$", fontsize = 16)
     #axes[4, 0].legend()
 
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
-            ax.plot(S[:, i] / (correction), 
+            ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot Ri_g^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot Ri_g^{exp}$", fontsize = 16)
     #axes[5, 0].legend()
 
     plt.tight_layout()
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{exponents}_{it:04d}.png")
+    str_exp = list(map(str, exponents))
+    str_exp = '_'.join(f"{x:.3g}" for x in exponents)
+    frame_path = os.path.join(fig_folder, f"it{it:04d}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
-    print(f"Time step {it + 1} captured: {frame_path}")
-    return outdir # return the directory where frames are saved for video creation
-
+    print(f"Time step {it + 1} captured")
+    
 
 def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Fr, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
-    outdir = os.path.join(fig_folder, "ND flux influence")
-    os.makedirs(outdir, exist_ok=True)
     scale = np.ones(7) 
     scale[-1] = 0.02
     gridspec_kw={'height_ratios': scale}
@@ -128,77 +125,74 @@ def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, 
     for ax, exp in zip(axes[0, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
-            ax.plot(w_rms[:, i] / (correction), 
+            ax.plot(w_rms[:, i] * (correction), 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot Fr^{{{exp}}}$', fontsize = 16)
+        ax.set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot Fr^{exp}$', fontsize = 16)
     #axes[0, 0].legend()
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
-            ax.plot(b_center[:, i] / (correction), 
+            ax.plot(b_center[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r'$b_{centerline}/g \cdot Fr^{{{exp}}}$', fontsize = 16)
+        ax.set_xlabel(r'$b_{centerline}/g \cdot Fr^{exp}$', fontsize = 16)
     #axes[1, 0].legend()
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
-            ax.plot(bw[:, i] / (correction), 
+            ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{l}_{j}})\cdot Fr^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{r}_{j}})\cdot Fr^{exp}$", fontsize = 16)
     #axes[2, 0].legend()
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
-            ax.plot(rp[:, i] / (correction), 
+            ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"(r/l$_{j})\cdot Fr^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"(r/l$_{j})\cdot Fr^{exp}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
-            ax.plot(T[:, i] / (correction), 
+            ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot Fr^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot Fr^{exp}$", fontsize = 16)
     #axes[4, 0].legend()
 
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
-            ax.plot(S[:, i] / (correction), 
+            ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot Fr^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot Fr^{exp}$", fontsize = 16)
     #axes[5, 0].legend()
 
     plt.tight_layout()
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{exponents}_{it:04d}.png")
+    str_exp = '_'.join(f"{x:.3g}" for x in exponents)
+    frame_path = os.path.join(fig_folder, f"it{it:04d}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
-    print(f"Time step {it + 1} captured: {frame_path}")
-    return outdir # return the directory where frames are saved for video creation
-
+    print(f"Time step {it + 1} captured")
 
 def plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, mld, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
-    outdir = os.path.join(fig_folder, "ND MLD influence")
-    os.makedirs(outdir, exist_ok=True)
     scale = np.ones(7) 
     scale[-1] = 0.02
     gridspec_kw={'height_ratios': scale}
@@ -224,69 +218,141 @@ def plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
     for ax, exp in zip(axes[0, :], exponents):
         for i in range(num_cases):
             correction = mld[i]**exp
-            ax.plot(w_rms[:, i] / (correction), 
+            ax.plot(w_rms[:, i] * (correction), 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot mld^{{{exp}}}$', fontsize = 16)
+        ax.set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot mld^{exp}$', fontsize = 16)
     #axes[0, 0].legend()
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
             correction = mld[i]**exp
-            ax.plot(b_center[:, i] / (correction), 
+            ax.plot(b_center[:, i] *(correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r'$b_{centerline}/g \cdot mld^{{{exp}}}$', fontsize = 16)
+        ax.set_xlabel(r'$b_{centerline}/g \cdot mld^{exp}$', fontsize = 16)
     #axes[1, 0].legend()
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
             correction = mld[i]**exp
-            ax.plot(bw[:, i] / (correction), 
+            ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{l}_{j}})\cdot mld^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{r}_{j}})\cdot mld^{exp}$", fontsize = 16)
     #axes[2, 0].legend()
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
             correction = mld[i]**exp
-            ax.plot(rp[:, i] / (correction), 
+            ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"(r/l$_{j})\cdot mld^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"(r/l$_{j})\cdot mld^{exp}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
             correction = mld[i]**exp
-            ax.plot(T[:, i] / (correction), 
+            ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot mld^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot mld^{exp}$", fontsize = 16)
     #axes[4, 0].legend()
 
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
             correction = mld[i]**exp
-            ax.plot(S[:, i] / (correction), 
+            ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot mld^{{{exp}}}$", fontsize = 16)
+        ax.set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot mld^{exp}$", fontsize = 16)
     #axes[5, 0].legend()
 
     plt.tight_layout()
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{exponents}_{it:04d}.png")
+    str_exp = '_'.join(f"{x:.3g}" for x in exponents)
+    frame_path = os.path.join(fig_folder, f"it{it:04d}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
-    print(f"Time step {it + 1} captured: {frame_path}")
-    return outdir # return the directory where frames are saved for video creation
+    print(f"Time step {it + 1} captured")
+    
+
+def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, vars_exps, Ri_g, Fr, mld, case_names):
+    vars_str = vars_exps
+    num_cases = len(case_names)
+    scale = np.ones(7) 
+    scale[-1] = 0.1
+    gridspec_kw={'height_ratios': scale}
+    fig, axes = plt.subplots(1, len(scale), figsize=(25, 7), sharey=True, gridspec_kw = gridspec_kw)
+    plt.subplots_adjust(top=0.9)
+    for a in axes[-1]:
+        a.remove()
+    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])for i in range(num_cases)]
+    fig.legend(handles=case_handles,
+            loc='lower center',
+            ncol=num_cases//2,
+            bbox_to_anchor=(0.52, 0.005), fontsize = 16)
+    td = time[it] / 3600 / 24
+    fig.suptitle(f'{td:.2f} days', fontsize = 20, y = 0.99)
+    """
+    axes[0] = ND rms velocity vs z_nd varied exponent of all
+    axes[1] = ND centerline buoyancy vs z_nd varied exponent of all
+    axes[2] = ND average buoyancy flux vs z_nd varied exponent of all
+    axes[3] = ND radius of plume vs z_nd varied exponent of all
+    axes[4] = ND perturbed temperature vs z_nd varied exponent of all
+    axes[5] = ND average salinity vs z_nd varied exponent of all
+    """
+    for i in range(num_cases):
+        axes[0].plot(w_rms[:, i] * mld[0]**vars_exps[0, 0] * Ri_g[0]**vars_exps[0, 1] * Fr[0]**vars_exps[0, 2], 
+                zf_nd[:, i], color=color_opt[i])
+    axes[0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[0].set_xlabel(r'$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot mld^{exp}$', fontsize = 16)
+
+    for i in range(num_cases):
+        axes[1].plot(b_center[:, i] * mld[1]**vars_exps[1, 0] * Ri_g[1]**vars_exps[1, 1] * Fr[1]**vars_exps[1, 2], 
+                z_nd[:, i], color=color_opt[i])
+    axes[1].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[1].set_xlabel(r'$b_{centerline}/g \cdot mld^{exp}$', fontsize = 16)
+
+    for i in range(num_cases):
+        axes[2].plot(bw[:, i] * mld[2]**vars_exps[2, 0] * Ri_g[2]**vars_exps[2, 1] * Fr[2]**vars_exps[2, 2], 
+                z_nd[:, i], color=color_opt[i])
+    axes[2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[2].set_xlabel(r"$(\langle b'w'\rangle_{xy}/\sqrt{\text{g}^3 \text{r}_{j}})\cdot mld^{exp}$", fontsize = 16)
+
+    for i in range(num_cases):
+        axes[3].plot(rp[:, i] * mld[3]**vars_exps[3, 0] * Ri_g[3]**vars_exps[3, 1] * Fr[3]**vars_exps[3, 2], 
+                z_nd[:, i], color=color_opt[i])
+    axes[3].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[3].set_xlabel(r"(r/l$_{j})\cdot mld^{exp}$", fontsize = 16)
+
+    for i in range(num_cases):
+        axes[4].plot(T[:, i] * mld[4]**vars_exps[4, 0] * Ri_g[4]**vars_exps[4, 1] * Fr[4]**vars_exps[4, 2], 
+                z_nd[:, i], color=color_opt[i])
+    axes[4].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[4].set_xlabel(r"$(\text{T'}_{\text{centerline}}\alpha)\cdot mld^{exp}$", fontsize = 16)
+
+    for i in range(num_cases):
+        axes[5].plot(S[:, i] * mld[5]**vars_exps[5, 0] * Ri_g[5]**vars_exps[5, 1] * Fr[5]**vars_exps[5, 2], 
+                z_nd[:, i], color=color_opt[i])
+    axes[5].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[5].set_xlabel(r"($\langle$C$\rangle_{\text{xy}} \beta)\cdot mld^{exp}$", fontsize = 16)
+
+
+    plt.tight_layout()
+
+    # --- Save Frame ---
+    frame_path = os.path.join(fig_folder, f"it{it:04d}_combined.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it + 1} captured")
+    
 
