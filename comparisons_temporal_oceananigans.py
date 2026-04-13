@@ -52,7 +52,6 @@ elif variations == 'flux':
 with_halos = False
 stokes = False * np.ones(num_cases) 
 salinity = True
-temporal_avg = True
 mld_transient = False
 
 # Set up folder and simulation parameters
@@ -120,61 +119,7 @@ centerline_index = np.zeros((3, nx[2])).astype(int)
 centerline_index[0, :] = nx[0]//2 - 1
 centerline_index[1, :] = nx[1]//2 - 1
 centerline_index[2, :] = np.arange(nx[2]).astype(int)
-if temporal_avg and salinity:
-    S_contour = np.zeros(num_cases)
-    w_contour = np.zeros(num_cases)
-    for i, folder in enumerate(folders):
-        # List JLD2 files
-        dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-        Nranks = len(dtn)
-        if Nranks > 1:
-            dtn = []
-            for file in np.arange(Nranks):
-                dtn.append(f'fields_rank{file}.jld2')
-        # Read model information
-        fid = os.path.join(folder, dtn[0])
-        if Nranks == 1 and not stokes[i]:
-            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
-        elif Nranks == 1 and stokes[i]:
-            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
-        elif Nranks > 1 and not stokes[i]:
-            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
-        else:
-            time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
-            #u_s = stokes_exp(z)
-        if salinity:
-            alpha, beta = collect_temp_and_sal(fid, salinity)
-        else:
-            alpha = collect_temp_and_sal(fid, salinity)
-        t_save.append(t_save_temp)
-        centerline_index = np.zeros((3, nx[2])).astype(int)
-        center_xy_loc = np.zeros((3, nx[2]))
-        center_xy_loc[0, :] = lx[0]/2
-        center_xy_loc[1, :] = lx[1]/2
-        center_xy_loc[2, :] = z
-        centerline_index[0, :] = nx[0]//2 - 1
-        centerline_index[1, :] = nx[1]//2 - 1
-        centerline_index[2, :] = np.arange(nx[2]).astype(int)
-        nt = len(t_save_temp)
-        n = 0.0
-        S_sum = 0.0
-        w_sum = 0.0
-        for it in range(10, nt):
 
-            # Load data from files
-            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
-            wc = 0.5 * (w[..., :-1] + w[..., 1:])
-            w_sum += np.mean(w[centerline_index[0, :], centerline_index[1, :], :])
-            b = g*alpha*(T - T0) - g*beta*(S - S0)
-            b_avg = np.mean(b, axis=(-3, -2))
-            wc_avg = np.mean(wc, axis=(-3, -2))
-            bw_fluc, bw_fluc_avg = ab_fluc_mean(b, wc, b_avg, wc_avg)
-            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
-            S_sum += np.mean(S[centerline_index[0, :], centerline_index[1, :], bw_idx])
-            n += 1
-        S_contour[i] = S_sum/n
-        w_contour[i] = w_sum/n
-        print(f"Case {case_names[i]}: w_contour = {w_contour[i]}, S_contour = {S_contour[i]}")
 nt = len(t_save_temp)
 
 z = z*np.ones([num_cases, nx[2]])
