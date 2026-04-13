@@ -16,9 +16,15 @@ name_uni = f'contour-{contour_bound:.2f}'
 ND = True
 video = False
 mld_transient = True
+# manually select which plotting flags if not the component being varied by default
+strat_flag = False
+flux_flag = False
+mld_flag = False
+
+exponents = [-1/4, -1/8, 0, 1/8, 1/4] # for plotting reference lines with different exponents, set to empty array to not plot any
 
 # selecting cases to compare
-variations = 'strat' # 'MLD', 'flux', 'strat'
+variations = 'MLD' # 'MLD', 'flux', 'strat'
 if variations == 'strat':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.005', 'beta = default S0 = 0.1', 'beta = default S0 = 0.1 dTdz = 0.05', 'beta = default S0 = 0.1 dTdz = 0.1'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -278,9 +284,20 @@ for it in nt:
         v_rms = v_rms/vel_scale
         w_rms = w_rms/vel_scale
     ############ PLOTTING ############
-    Rig_outdir = plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
-    Fr_outdir = plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
-    mld_outdir = plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/lj, case_names)
+    if np.size(exponents)==0:
+        if variations == 'strat' or strat_flag:
+            Rig_outdir = plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+        if variations == 'flux' or flux_flag:
+            Fr_outdir = plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+        if variations == 'MLD' or mld_flag:
+            mld_outdir = plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/lj, case_names)
+    else:
+        if variations == 'strat' or strat_flag:
+            Rig_outdir = plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+        if variations == 'flux' or flux_flag:
+            Fr_outdir = plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+        if variations == 'MLD' or mld_flag:
+            mld_outdir = plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/lj, case_names, exponents = exponents)
 # creating video
 if video:
     create_video(Rig_outdir, fig_folder, name_uni, 'Ri_g_NDanalysis')
