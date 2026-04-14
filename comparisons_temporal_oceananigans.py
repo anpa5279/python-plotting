@@ -18,7 +18,7 @@ if mld_analysis_plot:
 # selecting cases to compare
 variations = 'strat' # 'MLD', 'flux', 'strat'
 if variations == 'strat':
-    folder_names =['beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60'] 
+    folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
     num_cases = len(case_names)
     dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
@@ -28,7 +28,7 @@ if variations == 'strat':
     S_contour = S_value*0.15 
     # with noise and closure cases: w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
 elif variations == 'MLD':
-    folder_names =['beta = default S0 = 0.1 dTdz = 0.01 MLD = 50', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 70']
+    folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
     case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
@@ -38,7 +38,7 @@ elif variations == 'MLD':
     S_contour = S_value*0.15 
     # with noise and closure cases: w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
 elif variations == 'flux':
-    folder_names =['beta = default S0 = 0.05 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.15 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.2 dTdz = 0.01 MLD = 60']
+    folder_names =['S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
     case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
@@ -56,7 +56,7 @@ salinity = True
 mld_transient = False
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
 folders = []
 for name in folder_names:
