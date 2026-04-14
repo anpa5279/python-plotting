@@ -80,22 +80,15 @@ elif variations == 'combo':
                         0.005202084553938343, 0.005283282089196569, 0.005173444793047881,
                         0.0031834305308354204, 0.006362182592469852, 0.008358286212836368]) 
     S_contour = S_value*contour_bound
-    vars_exps = np.array([
+    vars_exps = np.array([ # columns: Ri, Fr, MLD
         [0, -1/3, -1/2], # w_rms
         [-1/2, -1/3, 1/3], # b_center
         [-1/2, -3/8, 0], # bw_fluc_avg
         [-1/4, 1/4, 0], # r_profile
         [-3/8, -1/4, 1], # T_fluc_center
-        [-1/4, -7/8, 1.4] # S_avg
+        [-1/4, -7/8, 1/4] # S_avg
     ]) # manually manipulate
-vars_exps = np.array([
-    [0, -1/3, -1/2], # w_rms
-    [-1/2, -1/3, 1/3], # b_center
-    [-1/2, -3/8, 0], # bw_fluc_avg
-    [-1/4, 1/4, 0], # r_profile
-    [-3/8, -1/4, 1], # T_fluc_center
-    [-1/4, -7/8, 1.4] # S_avg
-])
+
 T0 = 25.0
 g = 9.80665  # gravity in m/s^2
 wp = 0.001
