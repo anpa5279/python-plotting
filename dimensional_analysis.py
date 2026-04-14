@@ -15,14 +15,14 @@ ND = True
 all_steps = False
 mld_transient = True
 # manually select which plotting flags if not the component being varied by default
-strat_flag = False
-flux_flag = False
-mld_flag = False
+strat_flag = True
+flux_flag = True
+mld_flag = True
 
-exponents = [-1, -7/8, -3/4, -5/8, -2/3, -1/2]# for plotting reference lines with different exponents, set to empty array to not plot any
+exponents = []# for plotting reference lines with different exponents, set to empty array to not plot any
 
 # selecting cases to compare
-variations = 'combo' # 'MLD', 'flux', 'strat', 'combo'
+variations = 'strat' # 'MLD', 'flux', 'strat', 'combo'
 if variations == 'strat':
     folder_names =['beta = default S0 = 0.1 dTdz = 0.005 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.01 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.05 MLD = 60', 'beta = default S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  

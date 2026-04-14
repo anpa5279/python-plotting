@@ -93,12 +93,11 @@ def plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
     # --- Save Frame ---
     str_exp = list(map(str, exponents))
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"it{it:04d}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"Ri_it{it:04d}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured")
     
-
 def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Fr, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
@@ -187,7 +186,7 @@ def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, 
 
     # --- Save Frame ---
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"it{it:04d}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"Fr_it{it:04d}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured")
@@ -280,7 +279,7 @@ def plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
 
     # --- Save Frame ---
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"it{it:04d}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"MLD_it{it:04d}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured")
@@ -314,37 +313,37 @@ def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, r
     axes[5] = ND average salinity vs z_nd varied exponent of all
     """
     for i in range(num_cases):
-        axes[0, 0].plot(w_rms[:, i] * mld[0]**vars_exps[0, 0] * Ri_g[0]**vars_exps[0, 1] * Fr[0]**vars_exps[0, 2], 
+        axes[0, 0].plot(w_rms[:, i] * mld[i]**vars_exps[0, 0] * Ri_g[i]**vars_exps[0, 1] * Fr[i]**vars_exps[0, 2], 
                 zf_nd[:, i], color=color_opt[i])
     axes[0, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     axes[0, 0].set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g l}}_{{j}}}}\cdot$ {vars_str[0]}", fontsize = 16)
 
     for i in range(num_cases):
-        axes[0, 1].plot(b_center[:, i] * mld[1]**vars_exps[1, 0] * Ri_g[1]**vars_exps[1, 1] * Fr[1]**vars_exps[1, 2], 
+        axes[0, 1].plot(b_center[:, i] * mld[i]**vars_exps[1, 0] * Ri_g[i]**vars_exps[1, 1] * Fr[i]**vars_exps[1, 2], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 1].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     axes[0, 1].set_xlabel(rf"$b_{{centerline}}/g \cdot$ {vars_str[1]}", fontsize = 16)
 
     for i in range(num_cases):
-        axes[0, 2].plot(bw[:, i] * mld[2]**vars_exps[2, 0] * Ri_g[2]**vars_exps[2, 1] * Fr[2]**vars_exps[2, 2], 
+        axes[0, 2].plot(bw[:, i] * mld[i]**vars_exps[2, 0] * Ri_g[i]**vars_exps[2, 1] * Fr[i]**vars_exps[2, 2], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     axes[0, 2].set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot$ {vars_str[2]}", fontsize = 16)
 
     for i in range(num_cases):
-        axes[0, 3].plot(rp[:, i] * mld[3]**vars_exps[3, 0] * Ri_g[3]**vars_exps[3, 1] * Fr[3]**vars_exps[3, 2], 
+        axes[0, 3].plot(rp[:, i] * mld[i]**vars_exps[3, 0] * Ri_g[i]**vars_exps[3, 1] * Fr[i]**vars_exps[3, 2], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 3].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     axes[0, 3].set_xlabel(rf"(r/l$_{{j}})\cdot$ {vars_str[3]}", fontsize = 16)
 
     for i in range(num_cases):
-        axes[0, 4].plot(T[:, i] * mld[4]**vars_exps[4, 0] * Ri_g[4]**vars_exps[4, 1] * Fr[4]**vars_exps[4, 2],
+        axes[0, 4].plot(T[:, i] * mld[i]**vars_exps[4, 0] * Ri_g[i]**vars_exps[4, 1] * Fr[i]**vars_exps[4, 2],
                 z_nd[:, i], color=color_opt[i])
     axes[0, 4].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     axes[0, 4].set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot$ {vars_str[4]}", fontsize = 16)
 
     for i in range(num_cases):
-        axes[0, 5].plot(S[:, i] * mld[5]**vars_exps[5, 0] * Ri_g[5]**vars_exps[5, 1] * Fr[5]**vars_exps[5, 2], 
+        axes[0, 5].plot(S[:, i] * mld[i]**vars_exps[5, 0] * Ri_g[i]**vars_exps[5, 1] * Fr[i]**vars_exps[5, 2], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 5].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     axes[0, 5].set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot$ {vars_str[5]}", fontsize = 16)
