@@ -19,7 +19,7 @@ name_uni = f'contour-{contour_bound:.2f}'
 num_cases = len(case_names)
 
 # flags for what to plot
-plot_1d_z = True
+plot_1d_z = False
 plot_1d_y = True
 ND = False
 transient_mld = False
@@ -165,12 +165,12 @@ if ND:
 
 if plot_1d_y:
     ranges_hor = ranges.copy()
-    ranges_hor['S'] = [0, 3*10**(-2)]
+    ranges_hor['S'] = [0, 6*10**(-2)]
     ranges_hor['vel_rms'] = [0, 4*10**-3]
-    ranges_hor['bw_fluc'] = [-2*10**(-6), 2*10**(-6)]
+    ranges_hor['bw_fluc'] = [-5*10**(-6), 5*10**(-6)]
     ranges_hor['b_flux'] = [-1*10**(-5), 1*10**(-5)]
-    ranges_hor['b_fluc'] = [-1*10**(-4), 1*10**(-4)]
-    ranges_hor['w'] = [-0.1, 0.1]
+    ranges_hor['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
+    ranges_hor['w'] = [-0.12, 0.12]
     ranges_hor['T'] = [T0 - 0.25, T0 + 0.25]
     hor_idx = np.array(mld_idx)
     name_xy = name_uni + f"at z = {z[hor_idx, 0][0]} m"
@@ -179,6 +179,8 @@ if plot_1d_z:
     name_uni +="_centerline or average"
 
 start_neutral = np.zeros(num_cases).astype(int)
+
+############ TIME STEPPING AND CALCULATIONS ############
 for it in nt:
     u_avg = np.zeros((nx[2], num_cases))
     v_avg = np.zeros((nx[2], num_cases))

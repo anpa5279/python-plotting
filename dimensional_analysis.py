@@ -32,7 +32,6 @@ if variations == 'strat':
     mld = 60 * np.ones(num_cases) 
     Sj = 0.1 * np.ones(num_cases) 
     S_value = np.array([0.019057180763628737, 0.01781212374646423, 0.016321612994096027, 0.013368420531825671])
-    
 elif variations == 'MLD':
     folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
     case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
@@ -42,7 +41,6 @@ elif variations == 'MLD':
     Sj = 0.1 * np.ones(num_cases) 
     S_value = np.array([0.018644012206941826, 0.01781212374646423, 0.014760572871272904])
     S_contour = S_value*contour_bound
-    
 elif variations == 'flux':
     folder_names =['S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
     case_names =[r'F$_{\text{C}} = -5.0*10^{-5}$', r'F$_{\text{C}} = -1.0*10^{-4}$', r'F$_{\text{C}} = -1.5*10^{-4}$', r'F$_{\text{C}} = - 2.0*10^{-4}$']
@@ -52,7 +50,6 @@ elif variations == 'flux':
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) 
     S_value = np.array([0.011669688891918021, 0.01781212374646423, 0.022754616603584032, 0.024044819840350846])
     S_contour = S_value*contour_bound
-    
 elif variations == 'all':
     folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 60', 
                    'S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 70', 
