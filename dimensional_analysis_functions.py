@@ -292,7 +292,13 @@ def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, r
                 for j, x in enumerate(row)] for row in vars_exps]
     vars_str = [''.join(row) for row in NDs_filtered]
     num_cases = len(case_names)
-    gridspec_kw={'height_ratios': [1, 0.3]}
+    if num_cases > 4:
+        gridspec_kw={'height_ratios': [1, 0.3]}
+        n_col = num_cases//2
+    else:
+        gridspec_kw={'height_ratios': [1, 0.1]}
+        n_col = num_cases
+
     fig, axes = plt.subplots(2, len(NDs_filtered), figsize=(25, 7), sharey=True, gridspec_kw = gridspec_kw)
     plt.subplots_adjust(top=0.9)
     for a in axes[-1, :]:
@@ -300,7 +306,7 @@ def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, r
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])for i in range(num_cases)]
     fig.legend(handles=case_handles,
             loc='lower center',
-            ncol=num_cases//2,
+            ncol=n_col,
             bbox_to_anchor=(0.52, 0.005), fontsize = 16)
     td = time[it] / 3600 / 24
     fig.suptitle(f'{td:.2f} days', fontsize = 20, y = 0.99)

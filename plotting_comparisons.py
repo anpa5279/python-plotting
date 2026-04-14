@@ -183,9 +183,9 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
         ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$^{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_{j}}$/(F$^{\text{C}}$)") #
+        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$_{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_{j}}$/(F$_{\text{C}}$)") #
         ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
-        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$^{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$^{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_{j}}$/(F$^{\text{C}}$)")#
+        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$_{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$_{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_{j}}$/(F$_{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
         ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
@@ -317,10 +317,10 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 4, figsize=(12, 8))
-        outdir = os.path.join(fig_folder, name)
+        outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
     else:
-        outdir = os.path.join(fig_folder, name)
+        outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
         gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
         fig, ax = plt.subplots(3, 4, figsize=(12, 10), gridspec_kw=gridspec_kw)
@@ -422,7 +422,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
         ax5.plot(r_profile[:, i], z[:, i], color = color_opt[i], linestyle='solid')
     ax5.set_title("Plume Radius with Depth")
     ax5.set_ylim(ymin = np.min(zf), ymax = np.max(zf))
-    ax5.set_xlim(0, lx[0]/4)
+    ax5.set_xlim(0, lx[0]/2)
 
     # perturbed buoyancy flux 
     for i in range(num_cases):
@@ -457,7 +457,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     ax8.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_comparison_vert_buoyancy_{it:04d}.png")
+    frame_path = os.path.join(outdir, f"comparison_vert_buoyancy_{it:04d}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
@@ -468,10 +468,10 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 3, figsize=(12, 7))
-        outdir = os.path.join(fig_folder, name)
+        outdir = os.path.join(fig_folder, 'horizontal centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
     else:
-        outdir = os.path.join(fig_folder, name)
+        outdir = os.path.join(fig_folder, 'horizontal centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
         gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
         fig, ax = plt.subplots(3, 3, figsize=(12, 9), gridspec_kw=gridspec_kw)
@@ -499,17 +499,17 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
 
     if ND:
         ax1.set_xlabel(r"y/l$_{j}$") 
-        ax1.set_ylabel(r"u$_{i}$/(F$^{\text{C}} \beta$ dT/dz l$_{j}$ T$_{0}$)") 
+        ax1.set_ylabel(r"u$_{i}$/(F$_{\text{C}} \beta$ dT/dz l$_{j}$ T$_{0}$)") 
         ax2.set_xlabel(r"y/l$_{j}$")
-        ax2.set_ylabel(r"(b' u'$_{i}$)/(F$^{\text{C}} \beta$ g dT/dz l$_{j}$/T$_{0}$)") 
+        ax2.set_ylabel(r"(b' u'$_{i}$)/(F$_{\text{C}} \beta$ g dT/dz l$_{j}$/T$_{0}$)") 
         ax3.set_xlabel(r"y/l$_{j}$")
-        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{\text{g l}_{j}}$/(F$^{\text{C}}$)") 
+        ax3.set_ylabel(r"C$_{\text{centerline}} \sqrt{\text{g l}_{j}}$/(F$_{\text{C}}$)") 
         ax4.set_xlabel(r"y/l$_{j}$")
-        ax4.set_ylabel(r"b'/(F$^{\text{C}} \beta \sqrt{\text{g dT/dz l}_{j}/\text{T}_{0}}$)")
+        ax4.set_ylabel(r"b'/(F$_{\text{C}} \beta \sqrt{\text{g dT/dz l}_{j}/\text{T}_{0}}$)")
         ax5.set_xlabel(r"y/l$_{j}$")
-        ax5.set_ylabel(r"b'w'/(F$^{\text{C}} \beta$ g dT/dz l$_{j}$/T$_{0}$)")
+        ax5.set_ylabel(r"b'w'/(F$_{\text{C}} \beta$ g dT/dz l$_{j}$/T$_{0}$)")
         ax6.set_xlabel(r"y/l$_{j}$")
-        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g l}_{j}}}$/(F$^{\text{C}}\beta$dT/dz l$_{j}$)")
+        ax6.set_ylabel(r"T$_{\text{centerline}\sqrt{\text{g l}_{j}}}$/(F$_{\text{C}}\beta$dT/dz l$_{j}$)")
     else:
         ax1.set_xlabel("x [m]")
         ax1.set_ylabel("[m/s]")
@@ -527,13 +527,13 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     # velocity
     for i in range(num_cases):
         if i == 0:
-            ax1.plot((y - lx[1]/2), u[:, i], label=r"u$_{\text{centerline}}$", color = color_opt[i], linestyle='dotted')
-            ax1.plot((y - lx[1]/2), v[:, i], label=r"v$_{\text{centerline}}$", color = color_opt[i], linestyle='dashed')
-            ax1.plot((y - lx[1]/2), w[:, i], label=r"w$_{\text{centerline}}$", color = color_opt[i], linestyle='solid')
+            ax1.plot(y, u[:, i], label=r"u$_{\text{centerline}}$", color = color_opt[i], linestyle='dotted')
+            ax1.plot(y, v[:, i], label=r"v$_{\text{centerline}}$", color = color_opt[i], linestyle='dashed')
+            ax1.plot(y, w[:, i], label=r"w$_{\text{centerline}}$", color = color_opt[i], linestyle='solid')
         else:
-            ax1.plot((y - lx[1]/2), u[:, i], color = color_opt[i], linestyle='dotted')
-            ax1.plot((y - lx[1]/2), v[:, i], color = color_opt[i], linestyle='dashed')
-            ax1.plot((y - lx[1]/2), w[:, i], color = color_opt[i], linestyle='solid')
+            ax1.plot(y, u[:, i], color = color_opt[i], linestyle='dotted')
+            ax1.plot(y, v[:, i], color = color_opt[i], linestyle='dashed')
+            ax1.plot(y, w[:, i], color = color_opt[i], linestyle='solid')
     ax1.set_title("Velocity")
     ax1.set_xlim(-lx[1]/2, lx[1]/2)
     ax1.set_ylim(ranges['w'])
@@ -543,11 +543,11 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     # horizontal buoyancy flux 
     for i in range(num_cases):
         if i == 0:
-            ax2.plot((y - lx[1]/2), bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
-            ax2.plot((y - lx[1]/2), bv_fluc[:, i], color = color_opt[i], label = r"b$'$v$'_{\text{centerline}}$", linestyle='dashed')
+            ax2.plot(y, bu_fluc[:, i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted')
+            ax2.plot(y, bv_fluc[:, i], color = color_opt[i], label = r"b$'$v$'_{\text{centerline}}$", linestyle='dashed')
         else:
-            ax2.plot((y - lx[1]/2), bu_fluc[:, i], color = color_opt[i], linestyle='dotted')
-            ax2.plot((y - lx[1]/2), bv_fluc[:, i], color = color_opt[i], linestyle='dashed')
+            ax2.plot(y, bu_fluc[:, i], color = color_opt[i], linestyle='dotted')
+            ax2.plot(y, bv_fluc[:, i], color = color_opt[i], linestyle='dashed')
     ax2.set_title('Horizontal Buoyancy Flux Fluctuations')
     ax2.set_xlim(-lx[1]/2, lx[1]/2)
     ax2.set_ylim(ymin = ranges['b_flux'][0], ymax = ranges['b_flux'][1])
@@ -555,7 +555,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
 
     # tracer  
     for i in range(num_cases):
-        ax3.plot((y - lx[1]/2), tracer[:, i], color = color_opt[i], linestyle='solid')
+        ax3.plot(y, tracer[:, i], color = color_opt[i], linestyle='solid')
     ax3.set_title("Tracer")
     ax3.set_xlim(-lx[1]/2, lx[1]/2)
     ax3.set_ylim(ranges['S'])
@@ -563,14 +563,14 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
 
     # Perturbed buoyancy 
     for i in range(num_cases):
-        ax4.plot((y - lx[1]/2), b_center[:, i], color = color_opt[i], linestyle='solid')
+        ax4.plot(y, b_center[:, i], color = color_opt[i], linestyle='solid')
     ax4.set_title("Perturbed Buoyancy")
     ax4.set_xlim(-lx[1]/2, lx[1]/2)
     ax4.set_ylim(ranges['b_fluc'])
     ax4.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     # perturbed buoyancy flux 
     for i in range(num_cases):
-        ax5.plot((y - lx[1]/2), bw_fluc[:, i], color = color_opt[i], linestyle='solid')
+        ax5.plot(y, bw_fluc[:, i], color = color_opt[i], linestyle='solid')
     ax5.set_title("Vertical Buoyancy Flux Fluctuations")
     ax5.set_xlim(-lx[1]/2, lx[1]/2)
     ax5.set_ylim(ranges['bw_fluc'])
@@ -578,13 +578,13 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
 
     # temperature  
     for i in range(num_cases):
-        ax6.plot((y - lx[1]/2), T[:, i], color = color_opt[i], linestyle='solid')
+        ax6.plot(y, T[:, i], color = color_opt[i], linestyle='solid')
     ax6.set_title("Temperature")
     ax6.set_xlim(-lx[1]/2, lx[1]/2)
     ax6.set_ylim(ranges['T'])
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_hor_centerline_comparisons_{it:04d}.png")
+    frame_path = os.path.join(outdir, f"hor_centerline_comparisons_{it:04d}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
@@ -623,7 +623,7 @@ def mld_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name,
     if ND:
         ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"C$_{plume}$w/F$^{\text{C}}$") 
+        ax2.set_ylabel(r"C$_{plume}$w/F$_{\text{C}}$") 
         ax2.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
         ax3.set_ylabel(r"T'w$_{\text{plume}}$/(T$_{0}$h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
         ax3.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])

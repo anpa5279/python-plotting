@@ -14,6 +14,7 @@ mld_analysis_plot = False
 ND = True
 if mld_analysis_plot:
     mld_transient = True
+contour_bound = 0.05
 
 # selecting cases to compare
 variations = 'strat' # 'MLD', 'flux', 'strat'
@@ -24,9 +25,9 @@ if variations == 'strat':
     dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = 0.1 * np.ones(num_cases) 
-    S_value = [0.005202084553938343, 0.005010973297310681, 0.005283282089196569, 0.005173444793047881] # with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
-    S_contour = S_value*0.15 
-    # with noise and closure cases: w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
+    S_value = np.array([0.019057180763628737, 0.01781212374646423, 0.016321612994096027, 0.013368420531825671])
+    S_contour = S_value*contour_bound
+    
 elif variations == 'MLD':
     folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
     case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
@@ -34,19 +35,19 @@ elif variations == 'MLD':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = np.array([50, 60, 70])
     Sj = 0.1 * np.ones(num_cases) 
-    S_value = [0.005574689291054047, 0.005010973297310681, 0.004682995795255769] # with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
-    S_contour = S_value*0.15 
-    # with noise and closure cases: w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
+    S_value = np.array([0.018644012206941826, 0.01781212374646423, 0.014760572871272904])
+    S_contour = S_value*contour_bound
+    
 elif variations == 'flux':
     folder_names =['S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
-    case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
+    case_names =[r'F$_{\text{C}} = -5.0*10^{-5}$', r'F$_{\text{C}} = -1.0*10^{-4}$', r'F$_{\text{C}} = -1.5*10^{-4}$', r'F$_{\text{C}} = - 2.0*10^{-4}$']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 
-    # with noise and closure cases: S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
-    S_contour = S_value*0.15 
-    # with noise and closure cases: w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
+    S_value = np.array([0.011669688891918021, 0.01781212374646423, 0.022754616603584032, 0.024044819840350846])
+    S_contour = S_value*contour_bound
+    
 
 # flags for how to read data
 with_halos = False
@@ -106,9 +107,9 @@ for i, folder in enumerate(folders):
     # Read model information
     fid = os.path.join(folder, dtn[0])
     if not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure)
     else:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure)
         #u_s = stokes_exp(z)
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)

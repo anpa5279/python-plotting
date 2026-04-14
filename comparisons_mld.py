@@ -12,16 +12,17 @@ from dense_plume_analysis import plume_tracer_radius
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
 folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
 case_names = [r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']  
-name_uni = "transient-mld-fixed-5mag-7-Rithird"
 fig_folder = os.path.join(universal_folder, 'comparison figures', 'MLD comparison figures')
+contour_bound = 0.05
+name_uni = f'contour-{contour_bound:.2f}'
 
 num_cases = len(case_names)
 
 # flags for what to plot
 plot_1d_z = True
-plot_1d_y = False
-ND = True
-transient_mld = True
+plot_1d_y = True
+ND = False
+transient_mld = False
 
 # flags for how to read data
 with_halos = False
@@ -43,20 +44,19 @@ wp = 0.001
 Sj = 0.1 * np.ones(num_cases) 
 F_s = np.dot(Sj, wp)
 
-# with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
-S_contour = S_value*0.15 
-# with noise and closure cases: w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
+S_value = np.array([0.018644012206941826, 0.01781212374646423, 0.014760572871272904])
+S_contour = S_value*contour_bound
 
 # plotting prep
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), Sj = np.max(Sj))
-ranges['S'] = [0, 1*10**(-3)]
-ranges['vel_rms'] = [0, 4*10**-3]
-ranges['bw_fluc'] = [-9*10**(-9), 9*10**(-9)]
-ranges['b_rms'] = [0, 1.5*10**(-5)]
+ranges['S'] = [0, 2*10**(-3)]
+ranges['bw_fluc'] = [-1*10**(-8), 1*10**(-8)]
+ranges['b_rms'] = [0, 5*10**(-5)]
 ranges['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
 ranges['w'] = [-0.1, 0.1]
-ranges['S_fluc'] = [-5*10**(-2), 5*10**(-2)]
-ranges['T_fluc'] = [-4*10**(-1), 4*10**(-1)]
+ranges['S_fluc'] = [-1*10**(-1), 1*10**(-1)]
+ranges['T_fluc'] = [-1*10**(0), 1*10**(0)]
+ranges['b_avg'] = [-1*10**(-3), 5.0*10**(-5)]
 
 color_opt, line_opt = plot_format(num_cases)
 # font for plotting 
@@ -89,9 +89,9 @@ for i, folder in enumerate(folders):
     # Read model information
     fid = os.path.join(folder, dtn[0])
     if not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure)
     else:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure)
         #u_s = stokes_exp(z)
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
@@ -121,22 +121,6 @@ zf = (zf*np.ones([num_cases, nx[2] + 1])).T
 mld_idx = []
 for i in range(num_cases):
     mld_idx.append(np.argmin(np.abs(z[:, i]+mld[i])))
-
-if plot_1d_y:
-    ranges_hor = ranges.copy()
-    ranges_hor['S'] = [0, 9*10**(-2)]
-    ranges_hor['vel_rms'] = [0, 4*10**-3]
-    ranges_hor['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
-    ranges_hor['b_flux'] = [-1*10**(-5), 1*10**(-5)]
-    ranges_hor['b_rms'] = [0, 1.5*10**(-5)]
-    ranges_hor['b_fluc'] = [-5*10**(-4), 5*10**(-4)]
-    ranges_hor['w'] = [-0.1, 0.1]
-    ranges_hor['T'] = [23.5, 25.5]
-    hor_idx = np.array(mld_idx)
-    name_uni = name_uni + f"at z = {z[hor_idx, np.arange(num_cases)]} m"
-
-if plot_1d_z:
-    name_uni +="_centerline or average"
 
 ############ NONDIMENSIONALIZATION ############
 if ND: 
@@ -178,6 +162,22 @@ if ND:
     nd_ranges['S_fluc'] = nd_ranges['S_fluc'] / np.min(S_scale)
     nd_ranges['T_fluc'] = nd_ranges['T_fluc'] / np.min(T_scale)
     nd_ranges['T'] = nd_ranges['T'] / np.min(T_scale)
+
+if plot_1d_y:
+    ranges_hor = ranges.copy()
+    ranges_hor['S'] = [0, 3*10**(-2)]
+    ranges_hor['vel_rms'] = [0, 4*10**-3]
+    ranges_hor['bw_fluc'] = [-2*10**(-6), 2*10**(-6)]
+    ranges_hor['b_flux'] = [-1*10**(-5), 1*10**(-5)]
+    ranges_hor['b_fluc'] = [-1*10**(-4), 1*10**(-4)]
+    ranges_hor['w'] = [-0.1, 0.1]
+    ranges_hor['T'] = [T0 - 0.25, T0 + 0.25]
+    hor_idx = np.array(mld_idx)
+    hor_str = ' '.join([f"{z[hor_idx[i], i]} m" for i in range(num_cases)])
+    name_xy = name_uni + f"at z = {hor_str}"
+
+if plot_1d_z:
+    name_uni = name_uni + "_centerline or average"
 
 start_neutral = np.zeros(num_cases).astype(int)
 for it in nt:
@@ -340,16 +340,16 @@ for it in nt:
         if plot_1d_z:
             buoyancy_dir_z = plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
         if plot_1d_y:
-            buoyancy_dir_y = plume_horizontal_spatial_plot(time, it, ranges_hor, color_opt, fig_folder, case_names, name_uni, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
+            buoyancy_dir_y = plume_horizontal_spatial_plot(time, it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
 print("All frames created.")
 # creating videos
 if video and ND:
     if plot_1d_z:
-        create_video(buoyancy_dir_z_nd, fig_folder, name_nd, 'buoyancy_analysis')
+        create_video(buoyancy_dir_z_nd, fig_folder, name_nd, 'vertical profile')
     if plot_1d_y:
-        create_video(buoyancy_dir_y_nd, fig_folder, name_nd, 'buoyancy_analysis')
+        create_video(buoyancy_dir_y_nd, fig_folder, name_nd, 'horizontal profile')
 elif video:
     if plot_1d_z:
-        create_video(buoyancy_dir_z, fig_folder, name_uni, 'buoyancy_analysis')
+        create_video(buoyancy_dir_z, fig_folder, name_uni, 'vertical profile')
     if plot_1d_y:
-        create_video(buoyancy_dir_y, fig_folder, name_uni, 'buoyancy_analysis')
+        create_video(buoyancy_dir_y, fig_folder, name_xy, 'horizontal profile')

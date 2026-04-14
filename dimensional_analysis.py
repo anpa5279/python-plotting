@@ -18,11 +18,12 @@ mld_transient = True
 strat_flag = False
 flux_flag = False
 mld_flag = False
+combo_flag = True
 
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any
 
 # selecting cases to compare
-variations = 'combo' # 'MLD', 'flux', 'strat', 'combo'
+variations = 'all' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -30,9 +31,8 @@ if variations == 'strat':
     dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = 0.1 * np.ones(num_cases) 
-    S_value = np.array([0.005202084553938343, 0.005010973297310681, 0.005283282089196569, 0.005173444793047881])# with noise and closure cases: S_value = np.array([0.034487168519906714, 0.03602588163919859, 0.03995705848735615, 0.042189206877616705]) # for dTdz variations at max bw index
-    S_contour = S_value*contour_bound
-    # with noise and closure cases: w_avg_centerline = np.array([-0.043499393099289844, -0.03394752674800345, -0.018453789243636633, -0.01406895477434289]) # for strat centerline w values thorughout time
+    S_value = np.array([0.019057180763628737, 0.01781212374646423, 0.016321612994096027, 0.013368420531825671])
+    
 elif variations == 'MLD':
     folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
     case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
@@ -40,28 +40,28 @@ elif variations == 'MLD':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = np.array([50, 60, 70])
     Sj = 0.1 * np.ones(num_cases) 
-    S_value = np.array([0.005574689291054047, 0.005010973297310681, 0.004682995795255769]) # with noise and closure cases: S_value = np.array([0.03995705848735615, 0.03602588163919859, 0.032189606877616704]) # for MLD variations
+    S_value = np.array([0.018644012206941826, 0.01781212374646423, 0.014760572871272904])
     S_contour = S_value*contour_bound
-    # with noise and closure cases: w_avg_centerline = np.array([-0.025053252620373258, -0.03394752674800345, -0.04425781328270483]) # for MLD centerline w values thorughout time
+    
 elif variations == 'flux':
     folder_names =['S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
-    case_names =[r'F$^{\text{C}} = -5.0*10^{-5}$', r'F$^{\text{C}} = -1.0*10^{-4}$', r'F$^{\text{C}} = -1.5*10^{-4}$', r'F$^{\text{C}} = - 2.0*10^{-4}$']
+    case_names =[r'F$_{\text{C}} = -5.0*10^{-5}$', r'F$_{\text{C}} = -1.0*10^{-4}$', r'F$_{\text{C}} = -1.5*10^{-4}$', r'F$_{\text{C}} = - 2.0*10^{-4}$']
     num_cases = len(case_names)
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) 
-    S_value = np.array([0.0031834305308354204, 0.005010973297310681, 0.006362182592469852, 0.008358286212836368]) # with noise and closure cases: S_value = np.dot([0.0010948250136870168, 0.0018012940819599295, 0.0024005411329652226, 0.0029359463404349034], 20) # for Sj variations 
+    S_value = np.array([0.011669688891918021, 0.01781212374646423, 0.022754616603584032, 0.024044819840350846])
     S_contour = S_value*contour_bound
-    # with noise and closure cases: w_avg_centerline = np.array([-0.02020130913788876, -0.03394752674800345, -0.044740617760247015,  -0.05271218084132068]) # for Sj centerline w_avg values thorughout time
-elif variations == 'combo':
+    
+elif variations == 'all':
     folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 60', 
                    'S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 70', 
                    'S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60',
                    'S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
-    case_names =[r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.01', 
-                 r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 50m, dTdz = 0.01', r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 70m, dTdz = 0.01', 
-                 r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.005', r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.05', r'F$^{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.1', 
-                 r'F$^{\text{C}} = -5.0*10^{-5}$, MLD = 60m, dTdz = 0.01', r'F$^{\text{C}} = -1.5*10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$^{\text{C}} = - 2.0*10^{-4}$, MLD = 60m, dTdz = 0.01']
+    case_names =[r'F$_{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.01', 
+                 r'F$_{\text{C}} = -1.0*10^{-4}$, MLD = 50m, dTdz = 0.01', r'F$_{\text{C}} = -1.0*10^{-4}$, MLD = 70m, dTdz = 0.01', 
+                 r'F$_{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.005', r'F$_{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.05', r'F$_{\text{C}} = -1.0*10^{-4}$, MLD = 60m, dTdz = 0.1', 
+                 r'F$_{\text{C}} = -5.0*10^{-5}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.5*10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0*10^{-4}$, MLD = 60m, dTdz = 0.01']
     num_cases = len(case_names)
     dTdz = np.array([0.01, 
                      0.01, 0.01, 
@@ -75,11 +75,12 @@ elif variations == 'combo':
                    0.1, 0.1, 
                    0.1, 0.1, 0.1,
                    0.05, 0.15, 0.2]) 
-    S_value = np.array([0.005010973297310681, 
-                        0.005574689291054047, 0.004682995795255769, 
-                        0.005202084553938343, 0.005283282089196569, 0.005173444793047881,
-                        0.0031834305308354204, 0.006362182592469852, 0.008358286212836368]) 
+    S_value = np.array([0.01781212374646423, 
+                        0.018644012206941826, 0.014760572871272904, 
+                        0.019057180763628737, 0.016321612994096027, 0.013368420531825671,
+                        0.011669688891918021, 0.022754616603584032, 0.024044819840350846]) 
     S_contour = S_value*contour_bound
+if variations == 'all' or combo_flag:
     vars_exps = np.array([ # columns: Ri, Fr, MLD
         [0, -1/3, -1/2], # w_rms
         [-1/2, -1/3, 1/3], # b_center
@@ -169,7 +170,7 @@ if ND:
 
     area = (2*rj)**2 
     N2 = g * alpha * dTdz 
-    Ri_g = (N2/g*rj)
+    Ri_g = N2/(g/rj)
     Fr_flux = F_s * beta / np.sqrt(rj * g)
     vel_scale = np.sqrt(rj * g)
     b_scale = g
@@ -293,20 +294,19 @@ for it in nt:
         v_rms = v_rms/vel_scale
         w_rms = w_rms/vel_scale
     ############ PLOTTING ############
-    if variations == 'combo':
+    if variations == 'all' or combo_flag:
         plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
-    else:
-        if np.size(exponents)==0:
-            if variations == 'strat' or strat_flag:
-                plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
-            if variations == 'flux' or flux_flag:
-                plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
-            if variations == 'MLD' or mld_flag:
-                plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
-        else:
-            if variations == 'strat' or strat_flag:
-                plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
-            if variations == 'flux' or flux_flag:
-                plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
-            if variations == 'MLD' or mld_flag:
-                plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
+    if np.size(exponents)==0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
+        if variations == 'strat' or strat_flag:
+            plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+        if variations == 'flux' or flux_flag:
+            plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+        if variations == 'MLD' or mld_flag:
+            plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
+    elif np.size(exponents)!=0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
+        if variations == 'strat' or strat_flag:
+            plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+        if variations == 'flux' or flux_flag:
+            plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+        if variations == 'MLD' or mld_flag:
+            plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
