@@ -179,6 +179,7 @@ def collect_temporal_averages(folder, dtn, temperature=True, salinity=False):
             T_list = {}
             S_list = {}
     return rms_list, b_and_w_list, T_list, S_list
+
 def collect_contour_val(folder, dtn):
     # Load data from files
     fname = os.path.join(folder, dtn)
@@ -186,3 +187,12 @@ def collect_contour_val(folder, dtn):
         S = f['contour temporal averages/S'][()] 
         w = f['contour temporal averages/w'][()] 
     return S, w
+
+def collect_plume_stats(folder, dtn, percent_contour):
+    # Load data from files
+    fname = os.path.join(folder, dtn)
+    with h5py.File(fname, 'r') as f:
+        dset_path = f"plume statistics/contour {percent_contour}/plume tracer radius with depth"
+        rp_profile = f[dset_path][()]
+
+    return rp_profile

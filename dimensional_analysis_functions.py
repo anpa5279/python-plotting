@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from fractions import Fraction
 from matplotlib.lines import Line2D
 
-def plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Ri_g, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
+def plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Ri_g, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
     scale[-1] = 0.02
@@ -18,8 +18,7 @@ def plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
             loc='lower center',
             ncol=num_cases,
             bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    td = time[it] / 3600 / 24
-    fig.suptitle(f'{td:.2f} days', fontsize = 20, y = 0.99)
+    fig.suptitle(title, fontsize = 20, y = 0.99)
     """
     axes[0, :] = ND rms velocity vs z_nd varied exponent of Ri_g
     axes[1, :] = ND centerline buoyancy vs z_nd varied exponent of Ri_g
@@ -93,12 +92,11 @@ def plot_rig_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
     # --- Save Frame ---
     str_exp = list(map(str, exponents))
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"Ri_it{it:04d}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"Ri_{title}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
-    print(f"Time step {it + 1} captured")
     
-def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Fr, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
+def plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Fr, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
     scale[-1] = 0.02
@@ -112,8 +110,7 @@ def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, 
             loc='lower center',
             ncol=num_cases,
             bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    td = time[it] / 3600 / 24
-    fig.suptitle(f'{td:.2f} days', fontsize = 20, y = 0.99)
+    fig.suptitle(title, fontsize = 20, y = 0.99)
     """
     axes[0, :] = ND rms velocity vs z_nd varied exponent of Fr
     axes[1, :] = ND centerline buoyancy vs z_nd varied exponent of Fr
@@ -186,12 +183,11 @@ def plot_Fr_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, 
 
     # --- Save Frame ---
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"Fr_it{it:04d}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"Fr_{title}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
-    print(f"Time step {it + 1} captured")
 
-def plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, mld, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
+def plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, mld, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
     scale[-1] = 0.02
@@ -205,8 +201,7 @@ def plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
             loc='lower center',
             ncol=num_cases,
             bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    td = time[it] / 3600 / 24
-    fig.suptitle(f'{td:.2f} days', fontsize = 20, y = 0.99)
+    fig.suptitle(title, fontsize = 20, y = 0.99)
     """
     axes[0, :] = ND rms velocity vs z_nd varied exponent of MLD
     axes[1, :] = ND centerline buoyancy vs z_nd varied exponent of MLD
@@ -279,13 +274,12 @@ def plot_mld_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp,
 
     # --- Save Frame ---
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"MLD_it{it:04d}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"MLD_{title}_pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
-    print(f"Time step {it + 1} captured")
     
 
-def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, vars_exps, Ri_g, Fr, mld, case_names):
+def plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, vars_exps, Ri_g, Fr, mld, case_names):
     NDs = [rf"Ri$_g^", rf"Fr$^", rf"MLD$^"] 
     NDs_filtered = [[("" if str(Fraction(x).limit_denominator()) == '0' 
                 else NDs[j] + "{"+str(Fraction(x).limit_denominator())+"}$")
@@ -308,8 +302,8 @@ def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, r
             loc='lower center',
             ncol=n_col,
             bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    td = time[it] / 3600 / 24
-    fig.suptitle(f'{td:.2f} days', fontsize = 20, y = 0.99)
+    td = time / 3600 / 24
+    fig.suptitle(title, fontsize = 20, y = 0.99)
     """
     axes[0] = ND rms velocity vs z_nd varied exponent of all
     axes[1] = ND centerline buoyancy vs z_nd varied exponent of all
@@ -358,16 +352,15 @@ def plot_combo_exponents(color_opt, time, it, fig_folder, w_rms, b_center, bw, r
     plt.tight_layout()
 
     # --- Save Frame ---
-    frame_path = os.path.join(fig_folder, f"it{it:04d}_combined.png")
+    frame_path = os.path.join(fig_folder, f"{title}_combined.png")
     i = 0
     while True:
         i += 1
-        frame_path = os.path.join(fig_folder, f"it{it:04d}_combined_{i}.png")
+        frame_path = os.path.join(fig_folder, f"{title}_combined_{i}.png")
         if os.path.exists(frame_path):
             continue
         plt.savefig(frame_path)
         break
     plt.close(fig)
-    print(f"Time step {it + 1} captured")
     
 

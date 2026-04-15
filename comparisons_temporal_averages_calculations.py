@@ -61,11 +61,6 @@ for name in folder_names:
     folders.append(os.path.join(universal_folder, name))
 output_folder = universal_folder
 
-# flags for what to plot
-plume_analysis_plot = True
-mld_analysis_plot = False
-ND = True
-
 # flags for how to write data
 with_halos = False
 closure = False
@@ -103,11 +98,6 @@ for i, folder in enumerate(folders):
     else:
         alpha = collect_temp_and_sal(fid, salinity)
     t_save.append(t_save_temp)
-
-centerline_index = np.zeros((3, nx[2])).astype(int)
-centerline_index[0, :] = nx[0]//2 - 1
-centerline_index[1, :] = nx[1]//2 - 1
-centerline_index[2, :] = np.arange(nx[2]).astype(int)
 
 for i, folder in enumerate(folders):
     # List JLD2 files
@@ -262,24 +252,23 @@ for i, folder in enumerate(folders):
         file.close()
 
 # calculating plume statistics from temporal averages for all cases
-if plume_stats_only:
-    for i, folder in enumerate(folders):
-        S_value, w_value = collect_contour_val(folder, file_name)
-        S_contour = S_value * percent_contour
-        rp_profile = np.zeros(nx[2])
-        n = 0
-        for it in range(10, nt):
-            # Load data from files
-            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
-            rp_profile_temp, temp, temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour) # plume analysis
-            n += 1
-            rp_profile += rp_profile_temp
-        rp_profile = rp_profile/n
-        print(f"writing to {folder}")
-        with h5py.File(os.path.join(folder, file_name), 'a') as file:
-            dset_path = f"plume statistics/contour {percent_contour}/plume tracer radius with depth"
-            
-            if dset_path in file:
-                del file[dset_path]   # remove existing dataset
-            
-            file.create_dataset(dset_path, data=rp_profile)
+for i, folder in enumerate(folders):
+    S_value, w_value = collect_contour_val(folder, file_name)
+    S_contour = S_value * percent_contour
+    rp_profile = np.zeros(nx[2])
+    n = 0
+    for it in range(10, nt):
+        # Load data from files
+        u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+        rp_profile_temp, temp, temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour) # plume analysis
+        n += 1
+        rp_profile += rp_profile_temp
+    rp_profile = rp_profile/n
+    print(f"writing to {folder}")
+    with h5py.File(os.path.join(folder, file_name), 'a') as file:
+        dset_path = f"plume statistics/contour {percent_contour}/plume tracer radius with depth"
+        
+        if dset_path in file:
+            del file[dset_path]   # remove existing dataset
+        
+        file.create_dataset(dset_path, data=rp_profile)
