@@ -23,7 +23,7 @@ temporal_averages_flag = True
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any
 
 # selecting cases to compare
-variations = 'all' # 'MLD', 'flux', 'strat', 'all'
+variations = 'MLD' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -130,6 +130,9 @@ for i, folder in enumerate(folders):
 
 z = (z*np.ones([num_cases, nx[2]])).T
 zf = (zf*np.ones([num_cases, nx[2] + 1])).T
+mld_idx = []
+for i in range(num_cases):
+    mld_idx.append(np.argmin(np.abs(z[:, i]+mld[i])))
 
 if temporal_averages_flag:
     title = 'Temporal averages'
@@ -149,9 +152,6 @@ else:
     else:
         nt = len(t_save[0]) -1 # only last time step
         nt = [nt,]
-    mld_idx = []
-    for i in range(num_cases):
-        mld_idx.append(np.argmin(np.abs(z[:, i]+mld[i])))
 
 ############ NONDIMENSIONALIZATION ############
 area = (2*rj)**2 
@@ -186,14 +186,14 @@ if temporal_averages_flag:
     S_fluc_center = np.zeros((nx[2], num_cases))
     S_avg = np.zeros((nx[2], num_cases))
     for i, folder in enumerate(folders):
-        rms_list, b_and_w_list, T_list, S_list = collect_temporal_averages(folder, file_name)
+        rms_list, b_and_w_list, T_list, S_list = collect_temporal_averages(folder, file_name, True, salinity)
         w_rms[:, i] = rms_list['w_rms']
         b_avg[:, i] = b_and_w_list['b_avg']
         bw_fluc_avg[:, i] = b_and_w_list['bw_fluc_avg']
         b_center[:, i] = b_and_w_list['b_centerline_avg']
         T_fluc_center[:, i] = T_list['T_fluc_centerline_avg']
         S_avg[:, i] = S_list['S_avg']
-        r_profile[:, i] = collect_plume_stats(folder, dtn, contour_bound)
+        r_profile[:, i] = collect_plume_stats(folder, file_name, contour_bound)
         if transient_mld:
                 dbdz = np.gradient(b_avg[:, i], z[:, i])
                 dbdz_tol = dbdz <= (5.0*10**(-7))

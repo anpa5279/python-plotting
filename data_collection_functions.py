@@ -154,6 +154,7 @@ def collect_temporal_averages(folder, dtn, temperature=True, salinity=False):
         rms_list['w_rms'] = f['1D temporal averages/wrms'][()] 
         b_and_w_list['b_centerline_avg'] = f['centerline temporal averages/b'][()] 
         b_and_w_list['b_fluc_centerline_avg'] = f['centerline temporal averages/b\''][()] 
+        b_and_w_list['bw_fluc_avg'] = f['1D temporal averages/b\'w\''][()]
         if temperature and salinity:
             T_list = {}
             S_list = {}

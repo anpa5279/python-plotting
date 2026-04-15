@@ -302,7 +302,6 @@ def plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, 
             loc='lower center',
             ncol=n_col,
             bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    td = time / 3600 / 24
     fig.suptitle(title, fontsize = 20, y = 0.99)
     """
     axes[0] = ND rms velocity vs z_nd varied exponent of all
