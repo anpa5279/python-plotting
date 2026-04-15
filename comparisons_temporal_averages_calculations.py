@@ -276,6 +276,10 @@ if plume_stats_only:
             rp_profile += rp_profile_temp
         rp_profile = rp_profile/n
         print(f"writing to {folder}")
-        file = h5py.File(os.path.join(folder, file_name), 'a')
-        file.create_dataset(f"plume statistics/contour {percent_contour}/plume tracer radius with depth", data=rp_profile)
-        file.close()
+        with h5py.File(os.path.join(folder, file_name), 'a') as file:
+            dset_path = f"plume statistics/contour {percent_contour}/plume tracer radius with depth"
+            
+            if dset_path in file:
+                del file[dset_path]   # remove existing dataset
+            
+            file.create_dataset(dset_path, data=rp_profile)
