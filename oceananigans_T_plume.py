@@ -74,19 +74,23 @@ ranges['w'] = [-2*10**(-2), 2*10**(-2)]
 ranges['w_fluc'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel'] = [-1e-5, 1e-5]
 ranges['b'] = [-8.0*10**(-4), 8.0*10**(-4)]
-ranges['rho'] = [rho0-0.01, rho0+0.1]
-ranges['S'] = [0.0, 0.05]
-ranges['T'] = [T0-0.4, T0 + 0.02]
+ranges['rho'] = [rho0-0.01, rho0+0.2] # <--for stratification [rho0-0.01, rho0+0.1] # 
+ranges['rho_fluc'] = [-0.01, 0.01]
+ranges['S'] = [0.0, 0.04]
+ranges['T'] = [T0-0.8, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
+ranges['u'] = [-6*10**(-3), 6*10**(-3)]
+ranges['v'] = [-6*10**(-3), 6*10**(-3)]
 ranges['u_fluc'] = ranges['u']
+ranges['v_fluc'] = ranges['v']
 
 if xy_plot and salinity:
     xy_ranges = ranges.copy()
-    xy_ranges['b_fluc'] = [-2*10**(-5), 2*10**(-5)]
-    xy_ranges['rho_fluc'] = [-1*10**-3, 1*10**-3]
+    xy_ranges['b_fluc'] = [-4*10**(-5), 4*10**(-5)]
+    xy_ranges['rho_fluc'] = [-5*10**-3, 5*10**-3]
     xy_ranges['Pdynamic'] = [-1*10**(-4), 1*10**(-4)]
-    xy_ranges['T'] = [T0-0.04, T0 + 0.01]
+    xy_ranges['T'] = [T0-0.05, T0 + 0.005]
     xy_ranges['S'] = [0.0, 0.012]
-    xy_ranges['u'] = [-5*10**(-4), 5*10**(-4)]
+    xy_ranges['u'] = [-6*10**(-3), 6*10**(-3)]
     xy_ranges['v'] = xy_ranges['u']
 
 # List JLD2 files

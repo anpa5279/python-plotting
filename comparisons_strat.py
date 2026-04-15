@@ -280,7 +280,6 @@ for it in nt:
             mld[i] = -z[mld_idx[i], i]
         # collecting data for plotting
         if plot_1d_z and salinity:
-            bw_idx = np.where(bw_fluc_avg==np.max(bw_fluc_avg))[0][0]
             rp_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour[i]) # plume analysis
             r_profile[:, i] = rp_profile
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]

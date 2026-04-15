@@ -41,8 +41,8 @@ def collect_temp_and_sal(file, salinity=False):
             beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
             return alpha, beta
     return alpha
-## collecting 3D fields
 ## -------------------------EXTRACTING 3D FIELDS------------------------- ###
+## collecting 3D fields
 def collect_fields(folder, dtn, t_save, hx, temperature=True, salinity=False, with_halos=False):
     # Load data from files
     fname = os.path.join(folder, dtn)
@@ -138,4 +138,53 @@ def collect_fields_distributed(Nranks, folder, dtn, t_save, hx, nx, temperature=
             new_range = range(xrange.start + (nx[0] // Nranks), xrange.stop + (nx[0] // Nranks))
             xrange = new_range
         return u, v, w, b, Pdynamic, Pstatic
-
+## -------------------------Collecting temporal averages------------------------- ###
+def collect_temporal_averages(folder, dtn, temperature=True, salinity=False):
+    rms_list = {}
+    b_and_w_list = {}
+    # Load data from files
+    fname = os.path.join(folder, dtn)
+    with h5py.File(fname, 'r') as f:
+        b_and_w_list['w_avg'] = (f['1D temporal averages/w'])
+        b_and_w_list['b_avg'] = (f['1D temporal averages/b'])
+        b_and_w_list['w_fluc_avg'] = (f['1D temporal averages/w\''])
+        b_and_w_list['b_fluc_avg'] = (f['1D temporal averages/b\''])
+        rms_list['u_rms'] = (f['1D temporal averages/urms'])
+        rms_list['v_rms'] = (f['1D temporal averages/vrms'])
+        rms_list['w_rms'] = (f['1D temporal averages/wrms'])
+        b_and_w_list['b_centerline_avg'] = (f['centerline temporal averages/b'])
+        b_and_w_list['b_fluc_centerline_avg'] = (f['centerline temporal averages/b\''])
+        b_and_w_list['w_contour'] = (f['contour values/w'])
+        if temperature and salinity:
+            T_list = {}
+            S_list = {}
+            T_list['T_avg'] = (f['1D temporal averages/T'])
+            S_list['S_avg'] = (f['1D temporal averages/S'])
+            T_list['T_fluc_avg'] = (f['1D temporal averages/T\''])
+            S_list['S_fluc_avg'] = (f['1D temporal averages/S\''])
+            T_list['Tw_fluc_avg'] = (f['1D temporal averages/T\'w\''])
+            S_list['Sw_fluc_avg'] = (f['1D temporal averages/S\'w\''])
+            T_list['T_centerline_avg'] = (f['centerline temporal averages/T'])
+            S_list['S_centerline_avg'] = (f['centerline temporal averages/S'])
+            T_list['T_fluc_centerline_avg'] = (f['centerline temporal averages/T\''])
+            S_list['S_fluc_centerline_avg'] = (f['centerline temporal averages/S\''])
+            S_list['S_contour'] = (f['contour values/S'])
+        elif temperature and not salinity:
+            T_list = {}
+            T_list['T_avg'] = (f['1D temporal averages/T'])
+            T_list['T_fluc_avg'] = (f['1D temporal averages/T\''])
+            T_list['Tw_fluc_avg'] = (f['1D temporal averages/T\'w\''])
+            T_list['T_centerline_avg'] = (f['centerline temporal averages/T'])
+            T_list['T_fluc_centerline_avg'] = (f['centerline temporal averages/T\''])
+            S_list = None
+        else:
+            T_list = {}
+            S_list = {}
+    return rms_list, b_and_w_list, T_list, S_list
+def collect_contour_val(folder, dtn):
+    # Load data from files
+    fname = os.path.join(folder, dtn)
+    with h5py.File(fname, 'r') as f:
+        S_contour = (f['contour values/S'])
+        w_contour = (f['contour values/w'])
+    return S_contour, w_contour

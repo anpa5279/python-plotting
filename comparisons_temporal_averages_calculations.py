@@ -2,7 +2,9 @@ import os
 import numpy as np
 import h5py
 from general_analysis_functions import ab_fluc_mean, a2_fluc_mean
-from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal
+from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_temporal_averages
+from dense_plume_analysis import plume_tracer_radius
+
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
@@ -69,7 +71,7 @@ with_halos = False
 closure = False
 salinity = True
 
-
+percent_contour = 0.05
 # physical parameters
 rj = 10 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
@@ -130,8 +132,10 @@ for i, folder in enumerate(folders):
     centerline_index[0, :] = nx[0]//2 - 1
     centerline_index[1, :] = nx[1]//2 - 1
     centerline_index[2, :] = np.arange(nx[2]).astype(int)
+
     nt = len(t_save_temp)
     n = 0.0
+    # initializing arrays to collect temporal averages
     S_sum = 0.0
     w_sum = 0.0
     S_centerline_avg = np.zeros(nx[2])
@@ -148,25 +152,38 @@ for i, folder in enumerate(folders):
     T_fluc_avg = np.zeros(nx[2])
     b_fluc_avg = np.zeros(nx[2])
     w_fluc_avg = np.zeros(nx[2]+1)
+    Tw_fluc_avg = np.zeros(nx[2])
+    Sw_fluc_avg = np.zeros(nx[2])
     bw_fluc_avg = np.zeros(nx[2])
+    u_rms = np.zeros(nx[2])
+    v_rms = np.zeros(nx[2])
     w_rms = np.zeros(nx[2]+1)
     for it in range(10, nt):
         # Load data from files
         u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
         wc = 0.5 * (w[..., :-1] + w[..., 1:])
         b = g*alpha*(T - T0) - g*beta*(S - S0)
-        # calculating temproary averages
+        # horizontal averages
         S_avg_temp = np.mean(S, axis=(-3, -2))
         T_avg_temp = np.mean(T, axis=(-3, -2))
         b_avg_temp = np.mean(b, axis=(-3, -2))
         w_avg_temp = np.mean(w, axis=(-3, -2))
         wc_avg_temp = np.mean(wc, axis=(-3, -2))
         bw_fluc, bw_fluc_avg_temp = ab_fluc_mean(b, wc, b_avg_temp, wc_avg_temp)
+        Tw_fluc, Tw_fluc_avg_temp = ab_fluc_mean(T, wc, T_avg_temp, wc_avg_temp)
+        Sw_fluc, Sw_fluc_avg_temp = ab_fluc_mean(S, wc, S_avg_temp, wc_avg_temp)
         bw_idx = np.where(bw_fluc_avg_temp==np.max(bw_fluc_avg_temp))[0][0]
         w_sum += np.mean(w[centerline_index[0, :], centerline_index[1, :], bw_idx])
         S_sum += np.mean(S[centerline_index[0, :], centerline_index[1, :], bw_idx])
+        # calculating rms 
+        u_fluc = u - np.mean(u, axis=(-3, -2))
+        v_fluc = v - np.mean(v, axis=(-3, -2))
         w_fluc = w - w_avg_temp
         w_fluc_avg_temp, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
+        u_fluc_avg_temp, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
+        v_fluc_avg_temp, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
+        u_rms_temp= u2_fluc_avg**0.5
+        v_rms_temp= v2_fluc_avg**0.5
         w_rms_temp= w2_fluc_avg**0.5
         # collecting desired averages
         S_centerline_avg += S[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
@@ -180,11 +197,16 @@ for i, folder in enumerate(folders):
         T_fluc_avg += np.mean(T - T_avg_temp, axis=(-3, -2))
         b_fluc_avg += np.mean(b - b_avg_temp, axis=(-3, -2))
         w_fluc_avg += w_fluc_avg_temp
+        Tw_fluc_avg += Tw_fluc_avg_temp
+        Sw_fluc_avg += Sw_fluc_avg_temp
         bw_fluc_avg += bw_fluc_avg_temp
         S_fluc_centerline_avg += S[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] - S_avg_temp
         T_fluc_centerline_avg += T[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] - T_avg_temp
         b_fluc_centerline_avg += b[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] - b_avg_temp
+        u_rms += u_rms_temp
+        v_rms += v_rms_temp
         w_rms += w_rms_temp
+
         n += 1
     S_contour = S_sum/n
     w_contour = w_sum/n
@@ -202,7 +224,11 @@ for i, folder in enumerate(folders):
     T_fluc_avg = T_fluc_avg/n
     b_fluc_avg = b_fluc_avg/n
     w_fluc_avg = w_fluc_avg/n
+    Tw_fluc_avg = Tw_fluc_avg/n
+    Sw_fluc_avg = Sw_fluc_avg/n
     bw_fluc_avg = bw_fluc_avg/n
+    u_rms = u_rms/n
+    v_rms = v_rms/n
     w_rms = w_rms/n
     print(f"writing to {folder}")
     # saving temporal averages per case
@@ -223,6 +249,28 @@ for i, folder in enumerate(folders):
     file.create_dataset("1D temporal averages/T'", data=T_fluc_avg)
     file.create_dataset("1D temporal averages/b'", data=b_fluc_avg)
     file.create_dataset("1D temporal averages/w'", data=w_fluc_avg)
+    file.create_dataset("1D temporal averages/T'w'", data=Tw_fluc_avg)
+    file.create_dataset("1D temporal averages/S'w'", data=Sw_fluc_avg)
     file.create_dataset("1D temporal averages/b'w'", data=bw_fluc_avg)
-    file.create_dataset("1D temporal averages/w'rms'", data=w_rms)
+    file.create_dataset("1D temporal averages/urms", data=u_rms)
+    file.create_dataset("1D temporal averages/vrms", data=v_rms)
+    file.create_dataset("1D temporal averages/wrms", data=w_rms)
+    file.close()
+
+# calculating plume statistics from temporal averages for all cases
+if salinity:
+    for i, folder in enumerate(folders):
+        rms_list, b_and_w_list, T_list, S_list = collect_temporal_averages(folder, dtn, temperature=True, salinity=False)
+        S_contour = S_list['S_contour'] * percent_contour
+        rp_profile = np.zeros(nx[2])
+        n = 0
+        for it in range(10, nt):
+            # Load data from files
+            u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
+            rp_profile_temp, None, None = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour) # plume analysis
+            n += 1
+            rp_profile += rp_profile_temp
+        rp_profile = rp_profile/n
+    file = h5py.File(os.path.join(folder, 'temporal_averages.h5'), 'w')
+    file.create_dataset("plume statistics/plume tracer radius with depth", data=rp_profile)
     file.close()
