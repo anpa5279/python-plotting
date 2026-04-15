@@ -145,37 +145,35 @@ def collect_temporal_averages(folder, dtn, temperature=True, salinity=False):
     # Load data from files
     fname = os.path.join(folder, dtn)
     with h5py.File(fname, 'r') as f:
-        b_and_w_list['w_avg'] = (f['1D temporal averages/w'])
-        b_and_w_list['b_avg'] = (f['1D temporal averages/b'])
-        b_and_w_list['w_fluc_avg'] = (f['1D temporal averages/w\''])
-        b_and_w_list['b_fluc_avg'] = (f['1D temporal averages/b\''])
-        rms_list['u_rms'] = (f['1D temporal averages/urms'])
-        rms_list['v_rms'] = (f['1D temporal averages/vrms'])
-        rms_list['w_rms'] = (f['1D temporal averages/wrms'])
-        b_and_w_list['b_centerline_avg'] = (f['centerline temporal averages/b'])
-        b_and_w_list['b_fluc_centerline_avg'] = (f['centerline temporal averages/b\''])
-        b_and_w_list['w_contour'] = (f['contour values/w'])
+        b_and_w_list['w_avg'] = f['1D temporal averages/w'][()] 
+        b_and_w_list['b_avg'] = f['1D temporal averages/b'][()] 
+        b_and_w_list['w_fluc_avg'] = f['1D temporal averages/w\''][()] 
+        b_and_w_list['b_fluc_avg'] = f['1D temporal averages/b\''][()] 
+        rms_list['u_rms'] = f['1D temporal averages/urms'][()] 
+        rms_list['v_rms'] = f['1D temporal averages/vrms'][()] 
+        rms_list['w_rms'] = f['1D temporal averages/wrms'][()] 
+        b_and_w_list['b_centerline_avg'] = f['centerline temporal averages/b'][()] 
+        b_and_w_list['b_fluc_centerline_avg'] = f['centerline temporal averages/b\''][()] 
         if temperature and salinity:
             T_list = {}
             S_list = {}
-            T_list['T_avg'] = (f['1D temporal averages/T'])
-            S_list['S_avg'] = (f['1D temporal averages/S'])
-            T_list['T_fluc_avg'] = (f['1D temporal averages/T\''])
-            S_list['S_fluc_avg'] = (f['1D temporal averages/S\''])
-            T_list['Tw_fluc_avg'] = (f['1D temporal averages/T\'w\''])
-            S_list['Sw_fluc_avg'] = (f['1D temporal averages/S\'w\''])
-            T_list['T_centerline_avg'] = (f['centerline temporal averages/T'])
-            S_list['S_centerline_avg'] = (f['centerline temporal averages/S'])
-            T_list['T_fluc_centerline_avg'] = (f['centerline temporal averages/T\''])
-            S_list['S_fluc_centerline_avg'] = (f['centerline temporal averages/S\''])
-            S_list['S_contour'] = (f['contour values/S'])
+            T_list['T_avg'] = f['1D temporal averages/T'][()] 
+            S_list['S_avg'] = f['1D temporal averages/S'][()] 
+            T_list['T_fluc_avg'] = f['1D temporal averages/T\''][()] 
+            S_list['S_fluc_avg'] = f['1D temporal averages/S\''][()] 
+            T_list['Tw_fluc_avg'] = f['1D temporal averages/T\'w\''][()] 
+            S_list['Sw_fluc_avg'] = f['1D temporal averages/S\'w\''][()] 
+            T_list['T_centerline_avg'] = f['centerline temporal averages/T'][()] 
+            S_list['S_centerline_avg'] = f['centerline temporal averages/S'][()] 
+            T_list['T_fluc_centerline_avg'] = f['centerline temporal averages/T\''][()] 
+            S_list['S_fluc_centerline_avg'] = f['centerline temporal averages/S\''][()] 
         elif temperature and not salinity:
             T_list = {}
-            T_list['T_avg'] = (f['1D temporal averages/T'])
-            T_list['T_fluc_avg'] = (f['1D temporal averages/T\''])
-            T_list['Tw_fluc_avg'] = (f['1D temporal averages/T\'w\''])
-            T_list['T_centerline_avg'] = (f['centerline temporal averages/T'])
-            T_list['T_fluc_centerline_avg'] = (f['centerline temporal averages/T\''])
+            T_list['T_avg'] = f['1D temporal averages/T'][()] 
+            T_list['T_fluc_avg'] = f['1D temporal averages/T\''][()] 
+            T_list['Tw_fluc_avg'] = f['1D temporal averages/T\'w\''][()] 
+            T_list['T_centerline_avg'] = f['centerline temporal averages/T'][()] 
+            T_list['T_fluc_centerline_avg'] = f['centerline temporal averages/T\''][()] 
             S_list = None
         else:
             T_list = {}
@@ -185,6 +183,6 @@ def collect_contour_val(folder, dtn):
     # Load data from files
     fname = os.path.join(folder, dtn)
     with h5py.File(fname, 'r') as f:
-        S_contour = (f['contour values/S'])
-        w_contour = (f['contour values/w'])
-    return S_contour, w_contour
+        S = f['contour temporal averages/S'][()] 
+        w = f['contour temporal averages/w'][()] 
+    return S, w
