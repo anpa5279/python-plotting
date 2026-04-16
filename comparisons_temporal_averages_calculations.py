@@ -65,7 +65,7 @@ output_folder = universal_folder
 with_halos = False
 closure = False
 salinity = True
-plume_stats_only = True
+plume_stats_only = False
 
 file_name = 'temporal_averages.h5'
 percent_contour = 0.05

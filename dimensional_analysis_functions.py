@@ -34,7 +34,7 @@ def plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T,
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot Ri_g^{exp}$", fontsize = 16)
+        ax.set_xlabel(r"$w_{{rms}}/\sqrt{\text{g r}_{j}} \cdot Ri_g^{exp}$", fontsize = 16)
     #axes[0, 0].legend()
 
     for ax, exp in zip(axes[1, :], exponents):
@@ -126,7 +126,7 @@ def plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot Fr^{exp}$", fontsize = 16)
+        ax.set_xlabel(r"$w_{{rms}}/\sqrt{\text{g r}_{j}} \cdot Fr^{exp}$", fontsize = 16)
     #axes[0, 0].legend()
 
     for ax, exp in zip(axes[1, :], exponents):
@@ -217,7 +217,7 @@ def plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T,
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"$w_{{rms}}/\sqrt{\text{g l}_{j}} \cdot mld^{exp}$", fontsize = 16)
+        ax.set_xlabel(r"$w_{{rms}}/\sqrt{\text{g r}_{j}} \cdot mld^{exp}$", fontsize = 16)
     #axes[0, 0].legend()
 
     for ax, exp in zip(axes[1, :], exponents):
@@ -315,7 +315,7 @@ def plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, 
         axes[0, 0].plot(w_rms[:, i] * mld[i]**vars_exps[0, 2] * Ri_g[i]**vars_exps[0, 0] * Fr[i]**vars_exps[0, 1], 
                 zf_nd[:, i], color=color_opt[i])
     axes[0, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 0].set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g l}}_{{j}}}}\cdot$ {vars_str[0]}", fontsize = 16)
+    axes[0, 0].set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}}\cdot$ {vars_str[0]}", fontsize = 16)
 
     for i in range(num_cases):
         axes[0, 1].plot(b_center[:, i] * mld[i]**vars_exps[1, 2] * Ri_g[i]**vars_exps[1, 0] * Fr[i]**vars_exps[1, 1], 

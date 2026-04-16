@@ -12,13 +12,13 @@ contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
 # flags for what to plot
 all_steps = False
-transient_mld = True
+transient_mld = False
+temporal_averages_flag = True
 # manually select which plotting flags if not the component being varied by default
 strat_flag = False
 flux_flag = False
 mld_flag = False
 combo_flag = True
-temporal_averages_flag = True
 
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any
 
@@ -70,11 +70,11 @@ elif variations == 'all':
 if variations == 'all' or combo_flag:
     vars_exps = np.array([ # columns: Ri, Fr, MLD
         [0, -1/3, -1/2], # w_rms
-        [-1/2, -1/3, 1/3], # b_center
-        [-1/2, -3/8, 0], # bw_fluc_avg
-        [-1/4, 1/4, 0], # r_profile
-        [-3/8, -1/4, 1], # T_fluc_center
-        [-1/4, -7/8, 1/4] # S_avg
+        [-1/2, -1/3, 1/2], # b_center
+        [-1/3, -3/4, -1], # bw_fluc_avg
+        [-1/4, -1/4, -1/2], # r_profile
+        [-1/2, -1/4, 1], # T_fluc_center
+        [-1/3, -3/4, 1] # S_avg
     ]) # manually manipulate
 
 T0 = 25.0
