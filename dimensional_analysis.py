@@ -18,12 +18,13 @@ temporal_averages_flag = True
 strat_flag = False
 flux_flag = False
 mld_flag = False
-combo_flag = True
+combo_flag = False
+morton_znd_flag = False
 
-exponents = [0, 1/24, 1/16, 1/12, 1/6] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
+exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
 
 # selecting cases to compare
-variations = 'all' # 'MLD', 'flux', 'strat', 'all'
+variations = 'MLD' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -167,10 +168,21 @@ F_T_scale = beta * F_s / alpha
 F_S_scale = F_s
 hor_scale = rj
 
-F0 = area * beta * g * F_s
-Ln =(F0/N2**(3/2))**(1/4)
-z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))#(z+mld)/(Ln)#
-zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))#(zf+mld)/(Ln)#
+if morton_znd_flag:
+    name_uni += '_morton_scaling'
+    F0 = area * beta * g * F_s
+    Ln =(F0/N2**(3/2))**(1/4)
+    z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
+    zf_nd = (zf+mld)*(mld)**(1/3)/(Ln**(4/3))
+else:
+    name_uni += '_simple_znd'
+    F0 = area * beta * g * F_s
+    Ln =(F0/N2**(3/2))**(1/4)
+    z_nd = (z+mld)/(Ln)
+    zf_nd = (zf+mld)/(Ln)
+    #for i in range(num_cases):
+    #    z_nd[0:mld_idx[i], i] = (z[0:mld_idx[i], i]+mld[i])*(mld[i])**(1/3)/(Ln[i]**(4/3))
+    #    zf_nd[0:mld_idx[i]+1, i] = (zf[0:mld_idx[i]+1, i]+mld[i])*(mld[i])**(1/3)/(Ln[i]**(4/3))
 
 y_nd = y / rj
 
@@ -216,21 +228,21 @@ if temporal_averages_flag:
     w_rms = w_rms/vel_scale
     ############ PLOTTING ############
     if variations == 'all' or combo_flag:
-        plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
+        plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
     if np.size(exponents)==0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
         if variations == 'strat' or strat_flag:
-            plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
         if variations == 'flux' or flux_flag:
-            plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
         if variations == 'MLD' or mld_flag:
-            plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
+            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
     elif np.size(exponents)!=0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
         if variations == 'strat' or strat_flag:
-            plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
         if variations == 'flux' or flux_flag:
-            plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
         if variations == 'MLD' or mld_flag:
-            plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
+            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
 else:
     for it in nt:
         u_avg = np.zeros((nx[2], num_cases))
@@ -313,18 +325,18 @@ else:
         td = title/3600/24
         title = f'{td:.2f} days'
         if variations == 'all' or combo_flag:
-            plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
+            plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
         if np.size(exponents)==0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
             if variations == 'strat' or strat_flag:
-                plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
             if variations == 'flux' or flux_flag:
-                plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
             if variations == 'MLD' or mld_flag:
-                plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
+                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
         elif np.size(exponents)!=0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
             if variations == 'strat' or strat_flag:
-                plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
             if variations == 'flux' or flux_flag:
-                plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
             if variations == 'MLD' or mld_flag:
-                plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
+                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)

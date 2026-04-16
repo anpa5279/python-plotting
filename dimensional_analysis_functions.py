@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from fractions import Fraction
 from matplotlib.lines import Line2D
 
-def plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Ri_g, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
+def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Ri_g, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
     scale[-1] = 0.02
@@ -92,11 +92,11 @@ def plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T,
     # --- Save Frame ---
     str_exp = list(map(str, exponents))
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"Ri_{title}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"Ri_{file_name} _pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     
-def plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Fr, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
+def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, Fr, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
     scale[-1] = 0.02
@@ -183,11 +183,11 @@ def plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, 
 
     # --- Save Frame ---
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"Fr_{title}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"Fr_{file_name} _pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
 
-def plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, mld, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
+def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, mld, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5]):
     num_cases = len(case_names)
     scale = np.ones(7) 
     scale[-1] = 0.02
@@ -274,12 +274,12 @@ def plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T,
 
     # --- Save Frame ---
     str_exp = '_'.join(f"{x:.3g}" for x in exponents)
-    frame_path = os.path.join(fig_folder, f"MLD_{title}_pow{str_exp}.png")
+    frame_path = os.path.join(fig_folder, f"MLD_{file_name} _pow{str_exp}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     
 
-def plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, vars_exps, Ri_g, Fr, mld, case_names):
+def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, zf_nd, vars_exps, Ri_g, Fr, mld, case_names):
     NDs = [rf"Ri$_g^", rf"Fr$^", rf"MLD$^"] 
     NDs_filtered = [[("" if str(Fraction(x).limit_denominator()) == '0' 
                 else NDs[j] + "{"+str(Fraction(x).limit_denominator())+"}$")
@@ -351,11 +351,11 @@ def plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, 
     plt.tight_layout()
 
     # --- Save Frame ---
-    frame_path = os.path.join(fig_folder, f"{title}_combined.png")
+    frame_path = os.path.join(fig_folder, f"{file_name} _combined.png")
     i = 0
     while True:
         i += 1
-        frame_path = os.path.join(fig_folder, f"{title}_combined_{i}.png")
+        frame_path = os.path.join(fig_folder, f"{file_name} _combined_{i}.png")
         if os.path.exists(frame_path):
             continue
         plt.savefig(frame_path)
