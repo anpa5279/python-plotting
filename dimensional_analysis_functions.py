@@ -64,7 +64,7 @@ def plot_rig_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T,
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"(r/l$_{j})\cdot Ri_g^{exp}$", fontsize = 16)
+        ax.set_xlabel(r"(r/r$_{j})\cdot Ri_g^{exp}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
@@ -156,7 +156,7 @@ def plot_Fr_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T, 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"(r/l$_{j})\cdot Fr^{exp}$", fontsize = 16)
+        ax.set_xlabel(r"(r/r$_{j})\cdot Fr^{exp}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
@@ -247,7 +247,7 @@ def plot_mld_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, T,
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax.set_title(f'mld^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(r"(r/l$_{j})\cdot mld^{exp}$", fontsize = 16)
+        ax.set_xlabel(r"(r/r$_{j})\cdot mld^{exp}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
@@ -333,7 +333,7 @@ def plot_combo_exponents(color_opt, title, fig_folder, w_rms, b_center, bw, rp, 
         axes[0, 3].plot(rp[:, i] * mld[i]**vars_exps[3, 2] * Ri_g[i]**vars_exps[3, 0] * Fr[i]**vars_exps[3, 1], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 3].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 3].set_xlabel(rf"(r/l$_{{j}})\cdot$ {vars_str[3]}", fontsize = 16)
+    axes[0, 3].set_xlabel(rf"(r/r$_{{j}})\cdot$ {vars_str[3]}", fontsize = 16)
 
     for i in range(num_cases):
         axes[0, 4].plot(T[:, i] * mld[i]**vars_exps[4, 2] * Ri_g[i]**vars_exps[4, 0] * Fr[i]**vars_exps[4, 1],

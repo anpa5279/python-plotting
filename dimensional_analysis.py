@@ -20,10 +20,10 @@ flux_flag = False
 mld_flag = False
 combo_flag = True
 
-exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any
+exponents = [0, 1/24, 1/16, 1/12, 1/6] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
 
 # selecting cases to compare
-variations = 'MLD' # 'MLD', 'flux', 'strat', 'all'
+variations = 'all' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -69,12 +69,12 @@ elif variations == 'all':
                    0.05, 0.15, 0.2]) 
 if variations == 'all' or combo_flag:
     vars_exps = np.array([ # columns: Ri, Fr, MLD
-        [0, -1/3, -1/2], # w_rms
-        [-1/2, -1/3, 1/2], # b_center
-        [-1/3, -3/4, -1], # bw_fluc_avg
-        [-1/4, -1/4, -1/2], # r_profile
-        [-1/2, -1/4, 1], # T_fluc_center
-        [-1/3, -3/4, 1] # S_avg
+        [1/16, -3/8, -1/2], # w_rms
+        [-1/2, -1/3, 2/3], # b_center
+        [-3/8, -3/4, -1], # bw_fluc_avg
+        [-1/4, -1/6, -2/3], # r_profile
+        [-1/2, -1/4, 3/4], # T_fluc_center
+        [-1/3, -3/4, 3/4] # S_avg
     ]) # manually manipulate
 
 T0 = 25.0
