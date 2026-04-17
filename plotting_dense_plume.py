@@ -7,7 +7,7 @@ import imageio.v2 as imageio
 import matplotlib.ticker as mticker
 
 ## buoyancy analysis 
-def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_avg, b_background, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, plume_depth_intrusion, plume_depth_neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld):
+def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, plume_depth_intrusion, plume_depth_neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld):
 
     outdir = os.path.join(fig_folder, 'NBP buoyancy analysis/')
     os.makedirs(outdir, exist_ok=True)
@@ -82,7 +82,7 @@ def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_
     ax5.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
     ax5.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
     ax5.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
-    ax5.set_xlim(ranges['richardson'])
+    ax5.set_xlim(ranges['Ri'])
     if len(np.shape(Ri_strat))>1: # if we have the Hassanzadeh Richardson number, plot that as well
         Ri_strat_h = Ri_strat[:, 1]
         Ri_avg_h = Ri_avg[:, 1]
@@ -107,7 +107,6 @@ def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_
     ax6.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
     ax6.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
     ax6.set_xlim(ranges['b'])
-    ax6.plot(b_background, z, color='black', label = r"b$_{\text{stratified}}$")
     ax6.plot(b_avg, z, color='black', label = r"$\langle$b$\rangle_{\text{xy}}")
     ax6.plot(b_center, z, color='red', label = r"b$_{\text{centerline}}$")
     ax6.set_title("Buoyancy Profile")
@@ -191,7 +190,7 @@ def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
 ## dense tracer buoyancy analysis 
-def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc, uw_fluc, vw_fluc, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_background, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, tracer_avg, rp, plume_depths, ws, rhos, bw_flucs, l_scale):
+def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc, uw_fluc, vw_fluc, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, tracer_avg, rp, plume_depths, ws, rhos, bw_flucs, l_scale):
     plume_depth_intrusion = plume_depths[0]
     plume_depth_neutral = plume_depths[1]
 
@@ -376,7 +375,6 @@ def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_
     ax7.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
     ax7.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
     ax7.set_xlim(ranges['b'])
-    ax7.plot(b_background, z, color='black', label = r"b$_{\text{IC}}$")
     ax7.plot(b_avg, z, color='green', label = r"$\langle$b$\rangle_{\text{xy}}")
     ax7.plot(b_center, z, color='red', label = r"b$_{\text{centerline}}$")
     ax7.set_title("Buoyancy Profile")
@@ -546,7 +544,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax3.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
     ax3.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')#, label = "Intrusion Depth")
     ax3.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')#, label = "Neutral Buoyancy")
-    ax3.plot(b_avg, z, color = 'black', label = r"$\langle$b$\rangle_{\text{xy}}")
+    ax3.plot(b_avg, z, color = 'black', label = r"$\langle$b$\rangle_{\text{xy}}$")
     ax3.plot(b_center, z, color = 'black', label = r"b$_{\text{centerline}}$", linestyle = 'dashed')
     ax3.set_title("Buoyancy Profile")
     ax3.set_ylim(-lx[2], 0)
@@ -669,7 +667,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax15.plot(Ri, z, color = 'black')
     ax15.set_title("Richardson Number")
     ax15.set_ylim(-lx[2], 0)
-    ax15.set_xlim(ranges['richardson'])
+    ax15.set_xlim(ranges['Ri'])
 
     fig.legend(handles=[mld_handle, intrusion_handle, neutral_handle], labels=["MLD", "Intrusion Depth", "Neutral Buoyancy Depth"],
             loc='lower center',

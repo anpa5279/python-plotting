@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import make_interp_spline
+
 
 from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
@@ -208,8 +208,7 @@ for it in nt:
             b_T = g*alpha*(T - T0)
             b_S = - g*beta*(S - S0)
         # interpolate so all values are from the center, center, center of the grid cell
-        w_face = make_interp_spline(zf[:, i], w, axis=-1, k=1)
-        wc = w_face(z[:, i])
+        wc = 0.5 * (w[..., :-1] + w[..., 1:])
 
         # calculate means
         u_avg[:, i] = np.mean(u, axis=(-3, -2))

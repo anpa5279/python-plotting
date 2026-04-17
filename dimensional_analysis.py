@@ -24,7 +24,7 @@ morton_znd_flag = False
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
 
 # selecting cases to compare
-variations = 'MLD' # 'MLD', 'flux', 'strat', 'all'
+variations = 'flux' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -206,6 +206,8 @@ if temporal_averages_flag:
         T_fluc_center[:, i] = T_list['T_fluc_centerline_avg']
         S_avg[:, i] = S_list['S_avg']
         r_profile[:, i] = collect_plume_stats(folder, file_name, contour_bound)
+        S_value, w_value = collect_contour_val(folder, file_name)
+        #Fr_flux[i] = np.abs(w_value/(F_s[i]*beta))#np.sqrt(g*rj*S_value/beta))
         if transient_mld:
                 dbdz = np.gradient(b_avg[:, i], z[:, i])
                 dbdz_tol = dbdz <= (5.0*10**(-7))

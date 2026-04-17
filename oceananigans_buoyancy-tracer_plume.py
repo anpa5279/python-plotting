@@ -4,12 +4,12 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib import cm
-from scipy.interpolate import make_interp_spline
+
 import imageio.v2 as imageio
 import matplotlib.ticker as mticker
 
 from plotting_functions import stratification_profile, plot_ranges, turb_stats, plot_3d_fields, vert_plane_slices, buoyancy_analysis, xy_plane_slices, create_video
-from general_analysis_functions import a2_fluc_mean, ozmidov_length, centerline_analysis_buoyancy, ab_fluc_mean, visc_dissipation_rate, richardson_number, froude_number, reynolds_buoyancy_number, richardson_number_ratio, lamb_vector
+from general_analysis_functions import a2_fluc_mean, centerline_analysis_buoyancy, ab_fluc_mean, richardson_number, froude_number, reynolds_buoyancy_number, richardson_number_ratio, lamb_vector
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/b tracer for NBP/with closure Re 3000/continuous source/varied buoyancy flux/b0 = -4E-1/'
@@ -100,13 +100,10 @@ for it in range(nt):
     else:
         u, v, w, b, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save, it, hx, nx, False, False, with_halos)
     #interpolate so all values are from the center, center, center of the grid cell
-    w_face = make_interp_spline(zf, w, axis=-1, k=1)
-    wc = w_face(z)
+    wc = 0.5 * (w[..., :-1] + w[..., 1:])
 
     if stokes:
         u = u - u_s
-    
-    b_background = stratification_profile(z, alpha*g*dTdz, mld)
 
     if buoyancy_analysis or turb_stats_plot:
         rho = ((b)*rho0)/(-g) + rho0
@@ -185,7 +182,7 @@ for it in range(nt):
         rho_center = rho[int(nx[0]/2), int(nx[1]/2), :]
         rho_perturbed_center = rho_perturbed[int(nx[0]/2), int(nx[1]/2), :]
         
-        neutral_index, max_index, b_center, w_center, dbdz_plume_avg, z_max, z_neutral, max_w, max_b_fluc, max_rho_perturbed, neutral_w, neutral_b_fluc, neutral_rho_perturbed, mld_w, mld_b_fluc, mld_rho_perturbed = centerline_analysis_buoyancy(wc_center, b_center, b_fluc_center, dbdz_center, rho_perturbed_center, z, nx, mld)
+        neutral_index, max_index, b_center, w_center, dbdz_plume_avg, z_max, z_neutral, max_w, max_b_fluc, max_rho_perturbed, neutral_w, neutral_b_fluc, neutral_rho_perturbed, mld_w, mld_b_fluc, mld_rho_perturbed = centerline_analysis_buoyancy(wc_center, b_center, b_fluc_center, dbdz_center, rho_perturbed_center, nx, mld)
         
         # ozmidov length scale
         #epsilon =visc_dissipation_rate(visc, u, v, wc, dx)

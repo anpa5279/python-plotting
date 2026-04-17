@@ -4,7 +4,6 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib import cm
-from scipy.interpolate import make_interp_spline
 import imageio.v2 as imageio
 import matplotlib.ticker as mticker
 
@@ -129,8 +128,7 @@ rho_nd = (rho_tot - rho_w)/rho_w
 B = g * (alpha * (T0-T) + rho_nd)
 
 #interpolate so all values are from the center, center, center of the grid cell
-w_face = make_interp_spline(zf, w, axis=3, k=1)
-wc = w_face(z)
+wc = 0.5 * (w[..., :-1] + w[..., 1:])
 u_f = 0.001
 u = u #-u_s
 #calculate means

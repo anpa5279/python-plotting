@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.ndimage import center_of_mass
-from general_analysis_functions import point_linear_interp
 from scipy.ndimage import binary_fill_holes
 from scipy.spatial import ConvexHull
 ### -------------------------NBJ FUNCTIONS------------------------- ###
@@ -23,7 +22,7 @@ def z_m_analytical(rhoB, rho_z, g, w):
     At = (rho_z - rhoB)/(rho_z + rhoB)
     return w**2/(g*At)
 # centerline analysis with no stokes/ shear influencing flow
-def centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, z, nx):
+def centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, nx):
     # finding max height of plume and neutral buoyancy height (perturbed vertical buoyancy flux should be 0)
     bw_fluc_sign = np.sign(bw_fluc_center)
     sign_change_z = bw_fluc_sign[0:(nx[2]-1)] * bw_fluc_sign[1:(nx[2])] < 0
@@ -35,9 +34,6 @@ def centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, z, nx):
     else:
         neutral_index = np.where(bw_fluc_center==b_fluc_w_sign_change[-1])[0][0]
         max_index = np.where(bw_fluc_center==b_fluc_w_sign_change[-2])[0][0]
-    
-    z_max = z[max_index]
-    z_neutral = z[neutral_index]
 
     # finding Ozmidov length scale of plume
     dbdz_plume_avg = np.mean(dbdz_center[max_index:])
@@ -110,16 +106,7 @@ def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_perturbed, nx, c
     idx_rp_max = idx_rp_max[np.where(neural_vs_rp==np.min(neural_vs_rp))] 
     return idx_rp_max, idx_neutral_in_plume, idx_neutral_in_plume
 
-def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour=None, idx=None, contour=None):
-
-    # --- contour threshold ---
-    if tracer_contour is None or np.size(tracer_contour) == 0:
-        tracer_contour = np.max(tracer[
-            centerline_index[0, :],
-            centerline_index[1, :],
-            idx
-        ]) * contour
-
+def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour):
     plume_contour = tracer >= tracer_contour
     xi, yi, zi = np.where(plume_contour)
     plume_index = (xi, yi, zi)
@@ -136,21 +123,16 @@ def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour=None,
     rp_profile[mask] = sums[mask] / counts[mask]
     return rp_profile, plume_index, tracer_contour
 
-def plume_tracer_analysis(x, y, z, lx, nx, tracer, tracer_contour = [], idx = [], contour = [], calc_option='middle domain'):
+def plume_tracer_analysis(x, y, nx, tracer, tracer_contour, calc_option='middle domain'):
     if calc_option == 'middle domain':
         # finding centerline of plume 
         centerline_index = np.zeros((3, nx[2])).astype(int)
-        center_xy_loc = np.zeros((3, nx[2]))
-        center_xy_loc[0, :] = lx[0]/2
-        center_xy_loc[1, :] = lx[1]/2
-        center_xy_loc[2, :] = z
         centerline_index[0, :] = nx[0]//2 - 1
         centerline_index[1, :] = nx[1]//2 - 1
         centerline_index[2, :] = np.arange(nx[2]).astype(int)
     elif calc_option == 'center of mass':
         # finding centerline of plume 
         centerline_index = np.zeros((3, nx[2]))
-        center_xy_loc = np.zeros((3, nx[2]))
         for k in range(nx[2]-1, -1, -1): # nx[2] = top of the domain 
             center_xy = center_of_mass(tracer[:, :, k])
             if ((np.isnan(center_xy[0]) or np.isnan(center_xy[1]))) and (k < nx[2]-1):
@@ -158,14 +140,8 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, tracer_contour = [], idx = []
             elif ((np.isnan(center_xy[0]) or np.isnan(center_xy[1]))) and (k == nx[2]-1):
                 center_xy = [nx[0]//2, nx[1]//2]
             centerline_index[:, k] = [(center_xy[0]), (center_xy[1]), k]
-            center_int = [int(center_xy[0]), int(center_xy[1])]
-            center_xy_loc[0, k] = point_linear_interp(x[center_int[0]], x[center_int[0]+1], centerline_index[0][k], center_int[0], center_int[0]+1)
-            center_xy_loc[1, k] = point_linear_interp(y[center_int[1]], y[center_int[1]+1], centerline_index[1][k], center_int[1], center_int[1]+1)
-            center_xy_loc[2, k] = z[k]
         centerline_index = np.round(centerline_index).astype(int)
     # finding plume bounds via contour on the centerline of the tracer
-    if np.size(tracer_contour) == 0:
-        tracer_contour = np.max(tracer[centerline_index[0, :], centerline_index[1, :], idx])*contour
     plume_contour = tracer >= tracer_contour
     plume_index = np.where(plume_contour)
     edge_mask = plume_contour & (
@@ -176,7 +152,6 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, tracer_contour = [], idx = []
     )
     edge_index = np.where(edge_mask)
     # find the radius of plume on xy plane
-    X, Y = np.meshgrid(x, y, indexing='ij')
     rp_profile = np.zeros(nx[2])
     for k in np.arange(nx[2]):
         hor_plane = np.where(edge_index[2]==k)[0]
@@ -185,18 +160,20 @@ def plume_tracer_analysis(x, y, z, lx, nx, tracer, tracer_contour = [], idx = []
         else:
             r = np.zeros(len(hor_plane))
             for i in range(len(hor_plane)):
-                rx = np.abs(x[edge_index[0][hor_plane[i]]]) - center_xy_loc[0, k]
-                ry = np.abs(y[edge_index[1][hor_plane[i]]]) - center_xy_loc[1, k]
+                rx = np.abs(x[edge_index[0][hor_plane[i]]])
+                ry = np.abs(y[edge_index[1][hor_plane[i]]])
                 r[i] = np.sqrt(rx**2 + ry**2)
             rp_profile[k] = np.mean(r)
-    return center_xy_loc, centerline_index, rp_profile, plume_index, tracer_contour
-def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, b_fluc, rho_fluc, X, Y, dbdz_tol, b_tol, w_mag_tol):
+    return centerline_index, rp_profile, plume_index
+
+# momentum analysis of plume
+def plume_momentum_analysis(centerline_index, nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol):
     # checking magnitude of values to help define bounds
     w_mag = np.abs(w)
     w_mag_order = np.floor(np.log10(w_mag))
     w_mag_cl = w_mag_order[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
 
-    if np.sum(w_mag_cl == w_mag_tol) > 0:
+    if np.any(w_mag_cl == w_mag_tol):
         # index of plume points of interest
         rho_cl = rho_fluc[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] 
         rho_cl_sign = np.sign(rho_cl)
@@ -220,9 +197,11 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
             idx_max =idx_max[-1] +1 
             idx_rho_max = np.where(rho_cl_sign_change < 0)[0]
             idx_diff = np.abs(idx_rho_max - idx_max)
-            idx_max_2 = idx_rho_max[idx_diff.argmin()] + 1 
-            if (idx_max > idx_max_2):
-                idx_max = idx_max_2 
+            if np.size(idx_rho_max) == 0:
+                idx_max = idx_max
+            else:
+                idx_max_2 = idx_rho_max[idx_diff.argmin()] + 1 
+                idx_max = np.max([idx_max, idx_max_2])
     else: # early stages of plume development
         idx_max = nx[2]-1
         idx_neutral = idx_max
@@ -259,7 +238,7 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         area_wmag = (wmagk >= w_mag_tol).astype(float)
         area_opt = area_wmag#area_bk + 
         area_opt = area_opt>0
-        if np.sum(area_opt) == 0:
+        if np.sum(area_opt) < 3:
             idx_max = idx_max + 1
             continue
         area_opt = binary_fill_holes(area_opt)
@@ -269,8 +248,8 @@ def plume_momentum_analysis(centerline_index, center_xy_loc, nx, x, y, z, w, b, 
         area_idx[:, :, k] = area_opt
         # compute area 
         x_idx, y_idx = np.where(area_opt)
-        Xloc = X[x_idx, y_idx, k] - center_xy_loc[0, k]
-        Yloc = Y[x_idx, y_idx, k] - center_xy_loc[1, k]
+        Xloc = X[x_idx, y_idx, k]
+        Yloc = Y[x_idx, y_idx, k]
         points = np.stack([Xloc, Yloc], axis=1)
         hull = ConvexHull(points)
         area[k] = hull.volume

@@ -21,9 +21,10 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
                 'b_flux', 
                 'vel_rms', 'b_rms', 
                 'b_avg', 'T_avg', 'vel_avg', 'lamb_avg',
-                'vel_restress', 'vel_flux', 'richardson', 
+                'vel_restress', 'vel_flux', 'Ri', 
                 'u_fluc', 'v_fluc', 'w_fluc', 'b_fluc', 'vel_fluc', 'bw_fluc', 'Tw_fluc', 'rho_fluc', 'T_fluc', 'S_fluc',
-                'lengthscale', 'gradb', 'alphas']
+                'lengthscale', 'gradb', 'alphas', 
+                'Q', 'F', 'M', 'B']
     for i in range(0,len(list_pqr),1):
         ranges[list_pqr[i]] = list()
     ranges['u'] = [-0.002, 0.002]
@@ -39,7 +40,7 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges['vel_rms'] = [0, 0.004]
     ranges['vel_flux'] = [-1*10**(-2), 1*10**(-2)]
     ranges['restress'] = [-3*10**(-6), 3*10**(-6)]
-    ranges['richardson'] = [0, 5*10**(-3)]
+    ranges['Ri'] = [0, 5*10**(-3)]
     ranges['Pdynamic'] = [-0.005, 0.005]
     ranges['Pstatic'] = [-0.05, 0.05]
     ranges['b_avg'] = [-1.5*10**(-3), 1.0*10**(-5)]
