@@ -20,7 +20,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/sponge testing/gaussian/width = 10.0, rate = 0.0002777777777777778' #/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -32,29 +32,30 @@ video = True
 
 video_3d_flag = False
 turb_stats_plot = False
-vert_slice_plot = False
-xy_plot = False
+vert_slice_plot = True
+xy_plot = True
 buoyancy_analysis_plot = False
-buoyancy_momentum_analysis = True
+buoyancy_momentum_analysis = False
 
 # flags for how to read data
 with_halos = False
 closure = False
 stokes = False
 salinity = True
+prior_107 = False
 
 # physical parameters
-nums = re.findall(r' -?\d*\.?\d+', folder)
-mld = float(nums[-1]) # mixed layer depth in meters
+#nums = re.findall(r' -?\d*\.?\d+', folder)
+mld = 30#float(nums[-1]) # mixed layer depth in meters
 g = 9.80665  # gravity in m/s^2
-dTdz = float(nums[-2]) # background temperature gradient in K/m
+dTdz = 0.01#float(nums[-2]) # background temperature gradient in K/m
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = float(nums[-3]) # salinity of the source in PSU
+Sj = 0.1#float(nums[-3]) # salinity of the source 
 wp = 0.001
 F_s = Sj*wp
-S_value, w_value = collect_contour_val(folder, 'temporal_averages.h5')
+#S_value, w_value = collect_contour_val(folder, 'temporal_averages.h5')
 # plotting prep
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -70,15 +71,15 @@ plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 
 ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = dTdz, Sj = Sj)
 # plot ranges
-ranges['w'] = [-2*10**(-2), 2*10**(-2)]
+ranges['w'] = [-1.5*10**(-2), 1.5*10**(-2)]
 ranges['w_fluc'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel'] = [-1e-5, 1e-5]
-ranges['b'] = [-8.0*10**(-4), 8.0*10**(-4)]
-ranges['rho'] = [rho0-0.01, rho0+0.2] # <--for stratification [rho0-0.01, rho0+0.1] # 
+ranges['b'] = [-1.5*10**(-3), 1.5*10**(-3)]
+ranges['rho'] = [rho0-0.01, rho0+0.13] # <--for stratification [rho0-0.01, rho0+0.1] # 
 ranges['rho_fluc'] = [-0.01, 0.01]
-ranges['S'] = [0.0, 0.04]
-ranges['T'] = [T0-0.8, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
-ranges['u'] = [-6*10**(-3), 6*10**(-3)]
+ranges['S'] = [0.0, 0.025]
+ranges['T'] = [T0-0.7, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
+ranges['u'] = [-6*10**(-7), 6*10**(-7)]
 ranges['v'] = [-6*10**(-3), 6*10**(-3)]
 ranges['u_fluc'] = ranges['u']
 ranges['v_fluc'] = ranges['v']
@@ -108,9 +109,9 @@ if Nranks > 1:
 # Read model information
 fid = os.path.join(folder, dtn[0])
 if not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, zf, visc, diff = collect_time_outputs(fid, Nranks, stokes, closure)
 elif stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
     u_s = stokes_exp(z)
 
 if salinity:

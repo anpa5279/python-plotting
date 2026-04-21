@@ -24,15 +24,13 @@ def collect_time_outputs(file, Nranks, stokes=False, closure=True):
         x = f['grid/xᶜᵃᵃ'][hx[0]] + np.arange(nx[0]) * dx[0]
         y = f['grid/yᵃᶜᵃ'][hx[1]:-hx[1]]
         z = f['grid/z/cᵃᵃᶜ'][hx[2]:-hx[2]]
-        xf = np.arange(nx[0]) * dx[0]
-        yf = f['grid/yᵃᶠᵃ'][hx[1]:-hx[1]]
         zf = f['grid/z/cᵃᵃᶠ'][hx[2]:-hx[2]]
     if stokes:
         u_f =np.array(f["IC/"]["friction_velocity"])
         u_s = np.array(f["IC/"]["stokes_velocity"])
-        return time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s
+        return time, t_save, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s
     else:
-        return time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff
+        return time, t_save, nx, hx, lx, x, y, z, zf, visc, diff
 # collecting thermal expansion and haline contraction coefficients
 def collect_temp_and_sal(file, salinity=False):
     with h5py.File(file, 'r') as f:

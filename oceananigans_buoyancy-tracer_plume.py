@@ -60,13 +60,13 @@ Nranks = len(dtn)
 # Read model information
 fid = os.path.join(folder, dtn[-1])
 if Nranks == 1 and not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc = collect_time_outputs(fid, Nranks, stokes, closure)
 elif Nranks == 1 and stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
 elif Nranks > 1 and not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc = collect_time_outputs(fid, Nranks, stokes, closure)
 else:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
 if rho_IC_perturb:
     name+='-rhoICperturbation-'
 name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'

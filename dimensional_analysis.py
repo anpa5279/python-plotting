@@ -120,9 +120,9 @@ for i, folder in enumerate(folders):
     # Read model information
     fid = os.path.join(folder, dtn[0])
     if not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, zf, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
     else:
-        time, t_save_temp, nx, hx, lx, x, y, z, xf, yf, zf, dx, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
+        time, t_save_temp, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
