@@ -136,6 +136,55 @@ def collect_fields_distributed(Nranks, folder, dtn, t_save, hx, nx, temperature=
             new_range = range(xrange.start + (nx[0] // Nranks), xrange.stop + (nx[0] // Nranks))
             xrange = new_range
         return u, v, w, b, Pdynamic, Pstatic
+## -------------------------Writing grid info------------------------- ###
+def writing_grid(folder, dtn, nx, lx, hx):
+    dtn_new = 'fields_with_grid.jld2'
+    dx = lx / nx
+    d_min = -hx*dx
+    d_max = hx*dx + lx
+    xf = np.arange(d_min[0]-lx[0]/2, d_max[0]-lx[0]/2, dx[0])
+    yf = np.arange(d_min[1]-lx[1]/2, d_max[1]-lx[1]/2, dx[1])
+    zf = np.arange(-lx[2]-dx[2]*hx[2], dx[2]*(hx[2]+1), dx[2])
+    x = xf + 0.5*dx[0]
+    y = yf + 0.5*dx[1]
+    z = zf[:-1] + 0.5*dx[2]
+    new_file_directory = os.path.join(folder, dtn_new)
+    with h5py.File(os.path.join(folder, dtn), 'r') as src, h5py.File(new_file_directory, 'w') as dst:
+        for key in src.keys():
+            if key == 'grid':
+                continue
+            try:
+                src.copy(key, dst)
+            except Exception as e:
+                print(f"Skipping {key}: {e}")
+
+    file = h5py.File(new_file_directory, 'a')
+    file.create_group('grid')
+    file.create_dataset('grid/Nx', data=nx[0])
+    file.create_dataset('grid/Ny', data=nx[1])
+    file.create_dataset('grid/Nz', data=nx[2])
+
+    file.create_dataset('grid/Lx', data=lx[0])
+    file.create_dataset('grid/Ly', data=lx[1])
+    file.create_dataset('grid/Lz', data=lx[2])
+
+    file.create_dataset('grid/Hx', data=hx[0])
+    file.create_dataset('grid/Hy', data=hx[1])
+    file.create_dataset('grid/Hz', data=hx[2])
+
+    file.create_dataset('grid/Δxᶜᵃᵃ', data=dx[0])
+    file.create_dataset('grid/Δyᵃᶜᵃ', data=dx[1])
+    file.create_dataset('grid/z/Δᵃᵃᶜ', data=dx[2])
+
+    file.create_dataset('grid/xᶜᵃᵃ', data=x)
+    file.create_dataset('grid/yᵃᶜᵃ', data=y)
+    file.create_dataset('grid/z/cᵃᵃᶜ', data=z)
+    file.create_dataset('grid/z/cᵃᵃᶠ', data=zf)
+    file.close()
+
+    os.remove(os.path.join(folder, dtn))
+
+    return dtn_new
 ## -------------------------Collecting temporal averages------------------------- ###
 def collect_temporal_averages(folder, dtn, temperature=True, salinity=False):
     rms_list = {}

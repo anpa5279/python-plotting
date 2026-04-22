@@ -8,7 +8,7 @@ from plotting_functions import stratification_profile, plot_ranges, turb_stats, 
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_analysis
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
-from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_contour_val
+from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid
 
 def stokes_exp(z):
     g_Earth = 9.80665
@@ -20,7 +20,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/sponge testing/gaussian/width = 10.0, rate = 0.0002777777777777778' #/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/sponge testing/linear/width = 20, rate = 0.016666666666666666' #/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -42,7 +42,7 @@ with_halos = False
 closure = False
 stokes = False
 salinity = True
-prior_107 = False
+write_grid = False
 
 # physical parameters
 #nums = re.findall(r' -?\d*\.?\d+', folder)
@@ -102,6 +102,11 @@ if xy_plot and salinity:
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
+if write_grid:
+    nx = np.array([48, 48, 48])
+    lx = np.array([320.0, 320.0, 96.0])
+    hx = np.array([3, 3, 3]) 
+    dtn = writing_grid(folder, dtn[0], nx, lx, hx)
 if Nranks > 1:
     dtn = []
     for file in np.arange(Nranks):
