@@ -20,7 +20,7 @@ def stokes_exp(z):
     us = amplitude**2* wavenumber* frequency #0.05501259798225732#
     return us*np.exp(z/vert_scale)
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/sponge testing/linear/width = 20, rate = 0.016666666666666666' #/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/sponge testing/linear/width = 5, rate = 0.004166666666666667' #/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -42,7 +42,7 @@ with_halos = False
 closure = False
 stokes = False
 salinity = True
-write_grid = False
+write_grid = True
 
 # physical parameters
 #nums = re.findall(r' -?\d*\.?\d+', folder)
@@ -102,15 +102,19 @@ if xy_plot and salinity:
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
-if write_grid:
+if write_grid and Nranks > 1:
     nx = np.array([48, 48, 48])
     lx = np.array([320.0, 320.0, 96.0])
     hx = np.array([3, 3, 3]) 
     dtn = writing_grid(folder, dtn[0], nx, lx, hx)
-if Nranks > 1:
-    dtn = []
-    for file in np.arange(Nranks):
-        dtn.append(f'fields_rank{file}.jld2')
+    dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+elif write_grid and Nranks == 1:
+    nx = np.array([48, 48, 48])
+    lx = np.array([320.0, 320.0, 96.0])
+    hx = np.array([3, 3, 3]) 
+    dtn = writing_grid(folder, dtn[0], nx, lx, hx)
+    dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+
 # Read model information
 fid = os.path.join(folder, dtn[0])
 if not stokes:

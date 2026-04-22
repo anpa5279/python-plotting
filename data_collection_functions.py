@@ -137,8 +137,11 @@ def collect_fields_distributed(Nranks, folder, dtn, t_save, hx, nx, temperature=
             xrange = new_range
         return u, v, w, b, Pdynamic, Pstatic
 ## -------------------------Writing grid info------------------------- ###
-def writing_grid(folder, dtn, nx, lx, hx):
-    dtn_new = 'fields_with_grid.jld2'
+def writing_grid(folder, dtn, nx, lx, hx, rank =None):
+    if rank is None:
+        dtn_new = 'fields_with_grid.jld2'
+    else:
+        dtn_new = f'fields_with_grid_rank{rank}.jld2'
     dx = lx / nx
     d_min = -hx*dx
     d_max = hx*dx + lx
