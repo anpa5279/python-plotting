@@ -16,9 +16,6 @@ folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TES
 output_folder = os.path.join(folder, "plotting outputs") 
 name = 'Ri-NBP-'
 
-# flags to analyze data 
-rho_IC_perturb = False
-
 # flags for what to plot
 video_3d_flag = False
 turb_stats_plot = False
@@ -60,15 +57,14 @@ Nranks = len(dtn)
 # Read model information
 fid = os.path.join(folder, dtn[-1])
 if Nranks == 1 and not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc = collect_time_outputs(fid, stokes, closure)
 elif Nranks == 1 and stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc, u_f, u_s = collect_time_outputs(fid, stokes, closure)
 elif Nranks > 1 and not stokes:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc = collect_time_outputs(fid, Nranks, stokes, closure)
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc = collect_time_outputs(fid, stokes, closure)
 else:
-    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
-if rho_IC_perturb:
-    name+='-rhoICperturbation-'
+    time, t_save, nx, hx, lx, x, y, z, xf, yf, zf, visc, u_f, u_s = collect_time_outputs(fid, stokes, closure)
+
 name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'
 print(name)
 
@@ -144,11 +140,7 @@ for it in range(nt):
         wc_rms = wc2_fluc_avg**0.5
         b_rms = b2_fluc_avg**0.5
 
-    if (vert_slice_plot or buoyancy_analysis_plot or xy_plot) and rho_IC_perturb:
-        # calculating density 
-        rho_perturbed = ((b - b_background)*rho0)/(-g)
-        b_fluc = b - b_background
-    elif (vert_slice_plot or buoyancy_analysis_plot or xy_plot) and not rho_IC_perturb:
+    if (vert_slice_plot or buoyancy_analysis_plot or xy_plot):
         # calculating density 
         rho_perturbed = ((b - b_avg)*rho0)/(-g)
         b_fluc = b - b_avg

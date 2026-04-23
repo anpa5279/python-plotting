@@ -2,14 +2,23 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 from plotting_functions import plot_ranges, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format, turb_stats_multi, plume_vertical_spatial_plot
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal
 from dense_plume_analysis import plume_tracer_radius
 
-# selecting cases to comparse
+# flags for how to read data
+with_halos = False
+closure = False
+stokes = False
+salinity = True
+
+# flags for what to plot
+video = True
+turb_stats_plot = False
+
+# selecting cases to compare
 variations = 'strat' # 'MLD', 'flux', 'strat'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
@@ -50,6 +59,7 @@ ND = True
 with_halos = False
 closure = False
 salinity = True
+stokes = False
 
 
 # physical parameters
@@ -81,7 +91,6 @@ plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
 plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 
 # collecting model informations for all cases
-# collecting model informations for all cases
 t_save = []
 mld_idx = []
 
@@ -95,11 +104,7 @@ for i, folder in enumerate(folders):
             dtn.append(f'fields_rank{file}.jld2')
     # Read model information
     fid = os.path.join(folder, dtn[0])
-    if not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, zf, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure)
-    else:
-        time, t_save_temp, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure)
-        #u_s = stokes_exp(z)
+    time, t_save_temp, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
@@ -196,7 +201,7 @@ for it in nt:
             u, v, w, T, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
         else:
             u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
-        if stokes[i]:
+        if stokes:
             u = u - u_s
         # convert temperature and salinity to buoyancy 
         if not salinity:

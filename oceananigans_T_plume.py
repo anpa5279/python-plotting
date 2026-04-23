@@ -8,24 +8,18 @@ from plotting_functions import stratification_profile, plot_ranges, turb_stats, 
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_analysis
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
-from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid
-
-def stokes_exp(z):
-    g_Earth = 9.80665
-    wavelength = 60.0 #m
-    amplitude = 0.8 #m
-    wavenumber = 2 * np.pi / wavelength
-    frequency = np.sqrt(g_Earth * wavenumber)
-    vert_scale = wavelength / (4 * np.pi)
-    us = amplitude**2* wavenumber* frequency #0.05501259798225732#
-    return us*np.exp(z/vert_scale)
+from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid, collect_grid
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/sponge testing/linear/width = 5, rate = 0.004166666666666667' #/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/'
+folder = "/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet/S0 = 0.1 dTdz = 0.01 MLD = 60/"
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
-# flags to analyze data 
-rho_IC_perturb = False
+# flags for how to read data
+with_halos = False
+closure = False
+stokes = False
+salinity = True
+write_grid = True
 
 # flags for what to plot
 video = True
@@ -36,13 +30,6 @@ vert_slice_plot = True
 xy_plot = True
 buoyancy_analysis_plot = False
 buoyancy_momentum_analysis = False
-
-# flags for how to read data
-with_halos = False
-closure = False
-stokes = False
-salinity = True
-write_grid = True
 
 # physical parameters
 #nums = re.findall(r' -?\d*\.?\d+', folder)
@@ -102,25 +89,28 @@ if xy_plot and salinity:
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
-if write_grid and Nranks > 1:
-    nx = np.array([48, 48, 48])
-    lx = np.array([320.0, 320.0, 96.0])
-    hx = np.array([3, 3, 3]) 
-    dtn = writing_grid(folder, dtn[0], nx, lx, hx)
+if write_grid:
+    if Nranks > 1: 
+        nx = np.array([48, 48, 48])
+        lx = np.array([320.0, 320.0, 96.0])
+        hx = np.array([3, 3, 3]) 
+        x, y, z, zf = writing_grid(folder, dtn[0], nx, lx, hx)
+    else:
+        nx = np.array([48, 48, 48])
+        lx = np.array([320.0, 320.0, 96.0])
+        hx = np.array([3, 3, 3]) 
+        x, y, z, zf = writing_grid(folder, dtn[0], nx, lx, hx)
     dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-elif write_grid and Nranks == 1:
-    nx = np.array([48, 48, 48])
-    lx = np.array([320.0, 320.0, 96.0])
-    hx = np.array([3, 3, 3]) 
-    dtn = writing_grid(folder, dtn[0], nx, lx, hx)
-    dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-
+    x = x[hx[0]:-hx[0]]
+    y = y[hx[1]:-hx[1]]
+    z = z[hx[2]:-hx[2]]
+    zf = zf[hx[2]:-hx[2]]
+elif not write_grid:
+    nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn[0], Nranks)
 # Read model information
 fid = os.path.join(folder, dtn[0])
-if not stokes:
-    time, t_save, nx, hx, lx, x, y, z, zf, visc, diff = collect_time_outputs(fid, Nranks, stokes, closure)
-elif stokes:
-    time, t_save, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes, closure)
+time, t_save, visc, diff, u_f, u_s = collect_time_outputs(fid, stokes, closure)
+if stokes:
     u_s = stokes_exp(z)
 
 if salinity:
@@ -132,8 +122,6 @@ if buoyancy_momentum_analysis:
     w_mag_tol = np.floor(np.log10(np.abs(w_value)))
     dbdz_tol = (5.0*10**(-7)) #dTdz*alpha*g
 
-if rho_IC_perturb:
-    name+='-rhoICperturbation-'
 name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'
 
 # getting mld index location 
@@ -172,13 +160,13 @@ for it in nt:
     # convert temperature and salinity to buoyancy 
     if not salinity:
         rho = rho0 - rho0 * alpha * (T - T0)
-        drhodz = np.gradient(rho, z, axis=-1)
+        #drhodz = np.gradient(rho, z, axis=-1)
         b = -g*alpha*(T - T0)
     else:
         rhoS = rho0 * beta * (S - S0)
         rhoT = - rho0 * alpha * (T - T0)
         rho = rho0 + rhoS + rhoT
-        drhodz = np.gradient(rho, z, axis=-1)
+        #drhodz = np.gradient(rho, z, axis=-1)
         b = g*alpha*(T - T0) - g*beta*(S - S0)
     # interpolate so all values are from the center, center, center of the grid cell
     wc = 0.5 * (w[..., :-1] + w[..., 1:])
@@ -228,11 +216,7 @@ for it in nt:
         wc_rms = wc2_fluc_avg**0.5
         b_rms = b2_fluc_avg**0.5
 
-    if (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis) and rho_IC_perturb:
-        # calculating density 
-        rho_perturbed = ((b - b_avg)*rho0)/(-g)
-        b_fluc = b - b_avg
-    elif (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis) and not rho_IC_perturb:
+    if (vert_slice_plot or buoyancy_analysis_plot or xy_plot or turb_stats_plot or buoyancy_momentum_analysis):
         # calculating density 
         b_fluc = b - b_avg
         rho_perturbed = ((b_fluc)*rho0)/(-g)

@@ -19,7 +19,7 @@ strat_flag = False
 flux_flag = False
 mld_flag = False
 combo_flag = False
-morton_znd_flag = False
+morton_znd_flag = True
 
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
 
@@ -119,10 +119,7 @@ for i, folder in enumerate(folders):
             dtn.append(f'fields_rank{file}.jld2')
     # Read model information
     fid = os.path.join(folder, dtn[0])
-    if not stokes[i]:
-        time, t_save_temp, nx, hx, lx, x, y, z, zf, visc, diff = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
-    else:
-        time, t_save_temp, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
+    time, t_save_temp, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
@@ -180,6 +177,7 @@ else:
     Ln =(F0/N2**(3/2))**(1/4)
     z_nd = (z+mld)/(Ln)
     zf_nd = (zf+mld)/(Ln)
+    z_str = r'$(z + h$_{ML}$)/L_M$'
     #for i in range(num_cases):
     #    z_nd[0:mld_idx[i], i] = (z[0:mld_idx[i], i]+mld[i])*(mld[i])**(1/3)/(Ln[i]**(4/3))
     #    zf_nd[0:mld_idx[i]+1, i] = (zf[0:mld_idx[i]+1, i]+mld[i])*(mld[i])**(1/3)/(Ln[i]**(4/3))

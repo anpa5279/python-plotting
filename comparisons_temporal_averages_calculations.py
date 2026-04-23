@@ -6,7 +6,7 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
+universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise small square inlet/'
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
 name_uni ='temporal_averages'
 

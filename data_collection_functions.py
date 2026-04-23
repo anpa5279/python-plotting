@@ -4,33 +4,38 @@ import h5py
 
 ### -------------------------EXTRACTING DATA------------------------- ###
 ## collecting model information
-def collect_time_outputs(file, Nranks, stokes=False, closure=True):
+def collect_time_outputs(file, stokes=False, closure=True):
     with h5py.File(file, 'r') as f:
         timeseries_group = [g for g in f.keys() if 'timeseries' in g][0]
         t_group = f[timeseries_group + '/t']
         t_save = sorted([float(k) for k in t_group.keys()])
         t_save = np.array(t_save)
         time = np.array([t_group[str(int(k))][()] for k in t_save])
-        nx = [f['grid/Nx'][()] * Nranks, f['grid/Ny'][()], f['grid/Nz'][()]]
-        hx = [f['grid/Hx'][()], f['grid/Hy'][()], f['grid/Hz'][()]]
-        lx = [f['grid/Lx'][()] * Nranks, f['grid/Ly'][()], f['grid/Lz'][()]]
-        dx = [f['grid/Δxᶜᵃᵃ'][()], f['grid/Δyᵃᶜᵃ'][()], f['grid/z/Δᵃᵃᶜ'][()]]
         if closure:
             visc = f['closure/ν'][()]
             diff= f['closure/κ']
         else:
             visc = 0.0
             diff = 0.0
+    if stokes:
+        u_f =np.array(f["IC/"]["friction_velocity"])
+        u_s = np.array(f["IC/"]["stokes_velocity"])
+    else:
+        u_f = None
+        u_s = None
+    return time, t_save, visc, diff, u_f, u_s
+# collecting grid information
+def collect_grid(folder, file, Nranks):
+    with h5py.File(os.path.join(folder, file), 'r') as f:
+        nx = [f['grid/Nx'][()] * Nranks, f['grid/Ny'][()], f['grid/Nz'][()]]
+        hx = [f['grid/Hx'][()], f['grid/Hy'][()], f['grid/Hz'][()]]
+        lx = [f['grid/Lx'][()] * Nranks, f['grid/Ly'][()], f['grid/Lz'][()]]
+        dx = [f['grid/Δxᶜᵃᵃ'][()], f['grid/Δyᵃᶜᵃ'][()], f['grid/z/Δᵃᵃᶜ'][()]]
         x = f['grid/xᶜᵃᵃ'][hx[0]] + np.arange(nx[0]) * dx[0]
         y = f['grid/yᵃᶜᵃ'][hx[1]:-hx[1]]
         z = f['grid/z/cᵃᵃᶜ'][hx[2]:-hx[2]]
         zf = f['grid/z/cᵃᵃᶠ'][hx[2]:-hx[2]]
-    if stokes:
-        u_f =np.array(f["IC/"]["friction_velocity"])
-        u_s = np.array(f["IC/"]["stokes_velocity"])
-        return time, t_save, nx, hx, lx, x, y, z, zf, visc, diff, u_f, u_s
-    else:
-        return time, t_save, nx, hx, lx, x, y, z, zf, visc, diff
+    return nx, hx, lx, x, y, z, zf
 # collecting thermal expansion and haline contraction coefficients
 def collect_temp_and_sal(file, salinity=False):
     with h5py.File(file, 'r') as f:
@@ -137,7 +142,7 @@ def collect_fields_distributed(Nranks, folder, dtn, t_save, hx, nx, temperature=
             xrange = new_range
         return u, v, w, b, Pdynamic, Pstatic
 ## -------------------------Writing grid info------------------------- ###
-def writing_grid(folder, dtn, nx, lx, hx, rank =None):
+def writing_grid(folder, dtn, nx, lx, hx, rank=None):
     if rank is None:
         dtn_new = 'fields_with_grid.jld2'
     else:
@@ -151,6 +156,8 @@ def writing_grid(folder, dtn, nx, lx, hx, rank =None):
     x = xf + 0.5*dx[0]
     y = yf + 0.5*dx[1]
     z = zf[:-1] + 0.5*dx[2]
+    if rank is not None:
+        xf = xf[rank*nx[0]:(rank+1)*nx[0]]
     new_file_directory = os.path.join(folder, dtn_new)
     with h5py.File(os.path.join(folder, dtn), 'r') as src, h5py.File(new_file_directory, 'w') as dst:
         for key in src.keys():
@@ -187,7 +194,7 @@ def writing_grid(folder, dtn, nx, lx, hx, rank =None):
 
     os.remove(os.path.join(folder, dtn))
 
-    return dtn_new
+    return x, y, z, zf
 ## -------------------------Collecting temporal averages------------------------- ###
 def collect_temporal_averages(folder, dtn, temperature=True, salinity=False):
     rms_list = {}
