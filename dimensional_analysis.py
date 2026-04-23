@@ -3,7 +3,7 @@ import numpy as np
 
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format
-from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_contour_val, collect_temporal_averages, collect_plume_stats
+from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_contour_val, collect_temporal_averages, collect_plume_stats, collect_grid
 from dense_plume_analysis import plume_tracer_radius
 from dimensional_analysis_functions import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents, plot_combo_exponents
 
@@ -24,7 +24,7 @@ morton_znd_flag = True
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
 
 # selecting cases to compare
-variations = 'flux' # 'MLD', 'flux', 'strat', 'all'
+variations = 'MLD' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -119,7 +119,8 @@ for i, folder in enumerate(folders):
             dtn.append(f'fields_rank{file}.jld2')
     # Read model information
     fid = os.path.join(folder, dtn[0])
-    time, t_save_temp, visc, diff, u_f, u_s = collect_time_outputs(fid, Nranks, stokes[i], closure[i])
+    time, t_save_temp, visc, diff, u_f, u_s = collect_time_outputs(fid, stokes[i], closure[i])
+    nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn[0], Nranks)
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
