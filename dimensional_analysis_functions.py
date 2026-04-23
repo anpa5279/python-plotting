@@ -35,8 +35,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(w_rms[:, i] * (correction), 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Ri_g^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
@@ -44,8 +44,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(b_center[:, i] *(correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Ri_g^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
@@ -53,8 +53,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Ri_g^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
@@ -62,8 +62,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Ri_g^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
     
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
@@ -71,8 +71,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Ri_g^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
     
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
@@ -80,8 +80,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Ri_g^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Ri_g^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
     #axes[5, 0].legend()
 
     plt.tight_layout()
@@ -124,8 +124,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(w_rms[:, i] * (correction), 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Fr^{exp}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
     
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
@@ -133,8 +133,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(b_center[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Fr^{exp}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
@@ -142,8 +142,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Fr^{exp}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
     #axes[2, 0].legend()
 
     for ax, exp in zip(axes[3, :], exponents):
@@ -152,8 +152,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Fr^{exp}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
@@ -162,8 +162,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Fr^{exp}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
     #axes[4, 0].legend()
 
     for ax, exp in zip(axes[5, :], exponents):
@@ -172,8 +172,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(f'Fr^{exp:.2f}', fontsize = 16)
-        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Fr^{exp}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
 
     plt.tight_layout()
 
@@ -216,8 +216,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(w_rms[:, i] * (correction), 
                     zf_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{exp:.2f}$', fontsize = 16)
-        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g}} \text{{r}}_{{j}}}} \cdot \hat{{h}}_{{ML}}^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g}} \text{{r}}_{{j}}}} \cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
@@ -225,8 +225,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(b_center[:, i] *(correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{exp:.2f}$', fontsize = 16)
-        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot \hat{{h}}_{{ML}}^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
@@ -234,8 +234,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{exp:.2f}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{\text{{xy}}}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot \hat{{h}}_{{ML}}^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{\text{{xy}}}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
@@ -243,8 +243,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{exp:.2f}$', fontsize = 16)
-        ax.set_xlabel(rf"(r/r$_{{j}})\cdot \hat{{h}}_{{ML}}^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"(r/r$_{{j}})\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
@@ -252,8 +252,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{exp:.2f}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot \hat{{h}}_{{ML}}^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
 
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
@@ -261,8 +261,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{exp:.2f}$', fontsize = 16)
-        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot \hat{{h}}_{{ML}}^{exp:.2f}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
+        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
 
     plt.tight_layout()
 
