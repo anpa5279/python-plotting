@@ -305,244 +305,137 @@ def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, 
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## vertical plane slices 
-def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Xf, Y, Yf, Z, Zf, u, v, w, u_fluc, v_fluc, w_fluc, b_fluc, Pstatic, Pdynamic, rho, rho_perturbed, b, T = np.array([]), S = np.array([]), yz=True):
-    smaller = 1.0 #0.1
+def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
     if yz: #yz plane
+        ar = lx[1]/lx[2]
         plane = 'YZ plane'
         hor = Y[:, int(nx[1]/2), :]
-        horf = Yf[:, int(nx[1]/2), :]
         z = Z[:, int(nx[1]/2), :]
         x_data = int(nx[0]/2)
         y_data = np.arange(0, nx[1])
-        hor_range = (np.min(Y[:, :, int(nx[1]/2)]), np.max(Y[:, :, int(nx[1]/2)]))
-        urange = [ranges['u'][0]*smaller, ranges['u'][-1]*smaller]
-        vrange = ranges['v']
-        uflucrange = [ranges['u_fluc'][0]*smaller, ranges['u_fluc'][-1]*smaller]
-        vflucrange = ranges['v_fluc']
+        hor_range = (np.min(Y[:, :, int(nx[2]/2)]), np.max(Y[:, :, int(nx[2]/2)]))
     else: #xz plane
+        ar = lx[0]/lx[2]
         plane = 'XZ plane'
         hor = X[int(nx[0]/2), :, :]
-        horf = Xf[int(nx[0]/2), :, :]
         z = Z[int(nx[0]/2), :, :]
         x_data = np.arange(0, nx[0])
         y_data = int(nx[1]/2)
-        hor_range = (np.min(X[:, :, int(nx[0]/2)]), np.max(X[:, :, int(nx[0]/2)]))
-        urange = ranges['u']
-        vrange = [ranges['v'][0]*smaller, ranges['v'][-1]*smaller]
-        uflucrange = ranges['u_fluc']
-        vflucrange = [ranges['v_fluc'][0]*smaller, ranges['v_fluc'][-1]*smaller]
-
+        hor_range = (np.min(X[:, :, int(nx[2]/2)]), np.max(X[:, :, int(nx[2]/2)]))
+    levels = 500
     outdir = os.path.join(fig_folder, 'vertical plane slices/', plane)
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
+    ncols = 4
+    nrows = 2
+    hor_len = 12.0
+    vert_len = hor_len * nrows / (ncols * ar) + 0.75 * nrows + 1.1
 
-    fig, ax = plt.subplots(3, 4, figsize=(12, 7.5))
-    fig.tight_layout()
-    fig.suptitle(plane + f', {td:.2f} days', y = 0.9, fontsize=12)
+    fig, ax = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
+    fig.suptitle(plane + f', {td:.2f} days', y = 0.99, fontsize=12)
+    ax = ax.ravel()
+    ax[3].remove() 
+    """
+    ax0 = ax[1, 0] # temperature
+    ax1 = ax[1, 1] # tracer
+    ax2 = ax[1, 2] # density
+    ax3 = ax[1, 3] # perturbed density 
+    ax4 = ax[0, 0] # u velocity
+    ax5 = ax[0, 1] # v velocity
+    ax6 = ax[0, 2] # w velocity
+    ax[0, 3].remove() # remove
+    """
 
-    levels = 500
-    ax5 = ax[0, 0] # typically ax1
-    ax1 = ax[0, 1] # typically ax2
-    ax2 = ax[0, 2] # typically ax3
-    ax4 = ax[0, 3]
-    ax9 = ax[1, 0] # typically ax5 
-    ax6 = ax[1, 1]
-    ax7 = ax[1, 2]
-    ax8 = ax[1, 3]
-    ax3 = ax[2, 0] # typically ax9
-    ax10 = ax[2, 1]
-    ax11 = ax[2, 2]
-    ax12 = ax[2, 3]
+    norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
+    mappable = cm.ScalarMappable(norm=norm)
+    ax[4].contourf(hor, z, T[x_data, y_data, :], levels, norm=norm)
+    ax[4].set_xlabel("[m]")
+    ax[4].set_ylabel("Depth [m]")
+    ax[4].set_title("Temperature")
+    ax[4].set_ylim(-lx[2], 0)
+    ax[4].set_xlim(hor_range)
+    ax[4].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[4], label=r"$^\circ$C", anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
+    
+    norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1])
+    mappable = cm.ScalarMappable(norm=norm)
+    ax[5].contourf(hor, z, S[x_data, y_data, :], levels, norm=norm)
+    ax[5].set_xlabel("[m]")
+    ax[5].set_title("Tracer")
+    ax[5].set_ylim(-lx[2], 0)
+    ax[5].set_xlim(hor_range)
+    ax[5].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[5], label=r"g/kg", anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
 
     norm = mcolors.Normalize(vmin=(ranges['rho'][0]), vmax=(ranges['rho'][-1]))
     mappable = cm.ScalarMappable(norm=norm)
-    ax1.contourf(hor, z, rho[x_data, y_data, :], levels, norm=norm)
-    ax1.set_xlabel("[m]")
-    #ax1.set_ylabel("Depth [m]")
-    ax1.set_title("Density")
-    ax1.set_ylim(-lx[2], 0)
-    ax1.set_xlim(hor_range)
-    ax1.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax1, label=r"kg/m$^3$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
+    ax[6].contourf(hor, z, rho[x_data, y_data, :], levels, norm=norm)
+    ax[6].set_xlabel("[m]")
+    ax[6].set_title("Density")
+    ax[6].set_ylim(-lx[2], 0)
+    ax[6].set_xlim(hor_range)
+    ax[6].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[6], label=r"kg/m$^3$", anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
     cbar.formatter.set_scientific(False)
     cbar.formatter.set_useOffset(False)
     cbar.set_ticks([(ranges['rho'][0]), (ranges['rho'][-1])])
     cbar.update_ticks()
 
-    norm = mcolors.Normalize(vmin=ranges['rho_fluc'][0], vmax=ranges['rho_fluc'][-1])#SymLogNorm(linthresh=1e-3, vmin=ranges['rho_fluc'][0], vmax=ranges['rho_fluc'][-1], base=10)
+    norm = mcolors.Normalize(vmin=ranges['rho_fluc'][0], vmax=ranges['rho_fluc'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-    ax2.contourf(hor, z, rho_perturbed[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax2.set_xlabel("[m]")
-    #ax2.set_ylabel("Depth [m]")
-    ax2.set_title("Perturbed Density")
-    ax2.set_ylim(-lx[2], 0)
-    ax2.set_xlim(hor_range)
-    ax2.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax2, label=r"kg/m$^3$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
+    ax[7].contourf(hor, z, rho_perturbed[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[7].set_xlabel("[m]")
+    ax[7].set_title("Perturbed Density")
+    ax[7].set_ylim(-lx[2], 0)
+    ax[7].set_xlim(hor_range)
+    ax[7].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[7], label=r"kg/m$^3$", anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
 
-    norm = mcolors.Normalize(vmin=ranges['b'][0], vmax=ranges['b'][-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-    ax3.contourf(hor, z, b[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax3.set_xlabel("[m]")
-    ax3.set_title("Buoyancy")
-    ax3.set_ylim(-lx[2], 0)
-    ax3.set_xlim(hor_range)
-    ax3.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax3, label=r"m/s$^2$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
+    norm = mcolors.Normalize(vmin=ranges['u'][0], vmax=ranges['u'][-1])
+    mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
+    ax[0].contourf(hor, z, u[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[0].set_ylabel("Depth [m]")
+    ax[0].set_title("u")
+    ax[0].set_ylim(-lx[2], 0)
+    ax[0].set_xlim(hor_range)
+    ax[0].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[0], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
     cbar.formatter.set_powerlimits((-3, 2))
     cbar.update_ticks()
 
-    if T.size != 0 and S.size == 0:
-        norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
-        mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-        ax4.contourf(hor, z, T[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-        ax4.set_xlabel("[m]")
-        ax4.set_title("Temperature")
-        ax4.set_ylim(-lx[2], 0)
-        ax4.set_xlim(hor_range)
-        ax4.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax4, label=r"$^\circ$C", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks()
-    else:
-        norm = mcolors.Normalize(vmin=ranges['b_fluc'][0], vmax=ranges['b_fluc'][-1])#SymLogNorm(linthresh=1e-5, vmin=ranges['b_fluc'][0], vmax=ranges['b_fluc'][-1], base=10)
-        mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-        ax4.contourf(hor, z, b_fluc[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-        ax4.set_xlabel("[m]")
-        ax4.set_title("Buoyancy Perturbations")
-        ax4.set_ylim(-lx[2], 0)
-        ax4.set_xlim(hor_range)
-        ax4.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax4, label=r"m/s$^2$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks()
-    if T.size != 0 and S.size != 0:
-        norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
-        mappable = cm.ScalarMappable(norm=norm)
-        ax5.contourf(hor, z, T[x_data, y_data, :], levels, norm=norm)
-        ax5.set_xlabel("[m]")
-        ax5.set_ylabel("Depth [m]")
-        ax5.set_title("Temperature")
-        ax5.set_ylim(-lx[2], 0)
-        ax5.set_xlim(hor_range)
-        ax5.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax5, label=r"$^\circ$C", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-    else:
-        norm = mcolors.Normalize(vmin=ranges['Pstatic'][0], vmax=ranges['Pstatic'][-1])
-        mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-        ax5.contourf(hor, z, Pstatic[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-        ax5.set_xlabel("[m]")
-        ax5.set_ylabel("Depth [m]")
-        ax5.set_title("Hydrostatic Pressure")
-        ax5.set_ylim(-lx[2], 0)
-        ax5.set_xlim(hor_range)
-        ax5.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax5, label=r"m/s$^{2}$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-
-    norm = mcolors.Normalize(vmin=urange[0], vmax=urange[-1])
+    norm = mcolors.Normalize(vmin=ranges['v'][0], vmax=ranges['v'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax6.contourf(hor, z, u[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax6.set_xlabel("[m]")
-    #ax6.set_ylabel("Depth [m]")
-    ax6.set_title("u")
-    ax6.set_ylim(-lx[2], 0)
-    ax6.set_xlim(hor_range)
-    ax6.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax6, label=r"m/s", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
-    norm = mcolors.Normalize(vmin=vrange[0], vmax=vrange[-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax7.contourf(hor, z, v[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax7.set_xlabel("[m]")
-    #ax7.set_ylabel("Depth [m]")
-    ax7.set_title("v")
-    ax7.set_ylim(-lx[2], 0)
-    ax7.set_xlim(hor_range)
-    ax7.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax7, label=r"m/s", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
+    ax[1].contourf(hor, z, v[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[1].set_title("v")
+    ax[1].set_ylim(-lx[2], 0)
+    ax[1].set_xlim(hor_range)
+    ax[1].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[1], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
     cbar.formatter.set_powerlimits((-3, 2))
     cbar.update_ticks()
 
     norm = mcolors.Normalize(vmin=ranges['w'][0], vmax=ranges['w'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax8.contourf(horf, Zf[x_data, y_data, :], w[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax8.set_xlabel("[m]")
-    ax8.set_title("w")
-    ax8.set_ylim(-lx[2], 0)
-    ax8.set_xlim(hor_range)
-    ax8.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax8, label=r"m/s", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
+    ax[2].contourf(hor, z, w[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[2].set_title("w")
+    ax[2].set_ylim(-lx[2], 0)
+    ax[2].set_xlim(hor_range)
+    ax[2].set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax[2], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
     cbar.formatter.set_powerlimits((-3, 2))
     cbar.update_ticks()
-    if T.size != 0 and S.size != 0:
-        norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1]) # SymLogNorm(linthresh=1e-3, vmin=ranges['S'][0], vmax=ranges['S'][-1], base=10)
-        mappable = cm.ScalarMappable(norm=norm)
-        ax9.contourf(hor, z, S[x_data, y_data, :], levels, norm=norm)
-        ax9.set_xlabel("[m]")
-        ax9.set_ylabel("Depth [m]")
-        ax9.set_title("Tracer")
-        ax9.set_ylim(-lx[2], 0)
-        ax9.set_xlim(hor_range)
-        ax9.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax9, anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-        #cbar.locator = mticker.MaxNLocator(nbins=3)
-        #cbar.update_ticks()
-    else:
-        norm = mcolors.Normalize(vmin=ranges['Pdynamic'][0], vmax=ranges['Pdynamic'][-1])
-        mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-        ax9.contourf(hor, z, Pdynamic[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-        ax9.set_xlabel("[m]")
-        ax9.set_ylabel("Depth [m]")
-        ax9.set_title("Hydrodynamic Pressure")
-        ax9.set_ylim(-lx[2], 0)
-        ax9.set_xlim(hor_range)
-        ax9.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax9, label=r"m/s$^{2}$", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-
-    norm = mcolors.Normalize(vmin=uflucrange[0], vmax=uflucrange[-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax10.contourf(hor, z, u_fluc[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax10.set_xlabel("[m]")
-    #ax10.set_ylabel("Depth [m]")
-    ax10.set_title("u'")
-    ax10.set_ylim(-lx[2], 0)
-    ax10.set_xlim(hor_range)
-    ax10.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax10, label=r"m/s", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
-    norm = mcolors.Normalize(vmin=vflucrange[0], vmax=vflucrange[-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax11.contourf(hor, z, v_fluc[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax11.set_xlabel("[m]")
-    #ax11.set_ylabel("Depth [m]")
-    ax11.set_title("v'")
-    ax11.set_ylim(-lx[2], 0)
-    ax11.set_xlim(hor_range)
-    ax11.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax11, label=r"m/s", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
-    norm = mcolors.Normalize(vmin=ranges['w_fluc'][0], vmax=ranges['w_fluc'][-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax12.contourf(horf, Zf[x_data, y_data, :], w_fluc[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
-    ax12.set_xlabel("[m]")
-    #ax12.set_ylabel("Depth [m]")
-    ax12.set_title("w'")
-    ax12.set_ylim(-lx[2], 0)
-    ax12.set_xlim(hor_range)
-    ax12.set_aspect('equal')
-    cbar  = fig.colorbar(mappable, ax=ax12, label=r"m/s", anchor = (0.5, -0.1), orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
+    
+    if depths.size > 0:
+        for depth in depths:
+            ax[0].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
+            ax[1].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
+            ax[2].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
+            ax[4].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
+            ax[5].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
+            ax[6].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
+            ax[7].plot(hor, depth*np.ones_like(hor), linestyle='--', linewidth = 0.2, color = 'black')
     # --- Save Frame ---
     frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
-    plt.tight_layout()
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")

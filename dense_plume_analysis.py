@@ -293,7 +293,7 @@ def plume_momentum_analysis(centerline_index, nx, w, b, b_fluc, rho_fluc, X, Y, 
             if np.size(idx_neutral) > 0:
                 idx_neutral = idx_neutral[-1]
     area_idx = np.where(area_idx)
-    return Q, M, F, B, wm, dm, bm, Ri, area_idx, idx_max, idx_neutral
+    return Q, M, F, B, wm, dm, bm, Ri, area_idx, int(idx_max), int(idx_neutral)
 
 # neutral buoyancy calculation 
 def neutral_buoyancy_loc(b_fluc, plume_index, centerline_index):
