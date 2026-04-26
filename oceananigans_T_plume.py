@@ -7,7 +7,7 @@ from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_radius, neutral_layer
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid, collect_grid, collect_contour_val
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, xy_plane_interpolation
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, xy_plane_interpolation, vertical_line_interpolation
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01/nz = 77 z = 96.25 m'
 output_folder = os.path.join(folder, "plotting outputs") 
@@ -224,20 +224,21 @@ for it in nt:
     dbdz = np.gradient(b, z, axis=-1)
 
     if salinity:
-        centerline_index, rp_profile, plume_index = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour)
-        S_fluc_center = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-        T_fluc_center = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-
+        centerx = 0.0
+        centery = 0.0
+        rp_profile, plume_index = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour)
+        S_fluc_center = vertical_line_interpolation(S_fluc, x, y, centerx, centery)
+        T_fluc_center = vertical_line_interpolation(T_fluc, x, y, centerx, centery)
 
     # buoyancy analysis 
     if buoyancy_analysis_plot or turb_stats_plot or buoyancy_momentum_analysis:
-        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(centerline_index, nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol)
+        Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol)
         z_neutral = z[neutral_index]
 
-        w_center = w[centerline_index[0], centerline_index[1], centerline_index[2]]
-        bw_fluc_center = bw_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-        rho_perturbed_center = rho_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]]
-        b_center = b[centerline_index[0], centerline_index[1], centerline_index[2]]
+        w_center = vertical_line_interpolation(w, x, y, centerx, centery)
+        bw_fluc_center = vertical_line_interpolation(bw_fluc, x, y, centerx, centery)
+        rho_perturbed_center = vertical_line_interpolation(rho_perturbed, x, y, centerx, centery)
+        b_center = vertical_line_interpolation(b, x, y, centerx, centery)
         z_intrusion = z[max_index]
         w_intrusion = w_center[max_index]
         w_neutral = w_center[neutral_index]
@@ -291,9 +292,9 @@ for it in nt:
         loc = "interp-mld"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
         loc_idx = mld_idx
         loc_z = -mld
-        u_xy = xy_plane_interpolation(u, z, -loc_z)
-        v_xy = xy_plane_interpolation(v, z, -loc_z)
-        w_xy = xy_plane_interpolation(w, z, -loc_z)
+        u_xy = xy_plane_interpolation(u, z, loc_z)
+        v_xy = xy_plane_interpolation(v, z, loc_z)
+        w_xy = xy_plane_interpolation(w, z, loc_z)
         surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X[:, :, loc_idx], Y, u_xy[:, :, loc_idx], v_xy, w_xy, Pdynamic, rho, rho_perturbed, loc, T, S)
     if buoyancy_analysis_plot and not salinity:
         buoyancy_dir = buoyancy_analysis(time, it, ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)

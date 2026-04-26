@@ -303,7 +303,7 @@ else:
             # finding radius of plume based on tracer contour
             S_value, w_value = collect_contour_val(folder, file_name)
             S_contour = S_value*contour_bound
-            rp_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour) # plume analysis
+            rp_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour) # plume analysis
             r_profile[:, i] = rp_profile
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]

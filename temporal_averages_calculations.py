@@ -189,7 +189,7 @@ n = 0
 for it in range(10, nt):
     # Load data from files
     u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
-    rp_profile_temp, temp, temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour) # plume analysis
+    rp_profile_temp, temp, temp = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour) # plume analysis
     n += 1
     rp_profile += rp_profile_temp
 rp_profile = rp_profile/n

@@ -26,13 +26,10 @@ def neutral_layer(z, bw_fluc, plume_index):
     return z[np.where(np.diff(np.sign(bw_fluc_plume_avg))>0)][-1]
 
 ### -------------------------TRACER CALCULATIONS------------------------- ###
-def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour):
+def plume_tracer_radius(x, y, centerx, centery, nx, tracer, tracer_contour):
     plume_contour = tracer >= tracer_contour
     xi, yi, zi = np.where(plume_contour)
     plume_index = (xi, yi, zi)
-
-    centerx = x[centerline_index[0, zi]]
-    centery = y[centerline_index[1, zi]]
 
     r = np.sqrt((x[xi] - centerx)**2 + (y[yi] - centery)**2)
     counts = np.bincount(zi, minlength=nx[2])
@@ -41,10 +38,10 @@ def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour):
     rp_profile = np.zeros(nx[2])
     mask = counts > 0
     rp_profile[mask] = sums[mask] / counts[mask]
-    return rp_profile, plume_index, tracer_contour
+    return rp_profile, plume_index
 
 ### -------------------------MOMENTUM ANALYSIS------------------------- ###
-def plume_momentum_analysis(centerline_index, nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol):
+def plume_momentum_analysis(nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol):
     # checking magnitude of values to help define bounds
     w_mag = np.abs(w)
     w_mag_order = np.floor(np.log10(w_mag))

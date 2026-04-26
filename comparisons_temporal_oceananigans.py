@@ -221,7 +221,7 @@ for it in range(nt):
             w_mld_rms[it, i] = w_rms[mld_idx[i]]
 
         # plume analysis 
-        r_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour[i])
+        r_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour[i])
         if np.size(plume_index)==0:
             plume_index = [nx[0]//2, nx[1]//2, nx[2]-1]
             r_profile = np.zeros(nx[2])

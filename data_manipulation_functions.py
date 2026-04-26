@@ -45,3 +45,18 @@ def xy_plane_interpolation(f, z, z_desired):
         frac = (f[:, :, max_idx]-f[:, :, min_idx])/(z[max_idx] - z[min_idx])
         f_interp = f[:, :, max_idx] + frac *(z_desired - z[max_idx])
     return f_interp
+# intperpolation to a vertical line
+def vertical_line_interpolation(f, x, y, x_desired, y_desired):
+    # getting mld index location 
+    dx = np.abs(x - x_desired)/x_desired
+    dy = np.abs(y - y_desired)/y_desired
+    if dx.min() == 0:
+        pos_loc_idx_x = np.where(dx==0)[0][0]
+    else:
+        pos_loc_idx_x = np.where(dx==dx.min())[0][0]
+    if dy.min() == 0:
+        pos_loc_idx_y = np.where(dy==0)[0][0]
+    else:
+        pos_loc_idx_y = np.where(dy==dy.min())[0][0]
+    f_interp = f[pos_loc_idx_x, pos_loc_idx_y, :]
+    return f_interp

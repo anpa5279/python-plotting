@@ -440,7 +440,6 @@ def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_
     print(f"Time step {it + 1} captured: {frame_path}")
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
-
 ## dense tracer buoyancy analysis via momentum
 def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tracer_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, tracer_fluc, T_fluc, Q, M, F, B, wm, dm, bm, Ri, r_profile, b_center, plume_depths, ND = False):
     plume_depth_intrusion = plume_depths[0]
