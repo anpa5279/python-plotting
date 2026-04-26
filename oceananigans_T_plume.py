@@ -1,14 +1,13 @@
 import os
-import re
 import numpy as np
 import matplotlib.pyplot as plt
 
 from plotting_functions import plot_ranges, turb_stats, plot_3d_fields, vert_plane_slices, xy_plane_slices, create_video
 from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_analysis
+from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_radius, neutral_layer
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid, collect_grid, collect_contour_val
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, xy_plane_interpolation
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01/nz = 77 z = 96.25 m'
 output_folder = os.path.join(folder, "plotting outputs") 
@@ -43,6 +42,7 @@ Sj = 0.1#float(nums[-3]) # salinity of the source
 wp = 0.001
 F_s = Sj*wp
 S_value, w_value = collect_contour_val(folder, 'temporal_averages.h5')
+S_contour = 0.05 * S_value 
 # plotting prep
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -224,25 +224,9 @@ for it in nt:
     dbdz = np.gradient(b, z, axis=-1)
 
     if salinity:
-        centerline_index, rp_profile, plume_index = plume_tracer_analysis(x, y, nx, S, tracer_contour = S_value*0.05)
-    
-        dbdx_avg = np.mean(np.gradient(b, x, axis=0), axis=(-3, -2))
-        dbdy_avg = np.mean(np.gradient(b, y, axis=1), axis=(-3, -2))
-        dbdz_avg = np.mean(np.gradient(b, z, axis=2), axis=(-3, -2))
+        centerline_index, rp_profile, plume_index = plume_tracer_radius(x, y, nx, centerline_index, S, S_contour)
         S_fluc_center = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
         T_fluc_center = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-    i_idx, j_idx, k_idx = plume_index
-    values = bw_fluc[i_idx, j_idx, k_idx]
-
-    # sum per k
-    sum_per_k = np.bincount(k_idx, weights=values)
-
-    # count per k
-    count_per_k = np.bincount(k_idx)
-
-    # average per k
-    bw_fluc_plume_avg = sum_per_k / count_per_k
-    bw_fluc_plume_avg[np.isnan(bw_fluc_plume_avg)] = 0
 
 
     # buoyancy analysis 
@@ -300,18 +284,17 @@ for it in nt:
         if it < 10:
             depths = np.array([-mld, ])
         else:
-            neutral_test = z[np.where(np.diff(np.sign(bw_fluc_plume_avg))>0)][-1]
-            depths = np.array([-mld, neutral_test])
+            neutral_depth = neutral_layer(z, bw_fluc, plume_index)
+            depths = np.array([-mld, neutral_depth])
         plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, nx, X, Y, Z, u, v, w, rho, rho_perturbed, T = T, S = S, depths = depths)
     if xy_plot and salinity:
-        loc = "mld"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
+        loc = "interp-mld"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
         loc_idx = mld_idx
-        if loc_idx >(nx[2]-1):
-            loc_idx = nx[2] - 1
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, loc_idx, loc, T, S)
-    elif xy_plot and not salinity:
-        loc = ""
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X, Y, u, v, w, b, b_fluc, Pdynamic, rho, rho_perturbed, max_index, loc, T)
+        loc_z = -mld
+        u_xy = xy_plane_interpolation(u, z, -loc_z)
+        v_xy = xy_plane_interpolation(v, z, -loc_z)
+        w_xy = xy_plane_interpolation(w, z, -loc_z)
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, lx, X[:, :, loc_idx], Y, u_xy[:, :, loc_idx], v_xy, w_xy, Pdynamic, rho, rho_perturbed, loc, T, S)
     if buoyancy_analysis_plot and not salinity:
         buoyancy_dir = buoyancy_analysis(time, it, ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_plot and salinity:

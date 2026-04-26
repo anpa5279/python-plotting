@@ -2,7 +2,7 @@ import numpy as np
 from scipy.ndimage import center_of_mass
 from scipy.ndimage import binary_fill_holes
 from scipy.spatial import ConvexHull
-### -------------------------NBJ FUNCTIONS------------------------- ###
+### -------------------------IMPORTANT DEPTHS------------------------- ###
 # mixed layer depth information
 def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
     # info at mixed layer depth
@@ -13,99 +13,19 @@ def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
     mld_rho_perturbed = rho_perturbed[mld_idx]
     return mld_idx, mld_w, mld_bw_fluc, mld_rho_perturbed
 # depth at which plume is neutrally buoyant
-def z_s_analytical(rhoB, rho0, dbdz, g, mld):
-    dbdz_norm = dbdz/g
-    top = rhoB/rho0-1-dbdz_norm*mld
-    return top/dbdz_norm
-# max depth of plume intrusion
-def z_m_analytical(rhoB, rho_z, g, w):
-    At = (rho_z - rhoB)/(rho_z + rhoB)
-    return w**2/(g*At)
-# centerline analysis with no stokes/ shear influencing flow
-def centerline_analysis_buoyancy(bw_fluc_center, dbdz_center, nx):
-    # finding max height of plume and neutral buoyancy height (perturbed vertical buoyancy flux should be 0)
-    bw_fluc_sign = np.sign(bw_fluc_center)
-    sign_change_z = bw_fluc_sign[0:(nx[2]-1)] * bw_fluc_sign[1:(nx[2])] < 0
-    sign_change_z = np.insert(sign_change_z, 0, False) # to align with original array length (we skipped the bottom, which is first in the array)
-    b_fluc_w_sign_change = bw_fluc_center[sign_change_z]
-    if len(b_fluc_w_sign_change) < 2: # early stages of plume development
-        max_index = np.where(bw_fluc_center==b_fluc_w_sign_change[-1])[0][0]
-        neutral_index = max_index
-    else:
-        neutral_index = np.where(bw_fluc_center==b_fluc_w_sign_change[-1])[0][0]
-        max_index = np.where(bw_fluc_center==b_fluc_w_sign_change[-2])[0][0]
+def neutral_layer(z, bw_fluc, plume_index):
+    i_idx, j_idx, k_idx = plume_index
+    values = bw_fluc[i_idx, j_idx, k_idx]
+    # sum per k
+    sum_per_k = np.bincount(k_idx, weights=values)
+    # count per k
+    count_per_k = np.bincount(k_idx)
+    # average per k
+    bw_fluc_plume_avg = sum_per_k / count_per_k
+    bw_fluc_plume_avg[np.isnan(bw_fluc_plume_avg)] = 0
+    return z[np.where(np.diff(np.sign(bw_fluc_plume_avg))>0)][-1]
 
-    # finding Ozmidov length scale of plume
-    dbdz_plume_avg = np.mean(dbdz_center[max_index:])
-
-    return neutral_index, max_index, dbdz_plume_avg
-
-def plume_bw_anlaysis(w, tracer, b_perturbed, bw_perturbed, rho_perturbed, nx, contour, centerline_index, r_max_profile, plume_index):
-    # getting centerline values of interest
-    rho_perturbed_centerline = rho_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]]
-    bw_centerline = bw_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]] # finding b'w' relative to centerline of plume 
-    bfluc_centerline = b_perturbed[centerline_index[0], centerline_index[1], centerline_index[2]] # finding b' relative to centerline of plume 
-    w_centerline = w[centerline_index[0], centerline_index[1], centerline_index[2]] # finding vertical velocity relative to centerline of plume
-    
-    # finding sign changes of b', b'w', rho'
-    # sign_change = 2: negative to positive, sign_change = -2: positive to negative, 0: no change
-    bfluc_sign = np.sign(bfluc_centerline)
-    bfluc_sign_change = np.diff(bfluc_sign) # indicates neutral layer: (+ to -), from bottom of domain
-    bw_sign = np.sign(bw_centerline)
-    bw_sign_change = np.diff(bw_sign) # indicates neutral (- to +) and intrusion layer (+ to -):  from bottom of domain
-    rho_sign = np.sign(rho_perturbed_centerline)
-    rho_sign_change = np.diff(rho_sign) # indicates neutral layer: (- to +), from bottom of domain
-    w_sign = np.sign(w_centerline)
-    w_sign_change = np.diff(w_sign) # indicates intrusion layer: (+ to -), from bottom of domain
-    
-    # finding plume bounds via contour on the centerline of the tracer
-    plume_contour = tracer >= contour
-    plume_index = np.where(plume_contour)
-    if np.sum(plume_index[2])==0: # if there is no tracer in the domain
-        plume_bottom_index = nx[2]-1
-    else:
-        plume_bottom_index = np.min(plume_index[2])
-
-    # checking potential intrusion indices
-    idx_bw_intrusion = np.where(bw_sign_change < 0)[0]
-    in_plume_test = np.where(idx_bw_intrusion >= plume_bottom_index)[0]
-    idx_bw_intrusion_in_plume = idx_bw_intrusion[in_plume_test]
-    idx_w_intrusion = np.where(w_sign_change < 0)[0]
-    in_plume_test = np.where(idx_w_intrusion >= plume_bottom_index)[0]
-    idx_w_intrusion_in_plume = idx_w_intrusion[in_plume_test]
-    idx_intrusion_in_plume = np.intersect1d(idx_bw_intrusion_in_plume, idx_w_intrusion_in_plume)
-
-    # checking potential neutral buoyancy indices
-    idx_rho_neutral = np.where(rho_sign_change > 0)[0] 
-    in_plume_test = np.where(idx_rho_neutral > plume_bottom_index)[0]
-    idx_rho_neutral_in_plume = idx_rho_neutral[in_plume_test]
-    idx_bw_neutral = np.where(bw_sign_change > 0)[0]
-    in_plume_test = np.where(idx_bw_neutral > plume_bottom_index)[0]
-    idx_bw_neutral_in_plume = idx_bw_neutral[in_plume_test]
-    idx_bfluc_neutral = np.where(bfluc_sign_change < 0)[0]
-    in_plume_test = np.where(idx_bfluc_neutral > plume_bottom_index)[0]
-    idx_bfluc_neutral_in_plume = idx_bfluc_neutral[in_plume_test]
-    idx_neutral_in_plume = np.intersect1d(idx_rho_neutral_in_plume, idx_bfluc_neutral_in_plume)
-    idx_neutral_in_plume = np.intersect1d(idx_neutral_in_plume, idx_bw_neutral_in_plume)
-
-    # ensuring there are values for the indices
-    if len(idx_intrusion_in_plume)==0:
-        idx_intrusion_in_plume = plume_bottom_index
-    idx_intrusion_in_plume = int(np.atleast_1d(idx_intrusion_in_plume)[0])
-
-    if len(idx_neutral_in_plume) == 0: # early stages of plume development
-        idx_neutral_in_plume = idx_intrusion_in_plume
-    else:
-        idx_neutral_in_plume = idx_neutral_in_plume[0]
-    
-    # find the max radius of plume on xy plane
-    rp_max = np.max(r_max_profile)
-    # ensuring the max radius location is close to the neutral buoyancy height
-    idx_rp_max = np.where(r_max_profile == rp_max)[0]
-    neural_vs_rp = idx_rp_max - idx_neutral_in_plume
-    idx_rp_max = idx_rp_max[np.where(neural_vs_rp==np.min(neural_vs_rp))] 
-    return idx_rp_max, idx_neutral_in_plume, idx_neutral_in_plume
-
+### -------------------------TRACER CALCULATIONS------------------------- ###
 def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour):
     plume_contour = tracer >= tracer_contour
     xi, yi, zi = np.where(plume_contour)
@@ -123,50 +43,7 @@ def plume_tracer_radius(x, y, nx, centerline_index, tracer, tracer_contour):
     rp_profile[mask] = sums[mask] / counts[mask]
     return rp_profile, plume_index, tracer_contour
 
-def plume_tracer_analysis(x, y, nx, tracer, tracer_contour, calc_option='middle domain'):
-    if calc_option == 'middle domain':
-        # finding centerline of plume 
-        centerline_index = np.zeros((3, nx[2])).astype(int)
-        centerline_index[0, :] = nx[0]//2 - 1
-        centerline_index[1, :] = nx[1]//2 - 1
-        centerline_index[2, :] = np.arange(nx[2]).astype(int)
-    elif calc_option == 'center of mass':
-        # finding centerline of plume 
-        centerline_index = np.zeros((3, nx[2]))
-        for k in range(nx[2]-1, -1, -1): # nx[2] = top of the domain 
-            center_xy = center_of_mass(tracer[:, :, k])
-            if ((np.isnan(center_xy[0]) or np.isnan(center_xy[1]))) and (k < nx[2]-1):
-                center_xy = centerline_index[:, k + 1]
-            elif ((np.isnan(center_xy[0]) or np.isnan(center_xy[1]))) and (k == nx[2]-1):
-                center_xy = [nx[0]//2, nx[1]//2]
-            centerline_index[:, k] = [(center_xy[0]), (center_xy[1]), k]
-        centerline_index = np.round(centerline_index).astype(int)
-    # finding plume bounds via contour on the centerline of the tracer
-    plume_contour = tracer >= tracer_contour
-    plume_index = np.where(plume_contour)
-    edge_mask = plume_contour & (
-        ~np.roll(plume_contour, 1, axis=0)
-        | ~np.roll(plume_contour,-1, axis=0)
-        | ~np.roll(plume_contour, 1, axis=1)
-        | ~np.roll(plume_contour,-1, axis=1)
-    )
-    edge_index = np.where(edge_mask)
-    # find the radius of plume on xy plane
-    rp_profile = np.zeros(nx[2])
-    for k in np.arange(nx[2]):
-        hor_plane = np.where(edge_index[2]==k)[0]
-        if len(hor_plane)==0:
-            rp_profile[k] = 0.0
-        else:
-            r = np.zeros(len(hor_plane))
-            for i in range(len(hor_plane)):
-                rx = np.abs(x[edge_index[0][hor_plane[i]]])
-                ry = np.abs(y[edge_index[1][hor_plane[i]]])
-                r[i] = np.sqrt(rx**2 + ry**2)
-            rp_profile[k] = np.mean(r)
-    return centerline_index, rp_profile, plume_index
-
-# momentum analysis of plume
+### -------------------------MOMENTUM ANALYSIS------------------------- ###
 def plume_momentum_analysis(centerline_index, nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol):
     # checking magnitude of values to help define bounds
     w_mag = np.abs(w)
@@ -294,22 +171,3 @@ def plume_momentum_analysis(centerline_index, nx, w, b, b_fluc, rho_fluc, X, Y, 
                 idx_neutral = idx_neutral[-1]
     area_idx = np.where(area_idx)
     return Q, M, F, B, wm, dm, bm, Ri, area_idx, int(idx_max), int(idx_neutral)
-
-# neutral buoyancy calculation 
-def neutral_buoyancy_loc(b_fluc, plume_index, centerline_index):
-    if np.size(plume_index)==0:
-        neutral_index = np.array([])
-    else:
-        # finding sign changes of b', b'w', rho'
-        # sign_change = 2: negative to positive, sign_change = -2: positive to negative, 0: no change
-        bfluc_sign = np.sign(b_fluc[centerline_index[0], centerline_index[1], centerline_index[2]])
-        bfluc_sign_change = np.diff(bfluc_sign) # indicates neutral layer: (+ to -), from bottom of domain
-
-        # finding index location of neutral depth 
-        idx_bfluc_neutral = np.where(bfluc_sign_change < 0)[0]
-        plume_bottom_index = np.min(plume_index[2])
-        in_plume_test = np.where(idx_bfluc_neutral > plume_bottom_index)[0]
-        neutral_index = idx_bfluc_neutral[in_plume_test]
-        if np.size(neutral_index)>=1:
-            neutral_index = neutral_index[-1]
-    return neutral_index

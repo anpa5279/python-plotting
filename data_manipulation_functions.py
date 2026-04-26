@@ -30,3 +30,18 @@ def ccf_ccc(f, z = np.array([]), z_want = np.array([])):
             frac = (f[:, :, i+1]-f[:, :, i])/(z[i+1] - z[i])
             f[:, :, i] = f[:, :, i] + frac*(z_want[i] - z[i])
         return f
+# interpolation to a certain plane slice
+def xy_plane_interpolation(f, z, z_desired):
+    # getting mld index location 
+    dz = np.abs(z + z_desired)/z_desired
+    if dz.min() == 0:
+        pos_loc_idx = np.where(dz==0)[0][0]
+        f_interp = f[:, :, pos_loc_idx]
+    else:
+        pos_loc_idx = np.where(dz==dz.min())[0][0]
+        pos_loc_idx_1 = np.where(dz==np.min([dz[pos_loc_idx -1], dz[pos_loc_idx + 1]]))[0][0]
+        min_idx = np.min([pos_loc_idx, pos_loc_idx_1])
+        max_idx = np.max([pos_loc_idx, pos_loc_idx_1])
+        frac = (f[:, :, max_idx]-f[:, :, min_idx])/(z[max_idx] - z[min_idx])
+        f_interp = f[:, :, max_idx] + frac *(z_desired - z[max_idx])
+    return f_interp
