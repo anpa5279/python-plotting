@@ -6,7 +6,7 @@ from data_collection_functions import collect_time_outputs, collect_fields_distr
 from dense_plume_analysis import plume_tracer_radius
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01/nz = 128 z = 160 m'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01/nz = 192 z = 240 m'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -32,11 +32,11 @@ F_s = Sj*wp
 # List JLD2 files
 dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
 Nranks = len(dtn)
-nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn[0], Nranks)
-if Nranks > 1:
+if Nranks > 1: 
     dtn = []
     for file in np.arange(Nranks):
         dtn.append(f'fields_rank{file}.jld2')
+nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn, Nranks)
 # Read model information
 fid = os.path.join(folder, dtn[0])
 time, t_save, visc, diff, u_f, u_s = collect_time_outputs(fid, stokes, closure)
@@ -189,7 +189,9 @@ n = 0
 for it in range(10, nt):
     # Load data from files
     u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
-    rp_profile_temp, temp, temp = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour) # plume analysis
+    centerx = 0.0
+    centery = 0.0
+    rp_profile_temp, temp = plume_tracer_radius(x, y, nx, S, S_contour) # plume analysis
     n += 1
     rp_profile += rp_profile_temp
 rp_profile = rp_profile/n

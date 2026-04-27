@@ -305,23 +305,17 @@ def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, 
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## vertical plane slices 
-def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
+def vert_plane_slices(time, it, ranges, fig_folder, lx, X, Y, z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
     if yz: #yz plane
         ar = lx[1]/lx[2]
         plane = 'YZ plane'
-        hor = Y[:, int(nx[1]/2), :]
-        z = Z[:, int(nx[1]/2), :]
-        x_data = int(nx[0]/2)
-        y_data = np.arange(0, nx[1])
-        hor_range = (np.min(Y[:, :, int(nx[2]/2)]), np.max(Y[:, :, int(nx[2]/2)]))
+        hor = Y
+        hor_range = (np.min(Y), np.max(Y))
     else: #xz plane
         ar = lx[0]/lx[2]
         plane = 'XZ plane'
-        hor = X[int(nx[0]/2), :, :]
-        z = Z[int(nx[0]/2), :, :]
-        x_data = np.arange(0, nx[0])
-        y_data = int(nx[1]/2)
-        hor_range = (np.min(X[:, :, int(nx[2]/2)]), np.max(X[:, :, int(nx[2]/2)]))
+        hor = X
+        hor_range = (np.min(X), np.max(X))
     levels = 500
     outdir = os.path.join(fig_folder, 'vertical plane slices/', plane)
     os.makedirs(outdir, exist_ok=True)
@@ -330,7 +324,6 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
     nrows = 2
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols * ar) + 0.75 * nrows + 1.1
-
     fig, ax = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
     fig.suptitle(plane + f', {td:.2f} days', y = 0.99, fontsize=12)
     ax = ax.ravel()
@@ -348,7 +341,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
 
     norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
     mappable = cm.ScalarMappable(norm=norm)
-    ax[4].contourf(hor, z, T[x_data, y_data, :], levels, norm=norm)
+    ax[4].contourf(hor, z, T, levels, norm=norm)
     ax[4].set_xlabel("[m]")
     ax[4].set_ylabel("Depth [m]")
     ax[4].set_title("Temperature")
@@ -359,7 +352,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
     
     norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1])
     mappable = cm.ScalarMappable(norm=norm)
-    ax[5].contourf(hor, z, S[x_data, y_data, :], levels, norm=norm)
+    ax[5].contourf(hor, z, S, levels, norm=norm)
     ax[5].set_xlabel("[m]")
     ax[5].set_title("Tracer")
     ax[5].set_ylim(-lx[2], 0)
@@ -369,7 +362,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
 
     norm = mcolors.Normalize(vmin=(ranges['rho'][0]), vmax=(ranges['rho'][-1]))
     mappable = cm.ScalarMappable(norm=norm)
-    ax[6].contourf(hor, z, rho[x_data, y_data, :], levels, norm=norm)
+    ax[6].contourf(hor, z, rho, levels, norm=norm)
     ax[6].set_xlabel("[m]")
     ax[6].set_title("Density")
     ax[6].set_ylim(-lx[2], 0)
@@ -383,7 +376,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
 
     norm = mcolors.Normalize(vmin=ranges['rho_fluc'][0], vmax=ranges['rho_fluc'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-    ax[7].contourf(hor, z, rho_perturbed[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[7].contourf(hor, z, rho_perturbed, levels, norm=norm, cmap='RdBu_r')
     ax[7].set_xlabel("[m]")
     ax[7].set_title("Perturbed Density")
     ax[7].set_ylim(-lx[2], 0)
@@ -393,7 +386,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
 
     norm = mcolors.Normalize(vmin=ranges['u'][0], vmax=ranges['u'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax[0].contourf(hor, z, u[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[0].contourf(hor, z, u, levels, norm=norm, cmap='RdBu_r')
     ax[0].set_ylabel("Depth [m]")
     ax[0].set_title("u")
     ax[0].set_ylim(-lx[2], 0)
@@ -405,7 +398,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
 
     norm = mcolors.Normalize(vmin=ranges['v'][0], vmax=ranges['v'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax[1].contourf(hor, z, v[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[1].contourf(hor, z, v, levels, norm=norm, cmap='RdBu_r')
     ax[1].set_title("v")
     ax[1].set_ylim(-lx[2], 0)
     ax[1].set_xlim(hor_range)
@@ -416,7 +409,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, nx, X, Y, Z, u, v, w, rh
 
     norm = mcolors.Normalize(vmin=ranges['w'][0], vmax=ranges['w'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap = 'RdBu_r')
-    ax[2].contourf(hor, z, w[x_data, y_data, :], levels, norm=norm, cmap='RdBu_r')
+    ax[2].contourf(hor, z, w, levels, norm=norm, cmap='RdBu_r')
     ax[2].set_title("w")
     ax[2].set_ylim(-lx[2], 0)
     ax[2].set_xlim(hor_range)
@@ -471,13 +464,11 @@ def xy_plane_slices(time, it, ranges, fig_folder, X, Y, u, v, w, Pdynamic, rho, 
     ax1.set_xlim(np.min(X), np.max(X))
     ax1.set_aspect('equal')
     cbar = fig.colorbar(mappable, ax=ax1, label=r"kg/m$^3$", orientation='horizontal', shrink=0.75)
-    #cbar.formatter.set_scientific(False)
-    #cbar.formatter.set_useOffset(False)
-    #cbar.set_ticks([(ranges['rho'][0]), (ranges['rho'][-1])])
     cbar.formatter.set_powerlimits((-2, 2))
     cbar.update_ticks()
         
     norm = mcolors.Normalize(vmin=ranges['rho'][0], vmax=ranges['rho'][-1])
+    mappable = cm.ScalarMappable(norm=norm)
     ax2.contourf(X, Y, rho, levels, norm=norm)
     #ax2.set_xlabel("[m]")
     ax2.set_title("Density")
@@ -485,55 +476,35 @@ def xy_plane_slices(time, it, ranges, fig_folder, X, Y, u, v, w, Pdynamic, rho, 
     ax2.set_xlim(np.min(X), np.max(X))
     ax2.set_aspect('equal')
     cbar  = fig.colorbar(mappable, ax=ax2, label=r"kg/m$^3$", orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
+    cbar.formatter.set_scientific(False)
+    cbar.formatter.set_useOffset(False)
+    cbar.set_ticks([(ranges['rho'][0]), (ranges['rho'][-1])])
     cbar.update_ticks()
-
-    if np.size(S)==0:
-        norm = mcolors.Normalize(vmin=ranges['rho_fluc'][0], vmax=ranges['rho_fluc'][-1])
-        ax3.contourf(X, Y, rho_perturbed, levels, norm=norm)
-        #ax3.set_xlabel("[m]")
-        ax3.set_title("Perturbed Density")
-        ax3.set_ylim(np.min(Y), np.max(Y))
-        ax3.set_xlim(np.min(X), np.max(X))
-        ax3.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax3, label=r"kg/m$^3$", orientation='horizontal', shrink=0.75)
+    
+    norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1])
+    mappable = cm.ScalarMappable(norm=norm)
+    ax3.contourf(X, Y, S, levels, norm=norm)
+    #ax3.set_xlabel("[m]")
+    ax3.set_title("Tracer")
+    ax3.set_ylim(np.min(Y), np.max(Y))
+    ax3.set_xlim(np.min(X), np.max(X))
+    ax3.set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax3, orientation='horizontal', shrink=0.75)
+    
+    T_slice = T
+    if (np.max(T_slice) - np.min(T_slice))<=1e-6:
+        levelsT = 10
     else:
-        norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1])
-        mappable = cm.ScalarMappable(norm=norm)
-        ax3.contourf(X, Y, S, levels, norm=norm)
-        #ax3.set_xlabel("[m]")
-        ax3.set_title("Tracer")
-        ax3.set_ylim(np.min(Y), np.max(Y))
-        ax3.set_xlim(np.min(X), np.max(X))
-        ax3.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax3, orientation='horizontal', shrink=0.75)
-
-    if np.size(T)==0:
-        norm = mcolors.Normalize(vmin=ranges['rho'][0], vmax=ranges['rho'][-1])
-        ax4.contourf(X, Y, rho, levels, norm=norm)
-        #ax4.set_xlabel("[m]")
-        ax4.set_title("Density")
-        ax4.set_ylim(np.min(Y), np.max(Y))
-        ax4.set_xlim(np.min(X), np.max(X))
-        ax4.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax4, label=r"kg/m$^3$", orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks()
-    else:
-        T_slice = T
-        if (np.max(T_slice) - np.min(T_slice))<=1e-6:
-            levelsT = 10
-        else:
-            levelsT = levels
-        norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
-        mappable = cm.ScalarMappable(norm=norm)
-        ax4.contourf(X, Y, T_slice, levelsT, norm=norm)
-        #ax4.set_xlabel("[m]")
-        ax4.set_title("Temperature")
-        ax4.set_ylim(np.min(Y), np.max(Y))
-        ax4.set_xlim(np.min(X), np.max(X))
-        ax4.set_aspect('equal')
-        cbar  = fig.colorbar(mappable, ax=ax4, label=r"$^\circ$C", orientation='horizontal', shrink=0.75)
+        levelsT = levels
+    norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
+    mappable = cm.ScalarMappable(norm=norm)
+    ax4.contourf(X, Y, T_slice, levelsT, norm=norm)
+    #ax4.set_xlabel("[m]")
+    ax4.set_title("Temperature")
+    ax4.set_ylim(np.min(Y), np.max(Y))
+    ax4.set_xlim(np.min(X), np.max(X))
+    ax4.set_aspect('equal')
+    cbar  = fig.colorbar(mappable, ax=ax4, label=r"$^\circ$C", orientation='horizontal', shrink=0.75)
     
     norm = mcolors.Normalize(vmin=ranges['Pdynamic'][0], vmax=ranges['Pdynamic'][-1])
     mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')

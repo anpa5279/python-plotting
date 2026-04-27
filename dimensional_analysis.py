@@ -120,7 +120,7 @@ for i, folder in enumerate(folders):
     # Read model information
     fid = os.path.join(folder, dtn[0])
     time, t_save_temp, visc, diff, u_f, u_s = collect_time_outputs(fid, stokes[i], closure[i])
-    nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn[0], Nranks)
+    nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn, Nranks)
     if salinity:
         alpha, beta = collect_temp_and_sal(fid, salinity)
     else:
@@ -303,7 +303,7 @@ else:
             # finding radius of plume based on tracer contour
             S_value, w_value = collect_contour_val(folder, file_name)
             S_contour = S_value*contour_bound
-            rp_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour) # plume analysis
+            rp_profile, plume_index = plume_tracer_radius(x, y, nx, S, S_contour) # plume analysis
             r_profile[:, i] = rp_profile
             b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
             T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]

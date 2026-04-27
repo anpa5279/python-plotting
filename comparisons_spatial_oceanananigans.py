@@ -7,7 +7,7 @@ from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format, plume_vertical_spatial_plot, plume_horizontal_spatial_plot
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal, collect_grid, collect_contour_val
 from dense_plume_analysis import plume_tracer_radius
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, vertical_line_interpolation
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, hor_line_interpolation
 
 # flags for what to plot
 plume_analysis_plot = True
@@ -114,7 +114,7 @@ for i, folder in enumerate(folders):
     else:
         alpha = collect_temp_and_sal(fid, salinity)
     t_save.append(t_save_temp)
-nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn[0], Nranks)
+nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn, Nranks)
 
 if video:
     nt = len(t_save[0])
@@ -282,11 +282,11 @@ for it in nt:
         if salinity:
             centerx = 0.0
             centery = 0.0
-            rp_profile, plume_index, S_contour_temp = plume_tracer_radius(x, y, centerx, centery, nx, S, S_contour[i])
+            rp_profile, plume_index = plume_tracer_radius(x, y, nx, S, S_contour[i])
             r_profile[:, i] = rp_profile
-            b_center[:, i] = vertical_line_interpolation(b, x, y, centerx, centery)
-            T_fluc_center[:, i] = vertical_line_interpolation(T_fluc, x, y, centerx, centery)
-            S_fluc_center[:, i] = vertical_line_interpolation(S_fluc, x, y, centerx, centery)
+            b_center[:, i] = hor_line_interpolation(b, x, y, centerx, centery)
+            T_fluc_center[:, i] = hor_line_interpolation(T_fluc, x, y, centerx, centery)
+            S_fluc_center[:, i] = hor_line_interpolation(S_fluc, x, y, centerx, centery)
 
     ############ PLOTTING ############
     ############ NONDIMENSIONALIZATION ############

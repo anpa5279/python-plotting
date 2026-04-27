@@ -25,16 +25,23 @@ def collect_time_outputs(file, stokes=False, closure=True):
         u_s = None
     return time, t_save, visc, diff, u_f, u_s
 # collecting grid information
-def collect_grid(folder, file, Nranks):
-    with h5py.File(os.path.join(folder, file), 'r') as f:
+def collect_grid(folder, files, Nranks):
+    with h5py.File(os.path.join(folder, files[0]), 'r') as f:
         nx = [f['grid/Nx'][()] * Nranks, f['grid/Ny'][()], f['grid/Nz'][()]]
         hx = [f['grid/Hx'][()], f['grid/Hy'][()], f['grid/Hz'][()]]
         lx = [f['grid/Lx'][()] * Nranks, f['grid/Ly'][()], f['grid/Lz'][()]]
         dx = [f['grid/Δxᶜᵃᵃ'][()], f['grid/Δyᵃᶜᵃ'][()], f['grid/z/Δᵃᵃᶜ'][()]]
-        x = f['grid/xᶜᵃᵃ'][hx[0]] + np.arange(nx[0]) * dx[0]
         y = f['grid/yᵃᶜᵃ'][hx[1]:-hx[1]]
         z = f['grid/z/cᵃᵃᶜ'][hx[2]:-hx[2]]
         zf = f['grid/z/cᵃᵃᶠ'][hx[2]:-hx[2]]
+        if Nranks==1:
+            x = f['grid/xᶜᵃᵃ'][hx[0]:-hx[0]]
+    if Nranks > 1:
+        xrange = nx[0]//Nranks
+        x = np.zeros(nx[0])
+        for i, file in enumerate(files):
+            with h5py.File(os.path.join(folder, file), 'r') as f:
+                x[i*xrange:(i+1)*xrange] = f['grid/xᶜᵃᵃ'][hx[0]:-hx[0]]
     return nx, hx, lx, x, y, z, zf
 # collecting thermal expansion and haline contraction coefficients
 def collect_temp_and_sal(file, salinity=False):
