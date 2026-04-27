@@ -4,9 +4,10 @@ import h5py
 from general_analysis_functions import ab_fluc_mean, a2_fluc_mean
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_contour_val, collect_grid
 from dense_plume_analysis import plume_tracer_radius
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01/nz = 192 z = 240 m'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.2 dTdz = 0.01 MLD = 60'
 output_folder = os.path.join(folder, "plotting outputs") 
 name = ""
 
@@ -17,7 +18,7 @@ stokes = False
 salinity = True
 plume_stats_only = False
 
-file_name = 'temporal_averages.h5'
+file_name = 'interp_temporal_averages.h5'
 percent_contour = 0.05
 
 # physical parameters
@@ -48,21 +49,19 @@ else:
 
 nt = len(t_save)
 
-centerline_index = np.zeros((3, nx[2])).astype(int)
 center_xy_loc = np.zeros((3, nx[2]))
 center_xy_loc[0, :] = lx[0]/2
 center_xy_loc[1, :] = lx[1]/2
 center_xy_loc[2, :] = z
-centerline_index[0, :] = nx[0]//2 - 1
-centerline_index[1, :] = nx[1]//2 - 1
-centerline_index[2, :] = np.arange(nx[2]).astype(int)
-
+centerx = 0
+centery = 0
 if not plume_stats_only:
     n = 0.0
     # initializing arrays to collect temporal averages
     S_sum = 0.0
     w_sum = 0.0
     S_centerline_avg = np.zeros(nx[2])
+    w_centerline_avg = np.zeros(nx[2])
     T_centerline_avg = np.zeros(nx[2])
     b_centerline_avg = np.zeros(nx[2])
     S_fluc_centerline_avg = np.zeros(nx[2])
@@ -71,34 +70,33 @@ if not plume_stats_only:
     S_avg = np.zeros(nx[2])
     T_avg = np.zeros(nx[2])
     b_avg = np.zeros(nx[2])
-    w_avg = np.zeros(nx[2]+1)
+    w_avg = np.zeros(nx[2])
     S_fluc_avg = np.zeros(nx[2])
     T_fluc_avg = np.zeros(nx[2])
     b_fluc_avg = np.zeros(nx[2])
-    w_fluc_avg = np.zeros(nx[2]+1)
+    w_fluc_avg = np.zeros(nx[2])
     Tw_fluc_avg = np.zeros(nx[2])
     Sw_fluc_avg = np.zeros(nx[2])
     bw_fluc_avg = np.zeros(nx[2])
     u_rms = np.zeros(nx[2])
     v_rms = np.zeros(nx[2])
-    w_rms = np.zeros(nx[2]+1)
+    w_rms = np.zeros(nx[2])
     for it in range(10, nt):
         # Load data from files
         u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
-        wc = 0.5 * (w[..., :-1] + w[..., 1:])
+        # interpolate velocities to cell centers
+        u = fcc_ccc(u)
+        v = cfc_ccc(v)
+        w = ccf_ccc(w)
         b = g*alpha*(T - T0) - g*beta*(S - S0)
         # horizontal averages
         S_avg_temp = np.mean(S, axis=(-3, -2))
         T_avg_temp = np.mean(T, axis=(-3, -2))
         b_avg_temp = np.mean(b, axis=(-3, -2))
         w_avg_temp = np.mean(w, axis=(-3, -2))
-        wc_avg_temp = np.mean(wc, axis=(-3, -2))
-        bw_fluc, bw_fluc_avg_temp = ab_fluc_mean(b, wc, b_avg_temp, wc_avg_temp)
-        Tw_fluc, Tw_fluc_avg_temp = ab_fluc_mean(T, wc, T_avg_temp, wc_avg_temp)
-        Sw_fluc, Sw_fluc_avg_temp = ab_fluc_mean(S, wc, S_avg_temp, wc_avg_temp)
-        bw_idx = np.where(bw_fluc_avg_temp==np.max(bw_fluc_avg_temp))[0][0]
-        w_sum += np.mean(w[centerline_index[0, :], centerline_index[1, :], bw_idx])
-        S_sum += np.mean(S[centerline_index[0, :], centerline_index[1, :], bw_idx])
+        bw_fluc, bw_fluc_avg_temp = ab_fluc_mean(b, w, b_avg_temp, w_avg_temp)
+        Tw_fluc, Tw_fluc_avg_temp = ab_fluc_mean(T, w, T_avg_temp, w_avg_temp)
+        Sw_fluc, Sw_fluc_avg_temp = ab_fluc_mean(S, w, S_avg_temp, w_avg_temp)
         # calculating rms 
         u_fluc = u - np.mean(u, axis=(-3, -2))
         v_fluc = v - np.mean(v, axis=(-3, -2))
@@ -109,10 +107,7 @@ if not plume_stats_only:
         u_rms_temp= u2_fluc_avg**0.5
         v_rms_temp= v2_fluc_avg**0.5
         w_rms_temp= w2_fluc_avg**0.5
-        # collecting desired averages
-        S_centerline_avg += S[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-        T_centerline_avg += T[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
-        b_centerline_avg += b[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]]
+        # collecting desired horizontal averages
         S_avg += S_avg_temp
         T_avg += T_avg_temp
         b_avg += b_avg_temp
@@ -124,17 +119,31 @@ if not plume_stats_only:
         Tw_fluc_avg += Tw_fluc_avg_temp
         Sw_fluc_avg += Sw_fluc_avg_temp
         bw_fluc_avg += bw_fluc_avg_temp
-        S_fluc_centerline_avg += S[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] - S_avg_temp
-        T_fluc_centerline_avg += T[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] - T_avg_temp
-        b_fluc_centerline_avg += b[centerline_index[0, :], centerline_index[1, :], centerline_index[2, :]] - b_avg_temp
         u_rms += u_rms_temp
         v_rms += v_rms_temp
         w_rms += w_rms_temp
+        # collecting centerline information
+        S_fluc_centerline_avg += z_line_interpolation(S - S_avg_temp, x, y, centerx, centery)
+        T_fluc_centerline_avg += z_line_interpolation(T - T_avg_temp, x, y, centerx, centery)
+        b_fluc_centerline_avg += z_line_interpolation(b - b_avg_temp, x, y, centerx, centery)
+        S_center_temp = z_line_interpolation(S, x, y, centerx, centery)
+        w_center_temp = z_line_interpolation(w, x, y, centerx, centery)
+        T_center_temp = z_line_interpolation(T, x, y, centerx, centery)
+        b_center_temp = z_line_interpolation(b, x, y, centerx, centery)
+        S_centerline_avg += S_center_temp
+        w_centerline_avg += w_center_temp
+        T_centerline_avg += T_center_temp
+        b_centerline_avg += b_center_temp
+        # collecting "jet" values
+        bw_idx = np.where(bw_fluc_avg_temp==np.max(bw_fluc_avg_temp))[0][0]
+        w_sum += w_center_temp[bw_idx]
+        S_sum += S_center_temp[bw_idx]
 
         n += 1
     S_contour = S_sum/n
     w_contour = w_sum/n
     S_centerline_avg = S_centerline_avg/n
+    w_centerline_avg = w_centerline_avg/n
     T_centerline_avg = T_centerline_avg/n
     b_centerline_avg = b_centerline_avg/n
     S_fluc_centerline_avg = S_fluc_centerline_avg/n
@@ -160,6 +169,7 @@ if not plume_stats_only:
     file.create_dataset("contour temporal averages/S", data=S_contour)
     file.create_dataset("contour temporal averages/w", data=w_contour)
     file.create_dataset("centerline temporal averages/S", data=S_centerline_avg)
+    file.create_dataset("centerline temporal averages/w", data=w_centerline_avg)
     file.create_dataset("centerline temporal averages/T", data=T_centerline_avg)
     file.create_dataset("centerline temporal averages/b", data=b_centerline_avg)
     file.create_dataset("centerline temporal averages/S'", data=S_fluc_centerline_avg)

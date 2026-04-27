@@ -1,4 +1,5 @@
 import os
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,11 +8,11 @@ from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_radius, neutral_layer
 from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid, collect_grid, collect_contour_val
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, xy_plane_interpolation, hor_line_interpolation, z_plane_interpolation
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, xy_plane_interpolation, z_line_interpolation, z_plane_interpolation
 # Set up folder and simulation parameters
 folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01/nz = 192 z = 240 m'
 output_folder = os.path.join(folder, "plotting outputs") 
-name = ""
+name = "interp"
 
 # flags for how to read data
 with_halos = False
@@ -26,19 +27,19 @@ video = True
 video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = True
-xy_plot = True
+xy_plot = False
 buoyancy_analysis_plot = False
 buoyancy_momentum_analysis = False
 
 # physical parameters
-#nums = re.findall(r' -?\d*\.?\d+', folder)
-mld = 60.0 #float(nums[-1]) # mixed layer depth in meters
+nums = re.findall(r' -?\d*\.?\d+', folder)
+mld = float(nums[-1]) # mixed layer depth in meters #60.0 #
 g = 9.80665  # gravity in m/s^2
-dTdz = 0.01#float(nums[-2]) # background temperature gradient in K/m
+dTdz = float(nums[-2]) # background temperature gradient in K/m #0.01#
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = 0.1#float(nums[-3]) # salinity of the source 
+Sj = float(nums[-3]) # salinity of the source #0.1#
 wp = 0.001
 F_s = Sj*wp
 S_value, w_value = collect_contour_val(folder, 'temporal_averages.h5')
@@ -62,10 +63,10 @@ ranges['w'] = [-2*10**(-2), 2*10**(-2)]
 ranges['w_fluc'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel'] = [-1e-5, 1e-5]
 ranges['b'] = [-6.0*10**(-4), 6.0*10**(-4)]
-ranges['rho'] = [rho0-0.01, rho0+0.4]#0.1] # <--for stratification [rho0-0.01, rho0+0.1] # 
+ranges['rho'] = [rho0-0.01, rho0+0.1]#0.1] # <--for stratification [rho0-0.01, rho0+0.1] # 
 ranges['rho_fluc'] = [-0.01, 0.01]
 ranges['S'] = [0.0, 0.04]
-ranges['T'] = [T0-2.0, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
+ranges['T'] = [T0-0.4, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
 ranges['u'] = [-6*10**(-3), 6*10**(-3)]
 ranges['v'] = [-6*10**(-3), 6*10**(-3)]
 ranges['u_fluc'] = ranges['u']
@@ -80,10 +81,10 @@ if xy_plot and salinity:
     xy_ranges = ranges.copy()
     xy_ranges['b_fluc'] = [-4*10**(-5), 4*10**(-5)]
     xy_ranges['rho_fluc'] = [-5*10**-3, 5*10**-3]
-    xy_ranges['rho'] = [rho0-0.01, rho0+0.01]
+    xy_ranges['rho'] = [rho0-0.001, rho0+0.04]
     xy_ranges['Pdynamic'] = [-1*10**(-4), 1*10**(-4)]
-    xy_ranges['T'] = [T0-0.05, T0 + 0.005]
-    xy_ranges['S'] = [0.0, 0.012]
+    xy_ranges['T'] = [T0-0.15, T0+0.005]
+    xy_ranges['S'] = [0.0, 0.01]
     xy_ranges['u'] = [-6*10**(-3), 6*10**(-3)]
     xy_ranges['v'] = xy_ranges['u']
 
@@ -228,18 +229,18 @@ for it in nt:
         centerx = 0.0
         centery = 0.0
         rp_profile, plume_index = plume_tracer_radius(x, y, nx, S, S_contour)
-        S_fluc_center = hor_line_interpolation(S_fluc, x, y, centerx, centery)
-        T_fluc_center = hor_line_interpolation(T_fluc, x, y, centerx, centery)
+        S_fluc_center = z_line_interpolation(S_fluc, x, y, centerx, centery)
+        T_fluc_center = z_line_interpolation(T_fluc, x, y, centerx, centery)
 
     # buoyancy analysis 
     if buoyancy_analysis_plot or turb_stats_plot or buoyancy_momentum_analysis:
         Q, M, F, B, wm, dm, bm, Ri, area_idx, max_index, neutral_index = plume_momentum_analysis(nx, w, b, b_fluc, rho_fluc, X, Y, w_mag_tol)
         z_neutral = z[neutral_index]
 
-        w_center = hor_line_interpolation(w, x, y, centerx, centery)
-        bw_fluc_center = hor_line_interpolation(bw_fluc, x, y, centerx, centery)
-        rho_perturbed_center = hor_line_interpolation(rho_perturbed, x, y, centerx, centery)
-        b_center = hor_line_interpolation(b, x, y, centerx, centery)
+        w_center = z_line_interpolation(w, x, y, centerx, centery)
+        bw_fluc_center = z_line_interpolation(bw_fluc, x, y, centerx, centery)
+        rho_perturbed_center = z_line_interpolation(rho_perturbed, x, y, centerx, centery)
+        b_center = z_line_interpolation(b, x, y, centerx, centery)
         z_intrusion = z[max_index]
         w_intrusion = w_center[max_index]
         w_neutral = w_center[neutral_index]
@@ -284,7 +285,6 @@ for it in nt:
         video_3d_dir = plot_3d_fields(time, it, ranges, output_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, w, T, S)
     if vert_slice_plot:
         x_loc = 0.0
-        loc_idx = nx[0]//2
         u_yz = z_plane_interpolation(u, x, x_loc)
         v_yz = z_plane_interpolation(v, x, x_loc)
         w_yz = z_plane_interpolation(w, x, x_loc)
@@ -297,10 +297,9 @@ for it in nt:
         else:
             neutral_depth = neutral_layer(z, bw_fluc, plume_index)
             depths = np.array([-mld, neutral_depth])
-        plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, X, Y[:, loc_idx, :], Z[:, loc_idx, :], u_yz, v_yz, w_yz, rho_yz, rho_perturbed_yz, T = T_yz, S = S_yz, depths = depths)
+        plane_slices_dir = vert_plane_slices(time, it, ranges, output_folder, lx, x, y, z, u_yz, v_yz, w_yz, rho_yz, rho_perturbed_yz, T = T_yz, S = S_yz, depths = depths)
     if xy_plot and salinity:
-        loc = "interp-mld"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
-        loc_idx = mld_idx
+        loc = "z = MLD"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
         loc_z = -mld
         u_xy = xy_plane_interpolation(u, z, loc_z)
         v_xy = xy_plane_interpolation(v, z, loc_z)
@@ -310,11 +309,11 @@ for it in nt:
         Pdynamic_xy = xy_plane_interpolation(Pdynamic, z, loc_z)
         T_xy = xy_plane_interpolation(T, z, loc_z)
         S_xy = xy_plane_interpolation(S, z, loc_z)
-        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, X[:, :, loc_idx], Y[:, :, loc_idx], u_xy, v_xy, w_xy, Pdynamic_xy, rho_xy, rho_perturbed_xy, loc, T = T_xy, S = S_xy)
+        surface_dir = xy_plane_slices(time, it, xy_ranges, output_folder, x, y, u_xy, v_xy, w_xy, Pdynamic_xy, rho_xy, rho_perturbed_xy, loc, T = T_xy, S = S_xy)
     if buoyancy_analysis_plot and not salinity:
-        buoyancy_dir = buoyancy_analysis(time, it, ranges, output_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
+        buoyancy_dir = buoyancy_analysis(time, it, ranges, output_folder, lx, nx, z, zf, x, z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_plot and salinity:
-        buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, Y, Z, mld, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
+        buoyancy_dir = plot_tracer_plume(time, it, ranges, output_folder, lx, nx, z, zf, y, z, mld, u_avg, v_avg, w_avg, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, u_rms, v_rms, w_rms, dbdx, dbdy, dbdz, b_avg, b_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, S_avg, rp_list, plume_depths, ws, rhos, bw_flucs, l_scale_list)
     if buoyancy_momentum_analysis:
         momentum_dir = plot_momentum_plume(time, it, ranges, output_folder, lx, z, zf, mld, b_avg, S_avg, u_rms, v_rms, w_rms, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, S_fluc_center, T_fluc_center, Q, M, F, B, wm, dm, bm, Ri, rp_profile, b_center, plume_depths)
 print("All frames created.")

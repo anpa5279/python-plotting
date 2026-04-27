@@ -6,6 +6,7 @@ from plotting_comparisons import plot_format
 from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_contour_val, collect_temporal_averages, collect_plume_stats, collect_grid
 from dense_plume_analysis import plume_tracer_radius
 from dimensional_analysis_functions import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents, plot_combo_exponents
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation
 
 # output name 
 contour_bound = 0.05
@@ -13,18 +14,18 @@ name_uni = f'contour-{contour_bound:.2f}'
 # flags for what to plot
 all_steps = False
 transient_mld = False
-temporal_averages_flag = True
+temporal_averages_flag = False
 # manually select which plotting flags if not the component being varied by default
 strat_flag = False
 flux_flag = False
 mld_flag = False
-combo_flag = False
+combo_flag = True
 morton_znd_flag = True
 
 exponents = [] # for plotting reference lines with different exponents, set to empty array to not plot any, -4/3, -1, -3/4, -2/3, -1/2, 1/2, 2/3, 3/4, 1, 4/3
 
 # selecting cases to compare
-variations = 'strat' # 'MLD', 'flux', 'strat', 'all'
+variations = 'MLD' # 'MLD', 'flux', 'strat', 'all'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -70,10 +71,10 @@ elif variations == 'all':
                    0.05, 0.15, 0.2]) 
 if variations == 'all' or combo_flag:
     vars_exps = np.array([ # columns: Ri, Fr, MLD
-        [1/16, -3/8, -1/2], # w_rms
-        [-1/2, -1/3, 2/3], # b_center
-        [-3/8, -3/4, -1], # bw_fluc_avg
-        [-1/4, -1/6, -2/3], # r_profile
+        [0, -1/3, -1/2], # w_rms
+        [-1/2, -1/3, 1/3], # b_center
+        [-1/3, -3/4, -1], # bw_fluc_avg
+        [-1/4, -1/4, -1/2], # r_profile
         [-1/2, -1/4, 3/4], # T_fluc_center
         [-1/3, -3/4, 3/4] # S_avg
     ]) # manually manipulate
@@ -86,9 +87,9 @@ rj = 5.0
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
-fig_folder = os.path.join(universal_folder, 'ND analysis', variations, name_uni)
+fig_folder = os.path.join(universal_folder, 'ND analysis', 'interpolation', variations, name_uni)
 os.makedirs(fig_folder, exist_ok=True)
-file_name = 'temporal_averages.h5'
+file_name = 'interp_temporal_averages.h5'
 folders = []
 for name in folder_names:
     folders.append(os.path.join(universal_folder, name))
@@ -137,14 +138,8 @@ if temporal_averages_flag:
     title = 'Temporal averages'
     name_uni += '_temporal_averages'
 else:
-    centerline_index = np.zeros((3, nx[2])).astype(int)
-    center_xy_loc = np.zeros((3, nx[2]))
-    center_xy_loc[0, :] = lx[0]/2
-    center_xy_loc[1, :] = lx[1]/2
-    center_xy_loc[2, :] = z
-    centerline_index[0, :] = nx[0]//2 - 1
-    centerline_index[1, :] = nx[1]//2 - 1
-    centerline_index[2, :] = np.arange(nx[2]).astype(int)
+    centerx = 0.0
+    centery = 0.0
     if all_steps:
         nt = len(t_save[0])
         nt = np.arange(0, nt)
@@ -188,9 +183,9 @@ y_nd = y / rj
 if temporal_averages_flag:
     T_avg = np.zeros((nx[2], num_cases))
     b_avg = np.zeros((nx[2], num_cases))
-    w_fluc_avg = np.zeros((nx[2] + 1, num_cases))
+    w_fluc_avg = np.zeros((nx[2], num_cases))
     bw_fluc_avg = np.zeros((nx[2], num_cases))
-    w_rms = np.zeros((nx[2] + 1, num_cases))
+    w_rms = np.zeros((nx[2], num_cases))
     r_profile = np.zeros((nx[2], num_cases))
     b_center = np.zeros((nx[2], num_cases))
     T_fluc_center = np.zeros((nx[2], num_cases))
@@ -229,34 +224,33 @@ if temporal_averages_flag:
     w_rms = w_rms/vel_scale
     ############ PLOTTING ############
     if variations == 'all' or combo_flag:
-        plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
+        plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
     if np.size(exponents)==0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
         if variations == 'strat' or strat_flag:
-            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names)
         if variations == 'flux' or flux_flag:
-            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names)
         if variations == 'MLD' or mld_flag:
-            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
+            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names)
     elif np.size(exponents)!=0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
         if variations == 'strat' or strat_flag:
-            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names, exponents = exponents)
         if variations == 'flux' or flux_flag:
-            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names, exponents = exponents)
         if variations == 'MLD' or mld_flag:
-            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
+            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)
 else:
     for it in nt:
         u_avg = np.zeros((nx[2], num_cases))
         v_avg = np.zeros((nx[2], num_cases))
-        w_avg = np.zeros((nx[2] + 1, num_cases))
-        wc_avg = np.zeros((nx[2], num_cases))
+        w_avg = np.zeros((nx[2], num_cases))
         T_avg = np.zeros((nx[2], num_cases))
         b_avg = np.zeros((nx[2], num_cases))
-        w_fluc_avg = np.zeros((nx[2] + 1, num_cases))
+        w_fluc_avg = np.zeros((nx[2], num_cases))
         bw_fluc_avg = np.zeros((nx[2], num_cases))
         u_rms = np.zeros((nx[2], num_cases))
         v_rms = np.zeros((nx[2], num_cases))
-        w_rms = np.zeros((nx[2] + 1, num_cases))
+        w_rms = np.zeros((nx[2], num_cases))
         r_profile = np.zeros((nx[2], num_cases))
         b_center = np.zeros((nx[2], num_cases))
         T_fluc_center = np.zeros((nx[2], num_cases))
@@ -267,13 +261,14 @@ else:
             u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[i][it], hx, nx, True, salinity, with_halos)
             # convert temperature and salinity to buoyancy 
             b = g*alpha*(T - T0) - g*beta*(S)
-
-            wc = 0.5 * (w[..., :-1] + w[..., 1:])
+            # interpolate velocities to cell centers
+            u = fcc_ccc(u)
+            v = cfc_ccc(v)
+            w = ccf_ccc(w)
             # calculate means
             u_avg[:, i] = np.mean(u, axis=(-3, -2))
             v_avg[:, i] = np.mean(v, axis=(-3, -2))
             w_avg[:, i] = np.mean(w, axis=(-3, -2))
-            wc_avg[:, i] = np.mean(wc, axis=(-3, -2))
             b_avg[:, i] = np.mean(b, axis=(-3, -2))
             S_avg[:, i] = np.mean(S, axis=(-3, -2))
             T_avg[:, i] = np.mean(T, axis=(-3, -2))
@@ -282,7 +277,6 @@ else:
             u_fluc = u-u_avg[:, i]
             v_fluc = v-v_avg[:, i]
             w_fluc = w-w_avg[:, i]
-            wc_fluc = wc-wc_avg[:, i]
             T_fluc = T - T_avg[:, i]
             S_fluc = S - S_avg[:, i]
             b_fluc = b - b_avg[:, i]
@@ -290,7 +284,7 @@ else:
             # calcualte reynolds stresses
             w_fluc_avg[:, i], w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
             b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg[:, i], b_avg[:, i])
-            bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, wc, b_avg[:, i], wc_avg[:, i])
+            bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, w, b_avg[:, i], w_avg[:, i])
 
             if transient_mld and it != 0:
                 dbdz = np.gradient(b_avg[:, i], z[:, i])
@@ -305,9 +299,9 @@ else:
             S_contour = S_value*contour_bound
             rp_profile, plume_index = plume_tracer_radius(x, y, nx, S, S_contour) # plume analysis
             r_profile[:, i] = rp_profile
-            b_center[:, i] = b[centerline_index[0], centerline_index[1], centerline_index[2]]
-            T_fluc_center[:, i] = T_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
-            S_fluc_center[:, i] = S_fluc[centerline_index[0], centerline_index[1], centerline_index[2]]
+            b_center[:, i] = z_line_interpolation(b, x, y, centerx, centery)
+            T_fluc_center[:, i] = z_line_interpolation(T_fluc, x, y, centerx, centery)
+            S_fluc_center[:, i] = z_line_interpolation(S_fluc, x, y, centerx, centery)
             # rms fluctuations
             w_rms[:, i] = w2_fluc_avg**0.5
         if transient_mld:
@@ -323,21 +317,21 @@ else:
         r_profile = r_profile / hor_scale
         w_rms = w_rms/vel_scale
         ############ PLOTTING ############
-        td = title/3600/24
+        td = time[it]/3600/24
         title = f'{td:.2f} days'
         if variations == 'all' or combo_flag:
-            plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
+            plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, vars_exps, Ri_g, Fr_flux, mld/rj, case_names)
         if np.size(exponents)==0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
             if variations == 'strat' or strat_flag:
-                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names)
+                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names)
             if variations == 'flux' or flux_flag:
-                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names)
+                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names)
             if variations == 'MLD' or mld_flag:
-                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names)
+                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names)
         elif np.size(exponents)!=0 and (variations == 'strat' or strat_flag or variations == 'flux' or flux_flag or variations == 'MLD' or mld_flag):
             if variations == 'strat' or strat_flag:
-                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Ri_g, case_names, exponents = exponents)
+                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names, exponents = exponents)
             if variations == 'flux' or flux_flag:
-                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, Fr_flux, case_names, exponents = exponents)
+                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names, exponents = exponents)
             if variations == 'MLD' or mld_flag:
-                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, zf_nd, mld/rj, case_names, exponents = exponents)
+                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)

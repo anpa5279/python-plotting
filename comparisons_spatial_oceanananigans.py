@@ -7,7 +7,7 @@ from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format, plume_vertical_spatial_plot, plume_horizontal_spatial_plot
 from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal, collect_grid, collect_contour_val
 from dense_plume_analysis import plume_tracer_radius
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, hor_line_interpolation
+from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation
 
 # flags for what to plot
 plume_analysis_plot = True
@@ -27,7 +27,7 @@ contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
 
 # selecting cases to compare
-variations = 'strat' # 'MLD', 'flux', 'strat'
+variations = 'MLD' # 'MLD', 'flux', 'strat', 'else'
 if variations == 'strat':
     folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
     case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -52,6 +52,13 @@ elif variations == 'flux':
     dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
     mld = 60 * np.ones(num_cases) 
     Sj = np.array([0.05, 0.1, 0.15, 0.2]) # 
+else:
+    folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60 no noise']
+    case_names =[r'S$_{\text{j}}$ = 0.1', r'S$_{\text{j}}$ = 0.2', r'S$_{\text{j}}$ = 0.1 no noise']
+    num_cases = len(case_names)
+    dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+    mld = 60 * np.ones(num_cases) 
+    Sj = np.array([0.1, 0.2, 0.1]) #
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet'
 fig_folder = os.path.join(universal_folder, 'comparison figures/contour 0.15/')
@@ -62,7 +69,7 @@ for name in folder_names:
 output_folder = universal_folder
 
 # physical parameters
-rj = 10 # m, radius of salinity flux circle at the surface
+rj = 5 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
 rho0 = 1026
 T0 = 25
@@ -93,7 +100,7 @@ plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 
 S_value = Sj
 for n, folder in enumerate(folders):
-    S_value[n], w_value = collect_contour_val(folder, 'temporal_averages.h5')
+    S_value[n], w_value = collect_contour_val(folder, 'interp_temporal_averages.h5')
 S_contour = S_value*contour_bound
 t_save = []
 mld_idx = []
@@ -184,23 +191,20 @@ if plot_1d_y:
 for it in nt:
     u_avg = np.zeros((nx[2], num_cases))
     v_avg = np.zeros((nx[2], num_cases))
-    w_avg = np.zeros((nx[2] + 1, num_cases))
-    wc_avg = np.zeros((nx[2], num_cases))
+    w_avg = np.zeros((nx[2], num_cases))
     T_avg = np.zeros((nx[2], num_cases))
     b_avg = np.zeros((nx[2], num_cases))
     rho_avg = np.zeros((nx[2], num_cases))
     u_rms = np.zeros((nx[2], num_cases))
     v_rms = np.zeros((nx[2], num_cases))
-    w_rms = np.zeros((nx[2] + 1, num_cases))
-    wc_rms = np.zeros((nx[2], num_cases))
+    w_rms = np.zeros((nx[2], num_cases))
     b_rms = np.zeros((nx[2], num_cases))
     u_fluc_avg = np.zeros((nx[2], num_cases))
     v_fluc_avg = np.zeros((nx[2], num_cases))
-    w_fluc_avg = np.zeros((nx[2] + 1, num_cases))
+    w_fluc_avg = np.zeros((nx[2], num_cases))
     uv_fluc_avg = np.zeros((nx[2], num_cases))
     vw_fluc_avg = np.zeros((nx[2], num_cases))
     uw_fluc_avg = np.zeros((nx[2], num_cases))
-    wc_fluc_avg = np.zeros((nx[2], num_cases))
     bu_fluc_avg = np.zeros((nx[2], num_cases))
     bv_fluc_avg = np.zeros((nx[2], num_cases))
     bw_fluc_avg = np.zeros((nx[2], num_cases))
@@ -236,14 +240,15 @@ for it in nt:
             b = g*alpha*(T - T0) - g*beta*(S - S0)
             b_T = g*alpha*(T - T0)
             b_S = - g*beta*(S - S0)
-        # interpolate so all values are from the center, center, center of the grid cell
-        wc = 0.5 * (w[..., :-1] + w[..., 1:])
+        # interpolate velocities to cell centers
+        u = fcc_ccc(u)
+        v = cfc_ccc(v)
+        w = ccf_ccc(w)
 
         # calculate means
         u_avg[:, i] = np.mean(u, axis=(-3, -2))
         v_avg[:, i] = np.mean(v, axis=(-3, -2))
         w_avg[:, i] = np.mean(w, axis=(-3, -2))
-        wc_avg[:, i] = np.mean(wc, axis=(-3, -2))
         b_avg[:, i] = np.mean(b, axis=(-3, -2))
         rho_avg[:, i] = np.mean(rho_total, axis=(-3, -2))
         S_avg[:, i] = np.mean(S, axis=(-3, -2))
@@ -253,7 +258,6 @@ for it in nt:
         u_fluc = u-u_avg[:, i]
         v_fluc = v-v_avg[:, i]
         w_fluc = w-w_avg[:, i]
-        wc_fluc = wc-wc_avg[:, i]
         T_fluc = T - T_avg[:, i]
         S_fluc = S - S_avg[:, i]
 
@@ -261,21 +265,19 @@ for it in nt:
         u_fluc_avg[:, i], u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
         v_fluc_avg[:, i], v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
         w_fluc_avg[:, i], w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-        wc_fluc_avg[:, i], wc2_fluc, wc2_fluc_avg = a2_fluc_mean(wc_fluc)
         uv_fluc, uv_fluc_avg[:, i] = ab_fluc_mean(u, v, u_avg[:, i], v_avg[:, i])
-        uw_fluc, uw_fluc_avg[:, i] = ab_fluc_mean(u, wc, u_avg[:, i], wc_avg[:, i])
-        vw_fluc, vw_fluc_avg[:, i] = ab_fluc_mean(v, wc, v_avg[:, i], wc_avg[:, i])
+        uw_fluc, uw_fluc_avg[:, i] = ab_fluc_mean(u, w, u_avg[:, i], w_avg[:, i])
+        vw_fluc, vw_fluc_avg[:, i] = ab_fluc_mean(v, w, v_avg[:, i], w_avg[:, i])
 
         b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg[:, i], b_avg[:, i])
         bu_fluc, bu_fluc_avg[:, i] = ab_fluc_mean(b, u, b_avg[:, i], u_avg[:, i])
         bv_fluc, bv_fluc_avg[:, i] = ab_fluc_mean(b, v, b_avg[:, i], v_avg[:, i])
-        bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, wc, b_avg[:, i], wc_avg[:, i])
-  
+        bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, w, b_avg[:, i], w_avg[:, i])
+
         # rms fluctuations
         u_rms[:, i] = u2_fluc_avg**0.5
         v_rms[:, i] = v2_fluc_avg**0.5
         w_rms[:, i] = w2_fluc_avg**0.5
-        wc_rms[:, i] = wc2_fluc_avg**0.5
         b_rms[:, i] = b2_fluc_avg**0.5
         
         # dense plume analysis
@@ -284,9 +286,9 @@ for it in nt:
             centery = 0.0
             rp_profile, plume_index = plume_tracer_radius(x, y, nx, S, S_contour[i])
             r_profile[:, i] = rp_profile
-            b_center[:, i] = hor_line_interpolation(b, x, y, centerx, centery)
-            T_fluc_center[:, i] = hor_line_interpolation(T_fluc, x, y, centerx, centery)
-            S_fluc_center[:, i] = hor_line_interpolation(S_fluc, x, y, centerx, centery)
+            b_center[:, i] = z_line_interpolation(b, x, y, centerx, centery)
+            T_fluc_center[:, i] = z_line_interpolation(T_fluc, x, y, centerx, centery)
+            S_fluc_center[:, i] = z_line_interpolation(S_fluc, x, y, centerx, centery)
 
     ############ PLOTTING ############
     ############ NONDIMENSIONALIZATION ############
@@ -312,7 +314,7 @@ for it in nt:
             v_rms = v_rms/vel_scale
             w_rms = w_rms/vel_scale
             #print(f"it = {it}, mld_idx = {mld_idx}, mld = {mld}, dbdz at mld = {dbdz[mld_idx, np.arange(num_cases)]}")
-            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, zf_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{MLD}$)h$_{MLD}^{1/3}$/L$_N^{4/3}$")
+            buoyancy_dir_z_nd = plume_vertical_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, z_nd, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center, ND, z_nd = r"(z - h$_{MLD}$)h$_{MLD}^{1/3}$/L$_N^{4/3}$")
         if plot_1d_y and salinity:
             u_hor = u_hor/vel_scale
             v_hor = v_hor/vel_scale
@@ -326,7 +328,7 @@ for it in nt:
             buoyancy_dir_y_nd = plume_horizontal_spatial_plot(time, it, nd_ranges, color_opt, fig_folder, case_names, name_nd, lx_nd, y_nd, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor, ND)
     else:
         if plot_1d_z:
-            buoyancy_dir_z = plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, zf, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
+            buoyancy_dir_z = plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, T_fluc_center, S_fluc_center)
         if plot_1d_y:
             buoyancy_dir_y = plume_horizontal_spatial_plot(time, it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
 print("All frames created.")

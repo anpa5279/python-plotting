@@ -3,7 +3,7 @@ from scipy.ndimage import center_of_mass
 from scipy.ndimage import binary_fill_holes
 from scipy.spatial import ConvexHull
 
-from data_manipulation_functions import hor_line_interpolation
+from data_manipulation_functions import z_line_interpolation
 ### -------------------------IMPORTANT DEPTHS------------------------- ###
 # mixed layer depth information
 def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
