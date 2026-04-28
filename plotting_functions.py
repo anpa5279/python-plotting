@@ -1,10 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib import cm
 import imageio.v2 as imageio
-import matplotlib.ticker as mticker
 ### ----------------------------------PROFILES------------------------------- ###
 ## stratification profile
 def stratification_profile(z, a0, dadz, mld):
