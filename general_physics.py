@@ -16,7 +16,7 @@ def buoyancy(T, rho0, alpha, T0, g, tracer = []):
 
 # ------------------------- TURBULENT STATISTICS ------------------------- #
 # vertical average fluctuations
-def ab_fluc(a, b, a_avg, b_avg):
+def reynolds_stress(a, b, a_avg, b_avg):
     """
     Computes the mean fluctuations in x and y directions.
 

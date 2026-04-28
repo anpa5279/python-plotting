@@ -282,8 +282,8 @@ else:
 
             # calcualte reynolds stresses
             w_fluc_avg[:, i], w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-            b2_fluc, b2_fluc_avg = ab_fluc(b, b, b_avg[:, i], b_avg[:, i])
-            bw_fluc, bw_fluc_avg[:, i] = ab_fluc(b, w, b_avg[:, i], w_avg[:, i])
+            b2_fluc, b2_fluc_avg = reynolds_stress(b, b, b_avg[:, i], b_avg[:, i])
+            bw_fluc, bw_fluc_avg[:, i] = reynolds_stress(b, w, b_avg[:, i], w_avg[:, i])
 
             if transient_mld and it != 0:
                 dbdz = np.gradient(b_avg[:, i], z[:, i])

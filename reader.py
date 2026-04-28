@@ -84,8 +84,8 @@ class OceananigansData:
 
         return coeffs
     # ------------------------- TIME ------------------------- #
-    def load_time(self, file, stokes=False, closure=True):
-        with h5py.File(file, 'r') as f:
+    def load_time(self, stokes=False, closure=True):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
             ts_group = [g for g in f.keys() if 'timeseries' in g][0]
             t_group = f[ts_group + '/t']
 
@@ -100,8 +100,7 @@ class OceananigansData:
                 u_s = np.array(f["IC/"]["stokes_velocity"])
             else:
                 u_f, u_s = None, None
-            nt = len(t_save)
-        return nt, time, t_save, visc, diff, u_f, u_s
+        return time, t_save, visc, diff, u_f, u_s
     # ------------------------- INTERNAL UTILS ------------------------- #
     def _slice(self, arr, with_halos):
         if with_halos:
@@ -135,9 +134,9 @@ class OceananigansData:
 
             if with_halos:
                 dset = dset[
-                    self.hx[0]:-self.hx[0],
+                    self.hx[2]:-self.hx[2],
                     self.hx[1]:-self.hx[1],
-                    self.hx[2]:-self.hx[2]
+                    self.hx[0]:-self.hx[0]
                 ]
 
             # Wrap as dask array
@@ -152,83 +151,7 @@ class OceananigansData:
             arrays.append(darr)
 
         # stitch along x
-        return da.concatenate(arrays, axis=0)
-    # ------------------------- SINGLE FILE ------------------------- #
-    def read_fields(self, file, t, temperature=True, salinity=False, with_halos=False):
-        fname = os.path.join(self.folder, file)
-
-        with h5py.File(fname, 'r') as f:
-            u = self._read_field(f, 'u', t, with_halos)
-            v = self._read_field(f, 'v', t, with_halos)
-            w = self._read_field(f, 'w', t, with_halos)
-
-            Pdyn = self._read_field(f, 'P_dynamic', t, with_halos)
-            Pstat = self._read_field(f, 'P_static', t, with_halos)
-
-            if temperature:
-                T = self._read_field(f, 'T', t, with_halos)
-
-                if salinity:
-                    S = self._read_field(f, 'S', t, with_halos)
-                    S[S < 1e-15] = 0.0
-                    return u, v, w, T, S, Pdyn, Pstat
-
-                return u, v, w, T, Pdyn, Pstat
-
-            else:
-                b = self._read_field(f, 'b', t, with_halos)
-                return u, v, w, b, Pdyn, Pstat
-
-    # ------------------------- DISTRIBUTED ------------------------- #
-    def read_fields_distributed(self, files, t, temperature=True, salinity=False, with_halos=False):
-        nx = self.nx
-        Nr = self.Nranks
-        chunk = nx[0] // Nr
-
-        # Allocate
-        u = np.zeros((nx[0], nx[1], nx[2]))
-        v = np.zeros_like(u)
-        w = np.zeros((nx[0], nx[1], nx[2] + 1))
-        Pdyn = np.zeros_like(u)
-        Pstat = np.zeros_like(u)
-
-        if temperature:
-            T = np.zeros_like(u)
-            S = np.zeros_like(u) if salinity else None
-        else:
-            b = np.zeros_like(u)
-
-        for r, file in enumerate(files):
-            start = r * chunk
-            end = (r + 1) * chunk
-
-            data = self.read_fields(file, t, temperature, salinity, with_halos)
-
-            u[start:end] = data[0]
-            v[start:end] = data[1]
-            w[start:end] = data[2]
-
-            if temperature:
-                T[start:end] = data[3]
-                if salinity:
-                    S[start:end] = data[4]
-                    Pdyn[start:end] = data[5]
-                    Pstat[start:end] = data[6]
-                else:
-                    Pdyn[start:end] = data[4]
-                    Pstat[start:end] = data[5]
-            else:
-                b[start:end] = data[3]
-                Pdyn[start:end] = data[4]
-                Pstat[start:end] = data[5]
-
-        if temperature:
-            if salinity:
-                return u, v, w, T, S, Pdyn, Pstat
-            return u, v, w, T, Pdyn, Pstat
-        else:
-            return u, v, w, b, Pdyn, Pstat
-
+        return np.array(da.concatenate(arrays, axis=0))
     # ------------------------- TEMPORAL AVERAGES ------------------------- #
     def load_temporal_averages(self, file, temperature=True, salinity=False):
         fname = os.path.join(self.folder, file)

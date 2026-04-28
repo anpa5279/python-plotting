@@ -1,10 +1,14 @@
 import os
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from matplotlib import cm
 import imageio.v2 as imageio
 import matplotlib.ticker as mticker
+
+from matplotlib.lines import Line2D
+from matplotlib import cm
+from fractions import Fraction
 ### ----------------------------------PROFILES------------------------------- ###
 ## stratification profile
 def stratification_profile(z, a0, dadz, mld):
@@ -64,7 +68,7 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
         ranges[key] = np.array(ranges[key])
     return ranges
 
-### -------------------------PLOTTING FUNCTIONS------------------------- ###
+### -------------------------GENERAL SIMULATION PLOTTING FUNCTIONS------------------------- ###
 ## turb statistics
 def turb_stats(time, it, ranges, fig_folder, lx, nx, z, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc, uw_fluc, vw_fluc, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho, plume_info = []):
     outdir = os.path.join(fig_folder, 'turb stats/')
@@ -371,6 +375,7 @@ def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, 
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
+
 ### -------------------------PLOTTING COMPARISON FUNCTIONS------------------------- ###
 ### temporal analysis ###
 def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
@@ -821,6 +826,71 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     print(f"Time step {it + 1} captured: {frame_path}")
 
     return outdir # return the directory where frames are saved for video creation
+## variable vertical plane slice across all cases
+def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, yz=True):
+    if yz: #yz plane
+        ar = lx[1]/lx[2]
+        plane = 'YZ plane'
+    else: #xz plane
+        ar = lx[0]/lx[2]
+        plane = 'XZ plane'
+    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
+    os.makedirs(outdir, exist_ok=True)
+    td = time / 3600 / 24
+    num_cases = len(case_names)
+    ncols = 3
+    nrows = math.ceil(num_cases/ncols)
+    hor_len = 12.0
+    vert_len = hor_len * nrows / (ncols * ar) + 0.75 * nrows + 1.1
+
+    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
+    fig.suptitle(name + ', ' + plane + ', ' + f'{it:.2f} days', fontsize=12)
+    ax = ax.ravel()
+    for n, case_name in enumerate(case_names):
+        im = ax[n].imshow(var[n], vmin=ranges[n][0], vmax=ranges[n][-1], extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
+        ax[n].set_xlabel("x [m]")
+        ax[n].set_ylabel("Depth [m]")
+        ax[n].set_title(case_name)
+        ax[n].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[n], anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
+        cbar.formatter.set_powerlimits((-3, 2))
+        cbar.update_ticks() 
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it} captured: {frame_path}")
+    return outdir
+## variable xy plane slice across all cases
+def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_names, name):
+    plane = 'XY plane'
+    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
+    os.makedirs(outdir, exist_ok=True)
+    td = time / 3600 / 24
+    num_cases = len(case_names)
+    ncols = 3
+    nrows = math.ceil(num_cases/ncols)
+    hor_len = 12.0
+    vert_len = hor_len * nrows / (ncols) + 0.75 * nrows + 1.1
+
+    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
+    fig.suptitle(name + ', ' + plane + ', ' + f'{it:.2f} days', fontsize=12)
+    ax = ax.ravel()
+    for n, case_name in enumerate(case_names):
+        im = ax[n].imshow(var[n], vmin=ranges[n][0], vmax=ranges[n][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower')
+        ax[n].set_xlabel("x [m]")        
+        ax[n].set_ylabel("y [m]")
+        ax[n].set_title(case_name)
+        ax[n].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[n], anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
+        cbar.formatter.set_powerlimits((-3, 2))
+        cbar.update_ticks() 
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it} captured: {frame_path}")
+    return outdir
 
 ### -------------------------PLOTTING DENSE PLUME FUNCTIONS------------------------- ###
 ## buoyancy analysis 

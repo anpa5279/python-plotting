@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from plotting_functions import plot_ranges, plot_momentum_plume, plot_tracer_plume, plume_momentum_analysis, plume_tracer_radius, z_line_interpolation, z_plane_interpolation, xy_plane_interpolation, vert_plane_slices, xy_plane_slices, create_video
 
 from .reader import OceananigansData
-from .general_physics import velocities_to_center, ab_fluc, buoyancy 
+from .general_physics import velocities_to_center, reynolds_stress, buoyancy 
 from .interpolation import xy_plane, velocities_to_center
 # Set up folder and simulation parameters
 folder = ''
@@ -37,7 +37,6 @@ dTdz = float(nums[-2]) # background temperature gradient in K/m #0.01#
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-wp = 0.001
 contour = 0.05 
 # plotting prep
 # font for plotting 
@@ -98,7 +97,7 @@ nx = reader.nx
 dx = reader.dx
 hx = reader.hx
 # load time and equation of state info
-nt, time, t_save, visc, diff, u_f, u_s = reader.load_time(files[0])
+time, t_save, visc, diff, u_f, u_s = reader.load_time(files[0])
 coeffs = reader.load_equation_of_state(files[0], salinity)
 alpha = coeffs['alpha']
 if salinity:
@@ -112,10 +111,8 @@ name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'
 dz_ml = np.abs(z + mld)/mld
 mld_idx = np.where(dz_ml==dz_ml.min())[0][-1]
 
-if video:
-    nt = np.arange(len(t_save))
-else:
-    nt = [-1, ]  # only last time step
+if not video:
+    t_save = [t_save[-1], ]  # only last time step
 X, Y, Z = np.meshgrid(x, y, z)
 
 depth_intrusion_list = []
@@ -180,19 +177,19 @@ for it, t in enumerate(t_save):
     T_fluc = T - T_avg
 
     # calcualte reynolds stresses
-    uw_fluc, uw_fluc_avg = ab_fluc(u, w, u_avg, w_avg)
-    vw_fluc, vw_fluc_avg = ab_fluc(v, w, v_avg, w_avg)
+    uw_fluc, uw_fluc_avg = reynolds_stress(u, w, u_avg, w_avg)
+    vw_fluc, vw_fluc_avg = reynolds_stress(v, w, v_avg, w_avg)
 
-    bu_fluc, bu_fluc_avg = ab_fluc(b, u, b_avg, u_avg)
-    bv_fluc, bv_fluc_avg = ab_fluc(b, v, b_avg, v_avg)
-    bw_fluc, bw_fluc_avg = ab_fluc(b, w, b_avg, w_avg)
+    bu_fluc, bu_fluc_avg = reynolds_stress(b, u, b_avg, u_avg)
+    bv_fluc, bv_fluc_avg = reynolds_stress(b, v, b_avg, v_avg)
+    bw_fluc, bw_fluc_avg = reynolds_stress(b, w, b_avg, w_avg)
     
     if turb_stats_plot or buoyancy_momentum_analysis:
         u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
         v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
         w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-        uv_fluc, uv_fluc_avg = ab_fluc(u, v, u_avg, v_avg)
-        b2_fluc, b2_fluc_avg = ab_fluc(b, b, b_avg, b_avg)
+        uv_fluc, uv_fluc_avg = reynolds_stress(u, v, u_avg, v_avg)
+        b2_fluc, b2_fluc_avg = reynolds_stress(b, b, b_avg, b_avg)
         # rms fluctuations
         u_rms = u2_fluc_avg**0.5
         v_rms = v2_fluc_avg**0.5

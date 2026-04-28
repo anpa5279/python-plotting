@@ -5,20 +5,17 @@ def face_to_center(f, axis, periodic=True):
         pad = [(0, 0)] * f.ndim
         pad[axis] = (0, 1)
         f = np.concatenate([f, np.take(f, [0], axis=axis)], axis=axis)
-
     sl0 = [slice(None)] * f.ndim
     sl1 = [slice(None)] * f.ndim
-
     sl0[axis] = slice(0, -1)
     sl1[axis] = slice(1, None)
-
     return 0.5 * (f[tuple(sl0)] + f[tuple(sl1)])
 
 def velocities_to_center(u, v, w):
     return (
-        face_to_center(u, axis=2),
+        face_to_center(u, axis=0),
         face_to_center(v, axis=1),
-        face_to_center(w, axis=0),
+        face_to_center(w, axis=2, periodic=False),
     )
 
 # ------------------------- GENERAL INTERPOLATION ------------------------- #
