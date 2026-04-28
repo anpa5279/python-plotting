@@ -5,7 +5,7 @@ import matplotlib.colors as mcolors
 from matplotlib import cm
 import imageio.v2 as imageio
 import matplotlib.ticker as mticker
-### -------------------------PROFILES------------------------- ###
+### ----------------------------------PROFILES------------------------------- ###
 ## stratification profile
 def stratification_profile(z, a0, dadz, mld):
     """Returns a linear stratification profile."""
@@ -66,10 +66,10 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
 
 ### -------------------------PLOTTING FUNCTIONS------------------------- ###
 ## turb statistics
-def turb_stats(time, it, ranges, fig_folder, lx, nx, z, zf, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc, uw_fluc, vw_fluc, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho, plume_info = []):
+def turb_stats(time, it, ranges, fig_folder, lx, nx, z, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc, uw_fluc, vw_fluc, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho, plume_info = []):
     outdir = os.path.join(fig_folder, 'turb stats/')
     os.makedirs(outdir, exist_ok=True)
-    td = time[it] / 3600 / 24 # convert time to days
+    td = time / 3600 / 24 # convert time to days
 
     fig = plt.figure()
     fig.set_figheight(8)
@@ -106,7 +106,7 @@ def turb_stats(time, it, ranges, fig_folder, lx, nx, z, zf, mld, u_avg, v_avg, w
     ax1.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')#, label = "MLD")
     ax1.plot(u_avg, z, label=r"$\langle$u$\rangle_{xy}$", color='green')
     ax1.plot(v_avg, z, label=r"$\langle$v$\rangle_{xy}$", color='red')
-    ax1.plot(w_avg, zf, label=r"$\langle$w$\rangle_{xy}$", color='blue')
+    ax1.plot(w_avg, z, label=r"$\langle$w$\rangle_{xy}$", color='blue')
     ax1.set_xlabel("[m/s]")
     ax1.set_ylabel("Depth [m]")
     ax1.set_title('Velocity Profiles')
@@ -119,7 +119,7 @@ def turb_stats(time, it, ranges, fig_folder, lx, nx, z, zf, mld, u_avg, v_avg, w
     ax2.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
     ax2.plot(u_rms, z, label=r"$\langle$u$_{rms}$$\rangle_{xy}$", color='green')
     ax2.plot(v_rms, z, label=r"$\langle$v$_{rms}$$\rangle_{xy}$", color='red')
-    ax2.plot(w_rms, zf, label=r"$\langle$w$_{rms}$$\rangle_{xy}$", color='blue')
+    ax2.plot(w_rms, z, label=r"$\langle$w$_{rms}$$\rangle_{xy}$", color='blue')
     ax2.set_xlabel("[m/s]")
     ax2.set_title("Root Mean Square Velocities")
     ax2.set_ylim(-lx[2], 0)
@@ -184,128 +184,8 @@ def turb_stats(time, it, ranges, fig_folder, lx, nx, z, zf, mld, u_avg, v_avg, w
     plt.close(fig)
 
     return outdir # return the directory where frames are saved for video creation
-## 3D fields 
-def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, w, T = np.array([]), S = np.array([]), b = np.array([])):
-
-    formatter = mticker.ScalarFormatter(useMathText=True)
-    formatter.set_scientific(True)
-    formatter.set_powerlimits((-1, 1))
-
-    outdir = os.path.join(fig_folder, 'oc 3D video frames/')
-    os.makedirs(outdir, exist_ok=True)
-    td = time[it] / 3600 / 24
-
-    levels = 500
-    if S.size != 0:
-        fig, ax = plt.subplots(1, 5, figsize=(15, 4), subplot_kw=dict(projection='3d'))
-        ax1 = ax[0]
-        ax2 = ax[1]
-        ax3 = ax[2]
-        ax4 = ax[3]
-        ax5 = ax[4]
-    else:
-        fig, ax = plt.subplots(1, 4, figsize=(12, 4), subplot_kw=dict(projection='3d'))
-        ax1 = ax[0]
-        ax2 = ax[1]
-        ax3 = ax[2]
-        ax4 = ax[3]
-
-    fig.tight_layout()
-    fig.suptitle(f'{td:.2f} days', fontsize=12)
-    # --- 3D Plots ---
-    # u velocity
-    norm = mcolors.Normalize(vmin=ranges['u'][0], vmax=ranges['u'][-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-    ax1.set(xlim=[np.min(X[:, :, idx_loc]), np.max(X[:, :, idx_loc])], ylim=[np.min(Y[:, :, idx_loc]), np.max(Y[:, :, idx_loc])], zlim=[-lx[2], 0])
-    ax1.imshow(X[:, :, -1], Y[:, :, -1], u[:, :, -1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='z', offset=0, cmap='RdBu_r')
-    ax1.imshow(X[-1, :, :], u[-1, :, :], Z[-1, :, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='y', offset=0, cmap='RdBu_r')
-    ax1.imshow(u[:, 0, :], Y[:, 0, :], Z[:, 0, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='x', offset=lx[0], cmap='RdBu_r')
-    ax1.set_title('u')
-    ax1.set(xlabel="y", ylabel="x", zlabel="z")
-    ax1.set_aspect('equal')
-    cbar = fig.colorbar(im, ax = ax1, label='[m/s]', location='bottom', orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
-    # v velocity
-    norm = mcolors.Normalize(vmin=ranges['v'][0], vmax=ranges['v'][-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-    ax2.set(xlim=[np.min(X[:, :, idx_loc]), np.max(X[:, :, idx_loc])], ylim=[np.min(Y[:, :, idx_loc]), np.max(Y[:, :, idx_loc])], zlim=[-lx[2], 0])
-    ax2.imshow(X[:, :, -1], Y[:, :, -1], v[:, :, -1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='z', offset=0, cmap='RdBu_r')
-    ax2.imshow(X[-1, :, :], v[-1, :, :], Z[-1, :, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='y', offset=0, cmap='RdBu_r')
-    ax2.imshow(v[:, 0, :], Y[:, 0, :], Z[:, 0, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='x', offset=lx[0], cmap='RdBu_r')
-    ax2.set_title('v')
-    ax2.set(xlabel="y", ylabel="x", zlabel="z")
-    ax2.set_aspect('equal')
-    cbar = fig.colorbar(im, ax = ax2, label='[m/s]', location='bottom', orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
-    # w velocity
-    norm = mcolors.Normalize(vmin=ranges['w'][0], vmax=ranges['w'][-1])
-    mappable = cm.ScalarMappable(norm=norm, cmap='RdBu_r')
-    ax3.set(xlim=[np.min(X[:, :, idx_loc]), np.max(X[:, :, idx_loc])], ylim=[np.min(Y[:, :, idx_loc]), np.max(Y[:, :, idx_loc])], zlim=[-lx[2], 0])
-    ax3.imshow(Xf[:, :, -1], Yf[:, :, -2], w[:, :, -2], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='z', offset=0, cmap='RdBu_r')
-    ax3.imshow(Xf[-1, :, :], w[-1, :, :], Zf[-1, :, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='y', offset=0, cmap='RdBu_r')
-    ax3.imshow(w[:, 0, :], Yf[:, 0, :], Zf[:, 0, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='x', offset=lx[0], cmap='RdBu_r')
-    ax3.set_title('w')
-    ax3.set(xlabel="y", ylabel="x", zlabel="z")
-    ax3.set_aspect('equal')
-    cbar = fig.colorbar(im, ax = ax3, label='[m/s]', location='bottom', orientation='horizontal', shrink=0.75)
-    cbar.formatter.set_powerlimits((-3, 2))
-    cbar.update_ticks()
-
-    if T.size != 0:
-        # temperature field
-        norm = mcolors.Normalize(vmin=ranges['T'][0], vmax=ranges['T'][-1])
-        mappable = cm.ScalarMappable(norm=norm)
-        ax4.set(xlim=[np.min(X[:, :, idx_loc]), np.max(X[:, :, idx_loc])], ylim=[np.min(Y[:, :, idx_loc]), np.max(Y[:, :, idx_loc])], zlim=[-lx[2], 0])
-        ax4.imshow(X[:, :, -1], Y[:, :, -1], T[:, :, -1], 50, zdir='z', offset=0)
-        ax4.imshow(X[-1, :, :], T[-1, :, :], Z[-1, :, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='y', offset=0)
-        ax4.imshow(T[:, 0, :], Y[:, 0, :], Z[:, 0, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='x', offset=lx[0])
-        ax4.set_title(r"Temperature")
-        ax4.set(xlabel="y", ylabel="x", zlabel="z")
-        ax4.set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax4, label=r"$^\circ$C", location='bottom', orientation='horizontal', shrink=0.75)
-
-    else:
-        # buoyancy field
-        norm = mcolors.Normalize(vmin=ranges['b'][0], vmax=ranges['b'][-1])
-        mappable = cm.ScalarMappable(norm=norm)
-        ax4.set(xlim=[np.min(X[:, :, idx_loc]), np.max(X[:, :, idx_loc])], ylim=[np.min(Y[:, :, idx_loc]), np.max(Y[:, :, idx_loc])], zlim=[-lx[2], 0])
-        ax4.imshow(X[:, :, -1], Y[:, :, -1], b[:, :, -1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='z', offset=0)
-        ax4.imshow(X[-1, :, :], b[-1, :, :], Z[-1, :, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='y', offset=0)
-        ax4.imshow(b[:, 0, :], Y[:, 0, :], Z[:, 0, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='x', offset=lx[0])
-        ax4.set_title(r"Buoyancy")
-        ax4.set(xlabel="y", ylabel="x", zlabel="z")
-        ax4.set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax4, label=r"m/s$^{2}$", location='bottom', orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks()
-    
-    if S.size != 0:
-        norm = mcolors.Normalize(vmin=ranges['S'][0], vmax=ranges['S'][-1])
-        mappable = cm.ScalarMappable(norm=norm)
-        ax5.set(xlim=[np.min(X[:, :, idx_loc]), np.max(X[:, :, idx_loc])], ylim=[np.min(Y[:, :, idx_loc]), np.max(Y[:, :, idx_loc])], zlim=[-lx[2], 0])
-        ax5.imshow(X[:, :, -1], Y[:, :, -1], S[:, :, -1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='z', offset=0)
-        ax5.imshow(X[-1, :, :], S[-1, :, :], Z[-1, :, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='y', offset=0)
-        ax5.imshow(S[:, 0, :], Y[:, 0, :], Z[:, 0, :], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower',zdir='x', offset=lx[0])
-        ax5.set_title(r"Tracer")
-        ax5.set(xlabel="y", ylabel="x", zlabel="z")
-        ax5.set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax5, location='bottom', orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks()
-
-    # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"oc_frame_{it:04d}.png")
-    plt.tight_layout()
-    plt.savefig(frame_path)
-    plt.close(fig)
-    print(f"Time step {it + 1} captured: {frame_path}")
-    return outdir # return the directory where frames are saved for video creation
 ## vertical plane slices 
-def vert_plane_slices(time, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
+def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
     if yz: #yz plane
         ar = lx[1]/lx[2]
         plane = 'YZ plane'
@@ -316,7 +196,7 @@ def vert_plane_slices(time, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_p
         hor = x
     outdir = os.path.join(fig_folder, 'vertical plane slices/', plane)
     os.makedirs(outdir, exist_ok=True)
-    td = time[it] / 3600 / 24
+    td = time / 3600 / 24
     ncols = 4
     nrows = 2
     hor_len = 12.0
@@ -402,10 +282,10 @@ def vert_plane_slices(time, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_p
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## surface plane slices 
-def xy_plane_slices(time, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T = np.array([]), S = np.array([])):
+def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T = np.array([]), S = np.array([])):
     outdir = os.path.join(fig_folder, 'horizontal plane slices/', 'XY plane slice at ' + plane)
     os.makedirs(outdir, exist_ok=True)
-    td = time[it] / 3600 / 24
+    td = time / 3600 / 24
 
     fig, ax = plt.subplots(2, 4, figsize=(12, 8.5))
     fig.tight_layout()
@@ -491,7 +371,6 @@ def xy_plane_slices(time, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
-
 
 ### -------------------------SAVING FRAMES AND MAKING VIDEOS------------------------- ###
 def create_video(outdir, fig_folder, name, plot_type):
