@@ -3,11 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from plotting_functions import plot_ranges, create_video
-from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
+
 from plotting_comparisons import plot_format, plume_vertical_spatial_plot, plume_horizontal_spatial_plot
-from data_collection_functions import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal, collect_grid, collect_contour_val
-from dense_plume_analysis import plume_tracer_radius
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation, xy_line_interpolation
+from reader import collect_time_outputs, collect_fields, collect_fields_distributed, collect_temp_and_sal, collect_grid, collect_contour_val
+from dense_plume import plume_tracer_radius
+from interpolation import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation, xy_line_interpolation
 
 # flags for what to plot
 plume_analysis_plot = True
@@ -154,7 +154,7 @@ if plot_1d_y:
     hor_str = ' '.join([f"{depth} m" for depth in loc_z])
     name_xy = name_uni + f"at z = {hor_str}"
 
-for it in nt:
+for it, t in enumerate(t_save):
     u_avg = []
     v_avg = []
     w_avg = []
@@ -237,14 +237,14 @@ for it in nt:
         u_fluc_avg_temp, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
         v_fluc_avg_temp, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
         w_fluc_avg_temp, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-        uv_fluc, uv_fluc_avg_temp = ab_fluc_mean(u, v, u_avg[i], v_avg[i])
-        uw_fluc, uw_fluc_avg = ab_fluc_mean(u, w, u_avg[i], w_avg[i])
-        vw_fluc, vw_fluc_avg = ab_fluc_mean(v, w, v_avg[i], w_avg[i])
+        uv_fluc, uv_fluc_avg_temp = ab_fluc(u, v, u_avg[i], v_avg[i])
+        uw_fluc, uw_fluc_avg = ab_fluc(u, w, u_avg[i], w_avg[i])
+        vw_fluc, vw_fluc_avg = ab_fluc(v, w, v_avg[i], w_avg[i])
 
-        b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg[i], b_avg[i])
-        bu_fluc, bu_fluc_avg_temp = ab_fluc_mean(b, u, b_avg[i], u_avg[i])
-        bv_fluc, bv_fluc_avg_temp = ab_fluc_mean(b, v, b_avg[i], v_avg[i])
-        bw_fluc, bw_fluc_avg_temp = ab_fluc_mean(b, w, b_avg[i], w_avg[i])
+        b2_fluc, b2_fluc_avg = ab_fluc(b, b, b_avg[i], b_avg[i])
+        bu_fluc, bu_fluc_avg_temp = ab_fluc(b, u, b_avg[i], u_avg[i])
+        bv_fluc, bv_fluc_avg_temp = ab_fluc(b, v, b_avg[i], v_avg[i])
+        bw_fluc, bw_fluc_avg_temp = ab_fluc(b, w, b_avg[i], w_avg[i])
 
         bu_fluc_avg.append(bu_fluc_avg_temp)
         bv_fluc_avg.append(bv_fluc_avg_temp)

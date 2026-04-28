@@ -3,14 +3,13 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 
-from plotting_functions import plot_ranges, turb_stats, plot_3d_fields, vert_plane_slices, xy_plane_slices, create_video
-from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
-from dense_plume_analysis import mld_info, plume_momentum_analysis, plume_tracer_radius, neutral_layer
-from plotting_dense_plume import buoyancy_analysis, plot_tracer_plume, plot_momentum_plume
-from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, writing_grid, collect_grid, collect_contour_val
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, xy_plane_interpolation, z_line_interpolation, z_plane_interpolation
+from plotting_functions import plot_ranges, plot_momentum_plume, plot_tracer_plume, plume_momentum_analysis, plume_tracer_radius, z_line_interpolation, z_plane_interpolation, xy_plane_interpolation, vert_plane_slices, xy_plane_slices, create_video
+
+from .reader import OceananigansData
+from .general_physics import velocities_to_center, ab_fluc, buoyancy 
+from .interpolation import xy_plane, velocities_to_center
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.2 dTdz = 0.01 MLD = 60'
+folder = ''
 output_folder = os.path.join(folder, "plotting outputs") 
 name = "interp"
 
@@ -24,7 +23,6 @@ write_grid = False
 # flags for what to plot
 video = True
 
-video_3d_flag = False
 turb_stats_plot = False
 vert_slice_plot = True
 xy_plot = True
@@ -39,11 +37,8 @@ dTdz = float(nums[-2]) # background temperature gradient in K/m #0.01#
 rho0 = 1026
 T0 = 25 
 S0 = 0 
-Sj = float(nums[-3]) # salinity of the source #0.1#
 wp = 0.001
-F_s = Sj*wp
-S_value, w_value = collect_contour_val(folder, 'interp_temporal_averages.h5')
-S_contour = 0.05 * S_value 
+contour = 0.05 
 # plotting prep
 # font for plotting 
 plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
@@ -57,7 +52,7 @@ plt.rcParams['mathtext.rm'] = 'DejaVu Serif'
 plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
 plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 
-ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = dTdz, Sj = Sj)
+ranges = plot_ranges(lz = 96, rho0 = rho0, T0 = T0, dTdz = dTdz)
 # plot ranges
 ranges['w'] = [-2*10**(-2), 2*10**(-2)]
 ranges['w_fluc'] = [-2*10**(-2), 2*10**(-2)]
@@ -86,43 +81,30 @@ if xy_plot and salinity:
     xy_ranges['S'] = [0.0, 0.01]
     xy_ranges['u'] = [-6*10**(-3), 6*10**(-3)]
     xy_ranges['v'] = xy_ranges['u']
-
+# ------------------------- GENERAL MODEL INFORMATION ------------------------- #
 # List JLD2 files
-dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-Nranks = len(dtn)
+files = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
+Nranks = len(files)
 if Nranks > 1:
-    dtn = []
+    files = []
     for file in np.arange(Nranks):
-        dtn.append(f'fields_rank{file}.jld2')
-if write_grid:
-    if Nranks > 1: 
-        nx = np.array([48, 48, 48])
-        lx = np.array([320.0, 320.0, 96.0])
-        hx = np.array([3, 3, 3]) 
-        x, y, z, zf = writing_grid(folder, dtn[0], nx, lx, hx)
-    else:
-        nx = np.array([48, 48, 48])
-        lx = np.array([320.0, 320.0, 96.0])
-        hx = np.array([3, 3, 3]) 
-        x, y, z, zf = writing_grid(folder, dtn[0], nx, lx, hx)
-    dtn = [f for f in os.listdir(folder) if (f.endswith('.jld2') and f.startswith('fields'))]
-    x = x[hx[0]:-hx[0]]
-    y = y[hx[1]:-hx[1]]
-    z = z[hx[2]:-hx[2]]
-    zf = zf[hx[2]:-hx[2]]
-elif not write_grid:
-    nx, hx, lx, x, y, z, zf = collect_grid(folder, dtn, Nranks)
-# Read model information
-fid = os.path.join(folder, dtn[0])
-time, t_save, visc, diff, u_f, u_s = collect_time_outputs(fid, stokes, closure)
+        files.append(f'fields_rank{file}.jld2')
 
+reader = OceananigansData(folder, files, Nranks)
+# grid info
+reader.load_grid()
+x, y, z = reader.x, reader.y, reader.z
+nx = reader.nx
+dx = reader.dx
+hx = reader.hx
+# load time and equation of state info
+nt, time, t_save, visc, diff, u_f, u_s = reader.load_time(files[0])
+coeffs = reader.load_equation_of_state(files[0], salinity)
+alpha = coeffs['alpha']
 if salinity:
-    alpha, beta = collect_temp_and_sal(fid, salinity)
-else:
-    alpha = collect_temp_and_sal(fid, salinity)
-
-w_mag_tol = np.floor(np.log10(np.abs(w_value)))
-dbdz_tol = (5.0*10**(-7)) #dTdz*alpha*g
+    beta = coeffs['beta']
+    S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
+    S_contour = S_value*contour
 
 name+=f'Nx{nx[0]}_Ny{nx[1]}_Nz{nx[2]}'
 
@@ -135,7 +117,6 @@ if video:
 else:
     nt = [-1, ]  # only last time step
 X, Y, Z = np.meshgrid(x, y, z)
-Xf, Yf, Zf = np.meshgrid(x, y, zf)
 
 depth_intrusion_list = []
 depth_neutral_list = []
@@ -152,16 +133,16 @@ if buoyancy_analysis_plot or turb_stats_plot or buoyancy_momentum_analysis:
     rho_perturbed_mld_list = []
     l_scale_list = []
     rp_list = []
-for it in nt:
+for it, t in enumerate(t_save):
     # Load data from files
-    if not salinity:
-        u, v, w, T, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
-    else:
-        u, v, w, T, S, Pdynamic, Pstatic = collect_fields_distributed(Nranks, folder, dtn, t_save[it], hx, nx, True, salinity, with_halos)
+    T = reader.lazy_field('T', t)
+    u = reader.lazy_field('u', t)
+    v = reader.lazy_field('v', t)
+    w = reader.lazy_field('w', t)
+    if salinity:
+        S = reader.lazy_field('S', t)
     # interpolate velocities to cell centers
-    u = fcc_ccc(u)
-    v = cfc_ccc(v)
-    w = ccf_ccc(w)
+    u, v, w = velocities_to_center(u, v, w)
     # convert temperature and salinity to buoyancy 
     if not salinity:
         rho = rho0 - rho0 * alpha * (T - T0)
@@ -199,19 +180,19 @@ for it in nt:
     T_fluc = T - T_avg
 
     # calcualte reynolds stresses
-    uw_fluc, uw_fluc_avg = ab_fluc_mean(u, w, u_avg, w_avg)
-    vw_fluc, vw_fluc_avg = ab_fluc_mean(v, w, v_avg, w_avg)
+    uw_fluc, uw_fluc_avg = ab_fluc(u, w, u_avg, w_avg)
+    vw_fluc, vw_fluc_avg = ab_fluc(v, w, v_avg, w_avg)
 
-    bu_fluc, bu_fluc_avg = ab_fluc_mean(b, u, b_avg, u_avg)
-    bv_fluc, bv_fluc_avg = ab_fluc_mean(b, v, b_avg, v_avg)
-    bw_fluc, bw_fluc_avg = ab_fluc_mean(b, w, b_avg, w_avg)
+    bu_fluc, bu_fluc_avg = ab_fluc(b, u, b_avg, u_avg)
+    bv_fluc, bv_fluc_avg = ab_fluc(b, v, b_avg, v_avg)
+    bw_fluc, bw_fluc_avg = ab_fluc(b, w, b_avg, w_avg)
     
     if turb_stats_plot or buoyancy_momentum_analysis:
         u_fluc_avg, u2_fluc, u2_fluc_avg = a2_fluc_mean(u_fluc)
         v_fluc_avg, v2_fluc, v2_fluc_avg = a2_fluc_mean(v_fluc)
         w_fluc_avg, w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-        uv_fluc, uv_fluc_avg = ab_fluc_mean(u, v, u_avg, v_avg)
-        b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg, b_avg)
+        uv_fluc, uv_fluc_avg = ab_fluc(u, v, u_avg, v_avg)
+        b2_fluc, b2_fluc_avg = ab_fluc(b, b, b_avg, b_avg)
         # rms fluctuations
         u_rms = u2_fluc_avg**0.5
         v_rms = v2_fluc_avg**0.5
@@ -280,8 +261,6 @@ for it in nt:
             turb_stat_dir = turb_stats(time, it, ranges, output_folder, lx, nx, z, zf, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg, plume_info)
         else:
             turb_stat_dir = turb_stats(time, it, ranges, output_folder, lx, nx, z, zf, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg)
-    if video_3d_flag:
-        video_3d_dir = plot_3d_fields(time, it, ranges, output_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, w, T, S)
     if vert_slice_plot:
         x_loc = 0.0
         u_yz = z_plane_interpolation(u, x, x_loc)
@@ -320,8 +299,6 @@ print("All frames created.")
 if video:
     if turb_stats_plot:
         create_video(turb_stat_dir, output_folder, name, 'turbulence_statistics')
-    if video_3d_flag:
-        create_video(video_3d_dir, output_folder, name, '3D_fields')
     if vert_slice_plot:
         create_video(plane_slices_dir, output_folder, name, 'vert_plane_slices')
     if xy_plot:

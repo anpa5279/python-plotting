@@ -1,9 +1,8 @@
 import numpy as np
-from scipy.ndimage import center_of_mass
 from scipy.ndimage import binary_fill_holes
 from scipy.spatial import ConvexHull
 
-from data_manipulation_functions import z_line_interpolation
+from interpolation import interp1d_axis
 ### -------------------------IMPORTANT DEPTHS------------------------- ###
 # mixed layer depth information
 def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
@@ -14,18 +13,6 @@ def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
     mld_bw_fluc = bw_fluc[mld_idx]
     mld_rho_perturbed = rho_perturbed[mld_idx]
     return mld_idx, mld_w, mld_bw_fluc, mld_rho_perturbed
-# depth at which plume is neutrally buoyant
-def neutral_layer(z, bw_fluc, plume_index):
-    i_idx, j_idx, k_idx = plume_index
-    values = bw_fluc[i_idx, j_idx, k_idx]
-    # sum per k
-    sum_per_k = np.bincount(k_idx, weights=values)
-    # count per k
-    count_per_k = np.bincount(k_idx)
-    # average per k
-    bw_fluc_plume_avg = sum_per_k / count_per_k
-    bw_fluc_plume_avg[np.isnan(bw_fluc_plume_avg)] = 0
-    return z[np.where(np.diff(np.sign(bw_fluc_plume_avg))>0)][-1]
 
 ### -------------------------TRACER CALCULATIONS------------------------- ###
 def plume_tracer_radius(x, y, nx, tracer, tracer_contour):

@@ -1,12 +1,11 @@
 import os
 import numpy as np
 
-from general_analysis_functions import a2_fluc_mean, ab_fluc_mean
 from plotting_comparisons import plot_format
-from data_collection_functions import collect_time_outputs, collect_fields_distributed, collect_temp_and_sal, collect_contour_val, collect_temporal_averages, collect_plume_stats, collect_grid
-from dense_plume_analysis import plume_tracer_radius
-from dimensional_analysis_functions import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents, plot_combo_exponents
-from data_manipulation_functions import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation
+from .reader import OceananigansData
+from dense_plume import plume_tracer_radius
+from ND_plotting import plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents, plot_combo_exponents
+from interpolation import fcc_ccc, cfc_ccc, ccf_ccc, z_line_interpolation
 
 # output name 
 contour_bound = 0.05
@@ -240,7 +239,7 @@ if temporal_averages_flag:
         if variations == 'MLD' or mld_flag:
             plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)
 else:
-    for it in nt:
+    for it, t in enumerate(t_save):
         u_avg = np.zeros((nx[2], num_cases))
         v_avg = np.zeros((nx[2], num_cases))
         w_avg = np.zeros((nx[2], num_cases))
@@ -283,8 +282,8 @@ else:
 
             # calcualte reynolds stresses
             w_fluc_avg[:, i], w2_fluc, w2_fluc_avg = a2_fluc_mean(w_fluc)
-            b2_fluc, b2_fluc_avg = ab_fluc_mean(b, b, b_avg[:, i], b_avg[:, i])
-            bw_fluc, bw_fluc_avg[:, i] = ab_fluc_mean(b, w, b_avg[:, i], w_avg[:, i])
+            b2_fluc, b2_fluc_avg = ab_fluc(b, b, b_avg[:, i], b_avg[:, i])
+            bw_fluc, bw_fluc_avg[:, i] = ab_fluc(b, w, b_avg[:, i], w_avg[:, i])
 
             if transient_mld and it != 0:
                 dbdz = np.gradient(b_avg[:, i], z[:, i])
