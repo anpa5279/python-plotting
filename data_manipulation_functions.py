@@ -1,6 +1,6 @@
 import numpy as np
 
-### -------------------------INTERPOLATION------------------------- ###
+### -------------------------FIELD INTERPOLATION------------------------- ###
 ## interpolation for center of grid
 def fcc_ccc(f, x = np.array([]), x_want = np.array([]), periodic = True):
     """ 
@@ -45,6 +45,7 @@ def ccf_ccc(f, z = np.array([]), z_want = np.array([])):
             frac = (f[:, :, i+1]-f[:, :, i])/(z[i+1] - z[i])
             f[:, :, i] = f[:, :, i] + frac*(z_want[i] - z[i])
         return f
+### -------------------------PLANE SLICE INTERPOLATION------------------------- ###
 # interpolation to a certain plane slice
 def xy_plane_interpolation(f, z, z_desired): # which z location for the xy plane slice?
     """
@@ -104,7 +105,8 @@ def z_plane_interpolation(f, hor, hor_desired, planeslice='yz'): # which x or y 
             frac = (f[:, max_idx, :]-f[:, min_idx, :])/(hor[max_idx] - hor[min_idx])
             f_interp = f[:, max_idx, :] + frac *(hor_desired - hor[max_idx])
     return f_interp
-# intperpolation to a vertical line
+### -------------------------LINE INTERPOLATION------------------------- ###
+# interpolation to a vertical line
 def z_line_interpolation(f, x, y, x_desired, y_desired):
     """
     f = 3D array of the variable to be interpolated
@@ -146,6 +148,58 @@ def z_line_interpolation(f, x, y, x_desired, y_desired):
         fracy = (f[maxx_idx, maxy_idx, :]-f[miny_idx, maxx_idx, :])/(y[maxy_idx] - y[miny_idx])
         f_interp = f[maxx_idx, maxy_idx, :] + fracy *(y_desired - y[maxy_idx]) + fracx[maxy_idx, :] *(x_desired - x[maxx_idx])
     return f_interp
+def xy_line_interpolation(f, hor, z, hor_desired, z_desired, axis = 'y'): # which z location for the vertical line slice?
+    """
+    f = 3D array of the variable to be interpolated
+    z = 1D array of the x coordinates corresponding to f
+    y = 1D array of the y coordinates corresponding to f
+    x_desired = the x location at which we want to find the corresponding vertical line of f
+    y_desired = the y location at which we want to find the corresponding vertical line
+    """
+    # getting mld index location 
+    dhor = np.abs(hor - hor_desired)
+    dz = np.abs(z - z_desired)
+    if dhor.min() == 0:
+        maxhor_idx = np.where(dhor==0)[0][0]
+        frachor = np.zeros(f.shape[1:])
+    else:
+        pos_loc_idx = np.where(dhor==dhor.min())[0]
+        if pos_loc_idx.size > 1:
+            pos_loc_idx_1 = pos_loc_idx[1]
+            pos_loc_idx = pos_loc_idx[0]
+        else:
+            pos_loc_idx = pos_loc_idx[0]
+            pos_loc_idx_1 = np.where(dhor==np.min([dhor[pos_loc_idx - 1], dhor[pos_loc_idx + 1]]))[0][0]
+        minhor_idx = np.min([pos_loc_idx, pos_loc_idx_1])
+        maxhor_idx = np.max([pos_loc_idx, pos_loc_idx_1])
+        if axis == 'y':
+            frachor = (f[:, maxhor_idx, :]-f[minhor_idx, :, :])/(hor[maxhor_idx] - hor[minhor_idx])
+        else:
+            frachor = (f[maxhor_idx, :, :]-f[minhor_idx, :, :])/(hor[maxhor_idx] - hor[minhor_idx])
+    if dz.min() == 0:
+        maxz_idx = np.where(dz==0)[0][0]
+        if axis == 'y':
+            f_interp = f[:, maxhor_idx, maxz_idx] + frachor[:, maxz_idx] * (hor_desired - hor[maxhor_idx])
+        else:
+            f_interp = f[maxhor_idx, :, maxz_idx] + frachor[maxhor_idx, maxz_idx] * (hor_desired - hor[maxhor_idx])
+    else:
+        pos_loc_idx = np.where(dz==dz.min())[0]
+        if pos_loc_idx.size > 1:
+            pos_loc_idx_1 = pos_loc_idx[1]
+            pos_loc_idx = pos_loc_idx[0]
+        else:
+            pos_loc_idx = pos_loc_idx[0]
+            pos_loc_idx_1 = np.where(dz==np.min([dz[pos_loc_idx - 1], dz[pos_loc_idx + 1]]))[0][0]
+        minz_idx = np.min([pos_loc_idx, pos_loc_idx_1])
+        maxz_idx = np.max([pos_loc_idx, pos_loc_idx_1])
+        if axis == 'y':
+            fracz = (f[:, maxhor_idx, maxz_idx]-f[:, minhor_idx, minz_idx])/(z[maxz_idx] - z[minz_idx])
+            f_interp = f[:, maxhor_idx, maxz_idx] + fracz *(z_desired - z[maxz_idx]) + frachor[maxhor_idx, maxz_idx] *(hor_desired - hor[maxhor_idx])
+        else:
+            fracz = (f[maxz_idx, :, :]-f[minz_idx, :, :])/(z[maxz_idx] - z[minz_idx])
+            f_interp = f[maxz_idx, :, :] + fracz *(z_desired - z[maxz_idx]) + frachor[maxhor_idx, maxz_idx] *(hor_desired - hor[maxhor_idx])
+    return f_interp
+### -------------------------POINT INTERPOLATION------------------------- ###
 # find desired location based on wanted value
 def vert_point_interpolation(f, f_desired, z):
     """

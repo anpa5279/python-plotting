@@ -305,7 +305,7 @@ def plot_3d_fields(time, it, ranges, fig_folder, lx, X, Y, Z, Xf, Yf, Zf, u, v, 
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## vertical plane slices 
-def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
+def vert_plane_slices(time, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
     if yz: #yz plane
         ar = lx[1]/lx[2]
         plane = 'YZ plane'
@@ -402,7 +402,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, r
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## surface plane slices 
-def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T = np.array([]), S = np.array([])):
+def xy_plane_slices(time, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T = np.array([]), S = np.array([])):
     outdir = os.path.join(fig_folder, 'horizontal plane slices/', 'XY plane slice at ' + plane)
     os.makedirs(outdir, exist_ok=True)
     td = time[it] / 3600 / 24
