@@ -4,10 +4,8 @@ import h5py
 import dask.array as da
 
 class OceananigansData:
-    def __init__(self, folder, files, Nranks):
+    def __init__(self, folder, name = 'fields'):
         self.folder = folder
-        self.files = files
-        self.Nranks = Nranks
 
         # Grid-related (set by load_grid)
         self.nx = None
@@ -21,9 +19,28 @@ class OceananigansData:
         self.z = None
         self.zf = None
 
+        # Time-related (set by load_time)
+        self.nt = None
+        self.time = None
+        self.t_save = None
+
+        # possible additional paraemters
+        self.f = None           # coriolis
+        self.visc = None        # viscosity
+        self.diff = None        # diffusivity
+        self.u_s = None         # stokes velocity
+        self.u_f = None         # friction velocity
+
         # contour cache for statistics
         self._contour_cache = {}
 
+        # ensuring file order
+        self.files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') and f.startswith(f'{name}'))]
+        self.Nranks = len(self.files)
+        if self.Nranks > 1:
+            self.files = []
+            for file in np.arange(self.Nranks):
+                self.files.append(f'{name}_rank{file}.jld2')
     # ------------------------- GRID ------------------------- #
     def load_grid(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -64,17 +81,39 @@ class OceananigansData:
                 with h5py.File(os.path.join(self.folder, file), 'r') as f:
                     self.x[i*xrange:(i+1)*xrange] = \
                         f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
-    # ------------------------- EQUATION OF STATE ------------------------- #
-    def load_equation_of_state(self, file=None, salinity=False):
+    # ------------------------- TIME ------------------------- #
+    def load_time(self):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            ts_group = [g for g in f.keys() if 'timeseries' in g][0]
+            t_group = f[ts_group + '/t']
+
+            self.t_save = np.array(sorted(float(k) for k in t_group.keys()))
+            self.time = np.array([t_group[str(int(k))][()] for k in self.t_save])
+
+            self.nt = len(self.time)
+    # ------------------------- ADDITIONAL PARAMETERS ------------------------- #
+    def load_coriolis(self):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            self.f = f['serialized/coriolis'][()]
+    def load_viscosity(self):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            self.visc = f['closure/ν'][()]
+    def load_diffusivity(self):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            self.diff = f['closure/κ'][()]
+    def load_stokes_velocity(self):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            self.u_s = f['IC/stokes_velocity'][()]
+    def load_friction_velocity(self):
+        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            self.u_f = f['IC/friction_velocity'][()]
+    def load_equation_of_state(self, salinity=False):
         """
         Load thermal expansion (alpha) and optionally
         haline contraction (beta).
         """
 
-        if file is None:
-            file = self.files[0]
-
-        fname = os.path.join(self.folder, file)
+        fname = os.path.join(self.folder, self.files[0])
 
         with h5py.File(fname, 'r') as f:
             coeffs = {'alpha': f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]}
@@ -83,24 +122,6 @@ class OceananigansData:
                 coeffs['beta'] = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
 
         return coeffs
-    # ------------------------- TIME ------------------------- #
-    def load_time(self, stokes=False, closure=True):
-        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
-            ts_group = [g for g in f.keys() if 'timeseries' in g][0]
-            t_group = f[ts_group + '/t']
-
-            t_save = np.array(sorted(float(k) for k in t_group.keys()))
-            time = np.array([t_group[str(int(k))][()] for k in t_save])
-
-            visc = f['closure/ν'][()] if closure else 0.0
-            diff = f['closure/κ'] if closure else 0.0
-
-            if stokes:
-                u_f = np.array(f["IC/"]["friction_velocity"])
-                u_s = np.array(f["IC/"]["stokes_velocity"])
-            else:
-                u_f, u_s = None, None
-        return time, t_save, visc, diff, u_f, u_s
     # ------------------------- INTERNAL UTILS ------------------------- #
     def _slice(self, arr, with_halos):
         if with_halos:
@@ -153,7 +174,7 @@ class OceananigansData:
         # stitch along x
         return np.array(da.concatenate(arrays, axis=0))
     # ------------------------- TEMPORAL AVERAGES ------------------------- #
-    def load_temporal_averages(self, file, temperature=True, salinity=False):
+    def load_temporal_averages(self, file, temperature=True, salinity=False, contour_bound = 0.05):
         fname = os.path.join(self.folder, file)
 
         with h5py.File(fname, 'r') as f:
@@ -182,13 +203,12 @@ class OceananigansData:
                     'S_avg': f['1D temporal averages/S'][()],
                     'S_fluc_avg': f['1D temporal averages/S\''][()],
                 }
-                contours = {
-                    'S_contour': f['plume statistics/']
-                }
+                r_plume = {'tracer radius': f[f'plume statistics/contour {contour_bound}/plume tracer radius with depth'][()]}
             else:
                 S = None
+                r_plume = None
 
-        return contours, rms, bw, T, S
+        return rms, bw, T, S, r_plume
     def load_contour_temporal_averages(self, file):
         """
         Loads contour temporal averages (cached).
@@ -206,3 +226,28 @@ class OceananigansData:
         self._contour_cache[file] = (S, w)
 
         return S, w
+    # ------------------------- BINNING ------------------------- #
+    def load_binning(self, file):
+        """
+        Loads binning (cached).
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        if file in self._contour_cache:
+            return self._contour_cache[file]
+
+        with h5py.File(fname, 'r') as f:
+            r = f['ccc/dimensions/r_bin'][()]
+            z = f['ccc/dimensions/z'][()]
+            time = f['ccc/dimensions/time'][()]
+            S_rz = f['ccc/S_rz'][()]
+            T_fluc_rz = f['ccc/T\'_rz'][()]
+            T_rz = f['ccc/T_rz'][()]
+            u_rz = f['ccc/u_rz'][()]
+            v_rz = f['ccc/v_rz'][()]
+            w_rz = f['ccc/w_rz'][()]
+
+        self._contour_cache[file] = (r, z, time, S_rz, T_fluc_rz, T_rz, u_rz, v_rz, w_rz)
+
+        return r, z, time, S_rz, T_fluc_rz, T_rz, u_rz, v_rz, w_rz

@@ -8,6 +8,7 @@ import matplotlib.ticker as mticker
 
 from matplotlib.lines import Line2D
 from matplotlib import cm
+from matplotlib import colors
 from fractions import Fraction
 ### ----------------------------------PROFILES------------------------------- ###
 ## stratification profile
@@ -16,17 +17,28 @@ def stratification_profile(z, a0, dadz, mld):
     a = a0 * np.ones(len(z))
     a[z<mld] = a0 + dadz * (z[z<mld] - mld)
     return a
-
 ### -------------------------PLOTTING PREP FUNCTIONS------------------------- ###
+## default plot formatting 
+def plot_format():
+    plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
+    plt.rcParams['font.serif'] = 'cmr10'
+    plt.rcParams['font.sans-serif'] = 'cmss10'
+    plt.rcParams['font.monospace'] = 'cmtt10'
+    plt.rcParams["axes.formatter.use_mathtext"] = True 
+    plt.rcParams['font.size'] = 12
+    plt.rcParams['mathtext.fontset'] = 'custom'
+    plt.rcParams['mathtext.rm'] = 'DejaVu Serif'
+    plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
+    plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
 ## defining ranges for plotting
-def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
+def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, C_tol = 10**(-7)):
     ranges = {}
-    list_pqr = ['u', 'v', 'w', 'b', 'T', 'S', 'Pdynamic', 'Pstatic', 'rho', 
+    list_pqr = ['u', 'v', 'w', 'b', 'T', 'Tracer', 'Pdynamic', 'Pstatic', 'rho', 
                 'b_flux', 
                 'vel_rms', 'b_rms', 
                 'b_avg', 'T_avg', 'vel_avg', 'lamb_avg',
                 'vel_restress', 'vel_flux', 'Ri', 
-                'u_fluc', 'v_fluc', 'w_fluc', 'b_fluc', 'vel_fluc', 'bw_fluc', 'Tw_fluc', 'rho_fluc', 'T_fluc', 'S_fluc',
+                'u_fluc', 'v_fluc', 'w_fluc', 'b_fluc', 'vel_fluc', 'bw_fluc', 'Tw_fluc', 'rho_fluc', 'T_fluc', 'Tracer_fluc',
                 'lengthscale', 'gradb', 'alphas', 
                 'Q', 'F', 'M', 'B']
     for i in range(0,len(list_pqr),1):
@@ -38,8 +50,8 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges['v_fluc'] = [-0.002, 0.002]
     ranges['w_fluc'] = [-0.002, 0.002]
     ranges['b'] = [-1.5*10**(-3), 10**(-5)]
-    ranges['T'] = [T0-(dTdz*lz)+0.2, T0 + 0.02]
-    ranges['S'] = [0.0, Sj/2]
+    ranges['T'] = [T0-(dTdz*(lz-mld))+0.1, T0 + 0.02]
+    ranges['Tracer'] = [C_tol, C]
     ranges['vel'] = [-0.00035, 0.00035]
     ranges['vel_rms'] = [0, 0.004]
     ranges['vel_flux'] = [-1*10**(-2), 1*10**(-2)]
@@ -48,7 +60,7 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges['Pdynamic'] = [-0.005, 0.005]
     ranges['Pstatic'] = [-0.05, 0.05]
     ranges['b_avg'] = [-1.5*10**(-3), 1.0*10**(-5)]
-    ranges['T_avg'] = [T0-(dTdz*lz)+0.2, T0 + 0.05]
+    ranges['T_avg'] = ranges['T']
     ranges['lamb_avg'] = [-4*10**(-6), 4*10**(-6)]
     ranges['b_rms'] = [0, 2*10**(-5)]
     ranges['bw_fluc'] = [-1*10**(-8), 1*10**(-8)]
@@ -63,14 +75,19 @@ def plot_ranges(lz = 96, rho0 = 1026, T0 = 25, dTdz = 0.01, Sj = 0.0):
     ranges['alphas'] = [0, 0.2]
     ranges['gradb'] = [-3*10**(-5), 3*10**(-5)]
     ranges['T_fluc'] = [-5*10**(-1), 5*10**(-1)]
-    ranges['S_fluc'] = [-1*10**(-1), 1*10**(-1)]
+    ranges['Tracer_fluc'] = [-1*10**(-1), 1*10**(-1)]
     for key in ranges:
         ranges[key] = np.array(ranges[key])
     return ranges
+## for multiple case comparison plotting
+def comparison_plot_opt(ncases):
+    colors = ['black', 'red', 'blue', 'green', 'orange', 'purple', 'pink', 'gray', 'olive', 'cyan', 'magenta']
+    line_styles = ['solid', 'dashed', 'dotted', 'dashdot', 'dashdotted']
 
+    return colors[:ncases], line_styles[:ncases]
 ### -------------------------GENERAL SIMULATION PLOTTING FUNCTIONS------------------------- ###
 ## turb statistics
-def turb_stats(time, it, ranges, fig_folder, lx, nx, z, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc, uw_fluc, vw_fluc, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho, plume_info = []):
+def turb_stats_plot(time, it, ranges, fig_folder, lx, z, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc, uw_fluc, vw_fluc, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho, plume_info = []):
     outdir = os.path.join(fig_folder, 'turb stats/')
     os.makedirs(outdir, exist_ok=True)
     td = time / 3600 / 24 # convert time to days
@@ -188,8 +205,10 @@ def turb_stats(time, it, ranges, fig_folder, lx, nx, z, mld, u_avg, v_avg, w_avg
     plt.close(fig)
 
     return outdir # return the directory where frames are saved for video creation
+
+### -------------------------PLOTTING PLANE SLICES FUNCTIONS------------------------- ###
 ## vertical plane slices 
-def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T = np.array([]), S = np.array([]), depths = np.array([]), yz=True):
+def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T, S, depths = np.array([]), yz=True):
     if yz: #yz plane
         ar = lx[1]/lx[2]
         plane = 'YZ plane'
@@ -227,7 +246,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, r
     ax[4].set_aspect('equal')
     cbar = fig.colorbar(im, ax = ax[4], label=r"$^\circ$C", anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
     
-    im = ax[5].imshow(S.T, vmin=ranges['S'][0], vmax=ranges['S'][-1], extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
+    im = ax[5].imshow(S.T, extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower', norm=colors.LogNorm(vmin=ranges['Tracer'][0], vmax=ranges['Tracer'][-1]))
     ax[5].set_xlabel("[m]")
     ax[5].set_title("Tracer")
     ax[5].set_aspect('equal')
@@ -286,7 +305,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, r
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## surface plane slices 
-def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T = np.array([]), S = np.array([])):
+def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T, S):
     outdir = os.path.join(fig_folder, 'horizontal plane slices/', 'XY plane slice at ' + plane)
     os.makedirs(outdir, exist_ok=True)
     td = time / 3600 / 24
@@ -322,7 +341,7 @@ def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, 
     cbar.set_ticks([ranges['rho'][0], ranges['rho'][-1]])
     cbar.update_ticks()
 
-    im = ax3.imshow(S.T, vmin=ranges['S'][0], vmax=ranges['S'][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower')
+    im = ax3.imshow(S.T, extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', norm=colors.LogNorm(vmin=ranges['Tracer'][0], vmax=ranges['Tracer'][-1]))
     #ax3.set_xlabel("[m]")
     ax3.set_title("Tracer")
     ax3.set_aspect('equal')
@@ -375,9 +394,98 @@ def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, 
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
+## variable vertical plane slice across all cases
+def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r', yz=True):
+    if yz: #yz plane
+        ar = lx[1]/lx[2]
+        plane = 'YZ plane'
+        xlabel = "y [m]"
+    else: #xz plane
+        ar = lx[0]/lx[2]
+        plane = 'XZ plane'
+        xlabel = "x [m]"
+
+    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
+    os.makedirs(outdir, exist_ok=True)
+    td = time / 3600 / 24
+    num_cases = len(case_names)
+    ncols = 3
+    nrows = int(math.ceil(num_cases/ncols))
+    hor_len = 12.0
+    vert_len = hor_len * nrows / (ncols * ar) + 0.25 * nrows + 2.0
+
+    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+    fig.suptitle(name + ', ' + plane + ', ' + f'{td:.2f} days', fontsize=12)
+    ax = ax.ravel()
+    if num_cases != (nrows*ncols):
+        for i in range(num_cases, nrows*ncols):
+            ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
+    for n, case_name in enumerate(case_names):
+        if name == 'Tracer':
+            im = ax[n].imshow(var[n].T, extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+        else:
+            im = ax[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap = cmap)
+        ax[n].set_title(case_name, fontsize=10)
+        ax[n].set_aspect('equal')
+        if n == 0 or n%ncols == 0:
+            ax[n].set_ylabel("Depth [m]")
+        if n >= (nrows - 1) * ncols:
+            ax[n].set_xlabel(xlabel)
+
+
+    cbar = fig.colorbar(im, ax = ax.tolist(), anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
+    if not name == 'Tracer': 
+        cbar.formatter.set_useOffset(False)
+        cbar.formatter.set_powerlimits((-2, 5))
+        cbar.update_ticks() 
+
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it} captured: {frame_path}")
+    return outdir
+## variable xy plane slice across all cases
+def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r'):
+    plane = 'XY plane'
+    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
+    os.makedirs(outdir, exist_ok=True)
+    td = time / 3600 / 24
+    num_cases = len(case_names)
+    ncols = 3
+    nrows = int(math.ceil(num_cases/ncols))
+    hor_len = 12.0
+    vert_len = hor_len * nrows / (ncols) + 0.5 * nrows + 1.1
+
+    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+    fig.suptitle(name + ', ' + plane + ', ' + f'{td:.2f} days', fontsize=12)
+    ax = ax.ravel()
+    if num_cases != (nrows*ncols):
+        for i in range(num_cases, nrows*ncols):
+            ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
+    for n, case_name in enumerate(case_names):
+        if name == 'Tracer':
+            im = ax[n].imshow(var[n].T, extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+        else:
+            im = ax[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap)
+        ax[n].set_title(case_name, fontsize=10)
+        ax[n].set_aspect('equal')
+        ax[n].set_xlabel("x [m]")
+        ax[n].set_ylabel("y [m]")
+    cbar = fig.colorbar(im, ax = ax.tolist(), anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
+    if not name == 'Tracer': 
+        cbar.formatter.set_useOffset(False)
+        cbar.formatter.set_powerlimits((-2, 5))
+        cbar.update_ticks() 
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it} captured: {frame_path}")
+    return outdir
 
 ### -------------------------PLOTTING COMPARISON FUNCTIONS------------------------- ###
-### temporal analysis ###
+## temporal analysis ###
 def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
     num_cases = len(case_names)
     if num_cases==1:
@@ -420,7 +528,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
         ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$_{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_{j}}$/(F$_{\text{C}}$)") #
-        ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
+        ax6.set_ylim(ymin = ranges['Tracer_fluc'][0], ymax = ranges['Tracer_fluc'][-1])
         ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$_{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$_{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_{j}}$/(F$_{\text{C}}$)")#
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
         ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
@@ -437,7 +545,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
         ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$ [$^{\circ}$C]")
         ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
         ax6.set_ylabel(r"$\langle$C$'\rangle_{\text{xy}}$ [g/kg]")
-        ax6.set_ylim(ymin = ranges['S_fluc'][0], ymax = ranges['S_fluc'][-1])
+        ax6.set_ylim(ymin = ranges['Tracer_fluc'][0], ymax = ranges['Tracer_fluc'][-1])
         ax7.set_ylabel(r"$\langle$C$'\text{w}\rangle_{\text{xy}}$ [g/kg]")
         ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
         ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$ [$^{\circ}$C $\cdot$ m/s]")
@@ -548,7 +656,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.savefig(frame_path)
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
-### spatial vertical analysis ###
+## spatial vertical analysis ###
 def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     if num_cases==0:
@@ -628,7 +736,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
         ax2.plot(tracer_avg[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
     ax2.set_title('Tracer')
     #ax2.set_ylim(ymin = np.min(z), ymax = np.max(z))
-    ax2.set_xlim(ranges['S'])
+    ax2.set_xlim(ranges['Tracer'])
     ax2.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # buoyancy profiles
@@ -650,7 +758,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
         ax4.plot(tracer_fluc[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
     ax4.set_title("Perturbed Tracer")
     #ax4.set_ylim(ymin = np.min(z), ymax = np.max(z))
-    ax4.set_xlim(ranges['S_fluc'])
+    ax4.set_xlim(ranges['Tracer_fluc'])
     ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # plume radius
@@ -699,7 +807,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
     print(f"Time step {it + 1} captured: {frame_path}")
 
     return outdir # return the directory where frames are saved for video creation
-### spatial horizontal analysis ###
+## spatial horizontal analysis ###
 def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
     num_cases = len(case_names)
     if num_cases==0:
@@ -794,7 +902,7 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
         ax3.plot(y, tracer[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
     ax3.set_title("Tracer")
     ax3.set_xlim(-lx[0][1]/2, lx[0][1]/2)
-    ax3.set_ylim(ranges['S'])
+    ax3.set_ylim(ranges['Tracer'])
     ax3.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
 
     # Perturbed buoyancy 
@@ -826,75 +934,9 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
     print(f"Time step {it + 1} captured: {frame_path}")
 
     return outdir # return the directory where frames are saved for video creation
-## variable vertical plane slice across all cases
-def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, yz=True):
-    if yz: #yz plane
-        ar = lx[1]/lx[2]
-        plane = 'YZ plane'
-    else: #xz plane
-        ar = lx[0]/lx[2]
-        plane = 'XZ plane'
-    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
-    os.makedirs(outdir, exist_ok=True)
-    td = time / 3600 / 24
-    num_cases = len(case_names)
-    ncols = 3
-    nrows = math.ceil(num_cases/ncols)
-    hor_len = 12.0
-    vert_len = hor_len * nrows / (ncols * ar) + 0.75 * nrows + 1.1
-
-    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
-    fig.suptitle(name + ', ' + plane + ', ' + f'{it:.2f} days', fontsize=12)
-    ax = ax.ravel()
-    for n, case_name in enumerate(case_names):
-        im = ax[n].imshow(var[n], vmin=ranges[n][0], vmax=ranges[n][-1], extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
-        ax[n].set_xlabel("x [m]")
-        ax[n].set_ylabel("Depth [m]")
-        ax[n].set_title(case_name)
-        ax[n].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[n], anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks() 
-    # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
-    plt.savefig(frame_path)
-    plt.close(fig)
-    print(f"Time step {it} captured: {frame_path}")
-    return outdir
-## variable xy plane slice across all cases
-def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_names, name):
-    plane = 'XY plane'
-    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
-    os.makedirs(outdir, exist_ok=True)
-    td = time / 3600 / 24
-    num_cases = len(case_names)
-    ncols = 3
-    nrows = math.ceil(num_cases/ncols)
-    hor_len = 12.0
-    vert_len = hor_len * nrows / (ncols) + 0.75 * nrows + 1.1
-
-    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
-    fig.suptitle(name + ', ' + plane + ', ' + f'{it:.2f} days', fontsize=12)
-    ax = ax.ravel()
-    for n, case_name in enumerate(case_names):
-        im = ax[n].imshow(var[n], vmin=ranges[n][0], vmax=ranges[n][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower')
-        ax[n].set_xlabel("x [m]")        
-        ax[n].set_ylabel("y [m]")
-        ax[n].set_title(case_name)
-        ax[n].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[n], anchor = (0.5, -0.3), orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-3, 2))
-        cbar.update_ticks() 
-    # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
-    plt.savefig(frame_path)
-    plt.close(fig)
-    print(f"Time step {it} captured: {frame_path}")
-    return outdir
-
 ### -------------------------PLOTTING DENSE PLUME FUNCTIONS------------------------- ###
 ## buoyancy analysis 
-def buoyancy_analysis(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, plume_depth_intrusion, plume_depth_neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld):
+def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, plume_depth_intrusion, plume_depth_neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld):
 
     outdir = os.path.join(fig_folder, 'NBP buoyancy analysis/')
     os.makedirs(outdir, exist_ok=True)
@@ -1291,7 +1333,7 @@ def plot_tracer_plume(time, it, ranges, fig_folder, lx, nx, z, zf, Y, Z, mld, u_
     ax9.set_ylabel("Depth [m]")
     ax9.set_title("Tracer")
     ax9.set_ylim(-lx[2], 0)
-    ax9.set_xlim(xmin = ranges['S'][0], xmax = ranges['S'][-1]*10**(-2))
+    ax9.set_xlim(xmin = ranges['Tracer'][0], xmax = ranges['Tracer'][-1]*10**(-2))
     ax9.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
 
     # Perturbed density plane slice
@@ -1423,7 +1465,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax2.plot(tracer_avg, z, color = 'black')
     ax2.set_title('Tracer')
     ax2.set_ylim(-lx[2], 0)
-    ax2.set_xlim(ranges['S'])
+    ax2.set_xlim(ranges['Tracer'])
     ax2.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
 
     # buoyancy profiles
@@ -1448,7 +1490,7 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     ax4.plot(tracer_fluc, z, color = 'black')
     ax4.set_title("Perturbed Tracer")
     ax4.set_ylim(-lx[2], 0)
-    ax4.set_xlim(ranges['S_fluc'])
+    ax4.set_xlim(ranges['Tracer_fluc'])
     ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # tracer plume radius
@@ -1923,6 +1965,95 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
         plt.savefig(frame_path)
         break
     plt.close(fig)
+
+### -------------------------BINNING PLOTTING FUNCTIONS------------------------- ###
+def plot_binning(S_rz, T_fluc_rz, T_rz, u_rz, v_rz, w_rz, r, z, time, output_folder):
+
+    # ranges for plotting 
+    frac = 0.7
+    min_S = 10**(-6)
+    Smax = np.max(np.abs(S_rz))
+    S_range = (min_S, Smax)
+    S_rz[S_rz<min_S] = min_S # set values below threshold to threshold for log plotting
+    T_flucmax = np.max(np.abs(T_fluc_rz)) * frac
+    T_fluc_range = (-T_flucmax, T_flucmax)
+    T_range = (np.min(T_rz), 25.05)
+    umax = np.max(np.abs(u_rz)) * frac
+    u_range = (-umax, umax)
+    vmax = np.max(np.abs(v_rz)) * frac
+    v_range = (-vmax, vmax)
+    wmax = np.max(np.abs(w_rz)) * frac
+    w_range = (-wmax, wmax)
+
+    outdir = os.path.join(output_folder, 'plotting')
+    os.makedirs(outdir, exist_ok=True)
+
+    # plotting results
+    for it, t in enumerate(time):
+        fig, ax = plt.subplots(2, 3, figsize=(16, 9.5), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+        ax = ax.ravel()
+        td = t / 3600 / 24
+        fig.suptitle(f'{td:.2f} days', y = 0.99, fontsize=12)
+        """
+        ax0  # perturbed temperature
+        ax1  # temperature
+        ax2  # tracer
+        ax3  # u velocity
+        ax4  # v velocity
+        ax5  # w velocity
+        """
+
+        im = ax[0].imshow(T_fluc_rz[:, :, it].T, vmin=T_fluc_range[0], vmax=T_fluc_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
+        ax[0].set_ylabel("Depth [m]")
+        ax[0].set_title("Perturbed Temperature")
+        ax[0].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[0], label=r"$^\circ$C", anchor = (0.5, -0.02), orientation='horizontal', shrink=0.75)
+
+        im = ax[1].imshow(T_rz[:, :, it].T, vmin=T_range[0], vmax=T_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
+        ax[1].set_title("Temperature")
+        ax[1].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[1], label=r"$^\circ$C", anchor = (0.5, -0.02), orientation='horizontal', shrink=0.75)
+
+        im = ax[2].imshow(S_rz[:, :, it].T, extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', norm=colors.LogNorm(vmin=S_range[0], vmax=S_range[1]))
+        ax[2].set_title("Tracer")
+        ax[2].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[2], label=r"g/kg", anchor = (0.5, -0.02), orientation='horizontal', shrink=0.75)
+
+        im = ax[3].imshow(u_rz[:, :, it].T, vmin=u_range[0], vmax=u_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
+        ax[3].set_ylabel("Depth [m]")
+        ax[3].set_xlabel("radial distance [m]")
+        ax[3].set_title("u")
+        ax[3].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[3], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        cbar.formatter.set_powerlimits((-2, 2))
+        cbar.update_ticks()
+
+        im = ax[4].imshow(v_rz[:, :, it].T, vmin=v_range[0], vmax=v_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
+        ax[4].set_xlabel("radial distance [m]")
+        ax[4].set_title("v")
+        ax[4].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[4], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        cbar.formatter.set_powerlimits((-2, 2))
+        cbar.update_ticks()
+
+        im = ax[5].imshow(w_rz[:, :, it].T, vmin=w_range[0], vmax=w_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
+        ax[5].set_xlabel("radial distance [m]")
+        ax[5].set_title("w")
+        ax[5].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = ax[5], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        cbar.formatter.set_powerlimits((-2, 2))
+        cbar.update_ticks()
+        
+        
+        # --- Save Frame ---
+        frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
+        plt.savefig(frame_path)
+        plt.close(fig)
+        print(f"Time step {it + 1} captured: {frame_path}")
+
+        plt.close()
+
+    create_video(outdir, output_folder, '', 'binning_rtz')
 
 ### ---------------------- CONVERGENCE TESTS ----------------------------- ###
 def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorted, matrix_N, ver, hor, 

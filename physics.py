@@ -1,21 +1,6 @@
 import numpy as np
-# ------------------------- GENERAL BUOYANCY ------------------------- #
-def buoyancy(T, rho0, alpha, T0, g, tracer = []):
-    if tracer is None:
-        b = -g * alpha * (T - T0)
-        rho = rho0 * (1 - alpha * (T - T0))
-    else:
-        beta = tracer['beta']
-        C = tracer['C']
-        C0 = tracer['C0']
-        rho = rho0 - rho0 * alpha * (T - T0) + rho0 * beta * (C - C0)
-        bs ={'b_total':-g * alpha * (T - T0) + g * beta * (C - C0),
-             'b_T':-g * alpha * (T - T0),
-             'b_C':g * beta * (C - C0)}
-    return bs, rho
-
 # ------------------------- TURBULENT STATISTICS ------------------------- #
-# vertical average fluctuations
+# reynolds stress function (fluctuations of two variables)
 def reynolds_stress(a, b, a_avg, b_avg):
     """
     Computes the mean fluctuations in x and y directions.
@@ -29,11 +14,37 @@ def reynolds_stress(a, b, a_avg, b_avg):
         ab_fluct_avg: 1D array of shape (nz,)
     """
     # Compute squared fluctuation a'*b' = (a-a_avg)(b-b_avg)
-    ab_fluct = (a - a_avg)*(b - b_avg)
+    ab_fluc = (a - a_avg)*(b - b_avg)
 
-    return ab_fluct
+    return ab_fluc
+# Root mean square error function)
+def rms(a):
+    avg = np.mean(a, axis=(-3, -2))
+    return np.mean((a-avg)**2, axis=(-3, -2))**0.5
+# fluctuations of one variable 
+def a_fluc_b(a, b):
+    a_avg = np.mean(a, axis=(-3, -2))
+    return (a - a_avg)*b
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
+# calculate buoyancy 
+def buoyancy(T, rho0, coeffs, T0, g, tracer = None):
+    alpha = coeffs['alpha']
+    if tracer is None:
+        b = -g * alpha * (T - T0)
+        rho = rho0 * (1 - alpha * (T - T0))
+        bs = {'b_total':b, 'b_T':b, 'rho':rho}
+    else:
+        beta = coeffs['beta']
+        C = tracer['C']
+        C0 = tracer['C0']
+        rho = rho0 - rho0 * alpha * (T - T0) + rho0 * beta * (C - C0)
+        bs ={'b_total':-g * alpha * (T - T0) + g * beta * (C - C0),
+             'b_T':-g * alpha * (T - T0),
+             'b_C':g * beta * (C - C0),
+             'rho':rho}
+    return bs, rho
+
 # Richardson number
 def richardson_number(dbdz, z, u, v):
     du_dz = np.gradient(u, z, axis=-1)
@@ -59,3 +70,13 @@ def lamb_vector(u, v, w, x, y, z):
     lamb_y_avg = np.mean(lamb_y, axis=(-3, -2))
     lamb_z_avg = np.mean(lamb_z, axis=(-3, -2))
     return lamb_x_avg, lamb_y_avg, lamb_z_avg
+### -------------------------IMPORTANT DEPTHS------------------------- ###
+# mixed layer depth information
+def mld_info(w, bw_fluc, rho_perturbed, z, mld): # inputs are 1d arrays
+    # info at mixed layer depth
+    dz_ml = np.abs(z + mld)/mld
+    mld_idx = np.where(dz_ml==dz_ml.min())[0][-1]
+    mld_w = w[mld_idx]
+    mld_bw_fluc = bw_fluc[mld_idx]
+    mld_rho_perturbed = rho_perturbed[mld_idx]
+    return mld_idx, mld_w, mld_bw_fluc, mld_rho_perturbed

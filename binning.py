@@ -1,15 +1,13 @@
 import os
 import numpy as np
 import h5py
-import matplotlib.pyplot as plt
-from matplotlib import colors
 
 from reader import OceananigansData
 from interpolation import velocities_to_center
-from plotting_functions import create_video
+from plotting_functions import plot_binning
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.005 MLD = 60'
 output_folder = os.path.join(folder, 'binning')
 os.makedirs(output_folder, exist_ok=True)
 file_path = os.path.join(output_folder, 'binning_rtz.h5')
@@ -48,7 +46,7 @@ u_rz = np.empty((counts.size, nx[2], nt))
 v_rz = np.empty((counts.size, nx[2], nt))
 w_rz = np.empty((counts.size, nx[2], nt))
 
-for it, t in enumerate(t_save):
+for it, t in enumerate(reader.t_save):
     # Load data from files
     T = reader.lazy_field('T', t)
     S = reader.lazy_field('S', t)
@@ -88,3 +86,5 @@ with h5py.File(file_path, "a") as f:
     f.create_dataset("ccc/w_rz", data=w_rz)
 
 f.close()
+
+plot_binning(S_rz, T_fluc_rz, T_rz, u_rz, v_rz, w_rz, r, z, time, output_folder)
