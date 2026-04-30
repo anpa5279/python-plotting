@@ -4,7 +4,7 @@ from scipy.spatial import ConvexHull
 
 from interpolation import vertical_line
 class PlumeAnalysis:
-    def __init__(self, tracer_contour):
+    def __init__(self, tracer_contour = None):
         self.tracer = None 
         self.tracer_contour = tracer_contour
 
@@ -35,11 +35,12 @@ class PlumeAnalysis:
         self._contour_cache = {}
 
     ### -------------------------TRACER INFORMATION------------------------- ###
-    def input_tracer(self, tracer, b_tracer, b_background, bw_fluc):
+    def input_info(self, tracer, b_tracer = None, b_background = None, bw_fluc = None):
         self.tracer = tracer
         self.b_tracer = b_tracer
         self.b_background = b_background
-        self.b_fluc = b_background - b_tracer
+        if b_tracer is not None and b_background is not None:
+            self.b_fluc = b_background - b_tracer
         self.b_fluc_w = bw_fluc
         self.nz = self.tracer.shape[-1]
 
@@ -65,16 +66,17 @@ class PlumeAnalysis:
         xi, yi, zi = np.where(plume_contour)
         self.plume_index = [xi, yi, zi]
 
-        centerx = np.mean(x)
+        x0 = np.mean(x)
         centery = np.mean(y)
 
-        r = np.sqrt((x[xi] - centerx)**2 + (y[yi] - centery)**2)
+        r = np.sqrt((x[xi] - x0)**2 + (y[yi] - centery)**2)
         counts = np.bincount(zi, minlength=self.nz)
         sums   = np.bincount(zi, weights=r, minlength=self.nz)
 
         self.radius_tracer = np.zeros(self.nz)
         mask = counts > 0
         self.radius_tracer[mask] = sums[mask] / counts[mask]
+        return self.radius_tracer
 
     ### -------------------------MOMENTUM ANALYSIS------------------------- ###
     def plume_momentum_analysis(self, w, b):

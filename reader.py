@@ -91,6 +91,7 @@ class OceananigansData:
             self.time = np.array([t_group[str(int(k))][()] for k in self.t_save])
 
             self.nt = len(self.time)
+            return self.time, self.t_save
     # ------------------------- ADDITIONAL PARAMETERS ------------------------- #
     def load_coriolis(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:

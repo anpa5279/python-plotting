@@ -1,16 +1,16 @@
 import os
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 
 from plotting_functions import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, vert_plane_slices, xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
 
-from .reader import OceananigansData
-from .physics import reynolds_stress, buoyancy , rms, a_fluc_b
-from .interpolation import velocities_to_center, yz_plane, xy_plane, vertical_line
-from .dense_plume import PlumeAnalysis
+from reader import OceananigansData
+from physics import reynolds_stress, buoyancy , rms, a_fluc_b
+from interpolation import velocities_to_center, yz_plane, xy_plane, vertical_line
+from dense_plume import PlumeAnalysis
 # Set up folder and simulation parameters
-folder = ''
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod'
+
 output_folder = os.path.join(folder, "plotting outputs") 
 name = "interp"
 
@@ -19,7 +19,6 @@ with_halos = False
 closure = False
 stokes = False
 salinity = True
-write_grid = False
 
 # flags for what to plot
 video = True
@@ -46,11 +45,12 @@ reader = OceananigansData(folder)
 reader.load_grid()
 x, y, z = reader.x, reader.y, reader.z
 nx = reader.nx
+lx = reader.lx
 dx = reader.dx
 hx = reader.hx
 # load time and equation of state info
-reader.load_time(reader)
-coeffs = reader.load_equation_of_state(reader, salinity)
+reader.load_time()
+coeffs = reader.load_equation_of_state(salinity)
 alpha = coeffs['alpha']
 if salinity:
     beta = coeffs['beta']
@@ -74,7 +74,8 @@ ranges['vel'] = [-1e-5, 1e-5]
 ranges['b'] = [-6.0*10**(-4), 6.0*10**(-4)]
 ranges['rho'] = [rho0-0.01, rho0+0.1]#0.1] # <--for stratification [rho0-0.01, rho0+0.1] # 
 ranges['rho_fluc'] = [-0.01, 0.01]
-ranges['Tracer'] = [0.0, 0.04]
+S_tol = 10**(-5)
+ranges['Tracer'] = [S_tol, 0.04]
 ranges['T'] = [T0-0.4, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
 ranges['u'] = [-6*10**(-3), 6*10**(-3)]
 ranges['v'] = [-6*10**(-3), 6*10**(-3)]
@@ -92,7 +93,7 @@ if xy_plot and salinity:
     xy_ranges['rho'] = [rho0-0.01, rho0+0.01]
     xy_ranges['Pdynamic'] = [-1*10**(-4), 1*10**(-4)]
     xy_ranges['T'] = [T0-0.05, T0+0.01]
-    xy_ranges['Tracer'] = [0.0, 0.01]
+    xy_ranges['Tracer'] = [S_tol, 0.01]
     xy_ranges['u'] = [-6*10**(-3), 6*10**(-3)]
     xy_ranges['v'] = xy_ranges['u']
 
@@ -127,12 +128,13 @@ for it, t in enumerate(reader.t_save):
     w = reader.lazy_field('w', t)
     if salinity:
         S = reader.lazy_field('S', t)
+        S[S<S_tol] = S_tol * 10**(-3)
     if xy_plot:
-        Pdynamic = reader.lazy_field('Pdynamic', t)
+        Pdynamic = reader.lazy_field('P_dynamic', t)
     # interpolate velocities to cell centers
     u, v, w = velocities_to_center(u, v, w)
     # convert temperature and salinity to buoyancy 
-    bs = buoyancy(T, rho0, coeffs, T0, g, tracer = S if salinity else None)
+    bs = buoyancy(T, rho0, coeffs, T0, tracer = S if salinity else None)
     b = bs['b_total']
     rho = bs['rho']
 
@@ -150,16 +152,17 @@ for it, t in enumerate(reader.t_save):
     if salinity:
         S_avg = np.mean(S, axis=(-3, -2))
         S_fluc = S - S_avg
-
-    # calcualte reynolds stresses
-    uw_fluc, uw_fluc_avg = reynolds_stress(u, w, u_avg, w_avg)
-    vw_fluc, vw_fluc_avg = reynolds_stress(v, w, v_avg, w_avg)
-
-    bu_fluc, bu_fluc_avg = reynolds_stress(b, u, b_avg, u_avg)
-    bv_fluc, bv_fluc_avg = reynolds_stress(b, v, b_avg, v_avg)
-    bw_fluc, bw_fluc_avg = reynolds_stress(b, w, b_avg, w_avg)
     
-    if turb_stat_flag or buoyancy_momentum_flag:
+    if turb_stat_flag or buoyancy_momentum_flag or buoyancy_analysis_flag:
+
+        # calcualte reynolds stresses
+        uw_fluc_avg = np.mean(reynolds_stress(u, w, u_avg, w_avg), axis=(-3, -2))
+        vw_fluc_avg = np.mean(reynolds_stress(v, w, v_avg, w_avg), axis=(-3, -2))
+
+        bu_fluc_avg = np.mean(a_fluc_b(b, u, b_avg, u_avg), axis=(-3, -2))
+        bv_fluc_avg = np.mean(a_fluc_b(b, v, b_avg, v_avg), axis=(-3, -2))
+        bw_fluc_avg = np.mean(a_fluc_b(b, w, b_avg, w_avg), axis=(-3, -2))
+
         uv_fluc_avg = np.mean(reynolds_stress(u, v, u_avg, v_avg), axis=(-3, -2))
         # rms fluctuations
         u_rms = rms(u)
@@ -174,11 +177,13 @@ for it, t in enumerate(reader.t_save):
     dbdz = np.gradient(b, z, axis=-1)
 
     if salinity:
-        centerx = 0.0
+        x0 = 0.0
         centery = 0.0
+        bw_fluc = a_fluc_b(b, w)
+        dense_plume.input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
         rp_profile = dense_plume.plume_tracer_radius(x, y)
-        S_fluc_center = vertical_line(S_fluc, x, y, centerx, centery)
-        T_fluc_center = vertical_line(T_fluc, x, y, centerx, centery)
+        S_fluc_center = vertical_line(S_fluc, x, y, x0, centery)
+        T_fluc_center = vertical_line(T_fluc, x, y, x0, centery)
 
     # buoyancy analysis 
     if buoyancy_analysis_flag or turb_stat_flag or buoyancy_momentum_flag:
@@ -194,10 +199,10 @@ for it, t in enumerate(reader.t_save):
         Ri = dense_plume.Ri
         z_neutral = dense_plume.neutral_layer(z)
 
-        w_center = vertical_line(w, x, y, centerx, centery)
-        bw_fluc_center = vertical_line(bw_fluc, x, y, centerx, centery)
-        rho_perturbed_center = vertical_line(rho_perturbed, x, y, centerx, centery)
-        b_center = vertical_line(b, x, y, centerx, centery)
+        w_center = vertical_line(w, x, y, x0, centery)
+        bw_fluc_center = vertical_line(bw_fluc, x, y, x0, centery)
+        rho_perturbed_center = vertical_line(rho_perturbed, x, y, x0, centery)
+        b_center = vertical_line(b, x, y, x0, centery)
         z_intrusion = dense_plume.max_penetration(z)
         w_intrusion = w_center[max_index]
         w_neutral = w_center[neutral_index]
@@ -239,19 +244,19 @@ for it, t in enumerate(reader.t_save):
         else:
             turb_stat_dir = turb_stats_plot(time, it, ranges, output_folder, lx, nx, z, mld, u_avg, v_avg, w_avg, u_rms, v_rms, w_rms, uv_fluc_avg, uw_fluc_avg, vw_fluc_avg, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_rms, rho_avg)
     if vert_slice_plot:
-        u_yz = yz_plane(u, x, centerx)
-        v_yz = yz_plane(v, x, centerx)
-        w_yz = yz_plane(w, x, centerx)
-        rho_yz = yz_plane(rho, x, centerx)
-        rho_perturbed_yz = yz_plane(rho_perturbed, x, centerx)
-        T_yz = yz_plane(T, x, centerx)
-        S_yz = yz_plane(S, x, centerx)
+        u_yz = yz_plane(u, x, x0)
+        v_yz = yz_plane(v, x, x0)
+        w_yz = yz_plane(w, x, x0)
+        rho_yz = yz_plane(rho, x, x0)
+        rho_perturbed_yz = yz_plane(rho_perturbed, x, x0)
+        T_yz = yz_plane(T, x, x0)
+        S_yz = yz_plane(S, x, x0)
         if it < 10:
             depths = np.array([-mld, ])
         else:
             neutral_depth = dense_plume.neutral_layer(z)
             depths = np.array([-mld, neutral_depth])
-        plane_slices_dir = vert_plane_slices(time[it], ranges, output_folder, lx, x, y, z, u_yz, v_yz, w_yz, rho_yz, rho_perturbed_yz, T = T_yz, S = S_yz, depths = depths)
+        plane_slices_dir = vert_plane_slices(time[it], it, ranges, output_folder, lx, x, y, z, u_yz, v_yz, w_yz, rho_yz, rho_perturbed_yz, T = T_yz, S = S_yz, depths = depths)
     if xy_plot and salinity:
         loc = "z = MLD"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
         loc_z = -mld
@@ -263,7 +268,7 @@ for it, t in enumerate(reader.t_save):
         Pdynamic_xy = xy_plane(Pdynamic, z, loc_z)
         T_xy = xy_plane(T, z, loc_z)
         S_xy = xy_plane(S, z, loc_z)
-        surface_dir = xy_plane_slices(time[it], xy_ranges, output_folder, x, y, u_xy, v_xy, w_xy, Pdynamic_xy, rho_xy, rho_perturbed_xy, loc, T = T_xy, S = S_xy)
+        surface_dir = xy_plane_slices(time[it], it, xy_ranges, output_folder, x, y, u_xy, v_xy, w_xy, Pdynamic_xy, rho_xy, rho_perturbed_xy, loc, T = T_xy, S = S_xy)
     if buoyancy_analysis_flag and not salinity:
         buoyancy_dir = buoyancy_analysis_plot(time[it], it, ranges, output_folder, lx, nx, z, x, z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_flag and salinity:

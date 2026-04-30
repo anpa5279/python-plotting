@@ -85,7 +85,7 @@ x = readers[0].x
 y = readers[0].y
 
 # physical parameters
-centerx = 0.0
+x0 = 0.0
 centery = 0.0
 rj = 5 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
@@ -287,7 +287,7 @@ else:
             # interpolate velocities to cell centers
             u, v, w = velocities_to_center(u, v, w)
             # convert temperature and salinity to buoyancy 
-            bs = buoyancy(T, rho0, coeffs, T0, g, tracer = S if salinity else None)
+            bs = buoyancy(T, rho0, coeffs, T0, tracer = S if salinity else None)
             b = bs['b_total']
             rho = bs['rho']
             rho_fluc = rho - np.mean(rho, axis=(-3, -2))
@@ -318,9 +318,9 @@ else:
                     dense_plume[i].b_background = g*alpha*(T - T0)
                     r_profile.append(dense_plume[i].plume_tracer_radius(x, y))
 
-                    b_center.append(vertical_line(b, x, y, centerx, centery))
-                    T_fluc_center.append(vertical_line(T-T_avg[i], x, y, centerx, centery))
-                    S_fluc_center.append(vertical_line(S-S_avg[i], x, y, centerx, centery))
+                    b_center.append(vertical_line(b, x, y, x0, centery))
+                    T_fluc_center.append(vertical_line(T-T_avg[i], x, y, x0, centery))
+                    S_fluc_center.append(vertical_line(S-S_avg[i], x, y, x0, centery))
             # horizontal lines to save for plotting
             if plot_1d_y:
                 u_hor.append(horizontal_line(u, y, z[i], centery, loc_z[i]))
@@ -334,15 +334,15 @@ else:
                 S_hor.append(horizontal_line(S, y, z[i], centery, loc_z[i]))
             # plane slices to save for plotting
             if plot_variables and planeslice == 'vertical':
-                #T_plane.append(yz_plane(T, x, centerx))
-                u_plane.append(yz_plane(u, x, centerx))
-                #v_plane.append(yz_plane(v, x, centerx))
-                w_plane.append(yz_plane(w, x, centerx))
-                #rho_plane.append(yz_plane(rho, x, centerx))
-                bw_plane.append(yz_plane(bw_fluc, x, centerx))
-                rho_fluc_plane.append(yz_plane(rho_fluc, x, centerx))
+                #T_plane.append(yz_plane(T, x, x0))
+                u_plane.append(yz_plane(u, x, x0))
+                #v_plane.append(yz_plane(v, x, x0))
+                w_plane.append(yz_plane(w, x, x0))
+                #rho_plane.append(yz_plane(rho, x, x0))
+                bw_plane.append(yz_plane(bw_fluc, x, x0))
+                rho_fluc_plane.append(yz_plane(rho_fluc, x, x0))
                 if salinity:
-                    S_plane.append(yz_plane(S, x, centerx))
+                    S_plane.append(yz_plane(S, x, x0))
             elif plot_variables and planeslice == 'horizontal':
                 T_plane.append(xy_plane(T, z, loc_z[i]))
                 u_plane.append(xy_plane(u, z, loc_z[i]))
