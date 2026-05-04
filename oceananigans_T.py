@@ -5,11 +5,11 @@ import numpy as np
 from plotting_functions import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, vert_plane_slices, xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
 
 from reader import OceananigansData
-from physics import reynolds_stress, buoyancy , rms, a_fluc_b
+from physics import reynolds_stress, buoyancy, rms, a_fluc_b
 from interpolation import velocities_to_center, yz_plane, xy_plane, vertical_line
 from dense_plume import PlumeAnalysis
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod'
+folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback'
 
 output_folder = os.path.join(folder, "plotting outputs") 
 name = "interp"
