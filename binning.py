@@ -15,9 +15,8 @@ output_folder = os.path.join(folder, 'binning')
 os.makedirs(output_folder, exist_ok=True)
 file_path = os.path.join(output_folder, 'binning_rtz.h5')
 
+reader = OceananigansData(folder)
 if binning_flag:
-
-    reader = OceananigansData(folder)
 
     # inital paramreters
     rho0 = 1026
@@ -97,16 +96,6 @@ if binning_flag:
         f.create_dataset("ccc/w_rz", data=w_rz)
     f.close()
 else:
-    with h5py.File(file_path, "r") as f:
-        r = f["ccc/dimensions/r_bin"][:]
-        z = f["ccc/dimensions/z"][:]
-        time = f["ccc/dimensions/time"][:]
-        S_rz = f["ccc/S_rz"][:]
-        T_fluc_rz = f["ccc/T'_rz"][:]
-        T_rz = f["ccc/T_rz"][:]
-        b_fluc_rz = f["ccc/b'_rz"][:]
-        ur_rz = f["ccc/horizontal velocity"][:]
-        w_rz = f["ccc/w_rz"][:]
-    f.close()
+    r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
 
 plot_binning(S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz, r, z, time, output_folder)

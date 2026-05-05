@@ -228,12 +228,12 @@ class OceananigansData:
 
         return S, w
     # ------------------------- BINNING ------------------------- #
-    def load_binning(self, file):
+    def load_binning(self, file = 'binning_rtz.h5'):
         """
         Loads binning (cached).
         """
 
-        fname = os.path.join(self.folder, file)
+        fname = os.path.join(self.folder, 'binning', file)
 
         if file in self._contour_cache:
             return self._contour_cache[file]
@@ -245,10 +245,10 @@ class OceananigansData:
             S_rz = f['ccc/S_rz'][()]
             T_fluc_rz = f['ccc/T\'_rz'][()]
             T_rz = f['ccc/T_rz'][()]
-            u_rz = f['ccc/u_rz'][()]
-            v_rz = f['ccc/v_rz'][()]
+            ur_rz = f['ccc/horizontal velocity'][()]
             w_rz = f['ccc/w_rz'][()]
+            b_fluc_rz = f['ccc/b\'_rz'][()]
 
-        self._contour_cache[file] = (r, z, time, S_rz, T_fluc_rz, T_rz, u_rz, v_rz, w_rz)
+        self._contour_cache[file] = (r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz)
 
-        return r, z, time, S_rz, T_fluc_rz, T_rz, u_rz, v_rz, w_rz
+        return r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz

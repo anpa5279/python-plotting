@@ -395,28 +395,43 @@ def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, 
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## variable vertical plane slice across all cases
-def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r', yz=True):
-    if yz: #yz plane
-        ar = lx[1]/lx[2]
+def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r', plane='YZ'):
+    td = time / 3600 / 24
+    if plane == 'YZ': #yz plane
+        ar = lx[1]/lx[-1]
         plane = 'YZ plane'
         xlabel = "y [m]"
-    else: #xz plane
-        ar = lx[0]/lx[2]
+        title = name + ', ' + plane + ', ' + f'{td:.2f} days'
+    elif plane == 'XZ': #xz plane
+        ar = lx[0]/lx[-1]
         plane = 'XZ plane'
         xlabel = "x [m]"
+        title = name + ', ' + plane + ', ' + f'{td:.2f} days'
+    elif plane == 'binning':
+        ar = lx[0]/lx[-1]
+        xlabel = "r [m]"
+        title = name + ', ' + f'{td:.2f} days'
+    else:
+        raise ValueError("Invalid plane specified. Choose from 'YZ', 'XZ', or 'binning'.")
 
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
     os.makedirs(outdir, exist_ok=True)
-    td = time / 3600 / 24
     num_cases = len(case_names)
     ncols = 3
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols * ar) + 0.25 * nrows + 2.0
 
-    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
-    fig.suptitle(name + ', ' + plane + ', ' + f'{td:.2f} days', fontsize=12)
+    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 600)
+    fig.suptitle(title, fontsize=12)
     ax = ax.ravel()
+    # Force even pixel dimensions at 600 dpi
+    w_px = int(fig.get_figwidth() * fig.dpi)
+    h_px = int(fig.get_figheight() * fig.dpi)
+    if w_px % 2 != 0:
+        fig.set_figwidth((w_px + 1) / fig.dpi)
+    if h_px % 2 != 0:
+        fig.set_figheight((h_px + 1) / fig.dpi)
     if num_cases != (nrows*ncols):
         for i in range(num_cases, nrows*ncols):
             ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
