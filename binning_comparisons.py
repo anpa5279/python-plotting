@@ -24,7 +24,7 @@ stokes = False
 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
-universal_folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/'#vertical domain increase/dTdz = 0.01'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'#vertical domain increase/dTdz = 0.01'
 
 # selecting cases to compare
 variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'else'
@@ -58,15 +58,9 @@ x = readers[0].x
 y = readers[0].y
 
 # physical parameters
-rj = 5 # m, radius of salinity flux circle at the surface
-g = 9.80665  # gravity in m/s^2
 rho0 = 1026
 T0 = 25
 S0 = 0 
-coeffs = readers[0].load_equation_of_state(salinity)
-alpha = coeffs['alpha']
-if salinity:
-    beta = coeffs['beta']
 
 # video or not setup
 if video:
@@ -75,26 +69,19 @@ if video:
 
 # plotting prep
 plot_format()
-if plot_variables:
-    if salinity:
-        var_names = ['Tracer', 'Temperature', 'Perturbed Temperature'] #['Tracer', 'Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['Tracer', 'T', 'T_fluc'] #['Tracer', 'T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'T_fluc']
-    else:
-        var_names = ['Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'T_fluc']
-    variable_dir = {}
+var_names = ['Tracer', 'Temperature', 'Horizontal Velocity', 'Vertical Velocity', 'Perturbed Buoyancy', 'Perturbed Temperature'] 
+range_names = ['Tracer', 'T', 'u', 'w', 'b_fluc', 'T_fluc'] 
+variable_dir = {}
 
-S_tol = 10**(-5)
+S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['rho'] = [rho0, rho0+0.15]
 ranges['T_fluc'] = [-0.025, 0.025]
-ranges['Tracer'] = [S_tol, 0.2]
+ranges['Tracer'] = [S_tol, 0.1]
 ranges['T'] = [T0-1.0, T0 + 0.01]
 ranges['w'] = [-1.5*10**(-1), 1.5*10**(-1)]
 ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
-ranges['v'] = [-2*10**(-2), 2*10**(-2)]
-ranges['vel_rms'] = [0, 4*10**-3]
-ranges['bw_fluc'] = [-1.5*10**(-5), 1.5*10**(-5)]
+ranges['b_fluc'] = [-1.5*10**(-5), 1.5*10**(-5)]
 ranges['T_fluc'] = [-0.2, 0.2]
 
 if salinity:

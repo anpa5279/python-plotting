@@ -9,7 +9,7 @@ from physics import reynolds_stress, buoyancy, rms, a_fluc_b
 from interpolation import velocities_to_center, yz_plane, xy_plane, vertical_line
 from dense_plume import PlumeAnalysis
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback'
 
 output_folder = os.path.join(folder, "plotting outputs") 
 name = "interp"

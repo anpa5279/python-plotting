@@ -5,7 +5,7 @@ import numpy as np
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, write_temporal_averages, compute_temporal_radius_avg
 
-folder = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod'
 
 write_temporal_avg = True
 
