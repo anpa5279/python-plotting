@@ -74,11 +74,11 @@ fig.legend(handles=case_handles,
         ncol=num_cases,
         bbox_to_anchor=(0.52, 0.005), fontsize = 12)
 
-ax[0].set_title(r'dSu$_i$/dx$_i$', fontsize = 12)
+ax[0].set_title('dS/dt', fontsize = 12)
 ax[0].set_xlabel('Time (days)', fontsize = 12)
 ax[0].set_ylabel('[g/kg/s]', fontsize = 12)
 
-ax[1].set_title('dS/dt', fontsize = 12)
+ax[1].set_title(r'dSu$_i$/dx$_i$', fontsize = 12)
 ax[1].set_xlabel('Time (days)', fontsize = 12)
 ax[1].set_ylabel('[g/kg/s]', fontsize = 12)
 
