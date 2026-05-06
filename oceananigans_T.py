@@ -2,7 +2,7 @@ import os
 import re
 import numpy as np
 
-from plotting_functions import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, vert_plane_slices, xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
+from plotting_functions import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, plot_vert_plane_slices, plot_xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
 
 from reader import OceananigansData
 from physics import reynolds_stress, buoyancy, rms, a_fluc_b
@@ -256,7 +256,7 @@ for it, t in enumerate(reader.t_save):
         else:
             neutral_depth = dense_plume.neutral_layer(z)
             depths = np.array([-mld, neutral_depth])
-        plane_slices_dir = vert_plane_slices(time[it], it, ranges, output_folder, lx, x, y, z, u_yz, v_yz, w_yz, rho_yz, rho_perturbed_yz, T = T_yz, S = S_yz, depths = depths)
+        plane_slices_dir = plot_vert_plane_slices(time[it], it, ranges, output_folder, lx, x, y, z, u_yz, v_yz, w_yz, rho_yz, rho_perturbed_yz, T = T_yz, S = S_yz, depths = depths)
     if xy_plot and salinity:
         loc = "z = MLD"#"n = 230, z = " + str(np.round(z[230], 2)) + " m"
         loc_z = -mld
@@ -268,7 +268,7 @@ for it, t in enumerate(reader.t_save):
         Pdynamic_xy = xy_plane(Pdynamic, z, loc_z)
         T_xy = xy_plane(T, z, loc_z)
         S_xy = xy_plane(S, z, loc_z)
-        surface_dir = xy_plane_slices(time[it], it, xy_ranges, output_folder, x, y, u_xy, v_xy, w_xy, Pdynamic_xy, rho_xy, rho_perturbed_xy, loc, T = T_xy, S = S_xy)
+        surface_dir = plot_xy_plane_slices(time[it], it, xy_ranges, output_folder, x, y, u_xy, v_xy, w_xy, Pdynamic_xy, rho_xy, rho_perturbed_xy, loc, T = T_xy, S = S_xy)
     if buoyancy_analysis_flag and not salinity:
         buoyancy_dir = buoyancy_analysis_plot(time[it], it, ranges, output_folder, lx, nx, z, x, z, mld, b_avg, w_avg, b_center, w_center, b_rms, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, intrusion, neutral, w_neutral, w_intrusion, w_mld, rho_neutral, rho_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld, alpha_vel, alpha_length, salinity)
     if buoyancy_analysis_flag and salinity:
@@ -281,7 +281,7 @@ if video:
     if turb_stat_flag:
         create_video(turb_stat_dir, output_folder, name, 'turbulence_statistics')
     if vert_slice_plot:
-        create_video(plane_slices_dir, output_folder, name, 'vert_plane_slices')
+        create_video(plane_slices_dir, output_folder, name, 'plot_vert_plane_slices')
     if xy_plot:
         name_xy = loc + '-xy-plane-slices'
         create_video(surface_dir, output_folder, name, name_xy)

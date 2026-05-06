@@ -6,12 +6,13 @@ from reader import OceananigansData
 from dense_plume import PlumeAnalysis
 from diagnostics import comparison_info
 from physics import rms, a_fluc_b, buoyancy
-from plotting_functions import plot_format, plot_ranges, create_video, comparison_plot_opt, plume_vertical_spatial_plot, plume_horizontal_spatial_plot, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
+from plotting_functions import plot_format, plot_ranges, create_video, comparison_plot_opt, plot_plume_vertical_spatial, plot_plume_horizontal_spatial, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
 from interpolation import velocities_to_center, vertical_line, horizontal_line, yz_plane, xy_plane, xz_plane
 
 # flags for what to plot
 plot_variables = True
 plume_analysis_plot = False
+plot_turb_stats = True
 plot_1d_z = False
 plot_1d_y = False
 transient_mld = False
@@ -372,9 +373,9 @@ else:
                 for dir, var in enumerate(variables):
                     variable_dir[var_names[dir]] = plot_variable_xy_slice(time[it], it, ranges, fig_folder, lx, x, y, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir])
         if plot_1d_z:
-            buoyancy_dir_z = plume_vertical_spatial_plot(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
+            buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
         if plot_1d_y:
-            buoyancy_dir_y = plume_horizontal_spatial_plot(time[it], it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
+            buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx, y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
         if ND:
             if not temporal_averages_flag:
                 if variations == 'all' or combo_flag:

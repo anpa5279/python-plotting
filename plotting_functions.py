@@ -76,6 +76,8 @@ def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, 
     ranges['gradb'] = [-3*10**(-5), 3*10**(-5)]
     ranges['T_fluc'] = [-5*10**(-1), 5*10**(-1)]
     ranges['Tracer_fluc'] = [-1*10**(-1), 1*10**(-1)]
+    ranges['Tw_fluc'] = [-1.6*10**(-4), 1.6*10**(-4)]
+    ranges['Cw'] = [-1*10**(-5), 1*10**(-5)]
     for key in ranges:
         ranges[key] = np.array(ranges[key])
     return ranges
@@ -208,7 +210,7 @@ def turb_stats_plot(time, it, ranges, fig_folder, lx, z, mld, u_avg, v_avg, w_av
 
 ### -------------------------PLOTTING PLANE SLICES FUNCTIONS------------------------- ###
 ## vertical plane slices 
-def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T, S, depths = np.array([]), yz=True):
+def plot_vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, rho_perturbed, T, S, depths = np.array([]), yz=True):
     if yz: #yz plane
         ar = lx[1]/lx[2]
         plane = 'YZ plane'
@@ -305,7 +307,7 @@ def vert_plane_slices(time, it, ranges, fig_folder, lx, x, y, z, u, v, w, rho, r
     print(f"Time step {it + 1} captured: {frame_path}")
     return outdir # return the directory where frames are saved for video creation
 ## surface plane slices 
-def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T, S):
+def plot_xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, rho_perturbed, plane, T, S):
     outdir = os.path.join(fig_folder, 'horizontal plane slices/', 'XY plane slice at ' + plane)
     os.makedirs(outdir, exist_ok=True)
     td = time / 3600 / 24
@@ -499,7 +501,7 @@ def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_nam
     print(f"Time step {it} captured: {frame_path}")
     return outdir
 
-### -------------------------PLOTTING COMPARISON FUNCTIONS------------------------- ###
+### -------------------------PLOTTING 1D LINES FUNCTIONS------------------------- ###
 ## temporal analysis ###
 def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
     num_cases = len(case_names)
@@ -672,7 +674,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
 ## spatial vertical analysis ###
-def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
+def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 4, figsize=(12, 8))
@@ -823,7 +825,7 @@ def plume_vertical_spatial_plot(time, it, ranges, color_opt, fig_folder, case_na
 
     return outdir # return the directory where frames are saved for video creation
 ## spatial horizontal analysis ###
-def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
+def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
     num_cases = len(case_names)
     if num_cases==0:
         fig, ax = plt.subplots(2, 3, figsize=(12, 7))
@@ -944,6 +946,123 @@ def plume_horizontal_spatial_plot(time, it, ranges, color_opt, fig_folder, case_
 
     # --- Save Frame ---
     frame_path = os.path.join(outdir, f"hor_centerline_comparisons_{it:04d}.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    print(f"Time step {it + 1} captured: {frame_path}")
+
+    return outdir # return the directory where frames are saved for video creation
+## turbulent statistics plotting
+def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, u_rms, w_rms, uw, b_avg, bu_fluc_avg, bw_fluc_avg, Tu, Tw, Cu, Cw):
+    num_cases = len(case_names)
+    ncols = 3
+    nrows = 2
+    outdir = os.path.join(fig_folder, 'binning', 'turbulent statistics')
+    if it == 0:
+        os.makedirs(outdir, exist_ok=True)
+    ar = np.ones(nrows + 1)
+    ar[-1] = 0.02 # add space for universal legend
+    gridspec_kw={'height_ratios': ar} # add space for universal legend
+    fig, ax = plt.subplots(nrows + 1, ncols, figsize=(12, 10), gridspec_kw=gridspec_kw, sharey = True)
+    for a in ax[2, :]:
+        a.remove()
+    case_handles = [
+        Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
+        for i in range(num_cases)
+    ]
+    fig.legend(handles=case_handles,
+            loc='lower center',
+            ncol=num_cases,
+            bbox_to_anchor=(0.52, 0.015))
+    ax = ax.ravel()
+    td = time / 3600 / 24
+    fig.suptitle(f'{td:.2f} days', fontsize=12)
+    """
+    ax[0] = velocity rms
+    ax[1] = Reynolds stresses
+    ax[2] = buoyancy fluxes
+    ax[3] = temperature fluxes
+    ax[4] = tracer fluxes
+    ax[5] = buoyancy profile
+    """
+    ax[0].set_ylabel("Depth [m]")
+    ax[0].set_xlabel("[m/s]")
+    ax[1].set_xlabel(r"[m$^2$/s$^2$]")
+    ax[2].set_xlabel(r"[m$^2$/s$^3$]")
+
+    ax[3].set_ylabel("Depth [m]")
+    ax[3].set_xlabel(r"[$^{\circ}$ C$\cdot$m/s]")
+    ax[4].set_xlabel(r"[g/kg$\cdot$m/s]")
+    ax[5].set_xlabel(r"[m/s$^2$]")
+    for a in ax:
+        a.set_ylim(ymin = np.min(z), ymax = np.max(z))
+    # velocity rms
+    for i in range(num_cases):
+        if i == 0:
+            ax[0].plot(u_rms[i], z, label=r"$\langle$u$_{r,\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='dotted', linewidth = 0.75)
+            ax[0].plot(w_rms[i], z, label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        else:
+            ax[0].plot(u_rms[i], z, color = color_opt[i], linestyle='dotted', linewidth = 0.75)
+            ax[0].plot(w_rms[i], z, color = color_opt[i], linestyle='solid', linewidth = 0.75)
+    ax[0].set_title("Root Mean Square Velocities")
+    ax[0].set_xlim(ranges['vel_rms'])
+    ax[0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    ax[0].legend(loc='lower right')
+
+    # reynolds stresses
+    for i in range(num_cases):
+        ax[1].plot(uw[i], z, color = color_opt[i], linestyle='solid', linewidth = 0.75)
+    ax[1].set_title(r"Reynolds Stresses, $\langle$u$_r$'w'$\rangle_{\text{xy}}$")
+    ax[1].set_xlim(ranges['restress'])
+    ax[1].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+
+    # perturbed buoyancy flux 
+    for i in range(num_cases):
+        if i == 0:
+            ax[2].plot(bu_fluc_avg[i], z, color = color_opt[i], label = r"$\langle$b'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
+            ax[2].plot(bw_fluc_avg[i], z, color = color_opt[i], label = r"$\langle$b'w$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+        else:
+            ax[2].plot(bu_fluc_avg[i], z, color = color_opt[i], linestyle='dotted', linewidth = 0.75)
+            ax[2].plot(bw_fluc_avg[i], z, color = color_opt[i], linestyle='solid', linewidth = 0.75)
+    ax[2].legend(loc='upper left')
+    ax[2].set_title("Perturbed Buoyancy Flux")
+    ax[2].set_xlim(ranges['bw_fluc'])
+    ax[2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
+
+    # perturbed temperature flux 
+    for i in range(num_cases):
+        if i == 0:
+            ax[3].plot(Tu[i], z, color = color_opt[i], label = r"$\langle$T'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
+            ax[3].plot(Tw[i], z, color = color_opt[i], label = r"$\langle$T'w$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+        else:
+            ax[3].plot(Tu[i], z, color = color_opt[i], linestyle='dotted', linewidth = 0.75)
+            ax[3].plot(Tw[i], z, color = color_opt[i], linestyle='solid', linewidth = 0.75)
+    ax[3].legend(loc='upper right')
+    ax[3].set_title("Perturbed Temperature Flux")
+    ax[3].set_xlim(ranges['Tw_fluc'])
+    ax[3].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
+
+    # tracer flux 
+    for i in range(num_cases):
+        if i == 0:
+            ax[4].plot(Cu[i], z, color = color_opt[i], label = r"$\langle$Cu$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
+            ax[4].plot(Cw[i], z, color = color_opt[i], label = r"$\langle$Cw$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+        else:
+            ax[4].plot(Cu[i], z, color = color_opt[i], linestyle='dotted', linewidth = 0.75)
+            ax[4].plot(Cw[i], z, color = color_opt[i], linestyle='solid', linewidth = 0.75)
+    ax[4].legend(loc='lower right')
+    ax[4].set_title("Tracer Flux")
+    ax[4].set_xlim(ranges['Cw'])
+    ax[4].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
+
+    # buoyancy profile
+    for i in range(num_cases):
+        ax[5].plot(b_avg[i], z, color = color_opt[i], linewidth = 0.75)
+    ax[5].set_title("Buoyancy Profile")
+    ax[5].set_xlim(ranges['b_avg'])
+    ax[5].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
+
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"comparison_vert_buoyancy_{it:04d}.png")
     plt.savefig(frame_path)
     plt.close(fig)
     print(f"Time step {it + 1} captured: {frame_path}")

@@ -28,7 +28,7 @@ def a_fluc_b(a, b):
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
 # calculate buoyancy 
-def buoyancy(T, rho0, coeffs, T0, tracer = None):
+def buoyancy(T, coeffs, tracer = None, rho0 = 1026, T0 = 25):
     g = 9.80665
     alpha = coeffs['alpha']
     if tracer is None:
