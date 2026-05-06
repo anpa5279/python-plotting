@@ -15,7 +15,7 @@ plume_analysis_plot = False
 plot_1d_z = False
 plot_1d_y = False
 transient_mld = False
-temporal_averages_flag = True
+temporal_averages_flag = False
 video = True
 
 ND = False
@@ -39,7 +39,7 @@ if ND:
         name_uni += '_temporal_averages'
 
 # selecting cases to compare
-variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'else'
+variations = 'length' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'else'
 cases_info = comparison_info(variations, universal_folder, ND)
 mld = cases_info['mld']
 dTdz = cases_info['dTdz']
@@ -56,8 +56,8 @@ for name in cases_info["folder_names"]:
 # collecting model information for all cases
 t_save = []
 mld_idx = []
+z = []
 if variations == 'length':
-    z = []
     nx = []
     lx = []
 if salinity:
@@ -67,16 +67,17 @@ for i, reader in enumerate(readers):
     reader.load_time()
     t_save.append(reader.t_save)
     reader.load_grid()
+    z.append(reader.z)
     if variations == 'length':
-        z.append(reader.z)
         nx.append(reader.nx)
         lx.append(reader.lx)
-    if salinity:
+    if salinity and plot_1d_z:
         S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
         dense_plume.append(PlumeAnalysis(S_value*contour_bound))
 
-if not variations == 'length':
-    z = readers[0].z
+if variations == 'length':
+    lx = lx[-1]
+else:
     nx = readers[0].nx
     lx = readers[0].lx
 
@@ -117,7 +118,7 @@ if plot_variables:
     planeslice = 'vertical' # 'vertical' or 'horizontal'
     variable_dir = {}
 
-S_tol = 10**(-5)
+S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['rho'] = [rho0, rho0+0.15]
 ranges['rho_fluc'] = [-0.025, 0.025]

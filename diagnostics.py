@@ -7,7 +7,7 @@ from dense_plume import PlumeAnalysis
 from physics import rms, buoyancy
 
 ### -------------------------COLLECTING COMPARISON CASE INFO------------------------- ###
-def comparison_info(variations, universal_folder, ND=False):
+def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
     if variations == 'strat':
         folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
         case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
@@ -49,8 +49,15 @@ def comparison_info(variations, universal_folder, ND=False):
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = 0.001 * 0.1 * np.ones(num_cases) 
+    elif variations == 'WENO':
+        folder_names = ['S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback']
+        case_names = [r'Default', r'WENO modified', r'WENO modified with callback 0 function']
+        num_cases = len(case_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = 0.001 * 0.1 * np.ones(num_cases)
     else:
-        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', or define your own case info in the comparison_info function.")
+        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', or define your own case info in the comparison_info function.")
         return None # user defined specific case not defined here
     # Set up folder and simulation parameters
     if ND:
@@ -77,8 +84,6 @@ def comparison_info(variations, universal_folder, ND=False):
     else:
         if variations == 'length':
             universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01'
-        else:
-            universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet'
         
         fig_folder = os.path.join(universal_folder, 'comparison figures', variations + ' comparison figures', 'interpolated')
         case_info = {

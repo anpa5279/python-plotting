@@ -398,12 +398,12 @@ def xy_plane_slices(time, it, ranges, fig_folder, x, y, u, v, w, Pdynamic, rho, 
 def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r', plane='YZ'):
     td = time / 3600 / 24
     if plane == 'YZ': #yz plane
-        ar = lx[1]/lx[-1]
+        ar = lx[1]/lx[2]
         plane = 'YZ plane'
         xlabel = "y [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
     elif plane == 'XZ': #xz plane
-        ar = lx[0]/lx[-1]
+        ar = lx[0]/lx[2]
         plane = 'XZ plane'
         xlabel = "x [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
@@ -437,9 +437,9 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
             ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
         if name == 'Tracer':
-            im = ax[n].imshow(var[n].T, extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+            im = ax[n].imshow(var[n].T, extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
-            im = ax[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor.min(), hor.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap = cmap)
+            im = ax[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
         ax[n].set_title(case_name, fontsize=10)
         ax[n].set_aspect('equal')
         if n == 0 or n%ncols == 0:
