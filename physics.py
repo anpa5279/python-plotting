@@ -40,8 +40,8 @@ def buoyancy(T, coeffs, tracer = None, rho0 = 1026, T0 = 25):
         C = tracer
         rho = rho0 - rho0 * alpha * (T - T0) + rho0 * beta * C
         bs ={'b_total':g * alpha * (T - T0) - g * beta * C,
-             'b_T':-g * alpha * (T - T0),
-             'b_C':g * beta * C,
+             'b_T':g * alpha * (T - T0),
+             'b_C':-g * beta * C,
              'rho':rho}
     return bs
 
