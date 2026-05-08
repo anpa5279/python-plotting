@@ -19,7 +19,7 @@ case_names = cases_info['case_names']
 readers = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
-    readers.append(OceananigansData(folder))
+    readers.append(OceananigansData(folder, salinity = salinity))
     readers[-1].load_grid()
     readers[-1].load_time()
 

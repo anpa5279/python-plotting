@@ -36,7 +36,7 @@ def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, 
     list_pqr = ['u', 'v', 'w', 'b', 'T', 'Tracer', 'Pdynamic', 'Pstatic', 'rho', 
                 'b_flux', 
                 'vel_rms', 'b_rms', 
-                'b_avg', 'T_avg', 'vel_avg', 'lamb_avg',
+                'b_avg', 'T_avg', 'vel_avg', 'lamb_avg', 'Tracer_avg', 
                 'vel_restress', 'vel_flux', 'Ri', 
                 'u_fluc', 'v_fluc', 'w_fluc', 'b_fluc', 'vel_fluc', 'bw_fluc', 'Tw_fluc', 'rho_fluc', 'T_fluc', 'Tracer_fluc',
                 'lengthscale', 'gradb', 'alphas', 
@@ -415,7 +415,6 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         title = name + ', ' + f'{td:.2f} days'
     else:
         raise ValueError("Invalid plane specified. Choose from 'YZ', 'XZ', or 'binning'.")
-
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
     os.makedirs(outdir, exist_ok=True)
     num_cases = len(case_names)
@@ -449,8 +448,8 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         if n >= (nrows - 1) * ncols:
             ax[n].set_xlabel(xlabel)
 
-
-    cbar = fig.colorbar(im, ax = ax.tolist(), anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
+    active_axes = [ax[n] for n in range(num_cases)]
+    cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
     if not name == 'Tracer': 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
@@ -697,7 +696,7 @@ def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_na
                 ncol=num_cases,
                 bbox_to_anchor=(0.52, 0.015))
 
-    td = time[it] / 3600 / 24
+    td = time / 3600 / 24
     fig.suptitle(f'{td:.2f} days', fontsize=12)
 
     ax1 = ax[0, 0]
@@ -751,9 +750,9 @@ def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_na
     # tracer profile 
     for i in range(num_cases):
         ax2.plot(tracer_avg[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
-    ax2.set_title('Tracer')
+    ax2.set_title('Tracer Profile')
     #ax2.set_ylim(ymin = np.min(z), ymax = np.max(z))
-    ax2.set_xlim(ranges['Tracer'])
+    ax2.set_xlim(ranges['Tracer_avg'])
     ax2.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
     # buoyancy profiles
@@ -783,7 +782,7 @@ def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_na
         ax5.plot(r_profile[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
     ax5.set_title("Plume Radius with Depth")
     #ax5.set_ylim(ymin = np.min(z), ymax = np.max(z))
-    ax5.set_xlim(0, lx[0][0]/2)
+    ax5.set_xlim(0, lx[0]/2)
 
     # perturbed buoyancy flux 
     for i in range(num_cases):

@@ -40,7 +40,7 @@ T0 = 25
 S0 = 0 
 contour = 0.05 
 
-reader = OceananigansData(folder)
+reader = OceananigansData(folder, salinity = salinity)
 # grid info
 reader.load_grid()
 x, y, z = reader.x, reader.y, reader.z
@@ -50,10 +50,9 @@ dx = reader.dx
 hx = reader.hx
 # load time and equation of state info
 reader.load_time()
-coeffs = reader.load_equation_of_state(salinity)
-alpha = coeffs['alpha']
-if salinity:
-    beta = coeffs['beta']
+reader.load_equation_of_state()
+
+
     S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
     S_contour = S_value*contour
     dense_plume = PlumeAnalysis(S_value*contour)
@@ -134,7 +133,7 @@ for it, t in enumerate(reader.t_save):
     # interpolate velocities to cell centers
     u, v, w = velocities_to_center(u, v, w)
     # convert temperature and salinity to buoyancy 
-    bs = buoyancy(T, rho0, coeffs, T0, tracer = S if salinity else None)
+    bs = buoyancy(reader, T, S = S)
     b = bs['b_total']
     rho = bs['rho']
 

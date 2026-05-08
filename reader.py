@@ -4,7 +4,7 @@ import h5py
 import dask.array as da
 
 class OceananigansData:
-    def __init__(self, folder, name = 'fields'):
+    def __init__(self, folder, name = 'fields', temperature=True, salinity = False):
         self.folder = folder
 
         # Grid-related (set by load_grid)
@@ -31,16 +31,22 @@ class OceananigansData:
         self.u_s = None         # stokes velocity
         self.u_f = None         # friction velocity
 
+        # equation of state information
+        self.temperature = temperature
+        self.salinity = salinity
+        self.alpha = None
+        self.beta = None
+
         # contour cache for statistics
         self._contour_cache = {}
 
         # ensuring file order
-        self.files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') and f.startswith(f'{name}'))]
-        self.Nranks = len(self.files)
+        all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') and f.startswith(f'{name}'))]
+        self.Nranks = len(all_files)
         if self.Nranks > 1:
-            self.files = []
-            for file in np.arange(self.Nranks):
-                self.files.append(f'{name}_rank{file}.jld2')
+            self.files = [f'{name}_rank{n}.jld2' for n in range(self.Nranks)]
+        else:
+            self.files = all_files
     # ------------------------- GRID ------------------------- #
     def load_grid(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -108,21 +114,17 @@ class OceananigansData:
     def load_friction_velocity(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
             self.u_f = f['IC/friction_velocity'][()]
-    def load_equation_of_state(self, salinity=False):
+    def load_equation_of_state(self):
         """
         Load thermal expansion (alpha) and optionally
         haline contraction (beta).
         """
-
         fname = os.path.join(self.folder, self.files[0])
-
         with h5py.File(fname, 'r') as f:
-            coeffs = {'alpha': f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]}
+            self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
+            if self.salinity:
+                self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
 
-            if salinity:
-                coeffs['beta'] = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
-
-        return coeffs
     # ------------------------- INTERNAL UTILS ------------------------- #
     def _slice(self, arr, with_halos):
         if with_halos:
@@ -175,7 +177,7 @@ class OceananigansData:
         # stitch along x
         return np.array(da.concatenate(arrays, axis=0))
     # ------------------------- TEMPORAL AVERAGES ------------------------- #
-    def load_temporal_averages(self, file, temperature=True, salinity=False, contour_bound = 0.05):
+    def load_temporal_averages(self, file, contour_bound = 0.05):
         fname = os.path.join(self.folder, file)
 
         with h5py.File(fname, 'r') as f:
@@ -191,7 +193,7 @@ class OceananigansData:
                 'bw_fluc_avg': f['1D temporal averages/b\'w\''][()]
             }
 
-            if temperature:
+            if self.temperature:
                 T = {
                     'T_avg': f['1D temporal averages/T'][()],
                     'T_fluc_avg': f['1D temporal averages/T\''][()],
@@ -199,7 +201,7 @@ class OceananigansData:
             else:
                 T = None
 
-            if salinity:
+            if self.salinity:
                 S = {
                     'S_avg': f['1D temporal averages/S'][()],
                     'S_fluc_avg': f['1D temporal averages/S\''][()],

@@ -28,21 +28,21 @@ def a_fluc_b(a, b):
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
 # calculate buoyancy 
-def buoyancy(T, coeffs, tracer = None, rho0 = 1026, T0 = 25):
+def buoyancy(reader, T, S = [], rho0 = 1026, T0 = 25):
     g = 9.80665
-    alpha = coeffs['alpha']
-    if tracer is None:
+    reader.load_equation_of_state()
+    alpha = reader.alpha
+    if not reader.salinity:
         b = g * alpha * (T - T0)
         rho = rho0 * alpha * (T - T0)
-        bs = {'b_total':b, 'b_T':b, 'rho':rho}
+        bs = {'b_total':b, 'rho':rho}
     else:
-        beta = coeffs['beta']
-        C = tracer
-        rho = rho0 - rho0 * alpha * (T - T0) + rho0 * beta * C
-        bs ={'b_total':g * alpha * (T - T0) - g * beta * C,
-             'b_T':g * alpha * (T - T0),
-             'b_C':-g * beta * C,
-             'rho':rho}
+        beta = reader.beta
+        rho = rho0 - rho0 * alpha * (T - T0) + rho0 * beta * S
+        bs ={'b_total':g * alpha * (T - T0) - g * beta * S,
+            'b_T':g * alpha * (T - T0),
+            'b_C':-g * beta * S,
+            'rho':rho}
     return bs
 
 # Richardson number

@@ -19,10 +19,10 @@ stokes = False
 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/resolution testing'
 
 # selecting cases to compare
-variations = 'flux' # 'MLD', 'flux', 'strat', 'all', 'length', 'else'
+variations = 'resolution' # 'MLD', 'flux', 'strat', 'all', 'length', 'resolution', 'else'
 cases_info = comparison_info(variations, universal_folder)
 mld = cases_info['mld']
 dTdz = cases_info['dTdz']
@@ -33,9 +33,14 @@ fig_folder = cases_info['fig_folder']
 os.makedirs(fig_folder, exist_ok=True)
 
 readers = []
+nz = []
+lz = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
-    readers.append(OceananigansData(folder))
+    readers.append(OceananigansData(folder, salinity = salinity))
+    readers[-1].load_grid()
+    nz.append(readers[-1].nx[-1])
+    lz.append(readers[-1].lx[-1])
 
 readers[0].load_grid()
 readers[0].load_time()
@@ -45,7 +50,6 @@ lx = readers[0].lx
 lx = [lx[0]/2, lx[-1]]
 nt = readers[0].nt
 
-nz = np.max(nx[:][2])
 x = readers[0].x
 y = readers[0].y
 
@@ -53,9 +57,6 @@ y = readers[0].y
 rho0 = 1026
 T0 = 25
 S0 = 0 
-if plot_turb_stats:
-    coeffs = readers[0].load_equation_of_state(True)
-
 # video or not setup
 if video:
     time = readers[0].time
@@ -82,39 +83,39 @@ ranges['U_rms'] = [0, 4*10**(-3)]
 ranges['Tw_fluc'] = [-1.6*10**(-4), 1.6*10**(-4)]
 ranges['Cw'] = [-3.5*10**(-5), 3.5*10**(-5)]
 ranges['b_avg'] = [-1.0*10**(-3), 1.0*10**(-5)]
-if plot_rz_plane:
-    S_plane = np.empty((nt, num_cases, nx[0]//2, nx[2]))
-    T_plane = np.empty((nt, num_cases, nx[0]//2, nx[2]))
-    ur_plane = np.empty((nt, num_cases, nx[0]//2, nx[2]))
-    w_plane = np.empty((nt, num_cases, nx[0]//2, nx[2]))
-    b_fluc_plane = np.empty((nt, num_cases, nx[0]//2, nx[2]))
-    T_fluc_plane = np.empty((nt, num_cases, nx[0]//2, nx[2]))
-
-if plot_turb_stats:
-    u_rms = np.empty((nt, num_cases, nz))
-    w_rms = np.empty((nt, num_cases, nz))
-    uw = np.empty((nt, num_cases, nz))
-    b_avg = np.empty((nt, num_cases, nz))
-    bu_fluc_avg = np.empty((nt, num_cases, nz))
-    bw_fluc_avg = np.empty((nt, num_cases, nz))
-    Tu = np.empty((nt, num_cases, nz))
-    Tw = np.empty((nt, num_cases, nz))
-    Cu = np.empty((nt, num_cases, nz))
-    Cw = np.empty((nt, num_cases, nz))
 for i, reader in enumerate(readers):
+    if plot_rz_plane:
+        S_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+        T_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+        ur_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+        w_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+        b_fluc_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+        T_fluc_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+
+    if plot_turb_stats:
+        u_rms = np.empty((nt, num_cases, nz[i]))
+        w_rms = np.empty((nt, num_cases, nz[i]))
+        uw = np.empty((nt, num_cases, nz[i]))
+        b_avg = np.empty((nt, num_cases, nz[i]))
+        bu_fluc_avg = np.empty((nt, num_cases, nz[i]))
+        bw_fluc_avg = np.empty((nt, num_cases, nz[i]))
+        Tu = np.empty((nt, num_cases, nz[i]))
+        Tw = np.empty((nt, num_cases, nz[i]))
+        Cu = np.empty((nt, num_cases, nz[i]))
+        Cw = np.empty((nt, num_cases, nz[i]))
     # Load binning from files
     r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
     if plot_rz_plane:
         # plane slices to save for plotting
         S_rz[S_rz < S_tol] = S_tol
-        S_plane[:, i, :, :] = S_rz.transpose(2, 0, 1)
-        T_plane[:, i, :, :] = T_rz.transpose(2, 0, 1)
-        T_fluc_plane[:, i, :, :] = T_fluc_rz.transpose(2, 0, 1)
-        ur_plane[:, i, :, :] = ur_rz.transpose(2, 0, 1)
-        w_plane[:, i, :, :] = w_rz.transpose(2, 0, 1)
-        b_fluc_plane[:, i, :, :] = b_fluc_rz.transpose(2, 0, 1)
+        S_n[:, i, :, :] = S_rz.transpose(2, 0, 1)
+        T_n[:, i, :, :] = T_rz.transpose(2, 0, 1)
+        T_fluc_n[:, i, :, :] = T_fluc_rz.transpose(2, 0, 1)
+        ur_n[:, i, :, :] = ur_rz.transpose(2, 0, 1)
+        w_n[:, i, :, :] = w_rz.transpose(2, 0, 1)
+        b_fluc_n[:, i, :, :] = b_fluc_rz.transpose(2, 0, 1)
     if plot_turb_stats:
-        bs = buoyancy(T_rz, coeffs, tracer = S_rz if salinity else None)
+        bs = buoyancy(reader, T_rz, S = S_rz)
         b = bs['b_total']
         # Average over the radial dimension (axis=0), keeping time and z
         u_avg = np.mean(ur_rz, axis=0)  # shape: (nz, nt) or (nr_bins, nt) etc.
@@ -136,7 +137,7 @@ for i, reader in enumerate(readers):
 ############ PLOTTING ############
 if plot_rz_plane:
     for it, t in enumerate(time):
-        variables = [S_plane[it, :, :, :], T_plane[it, :, :, :], T_fluc_plane[it, :, :, :], ur_plane[it, :, :, :], w_plane[it, :, :, :], b_fluc_plane[it, :, :, :]] 
+        variables = [S_n[it, :, :, :], T_n[it, :, :, :], T_fluc_n[it, :, :, :], ur_n[it, :, :, :], w_n[it, :, :, :], b_fluc_n[it, :, :, :]] 
         colorbar_labels = [r"g/kg", r"$^\circ$C", r"$^\circ$C", r"m/s", r"m/s", r"m/s$^2$"]
         cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
         for n, var in enumerate(variables):

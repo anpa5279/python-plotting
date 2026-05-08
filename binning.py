@@ -10,18 +10,18 @@ from plotting_functions import plot_binning
 binning_flag = True
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/S0 = 0.2 dTdz = 0.01 MLD = 60'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/resolution testing/nz = 64'
 output_folder = os.path.join(folder, 'binning')
 os.makedirs(output_folder, exist_ok=True)
 file_path = os.path.join(output_folder, 'binning_rtz.h5')
 
-reader = OceananigansData(folder)
+reader = OceananigansData(folder, salinity = salinity)
 if binning_flag:
 
     # inital paramreters
     rho0 = 1026
     T0 = 25
-    coeffs = reader.load_equation_of_state(True)
+    reader.load_equation_of_state()
     # grid info
     reader.load_grid()
     x, y, z = reader.x, reader.y, reader.z
@@ -32,11 +32,11 @@ if binning_flag:
     # load time and equation of state info
     time, t_save = reader.load_time()
 
-    X, Y = np.meshgrid(x, y)
+    X, Y, Z= np.meshgrid(x, y, z)
     dist = np.sqrt(X**2 + Y**2)
     dx_scale = max(dx[:-1])
     r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
-    r_bin = np.sqrt((X/dx_scale)**2 + (Y/dx_scale)**2).astype(int)
+    r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
     counts = np.bincount(r_bin.flat)      # number of points in each radial shell, including corners
     ncirc = max(nx[0], nx[1])//2      # full circular shells
@@ -64,7 +64,7 @@ if binning_flag:
         T_fluc = T - T_avg
 
         # calculate b and b_fluc
-        bs = buoyancy(T, rho0, coeffs, T0, S)
+        bs = buoyancy(reader, T, S = S)
         b = bs['b_total']
         b_avg = np.mean(b, axis=(-3, -2), keepdims=True)
         b_fluc = b - b_avg

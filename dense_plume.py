@@ -75,7 +75,10 @@ class PlumeAnalysis:
 
         self.radius_tracer = np.zeros(self.nz)
         mask = counts > 0
-        self.radius_tracer[mask] = sums[mask] / counts[mask]
+        if np.any(mask):
+            self.radius_tracer[mask] = sums[mask] / counts[mask]
+        else:
+            self.radius_tracer = np.zeros(self.nz)
         return self.radius_tracer
 
     ### -------------------------MOMENTUM ANALYSIS------------------------- ###

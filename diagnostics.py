@@ -49,6 +49,13 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = 0.001 * 0.1 * np.ones(num_cases) 
+    elif variations == 'resolution':
+        folder_names =['nz = 64', 'nz = 128', 'nz = 192', 'nz = 256']
+        case_names =[r'N$_{\text{z}}$ = 64', r'N$_{\text{z}}$ = 128', r'N$_{\text{z}}$ = 192', r'N$_{\text{z}}$ = 256']
+        num_cases = len(case_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = 0.001 * 0.1 * np.ones(num_cases) 
     elif variations == 'WENO':
         folder_names = ['S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback']
         case_names = [r'Default', r'WENO modified', r'WENO modified with callback 0 function']
@@ -57,8 +64,9 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = 0.001 * 0.1 * np.ones(num_cases)
     else:
-        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', or define your own case info in the comparison_info function.")
+        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', or define your own case info in the comparison_info function.")
         return None # user defined specific case not defined here
+    folder_names = [os.path.join(universal_folder, folder) for folder in folder_names]
     # Set up folder and simulation parameters
     if ND:
         vars_exps = np.array([ # columns: Ri, Fr, MLD
@@ -82,9 +90,6 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
             "vars_exps": vars_exps
         }
     else:
-        if variations == 'length':
-            universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/vertical domain increase/dTdz = 0.01'
-        
         fig_folder = os.path.join(universal_folder, 'comparison figures', variations + ' comparison figures', 'interpolated')
         case_info = {
             "folder_names": folder_names,
@@ -104,7 +109,7 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10, T0 = 25.0, rh
     nx = reader.nx
     x0, y0 = center
 
-    coeffs = reader.load_equation_of_state(True)
+    reader.load_equation_of_state()
 
     n = 0
     # ---------------- initializing arrays ---------------- #
@@ -144,8 +149,8 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10, T0 = 25.0, rh
         # center velocities
         u, v, w = velocities_to_center(u, v, w)
         # buoyancy
-        b_temp = buoyancy(T, rho0, coeffs, T0, S)
-        b = b_temp['b_total']
+        bs = buoyancy(reader, T, S = S)
+        b = bs['b_total']
 
         # ---------------- horizontal means ---------------- #
         S_xy = np.mean(S, axis=(-3, -2))

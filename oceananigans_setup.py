@@ -5,7 +5,7 @@ import numpy as np
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, write_temporal_averages, compute_temporal_radius_avg
 
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/resolution testing/nz = 192'
 
 write_temporal_avg = True
 
@@ -15,7 +15,7 @@ g = 9.80665
 T0 = 25.0
 rho0 = 1026.0
 
-reader = OceananigansData(folder)
+reader = OceananigansData(folder, salinity = salinity)
 reader.load_grid()
 time, t_save = reader.load_time()
 
