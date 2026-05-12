@@ -5,9 +5,10 @@ import numpy as np
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, write_temporal_averages, compute_temporal_radius_avg
 
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/resolution testing/nz = 192'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60'
 
 write_temporal_avg = True
+salinity = True
 
 output_file = os.path.join(folder, 'interp_temporal_averages.h5')
 

@@ -173,8 +173,8 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10, T0 = 25.0, rh
         w_rms += rms(w)
         # ---------------- contour values ---------------- #
         bw_idx = np.where(bw==np.max(bw))[0][0]
-        S_value += point(S, x, y, z, x0, y0, z[bw_idx])
-        w_value += point(w, x, y, z, x0, y0, z[bw_idx])
+        S_value += point(S, z, z0 = z[bw_idx], x=x, x0 = x0, y = y, y0 = y0)
+        w_value += point(w, z, z0 = z[bw_idx], x=x, x0 = x0, y = y, y0 = y0)
         # ---------------- accumulation ---------------- #
         S_avg += S_xy
         T_avg += T_xy

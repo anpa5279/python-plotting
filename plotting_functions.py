@@ -437,7 +437,8 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         for i in range(num_cases, nrows*ncols):
             ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
-        if name == 'Tracer':
+        if name == 'Tracers':
+            var[n][var[n] <= 0] = 10**(-16)
             im = ax[n].imshow(var[n].T, extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
             im = ax[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
@@ -450,7 +451,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
 
     active_axes = [ax[n] for n in range(num_cases)]
     cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
-    if not name == 'Tracer': 
+    if not name == 'Tracers': 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
         cbar.update_ticks() 

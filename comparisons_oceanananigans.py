@@ -27,7 +27,8 @@ stokes = False
 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/resolution testing'#vertical domain increase/dTdz = 0.01'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
+#harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 if ND:
     combo_flag = False
@@ -38,8 +39,23 @@ if ND:
         name_uni += '_temporal_averages'
 
 # selecting cases to compare
-variations = 'resolution' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
-cases_info = comparison_info(variations, universal_folder = universal_folder, ND = ND)
+variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
+if variations != 'else':
+    cases_info = comparison_info(variations, universal_folder = universal_folder, ND = ND)
+else:
+    folder_names = ['Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
+    num_cases = len(folder_names)
+    fig_folder = os.path.join(universal_folder, 'comparison figures', 'Lz = 160m' + ' comparison figures', 'interpolated', 'MLD = 70m')
+    case_names =[r'L$_z = 160$m', r'L$_z = 96$m']#[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
+    cases_info = {
+            "folder_names": folder_names,
+            "fig_folder": fig_folder,
+            "case_names": case_names,
+            "num_cases": num_cases,
+            "dTdz": 0.01*np.ones(num_cases),
+            "mld": np.array([70, 70]),
+            "F_s": np.array([-1.0*10**(-4), -1.0*10**(-4)])
+        }
 mld = cases_info['mld']
 dTdz = cases_info['dTdz']
 F_s = cases_info['F_s']
@@ -69,11 +85,16 @@ for i, reader in enumerate(readers):
     z.append(reader.z)
     nx.append(reader.nx)
     lx.append(reader.lx)
+    if i == 0:
+        nt = reader.nt
+        nz = reader.nx[2]
+    else:
+        nt = np.min([nt, reader.nt])
+        nz = np.max([nz, reader.nx[2]])
     if salinity and plot_1d_z:
         S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
         dense_plume.append(PlumeAnalysis(S_value*contour_bound))
 
-nz = np.max(nx[:][2])
 x = readers[0].x
 y = readers[0].y
 
@@ -88,18 +109,18 @@ S0 = 0
 
 # video or not setup
 if video:
-    nt = np.arange(0, readers[0].nt)
+    nt = np.arange(0, nt)
     time = readers[0].time
 else:
-    nt = [readers[0].nt - 1,] # last time step
+    nt = [nt,] # last time step
     time = readers[0].time[-1]
 
 # plotting prep
 plot_format()
 if plot_variables:
     if salinity:
-        var_names = ['Tracer', 'Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['Tracer', 'T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'rho_fluc']
+        var_names = ['Sign Tracer', ]#'Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
+        range_names = ['Tracer', ]#'T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'rho_fluc']
     else:
         var_names = ['Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
         range_names = ['T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'rho_fluc']
@@ -110,8 +131,9 @@ S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['rho'] = [rho0, rho0+0.15]
 ranges['rho_fluc'] = [-0.025, 0.025]
-ranges['Tracer'] = [S_tol, 0.2]
-ranges['Tracer_avg'] = [0, 6*10**(-4)]
+ranges['Sign Tracer'] = np.sign([-0.05, 0.05])
+ranges['Tracer_fluc'] = [-0.2, 0.2]
+ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
 ranges['T'] = [T0-1.0, T0 + 0.01]
 ranges['w'] = [-1.5*10**(-1), 1.5*10**(-1)]
 ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
@@ -267,7 +289,6 @@ else:
             T = reader.lazy_field('T', reader.t_save[it])
             if salinity:
                 S = reader.lazy_field('S', reader.t_save[it])
-                S[S<S_tol] = S_tol * 10**(-3)
             if stokes:
                 u = u - reader.u_s
             # interpolate velocities to cell centers
@@ -339,7 +360,7 @@ else:
         ############ PLOTTING ############
         if plot_variables:
             if salinity: #'Tracer', 'T', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux'
-                variables = [S_plane, T_plane, rho_plane, u_plane, v_plane, w_plane, bw_plane, rho_fluc_plane] 
+                variables = [np.sign(S_plane), ]#T_plane, rho_plane, u_plane, v_plane, w_plane, bw_plane, rho_fluc_plane] 
                 colorbar_labels = [r"g/kg", r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s", r"m$^2$/s$^3$", r"kg/m$^3$"]
                 cmaps = ['viridis', 'viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
             else: #'T', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux'

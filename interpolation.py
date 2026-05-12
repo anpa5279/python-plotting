@@ -80,12 +80,12 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
 
         sl0[axis] = idx
         sl1[axis] = idx + 1
-
+        
         f0 = f[tuple(sl0)]
         f1 = f[tuple(sl1)]
-
+        
         w = (coord_new - c0) / (c1 - c0)
-
+        
         return (1 - w) * f0 + w * f1
 # ------------------------- PLANE SLICES ------------------------- #
 def xy_plane(f, z, z0):
@@ -117,15 +117,14 @@ def horizontal_line(f, hor, z, hor0, z0, axis='y'):
 # ------------------------- GRID POINT ------------------------- #
 def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
     if f0 is not None:
-        znew = interp1d_axis(f, z, f_new = f0, axis=-1) 
+        znew = interp1d_axis(f, z, f_new = f0) 
         new = znew
     if z0 is not None:
-        fnew = interp1d_axis(f, z, coord_new = z0, axis=-1)
+        fnew = interp1d_axis(f, z, coord_new = z0)
         new = fnew
     if x is not None and y is not None:
-        fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=-1)
-        new = interp1d_axis(fnewyz, x, coord_new = x0, axis=-1)
-    else:
-        return new
+        fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=1)
+        new = interp1d_axis(fnewyz, x, coord_new = x0, axis = 0)
+    return new
 
 
