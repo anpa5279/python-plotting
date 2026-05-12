@@ -8,7 +8,7 @@ from matplotlib.lines import Line2D
 from plotting_functions import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
-
+salinity = True
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet'
 

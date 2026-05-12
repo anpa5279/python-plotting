@@ -19,7 +19,7 @@ def velocities_to_center(u, v, w):
     )
 
 # ------------------------- GENERAL INTERPOLATION ------------------------- #
-def interp1d_axis(f, coord, coord_new, axis=-1):
+def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
     """
     Linear interpolation along a given axis.
 
@@ -38,60 +38,94 @@ def interp1d_axis(f, coord, coord_new, axis=-1):
     -------
     Interpolated array with that axis removed
     """
+    if f_new is not None:
+        coord = np.asarray(coord)
 
-    coord = np.asarray(coord)
+        # find index below target
+        if f_new == 0:
+            idx = np.where(np.diff(np.sign(f))!=0)[0][0]
+        else:
+            idx = np.searchsorted(f, f_new) - 1
+            idx = np.clip(idx, 0, len(f) - 2)
 
-    # find index below target
-    idx = np.searchsorted(coord, coord_new) - 1
-    idx = np.clip(idx, 0, len(coord) - 2)
+        f0 = f[idx]
+        f1 = f[idx + 1]
 
-    c0 = coord[idx]
-    c1 = coord[idx + 1]
+        # slice helpers
+        sl0 = [slice(None)] * coord.ndim
+        sl1 = [slice(None)] * coord.ndim
 
-    # slice helpers
-    sl0 = [slice(None)] * f.ndim
-    sl1 = [slice(None)] * f.ndim
+        sl0[axis] = idx
+        sl1[axis] = idx + 1
 
-    sl0[axis] = idx
-    sl1[axis] = idx + 1
+        c0 = coord[tuple(sl0)]
+        c1 = coord[tuple(sl1)]
 
-    f0 = f[tuple(sl0)]
-    f1 = f[tuple(sl1)]
+        w = (f_new - f0) / (f1 - f0)
 
-    w = (coord_new - c0) / (c1 - c0)
+        return (1 - w) * c0 + w * c1
+    if coord_new is not None:
+        coord = np.asarray(coord)
 
-    return (1 - w) * f0 + w * f1
+        # find index below target
+        idx = np.searchsorted(coord, coord_new) - 1
+        idx = np.clip(idx, 0, len(coord) - 2)
+
+        c0 = coord[idx]
+        c1 = coord[idx + 1]
+
+        # slice helpers
+        sl0 = [slice(None)] * f.ndim
+        sl1 = [slice(None)] * f.ndim
+
+        sl0[axis] = idx
+        sl1[axis] = idx + 1
+
+        f0 = f[tuple(sl0)]
+        f1 = f[tuple(sl1)]
+
+        w = (coord_new - c0) / (c1 - c0)
+
+        return (1 - w) * f0 + w * f1
 # ------------------------- PLANE SLICES ------------------------- #
 def xy_plane(f, z, z0):
-    return interp1d_axis(f, z, z0, axis=2)
+    return interp1d_axis(f, z, coord_new = z0, axis=2)
 
 def yz_plane(f, x, x0):
-    return interp1d_axis(f, x, x0, axis=0)
+    return interp1d_axis(f, x, coord_new = x0, axis=0)
 
 def xz_plane(f, y, y0):
-    return interp1d_axis(f, y, y0, axis=1)
+    return interp1d_axis(f, y, coord_new = y0, axis=1)
 
 def vertical_line(f, x, y, x0, y0):
     # interpolate in x
-    fx = interp1d_axis(f, x, x0, axis=0)
+    fx = interp1d_axis(f, x, coord_new = x0, axis=0)
 
     # interpolate in y
-    fxy = interp1d_axis(fx, y, y0, axis=0)
+    fxy = interp1d_axis(fx, y, coord_new = y0, axis=0)
 
     return fxy  # shape: (Nz,)
 
 def horizontal_line(f, hor, z, hor0, z0, axis='y'):
     if axis == 'y':
-        fh = interp1d_axis(f, hor, hor0, axis=1)
+        fh = interp1d_axis(f, hor, coord_new = hor0, axis=1)
     else:
-        fh = interp1d_axis(f, hor, hor0, axis=0)
+        fh = interp1d_axis(f, hor, coord_new = hor0, axis=0)
 
-    return interp1d_axis(fh, z, z0, axis=-1)
+    return interp1d_axis(fh, z, coord_new = z0, axis=-1)
 
 # ------------------------- GRID POINT ------------------------- #
-def point(f, x, y, z, x0, y0, z0):
-    fx = interp1d_axis(f, x, x0, axis=0)
-    fxy = interp1d_axis(fx, y, y0, axis=0)
-    fxyz = interp1d_axis(fxy, z, z0, axis=0)
-    return fxyz
+def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
+    if f0 is not None:
+        znew = interp1d_axis(f, z, f_new = f0, axis=-1) 
+        new = znew
+    if z0 is not None:
+        fnew = interp1d_axis(f, z, coord_new = z0, axis=-1)
+        new = fnew
+    if x is not None and y is not None:
+        fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=-1)
+        new = interp1d_axis(fnewyz, x, coord_new = x0, axis=-1)
+    else:
+        return new
+
 

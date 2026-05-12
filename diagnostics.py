@@ -8,27 +8,28 @@ from physics import rms, buoyancy
 
 ### -------------------------COLLECTING COMPARISON CASE INFO------------------------- ###
 def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
+    wp = -0.001
     if variations == 'strat':
         folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
         case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
         num_cases = len(case_names)
         dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases) 
-        F_s = 0.001 * 0.1 * np.ones(num_cases) 
+        F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'MLD':
         folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
         case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = np.array([50, 60, 70])
-        F_s = 0.001 * 0.1 * np.ones(num_cases) 
+        F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'flux':
         folder_names =['S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
         case_names =[r'F$_{\text{C}} = -5.0\cdot 10^{-5}$', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$', r'F$_{\text{C}} = -1.5\cdot 10^{-4}$', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)  
-        F_s = 0.001 * np.array([0.05, 0.1, 0.15, 0.2])
+        F_s = wp * np.array([0.05, 0.1, 0.15, 0.2])
     elif variations == 'all':
         folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 60', 
                     'S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 70', 
@@ -41,28 +42,28 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         num_cases = len(case_names)
         mld = np.array([60, 50, 70, 60, 60, 60, 60, 60, 60]) # mld in m
         dTdz = np.array([0.01, 0.01, 0.01, 0.005, 0.05, 0.1, 0.01, 0.01, 0.01]) # background temperature gradient in K/m
-        F_s = 0.001 * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
+        F_s = wp * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
     elif variations == 'length':
         folder_names =['nz = 77 z = 96.25 m', 'nz = 128 z = 160 m', 'nz = 192 z = 240 m']
         case_names =[r'L$_{\text{z}}$ = 96.25 m', r'L$_{\text{z}}$ = 160 m', r'L$_{\text{z}}$ = 240 m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
-        F_s = 0.001 * 0.1 * np.ones(num_cases) 
+        F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'resolution':
         folder_names =['nz = 64', 'nz = 128', 'nz = 192', 'nz = 256']
         case_names =[r'N$_{\text{z}}$ = 64', r'N$_{\text{z}}$ = 128', r'N$_{\text{z}}$ = 192', r'N$_{\text{z}}$ = 256']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
-        F_s = 0.001 * 0.1 * np.ones(num_cases) 
+        F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'WENO':
         folder_names = ['S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback']
         case_names = [r'Default', r'WENO modified', r'WENO modified with callback 0 function']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
-        F_s = 0.001 * 0.1 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)
     else:
         print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', or define your own case info in the comparison_info function.")
         return None # user defined specific case not defined here

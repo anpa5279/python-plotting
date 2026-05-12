@@ -1,10 +1,13 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 from reader import OceananigansData
 from physics import buoyancy
-from interpolation import interp1d_axis
+from interpolation import point
 from diagnostics import comparison_info
+from plotting_functions import plot_format, comparison_plot_opt
 
 # flags for how to read data
 with_halos = False
@@ -17,7 +20,7 @@ name_uni = f'contour-{contour_bound:.2f}'
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
 
 # selecting cases to compare
-variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'else'
+variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'resolution', 'else'
 cases_info = comparison_info(variations, universal_folder)
 mld = cases_info['mld']
 dTdz = cases_info['dTdz']
@@ -31,9 +34,10 @@ readers = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
     readers.append(OceananigansData(folder, salinity = salinity))
+    readers[-1].load_grid()
+    readers[-1].load_time()
+    readers[-1].load_equation_of_state()
 
-readers[0].load_grid()
-readers[0].load_time()
 z = readers[0].z
 nx = readers[0].nx
 lx = readers[0].lx
@@ -41,45 +45,89 @@ lx = [lx[0]/2, lx[-1]]
 nt = readers[0].nt
 
 nz = np.max(nx[:][2])
-x = readers[0].x
-y = readers[0].y
 
 # physical parameters
 rho0 = 1026
 T0 = 25
 S0 = 0 
 rp = 5
-
+alpha = readers[0].alpha
+beta = readers[0].beta
 g = 9.80665
-S_tol = 10**(-6)
+
+N = (g * alpha * dTdz)**0.5
+F0 = -g * beta * F_s * np.pi * rp**2
+Ln = (F0/N**3)**(1/4)
+
+length_scale = []
+neutral_depth = []
 for i, reader in enumerate(readers):
-    reader_dTdz = dTdz[i]
-    reader_Fs = F_s[i]
-    reader_mld = mld[i]
     r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
 
-    # time-average bw at plume center (r=0, smallest bin)
-    bw_rz = b_fluc_rz * w_rz                    # element-wise
-    
-    b_fluc_avg = np.mean(b_fluc_rz[:4, :, 20:], axis=(0, -1))
-    w_avg = np.mean(w_rz[:4, :, 20:], axis=(0, -1))
+    S_avg = np.mean(S_rz[0, :, 5:], axis=(-1))
+    S_mld = point(S_avg, z, z0 = -mld[i])
+    b_mld = g * S_mld * beta
+    length_scale.append(b_mld/(g*alpha*dTdz[i]))
+    """
+    bs = buoyancy(reader, T_rz, S_rz)
+    bT = bs['b_T']
+    bS = bs['b_C']
+    b_fluc = 
+    """
+    b_fluc_avg = np.mean(b_fluc_rz[0, :, 5:], axis=(-1))
+    mld_idx = np.argmin(np.abs(z + mld[i]))
+    idxs = np.where(np.diff(np.sign(b_fluc_avg))<0)[0] # goes from pos to neg
+    idx = idxs[np.argmin(np.abs(mld_idx - idxs))]
+    weight = -b_fluc_avg[idx]/(b_fluc_avg[idx+1] - b_fluc_avg[idx])
+    z_neutral = (1 - weight) * z[idx] + weight * z[idx+1]
+    neutral_depth.append(np.abs(z_neutral+mld[i]))
+    print(f'Case: MLD = {mld[i]} m, dT/dz = {dTdz[i]}, F_s = {F_s[i]} g/kg m/s')
+    print('\tLn:', Ln[i])
+    print('\t\t(96m-MLD)/Ln:', (96-mld[i])/Ln[i], '\t(160m-MLD)/Ln:', (160-mld[i])/Ln[i])
+    print('\tb(S_perturbed_centerline)/(g*alpha*dTdz):', length_scale[i])
+    print('\tneutral depth:', neutral_depth[i])
+    print('')
 
-    # zero crossings
-    sign_changes_b = np.diff(np.sign(b_fluc_avg))
-    sign_changes_w = np.diff(np.sign(w_avg))
+lz = np.arange(96, 193)
 
-    # neutral buoyancy: first positive -> negative crossing
-    neg_to_pos_b = np.where(sign_changes_b > 0)[0]
-    pos_to_neg_w = np.where(sign_changes_w < 0)[0]
-    
-    z_max_w = z[pos_to_neg_w[-1] + 1]
-    
-    z_max_b = z[neg_to_pos_b[0] + 1]
+color_opt, line_opt = comparison_plot_opt(num_cases)
+plot_format()
+scale = [1, 0.25]
+gridspec_kw={'height_ratios': scale}
+fig, ax = plt.subplots(2, 3, figsize=(23, 6), dpi = 300, gridspec_kw = gridspec_kw)
+for a in ax[-1, :]:
+        a.remove()
+ax = ax.ravel()
+plt.subplots_adjust(top=0.9)
+case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
+fig.legend(handles=case_handles,
+        loc='lower center',
+        ncol=num_cases/4,
+        bbox_to_anchor=(0.52, 0.005), fontsize = 12)
 
-    safety = 2.0
-    Lz_required = np.max(np.abs([z_max_w, z_max_b])) * safety
 
-    print(rf"Case MLD={reader_mld}, dTdz={reader_dTdz}, Fs={reader_Fs}: "
-        rf"z_max_w={z_max_w:.1f} m, w = {w_avg[pos_to_neg_w[-1]]:.2e} m/s, "
-        rf"z_max_b={z_max_b:.1f} m, b = {b_fluc_avg[neg_to_pos_b[0]]:.2e} m/s^2, "
-        rf"using {np.max(np.abs([z_max_w, z_max_b]))}, Lz_required={Lz_required:.1f} m")
+ax[0].set_title('Neutral Depths', fontsize = 12)
+ax[0].set_xlabel(r'L$_z$ [m]', fontsize = 12)
+ax[0].set_ylabel(r'(L$_z$ - h$_{ml}$)/(z$_{neutral}$)', fontsize = 12)
+
+ax[1].set_title('Ln', fontsize = 12)
+ax[1].set_xlabel(r'L$_z$ [m]', fontsize = 12)
+ax[1].set_ylabel(r'(L$_z$ - h$_{ml}$)/(L$_{n}$)', fontsize = 12)
+
+ax[2].set_title('$\Delta$b/(db/dz)', fontsize = 12)
+ax[2].set_xlabel(r'L$_z$ [m]', fontsize = 12)
+ax[2].set_ylabel(r'(L$_z$ - h$_{ml}$)/($\Delta$b/(db/dz))', fontsize = 12)
+
+for i in range(num_cases):
+     ax[0].plot(lz, (lz - mld[i])/(neutral_depth[i]), color = color_opt[i])
+     ax[1].plot(lz, (lz - mld[i])/(Ln[i]), color = color_opt[i])
+     ax[2].plot(lz, (lz - mld[i])/(length_scale[i]), color = color_opt[i])
+
+neutral_option = (137 - mld[0])/(neutral_depth[0])
+Ln_option = (137 - mld[0])/(Ln[0])
+length_scale_option = (137 - mld[0])/(length_scale[0])
+ax[0].plot(lz, neutral_option*np.ones_like(lz), color = 'black', linestyle = 'dashed', linewidth = 0.85)
+ax[1].plot(lz, Ln_option*np.ones_like(lz), color = 'black', linestyle = 'dashed', linewidth = 0.85)
+ax[2].plot(lz, length_scale_option*np.ones_like(lz), color = 'black', linestyle = 'dashed', linewidth = 0.85)
+
+plt.savefig(os.path.join(fig_folder, 'domain potentials.svg'))
