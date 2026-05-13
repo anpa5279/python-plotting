@@ -140,42 +140,111 @@ class OceananigansData:
         return self._slice(data, with_halos).transpose(2, 1, 0)
 
     # ------------------------- FIELD COLLECTION ------------------------- #
-    def lazy_field(self, field, t, with_halos=False):
+    def lazy_field(self, field, steps = None, with_halos=False):
         """
         Returns a lazy (dask) array of shape (Nx, Ny, Nz)
         without loading into memory.
         """
+        if steps is None: # default, load all time steps
+            steps = self.t_save
+        elif steps.size == 1: 
+            steps = [steps] # ensuring that it is iterable
+        arrayst = []
+        for t in steps:
+            arrays = []
+            for r, file in enumerate(self.files):
+                fname = os.path.join(self.folder, file)
 
-        arrays = []
-        chunk = self.nx[0] // self.Nranks
+                f = h5py.File(fname, 'r')  # keep open!
 
-        for r, file in enumerate(self.files):
-            fname = os.path.join(self.folder, file)
+                dset = f[f'timeseries/{field}'][f'{int(t)}']
 
-            f = h5py.File(fname, 'r')  # keep open!
+                if with_halos:
+                    dset = dset[
+                        self.hx[2]:-self.hx[2],
+                        self.hx[1]:-self.hx[1],
+                        self.hx[0]:-self.hx[0]
+                    ]
 
-            dset = f[f'timeseries/{field}'][f'{int(t)}']
+                # Wrap as dask array
+                darr = da.from_array(
+                    dset,
+                    chunks=dset.shape  # one chunk per rank (you can tune this)
+                )
 
-            if with_halos:
-                dset = dset[
-                    self.hx[2]:-self.hx[2],
-                    self.hx[1]:-self.hx[1],
-                    self.hx[0]:-self.hx[0]
-                ]
+                # transpose lazily
+                darr = darr.transpose(2, 1, 0)
 
-            # Wrap as dask array
-            darr = da.from_array(
-                dset,
-                chunks=dset.shape  # one chunk per rank (you can tune this)
-            )
+                arrays.append(darr)
+            arrayst.append(np.concatenate(arrays, axis = 0)) # stitch along x
+        if steps is None:
+            return np.array(arrayst)
+        else:
+            return np.array(arrayst).squeeze() # remove time dimension if only one step
+    def field_slice(self, field, steps = None, with_halos=False, slice = 'YZ', loc = 0.0):
+        """
+        Returns a 2D slice of the field throughout time with shape (2d slice, nt). 
+        for slice:
+        'YZ' = yz plane slice, shape (Ny, Nz, nt)
+        'XZ' = xz plane slice, shape (Nx, Nz, nt)
+        'XY' = xy plane slice, shape (Nx, Ny, nt)
+        for loc:
+        if slice = 'YZ', loc is the x location of the slice 
+        if slice = 'XZ', loc is the y location of the slice
+        if slice = 'XY', loc is the z location of the slice
+        the slice will be interpolated when needed
+        """
+        if steps is None: # default, load all time steps
+            steps = self.t_save
+        elif steps.size == 1: 
+            steps = [steps] # ensuring that it is iterable
+        
+        arrayst = []
+        # find file that contains the x location
+        coord = {'YZ': self.x, 'XZ': self.y, 'XY': self.z}[slice]
+        if slice == 'YZ':
+            if np.any(loc == self.x):
+                file_index = np.where(loc == coord)
+                shape = (1, self.nx[1], self.nx[2])
+            else:
+                file_index = np.where(np.abs(coord - loc) == np.min(np.abs(coord)))[0][0:2] # find closest x location
+                shape = (2, self.nx[1], self.nx[2])
+            files = self.files[file_index]
+        else:
+            files = self.files
+            shape = (self.nx[0]//self.Nranks, self.nx[2]) if slice == 'XZ' else (self.nx[0]//self.Nranks, self.nx[1])
 
-            # transpose lazily
-            darr = darr.transpose(2, 1, 0)
+        for t in steps:
+            arrays = []
+            for r, file in enumerate(files):
+                fname = os.path.join(self.folder, file)
 
-            arrays.append(darr)
+                f = h5py.File(fname, 'r')  # keep open!
 
-        # stitch along x
-        return np.array(da.concatenate(arrays, axis=0))
+                dset = f[f'timeseries/{field}'][f'{int(t)}']
+
+                if with_halos:
+                    dset = dset[
+                        self.hx[2]:-self.hx[2],
+                        self.hx[1]:-self.hx[1],
+                        self.hx[0]:-self.hx[0]
+                    ]
+
+                # Wrap as dask array
+                darr = da.from_array(
+                    dset,
+                    chunks=shape  # one chunk per rank. 3d field: (8, 256, 256)
+                )
+
+                # transpose lazily
+                darr = darr.transpose(2, 1, 0)
+
+                arrays.append(darr)
+            arrayst.append(np.concatenate(arrays))
+        if steps is None:
+            return np.array(arrayst).transpose(1, 2, 0) # (2d slice, nt)
+        else:
+            return np.array(arrayst).squeeze() # remove time dimension if only one step
     # ------------------------- TEMPORAL AVERAGES ------------------------- #
     def load_temporal_averages(self, file, contour_bound = 0.05):
         fname = os.path.join(self.folder, file)

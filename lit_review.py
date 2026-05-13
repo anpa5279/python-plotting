@@ -8,205 +8,155 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import openpyxl
 
+from diagnostics import comparison_info
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
-
-file_archive = '/Users/annapauls/Library/CloudStorage/OneDrive-UCB-O365/CU-Boulder/TESLa/Carbon Sequestration/Simulations/Oceananigans/NBP/salinity and temperature/literature review.xlsx'
 output_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/literature review/'
-
 os.makedirs(output_folder, exist_ok=True)
 
-# ── Load sheet ────────────────────────────────────────────────────────────────
-wb    = openpyxl.load_workbook(file_archive, data_only=True)
-sheet = wb['paper with calculations']
+# ── paper data ────────────────────────────────────────────────────────────────
+cases_info = comparison_info('all')
+rp = 5.0*np.ones(cases_info['num_cases'])
+g = 9.80665  # gravity in m/s^2
+beta = 7.8e-4
+alpha = 2e-4
+F0 = -((rp**2)*np.pi)*g*beta*cases_info['F_s']
+N = np.sqrt(g*alpha*cases_info['dTdz'])
 
-all_rows = list(sheet.iter_rows(min_row=1, values_only=True))
-headers  = all_rows[0]
-data     = all_rows[1:]
-
-n_rows = len(all_rows)
-n_cols = sum(1 for h in headers if h is not None)  
-
-# Pairs: [y_col, x_col] — last 6 non-None columns grouped as 3 pairs
-PLOT_COLS = np.array([[-6, -5], [-4, -3], [-2, -1]]) + n_cols
-
-COL_LABELS = [
-    [r"$M^{3/4}F_0^{-1/2}\ [\mathrm{m}]$",
-     r"$F_0^{1/4}N^{-3/4}\ [\mathrm{m}]$"],
-    [r"$F_0/(\pi r_j^2)\sqrt{g/r_{j}}$",
-     r"$N^2 r_{j}/g$"],
-    [r"$h_{ml}/L_n\ [F_0^{-1/4}N^{3/4}h_{ml}]$",
-     r"$\Gamma_0\ [Q_0^2 F_0 M^{-5/2}]$"],
+papers = [
+    {
+        'title': 'Ezhova, et al., 2017',
+        'type': 'LES w/ Smagorinsky',
+        'r0': np.array([5, 10, 10]),
+        'F0': np.array([94.65, 91.77, 129.63]),
+        'N': 0.34*np.ones(3),
+        'hml': 160.0*np.ones(3),
+        'Ln': np.array([7.00, 6.95, 7.57]), 
+    },
+    {
+        'title': 'Powell, et al., 2024',
+        'type': 'LES w/ AMD',
+        'r0': 0.005,
+        'F0': 3.96e-07,
+        'N': 1.0,
+        'hml': 0.2,
+        'Ln': 0.025, 
+    },
+    {
+        'title': 'Powell, et al., 2025',
+        'type': 'LES w/ AMD',
+        'r0': (0.005)*np.ones(3),
+        'F0': (5e-6)*np.ones(3),
+        'N': np.array([1.0, 10.0, 100.0]),
+        'hml': 0.2*np.ones(3),
+        'Ln': np.array([0.0473, 0.0084, 0.0015]), 
+    },
+    {
+        'title': 'Wang, et al., 2026',
+        'type': 'Implicit LES',
+        'r0': 27.42,
+        'F0': 1e-5,
+        'N': 5e-5,
+        'hml': 500,
+        'Ln': 94.57, 
+    },
+    {
+        'title': 'Current Cases',
+        'type': 'Implicit LES',
+        'r0': rp,
+        'F0': F0,
+        'N': N,
+        'hml': cases_info['mld'],
+        'Ln': (F0/N**3)**(1/4), 
+    }
 ]
 
-USE_LOG = [[True, True], [True, True], [False, True]]
-
-nplots = len(PLOT_COLS)
-
-# Current-case rows: sheet rows
-CURRENT_IDX = set(np.arange(n_rows - 10, n_rows - 1))
-
-# ── Helper ────────────────────────────────────────────────────────────────────
-def to_float(v):
-    if v is None or isinstance(v, str):
-        return np.nan
-    try:
-        f = float(v)
-        return np.nan if (math.isnan(f) or math.isinf(f)) else f
-    except Exception:
-        return np.nan
-
-# ── Collect unique papers ─────────────────────────────────────────────────────
-seen_papers = {}
-for i, row in enumerate(data):
-    if i in CURRENT_IDX:
-        continue
-    paper    = str(row[0]).strip() if row[0] else ''
-    sim_type = str(row[2]).strip().lower() if row[3] else ''
-    if paper and paper not in seen_papers:
-        seen_papers[paper] = {'type': sim_type}
-
-unique_papers = list(seen_papers.keys())
-
 # ── Color / marker assignment ─────────────────────────────────────────────────
-EXP_COLORS = ['#e6194b', '#f58231', '#c8850a', '#fabebe', '#a03020', '#e05c00', '#ffaa00']
-SIM_COLORS = ['#4363d8', '#42d4f4', '#3cb44b', '#911eb4', '#469990', '#000075',
+COLORS = ['#4363d8', '#42d4f4', '#3cb44b', '#911eb4', '#469990', '#000075',
               '#c0c000', '#dcbeff', '#008080', '#aaffc3']
 MARKERS    = ['o', 's', '^', 'D', 'v', 'P', '*', 'X', 'h', '<', '>', 'p', 'H', '8', 'd']
 
-exp_count = sim_count = 0
+count = 0
 paper_style = {}
-for paper in unique_papers:
-    is_exp = seen_papers[paper]['type'] == 'experiment'
-    if is_exp:
-        color  = EXP_COLORS[exp_count % len(EXP_COLORS)]
-        marker = MARKERS[exp_count % len(MARKERS)]
-        exp_count += 1
-    else:
-        color  = SIM_COLORS[sim_count % len(SIM_COLORS)]
-        marker = MARKERS[sim_count % len(MARKERS)]
-        sim_count += 1
-    paper_style[paper] = {'color': color, 'marker': marker, 'is_exp': is_exp}
-
-def shorten(title, n=56):
-    return title if len(title) <= n else title[:n].rstrip() + '…'
+for paper in papers:
+    color  = COLORS[count % len(COLORS)]
+    marker = MARKERS[count % len(MARKERS)]
+    count += 1
+    paper_style[paper['title']] = {'color': color, 'marker': marker}
+paper_style[paper['title']] = {'color': 'black', 'marker': 'o'}
 
 # ── Figure ────────────────────────────────────────────────────────────────────
 scale = [1, 0.3]
 gridspec_kw = {'height_ratios': scale}
-fig, axes_grid = plt.subplots(2, nplots, figsize=(22, 7), gridspec_kw=gridspec_kw)
+fig, axes_grid = plt.subplots(1, 2, figsize=(12, 7), gridspec_kw=gridspec_kw)
 
 # Remove the dummy bottom row axes used for legend space
 for a in axes_grid[-1, :]:
     a.remove()
-
-# Only keep the top row
-axes = axes_grid[0, :]
-
+ax = axes_grid[0, :]
 fig.patch.set_facecolor('white')
+plt.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.30)
 
-exp_papers_seen = []
-sim_papers_seen = []
-papers_seen_set = set()
+legend_handles = []
 
-for i, row in enumerate(data):
-    paper  = str(row[0]).strip() if row[0] else ''
-    is_cur = i in CURRENT_IDX
+for paper in papers:
+    title = paper['title']
+    style = paper_style[title]
 
-    if is_cur:
-        color   = 'black'
-        marker  = 'o'
-        size    = 110
-        zorder  = 6
-        lw_edge = 0.6
-    else:
-        if paper not in paper_style:
-            continue
-        style   = paper_style[paper]
-        color   = style['color']
-        marker  = style['marker']
-        size    = 55
-        zorder  = 3
-        lw_edge = 0.4
+    r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
+    hml = np.atleast_1d(np.asarray(paper['hml'], dtype=float))
+    Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
 
-    any_plotted = False
-    for ax_i, col_pair in enumerate(PLOT_COLS):
-        y = to_float(row[col_pair[0]])
-        x = to_float(row[col_pair[1]])
-        if not np.isnan(y) and y > 0 and not np.isnan(x) and x > 0:
-            axes[ax_i].scatter(
-                x, y,
-                color=color, marker=marker, s=size,
-                edgecolors='white', linewidths=lw_edge,
-                zorder=zorder,
-            )
-            any_plotted = True
+    x = Ln  / r0    # Ln / r0
+    y = hml / r0    # hml / r0
 
-    if any_plotted and not is_cur and paper not in papers_seen_set:
-        papers_seen_set.add(paper)
-        if paper_style[paper]['is_exp']:
-            exp_papers_seen.append(paper)
-        else:
-            sim_papers_seen.append(paper)
+    mask = np.isfinite(x) & np.isfinite(y) & (x > 0) & (y > 0)
+    if not np.any(mask):
+        continue
 
-# ── Axis formatting ───────────────────────────────────────────────────────────
-for ax_i in range(nplots):
-    ax = axes[ax_i]
-    if USE_LOG[ax_i][0]:
-        ax.set_yscale('log')
-    if USE_LOG[ax_i][1]:
-        ax.set_xscale('log')
-    ax.set_ylabel(COL_LABELS[ax_i][0], fontsize=12, labelpad=4)
-    ax.set_xlabel(COL_LABELS[ax_i][1], fontsize=12, labelpad=4)
-    ax.tick_params(labelsize=7)
-    ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-# ── Legend ────────────────────────────────────────────────────────────────────
-def make_handle(style_dict, label):
-    return mlines.Line2D(
-        [], [],
-        marker=style_dict['marker'], color='none',
-        markerfacecolor=style_dict['color'],
-        markeredgecolor='white', markeredgewidth=0.5,
-        markersize=7, label=label,
+    ax.scatter(
+        x[mask], y[mask],
+        color=style['color'], marker=style['marker'],
+        s=style['size'], edgecolors='white',
+        linewidths=style['lw_edge'], zorder=style['zorder'],
     )
 
-exp_handles = [make_handle(paper_style[p], shorten(p)) for p in exp_papers_seen]
-sim_handles = [make_handle(paper_style[p], shorten(p)) for p in sim_papers_seen]
+    legend_handles.append(mlines.Line2D(
+        [], [],
+        marker=style['marker'], color='none',
+        markerfacecolor=style['color'],
+        markeredgecolor='white', markeredgewidth=0.5,
+        markersize=9 if title == 'Current Cases' else 7,
+        label=title,
+    ))
 
-cur_handle = mlines.Line2D(
-    [], [],
-    marker='o', color='none',
-    markerfacecolor='black',
-    markeredgecolor='white', markeredgewidth=0.6,
-    markersize=10, label='Current cases',
-)
-sim_handles.append(cur_handle)
 
-leg_exp = fig.legend(
-    handles=exp_handles,
-    loc='lower left',
-    bbox_to_anchor=(0.3, 0.0),
-    ncol=1,
-    fontsize=10,
-    frameon=True, framealpha=0.92, edgecolor='#cccccc',
-    handletextpad=0.5, borderpad=0.7,
-    title='Experiments', title_fontsize = 12,
-)
 
-leg_sim = fig.legend(
-    handles=sim_handles,
+# ── Axis formatting ────────────────────────────────────────────────────────────
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlabel(r'$L_n / r_0$', fontsize=13)
+ax.set_ylabel(r'$h_{ml} / r_0$', fontsize=13)
+ax.tick_params(labelsize=10)
+ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
+fig.suptitle('Literature Review', fontsize=13)
+
+# ── Legend ─────────────────────────────────────────────────────────────────────
+fig.legend(
+    handles=legend_handles,
     loc='lower center',
-    bbox_to_anchor=(0.60, 0.0),
+    bbox_to_anchor=(0.5, 0.0),
     ncol=2,
-    fontsize=10,
+    fontsize=9,
     frameon=True, framealpha=0.92, edgecolor='#cccccc',
     handletextpad=0.5, borderpad=0.7,
-    title='Simulations', title_fontsize = 12,
+    title='Studies', title_fontsize=10,
 )
 
-# ── Save ──────────────────────────────────────────────────────────────────────
-out_path = os.path.join(output_folder, 'literature_review_plot.png')
+# ── Save ───────────────────────────────────────────────────────────────────────
+out_path = os.path.join(output_folder, 'mld_review_plot.svg')
 fig.savefig(out_path, dpi=180, bbox_inches='tight', facecolor='white')
 print(f'Saved -> {out_path}')
