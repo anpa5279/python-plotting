@@ -418,12 +418,15 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
     os.makedirs(outdir, exist_ok=True)
     num_cases = len(case_names)
-    ncols = 3
+    if num_cases < 4:
+        ncols = num_cases
+    else:
+        ncols = 3
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols * ar) + 0.25 * nrows + 2.0
 
-    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 600)
+    fig, ax = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 600)
     fig.suptitle(title, fontsize=12)
     ax = ax.ravel()
     # Force even pixel dimensions at 600 dpi
@@ -437,7 +440,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         for i in range(num_cases, nrows*ncols):
             ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
-        if name == 'Tracers':
+        if name == 'Tracer':
             var[n][var[n] <= 0] = 10**(-16)
             im = ax[n].imshow(var[n].T, extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
@@ -451,7 +454,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
 
     active_axes = [ax[n] for n in range(num_cases)]
     cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
-    if not name == 'Tracers': 
+    if not name == 'Tracer': 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
         cbar.update_ticks() 

@@ -11,13 +11,14 @@ from interpolation import velocities_to_center, vertical_line, horizontal_line, 
 
 # flags for what to plot
 plot_variables = True
-plot_1d_z = False
+plot_1d_z = True
 plot_1d_y = False
 transient_mld = False
 temporal_averages_flag = False
 video = True
 
 ND = False
+bin = True
 
 # flags for how to read data
 with_halos = False
@@ -27,7 +28,7 @@ stokes = False
 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 if ND:
@@ -39,14 +40,14 @@ if ND:
         name_uni += '_temporal_averages'
 
 # selecting cases to compare
-variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder, ND = ND)
 else:
-    folder_names = ['Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
+    folder_names = ['proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 70', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70']
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'comparison figures', 'Lz = 160m' + ' comparison figures', 'interpolated', 'MLD = 70m')
-    case_names =[r'L$_z = 160$m', r'L$_z = 96$m']#[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
+    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'interpolated', 'MLD = 70m')
+    case_names =[r'L$_z = 96$m', r'L$_z = 160$m']#r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m'#[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
     cases_info = {
             "folder_names": folder_names,
             "fig_folder": fig_folder,
@@ -56,12 +57,14 @@ else:
             "mld": np.array([70, 70]),
             "F_s": np.array([-1.0*10**(-4), -1.0*10**(-4)])
         }
-mld = cases_info['mld']
+
 dTdz = cases_info['dTdz']
-F_s = cases_info['F_s']
 case_names = cases_info['case_names']
 num_cases = cases_info['num_cases']
 fig_folder = cases_info['fig_folder']
+mld = cases_info['mld']
+if ND:
+    F_s = cases_info['F_s']
 
 readers = []
 for folder in cases_info["folder_names"]:
@@ -119,28 +122,28 @@ else:
 plot_format()
 if plot_variables:
     if salinity:
-        var_names = ['Small rangeTracer', ]#'Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['Tracer', ]#'T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'rho_fluc']
+        var_names = ['Tracer', 'Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
+        range_names = ['Tracer', 'T', 'rho', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
     else:
-        var_names = ['Temperature', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['T', 'rho', 'u', 'v', 'w', 'bw_fluc', 'rho_fluc']
-    planeslice = 'horizontal' # 'vertical' or 'horizontal'
+        var_names = ['Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
+        range_names = ['T', 'rho', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
+    planeslice = 'vertical' # 'vertical' or 'horizontal'
     variable_dir = {}
     if planeslice == 'horizontal':
         name_uni += '_horizontal_slice'
-        loc = 'cell' # 'cell' or 'z'
+        loc = 'z' # 'cell' or 'z'
         if loc == 'z':
             loc_z = -mld
             name_uni += '_at_mld'
         else:
             n = 254
-            loc_z = np.array(z)[:, n]
+            loc_z = z[:, n]
 
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['rho'] = [rho0, rho0+0.15]
 ranges['rho_fluc'] = [-0.025, 0.025]
-ranges['Tracer'] =[-0.001, 0.001]
+ranges['Tracer'] =[S_tol, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
 ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
 ranges['T'] = [T0-1.0, T0 + 0.01]
@@ -193,63 +196,63 @@ if ND:
         #for i in range(num_cases):
         #    z_nd[0:mld_idx[i], i] = (z[0:mld_idx[i], i]+mld[i])*(mld[i])**(1/3)/(Ln[i]**(4/3))
 
-if ND and temporal_averages_flag:
-    T_avg = np.zeros((nx[2], num_cases))
-    b_avg = np.zeros((nx[2], num_cases))
-    w_fluc_avg = np.zeros((nx[2], num_cases))
-    bw_fluc_avg = np.zeros((nx[2], num_cases))
-    w_rms = np.zeros((nx[2], num_cases))
-    r_profile = np.zeros((nx[2], num_cases))
-    b_center = np.zeros((nx[2], num_cases))
-    T_fluc_center = np.zeros((nx[2], num_cases))
-    S_fluc_center = np.zeros((nx[2], num_cases))
-    S_avg = np.zeros((nx[2], num_cases))
-    for i, reader in enumerate(readers):
-        vel_rms_avgt, bw_avgt, T_avgt, S_avgt, r_plume_avgt = reader.load_temporal_averages('interp_temporal_averages.h5', temperature=True, salinity=salinity)
-        w_rms[:, i] = vel_rms_avgt['w_rms']
-        b_avg[:, i] = bw_avgt['b_avg']
-        bw_fluc_avg[:, i] = bw_avgt['bw_fluc_avg']
-        b_center[:, i] = bw_avgt['b_centerline_avg']
-        T_fluc_center[:, i] = T_avgt['T_fluc_centerline_avg']
-        S_avg[:, i] = S_avgt['S_avg']
-        r_profile[:, i] = r_plume_avgt['tracer radius']
+    if temporal_averages_flag:
+        T_avg = np.zeros((nx[2], num_cases))
+        b_avg = np.zeros((nx[2], num_cases))
+        w_fluc_avg = np.zeros((nx[2], num_cases))
+        bw_fluc_avg = np.zeros((nx[2], num_cases))
+        w_rms = np.zeros((nx[2], num_cases))
+        r_profile = np.zeros((nx[2], num_cases))
+        b_center = np.zeros((nx[2], num_cases))
+        T_fluc_center = np.zeros((nx[2], num_cases))
+        S_fluc_center = np.zeros((nx[2], num_cases))
+        S_avg = np.zeros((nx[2], num_cases))
+        for i, reader in enumerate(readers):
+            vel_rms_avgt, bw_avgt, T_avgt, S_avgt, r_plume_avgt = reader.load_temporal_averages('interp_temporal_averages.h5', temperature=True, salinity=salinity)
+            w_rms[:, i] = vel_rms_avgt['w_rms']
+            b_avg[:, i] = bw_avgt['b_avg']
+            bw_fluc_avg[:, i] = bw_avgt['bw_fluc_avg']
+            b_center[:, i] = bw_avgt['b_centerline_avg']
+            T_fluc_center[:, i] = T_avgt['T_fluc_centerline_avg']
+            S_avg[:, i] = S_avgt['S_avg']
+            r_profile[:, i] = r_plume_avgt['tracer radius']
 
+            if transient_mld:
+                    dbdz = np.gradient(b_avg[:, i], z[:, i])
+                    dbdz_tol = dbdz <= (5.0*10**(-7))
+                    if np.any(dbdz_tol):
+                        mld_idx[i] = np.min(np.where(dbdz_tol))
+                    else:
+                        mld_idx[i] = nx[2] - 1
+                    mld[i] = -z[mld_idx[i], i]
         if transient_mld:
-                dbdz = np.gradient(b_avg[:, i], z[:, i])
-                dbdz_tol = dbdz <= (5.0*10**(-7))
-                if np.any(dbdz_tol):
-                    mld_idx[i] = np.min(np.where(dbdz_tol))
-                else:
-                    mld_idx[i] = nx[2] - 1
-                mld[i] = -z[mld_idx[i], i]
-    if transient_mld:
-        Ln =(F0/N2**(3/2))**(1/4)
-        z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
-    bw_fluc_avg = bw_fluc_avg/F_b_scale
-    S_avg = S_avg/S_scale
-    b_avg = b_avg/b_scale
-    b_center = b_center/b_scale
-    T_fluc_center = T_fluc_center / T_scale
-    S_fluc_center = S_fluc_center / S_scale
-    r_profile = r_profile / hor_scale
-    w_rms = w_rms/vel_scale
-    ############ PLOTTING ############
-    if variations == 'all' or combo_flag:
-        plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, cases_info['vars_exps'], Ri_g, Fr_flux, mld/rj, case_names)
-    if np.size(exponents)==0 and (variations == 'strat' or variations == 'flux' or variations == 'MLD'):
-        if variations == 'strat' :
-            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names)
-        if variations == 'flux' :
-            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names)
-        if variations == 'MLD':
-            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names)
-    elif np.size(exponents)!=0 and (variations == 'strat' or variations == 'flux' or variations == 'MLD'):
-        if variations == 'strat' :
-            plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names, exponents = exponents)
-        if variations == 'flux' :
-            plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names, exponents = exponents)
-        if variations == 'MLD':
-            plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)
+            Ln =(F0/N2**(3/2))**(1/4)
+            z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
+        bw_fluc_avg = bw_fluc_avg/F_b_scale
+        S_avg = S_avg/S_scale
+        b_avg = b_avg/b_scale
+        b_center = b_center/b_scale
+        T_fluc_center = T_fluc_center / T_scale
+        S_fluc_center = S_fluc_center / S_scale
+        r_profile = r_profile / hor_scale
+        w_rms = w_rms/vel_scale
+        ############ PLOTTING ############
+        if variations == 'all' or combo_flag:
+            plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, cases_info['vars_exps'], Ri_g, Fr_flux, mld/rj, case_names)
+        if np.size(exponents)==0 and (variations == 'strat' or variations == 'flux' or variations == 'MLD'):
+            if variations == 'strat' :
+                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names)
+            if variations == 'flux' :
+                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names)
+            if variations == 'MLD':
+                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names)
+        elif np.size(exponents)!=0 and (variations == 'strat' or variations == 'flux' or variations == 'MLD'):
+            if variations == 'strat' :
+                plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names, exponents = exponents)
+            if variations == 'flux' :
+                plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names, exponents = exponents)
+            if variations == 'MLD':
+                plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)
 else:
     for it in nt:
         if salinity:
@@ -351,8 +354,6 @@ else:
                 v_plane.append(yz_plane(v, x, x0))
                 w_plane.append(yz_plane(w, x, x0))
                 rho_plane.append(yz_plane(rho, x, x0))
-                bw_plane.append(yz_plane(bw_fluc, x, x0))
-                rho_fluc_plane.append(yz_plane(rho_fluc, x, x0))
                 if salinity:
                     S_plane.append(yz_plane(S, x, x0))
             elif plot_variables and planeslice == 'horizontal':
@@ -362,8 +363,6 @@ else:
                     v_plane.append(xy_plane(v, z, loc_z[i]))
                     w_plane.append(xy_plane(w, z, loc_z[i]))
                     rho_plane.append(xy_plane(rho, z, loc_z[i]))
-                    bw_plane.append(xy_plane(bw_fluc, z, loc_z[i]))
-                    rho_fluc_plane.append(xy_plane(rho_fluc, z, loc_z[i]))
                     if salinity:
                         S_plane.append(xy_plane(S, z, loc_z[i]))
                 else:
@@ -372,20 +371,18 @@ else:
                     v_plane.append(v[:, :, n])
                     w_plane.append(w[:, :, n])
                     rho_plane.append(rho[:, :, n])
-                    bw_plane.append(bw_fluc[:, :, n])
-                    rho_fluc_plane.append(rho_fluc[:, :, n]) 
                     if salinity:
                         S_plane.append(S[:, :, n])
 
         ############ PLOTTING ############
         if plot_variables:
-            if salinity: #'Tracer', 'T', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux'
-                variables = [S_plane, ]#T_plane, rho_plane, u_plane, v_plane, w_plane, bw_plane, rho_fluc_plane] 
-                colorbar_labels = [r"g/kg", r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s", r"m$^2$/s$^3$", r"kg/m$^3$"]
-                cmaps = ['viridis', 'viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
-            else: #'T', 'Density', 'u', 'v', 'w', 'Perturbed Vertical Buoyancy Flux'
-                variables = [T_plane, rho_plane, u_plane, v_plane, w_plane, bw_plane, rho_fluc_plane] 
-                colorbar_labels = [r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s", r"m$^2$/s$^3$", r"kg/m$^3$"]
+            if salinity: #'Tracer', 'T', 'Density', 'u', 'v', 'w'
+                variables = [S_plane, T_plane, rho_plane, u_plane, v_plane, w_plane]
+                colorbar_labels = [r"g/kg", r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
+                cmaps = ['viridis', 'viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+            else: #'T', 'Density', 'u', 'v', 'w'
+                variables = [T_plane, rho_plane, u_plane, v_plane, w_plane]
+                colorbar_labels = [r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
                 cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
             if planeslice == 'vertical':
                 for dir, var in enumerate(variables):
@@ -398,23 +395,22 @@ else:
         if plot_1d_y:
             buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx[-1], y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
         if ND:
-            if not temporal_averages_flag:
-                if variations == 'all' or combo_flag:
-                    plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, cases_info['vars_exps'], Ri_g, Fr_flux, mld/rj, case_names)
-                if np.size(exponents)==0 and (variations == 'strat' or variations == 'flux'or variations == 'MLD'):
-                    if variations == 'strat':
-                        plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names)
-                    if variations == 'flux':
-                        plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names)
-                    if variations == 'MLD':
-                        plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names)
-                elif np.size(exponents)!=0 and (variations == 'strat' or variations == 'flux'or variations == 'MLD'):
-                    if variations == 'strat':
-                        plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names, exponents = exponents)
-                    if variations == 'flux':
-                        plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names, exponents = exponents)
-                    if variations == 'MLD':
-                        plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)
+            if variations == 'all' or combo_flag:
+                plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, cases_info['vars_exps'], Ri_g, Fr_flux, mld/rj, case_names)
+            if np.size(exponents)==0 and (variations == 'strat' or variations == 'flux'or variations == 'MLD'):
+                if variations == 'strat':
+                    plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names)
+                if variations == 'flux':
+                    plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names)
+                if variations == 'MLD':
+                    plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names)
+            elif np.size(exponents)!=0 and (variations == 'strat' or variations == 'flux'or variations == 'MLD'):
+                if variations == 'strat':
+                    plot_rig_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Ri_g, case_names, exponents = exponents)
+                if variations == 'flux':
+                    plot_Fr_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, Fr_flux, case_names, exponents = exponents)
+                if variations == 'MLD':
+                    plot_mld_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, mld/rj, case_names, exponents = exponents)
     print("All frames created.")
     # creating videos
     if video:
