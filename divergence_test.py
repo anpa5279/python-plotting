@@ -5,21 +5,20 @@ import matplotlib.pyplot as plt
 
 from matplotlib.lines import Line2D
 
-from plotting_functions import plot_format, comparison_plot_opt
+from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from interpolation import velocities_to_center
 from reader import OceananigansData
 
 # Set up folder and simulation parameters
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet'
-
 cases_info = comparison_info('WENO')
 num_cases = cases_info['num_cases']
 case_names = cases_info['case_names']
 readers = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
-    readers.append(OceananigansData(folder, salinity = salinity))
+    readers.append(OceananigansData(folder, salinity = True))
     readers[-1].load_grid()
     readers[-1].load_time()
 

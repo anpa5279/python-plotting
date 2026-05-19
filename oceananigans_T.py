@@ -2,7 +2,7 @@ import os
 import re
 import numpy as np
 
-from plotting_functions import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, plot_vert_plane_slices, plot_xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
+from plotting_general import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, plot_vert_plane_slices, plot_xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
 
 from reader import OceananigansData
 from physics import reynolds_stress, buoyancy, rms, a_fluc_b

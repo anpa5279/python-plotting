@@ -6,7 +6,9 @@ from reader import OceananigansData
 from dense_plume import PlumeAnalysis
 from diagnostics import comparison_info
 from physics import rms, a_fluc_b, buoyancy
-from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt, plot_plume_vertical_spatial, plot_plume_horizontal_spatial, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
+from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
+from plotting_lines import plot_plume_vertical_spatial, plot_plume_horizontal_spatial
+from plotting_planes import plot_variable_vert_slice, plot_variable_xy_slice
 from interpolation import velocities_to_center, vertical_line, horizontal_line, yz_plane, xy_plane, xz_plane
 
 # flags for what to plot
@@ -33,9 +35,9 @@ variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resoluti
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
 else:
-    folder_names = ['proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 70', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70']
+    folder_names = ['proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60']
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'interpolated', 'MLD. = 70')
+    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'interpolated', 'default case')
     case_names =[r'L$_z = 96$m', r'L$_z = 160$m']#r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m'#[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
     cases_info = {
             "folder_names": folder_names,
@@ -43,7 +45,7 @@ else:
             "case_names": case_names,
             "num_cases": num_cases,
             "dTdz": 0.01*np.ones(num_cases),
-            "mld": np.array([70, 70]),
+            "mld": np.array([60, 60]),
         }
 
 dTdz = cases_info['dTdz']
@@ -58,7 +60,6 @@ for folder in cases_info["folder_names"]:
     readers.append(OceananigansData(folder, salinity = salinity))
 
 # collecting model information for all cases
-t_save = []
 mld_idx = []
 z = []
 nx = []
@@ -69,7 +70,6 @@ if salinity:
 for i, reader in enumerate(readers):
 
     reader.load_time()
-    t_save.append(reader.t_save)
     reader.load_grid()
     z.append(reader.z)
     nx.append(reader.nx)
@@ -108,11 +108,11 @@ else:
 plot_format()
 if plot_variables:
     if salinity:
-        var_names = ['Tracer', 'Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['Tracer', 'T', 'rho', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
+        var_names = ['Tracer', 'Temperature', 'Density', 'u', 'v', 'w']
+        range_names = ['Tracer', 'T', 'rho', 'u', 'v', 'w']
     else:
-        var_names = ['Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['T', 'rho', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
+        var_names = ['Temperature', 'Density', 'u', 'v', 'w']
+        range_names = ['T', 'rho', 'u', 'v', 'w']
     planeslice = 'vertical' # 'vertical' or 'horizontal'
     variable_dir = {}
     if planeslice == 'horizontal':
@@ -128,7 +128,6 @@ if plot_variables:
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['rho'] = [rho0, rho0+0.15]
-ranges['rho_fluc'] = [-0.025, 0.025]
 ranges['Tracer'] =[S_tol, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
 ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
@@ -154,101 +153,100 @@ if plot_1d_y:
     hor_str = ' '.join([f"{depth} m" for depth in loc_z])
     name_xy = name_uni + f"at z = {hor_str}"
 
+if salinity:
+    S_avg = []
+    S_fluc_center = []
+    S_hor = []
+    S_plane = []
+if plot_1d_z:
+    T_avg = []
+    b_avg = []
+    u_rms = []
+    v_rms = []
+    w_rms = []
+    u_fluc_avg = []
+    v_fluc_avg = []
+    w_fluc_avg = []
+    bu_fluc_avg = []
+    bv_fluc_avg = []
+    bw_fluc_avg = []
+    r_profile = []
+    b_center = []
+    T_fluc_center = []
+if plot_1d_y:
+    y0 = 0.0
+    u_hor = []
+    v_hor = []
+    w_hor = []
+    b_fluc_hor = []
+    bu_fluc_hor = []
+    bv_fluc_hor = []
+    bw_fluc_hor = []
+    T_hor = []
+if plot_variables:
+    T_plane = []
+    u_plane = []
+    v_plane = []
+    w_plane = []
+    rho_plane = []
+    bw_plane = []
 
-for it in nt:
+for i, reader in enumerate(readers):
+    # Load data from files [nt, nx, ny, nz]
+    u = reader.lazy_field('u')
+    v = reader.lazy_field('v')
+    w = reader.lazy_field('w')
+    T = reader.lazy_field('T')
     if salinity:
-        S_avg = []
-        S_fluc_center = []
-        S_hor = []
-        S_plane = []
+        S = reader.lazy_field('S')
+    if stokes:
+        u = u - reader.u_s
+    # interpolate velocities to cell centers
+    u, v, w = velocities_to_center(u, v, w)
+    # convert temperature and salinity to buoyancy 
+    bs = buoyancy(reader, T, S = S)
+    b = bs['b_total']
+    rho = bs['rho']
+
+    # calcualte buoyancy fluxes
+    bu_fluc = a_fluc_b(b, u)
+    bv_fluc = a_fluc_b(b, v)
+    bw_fluc = a_fluc_b(b, w)
+
+    # vertical lines to save for plotting
     if plot_1d_z:
-        T_avg = []
-        b_avg = []
-        u_rms = []
-        v_rms = []
-        w_rms = []
-        u_fluc_avg = []
-        v_fluc_avg = []
-        w_fluc_avg = []
-        bu_fluc_avg = []
-        bv_fluc_avg = []
-        bw_fluc_avg = []
-        r_profile = []
-        b_center = []
-        T_fluc_center = []
-    if plot_1d_y:
-        y0 = 0.0
-        u_hor = []
-        v_hor = []
-        w_hor = []
-        b_fluc_hor = []
-        bu_fluc_hor = []
-        bv_fluc_hor = []
-        bw_fluc_hor = []
-        T_hor = []
-    if plot_variables:
-        T_plane = []
-        u_plane = []
-        v_plane = []
-        w_plane = []
-        rho_plane = []
-        bw_plane = []
-    for i, reader in enumerate(readers):
-        # Load data from files
-        u = reader.lazy_field('u', steps = reader.t_save[it])
-        v = reader.lazy_field('v', steps = reader.t_save[it])
-        w = reader.lazy_field('w', steps = reader.t_save[it])
-        T = reader.lazy_field('T', steps = reader.t_save[it])
+        # rms fluctuations
+        u_rms.append(rms(u))
+        v_rms.append(rms(v))
+        w_rms.append(rms(w))
+        bu_fluc_avg.append(np.mean(bu_fluc, axis=(-3, -2)))
+        bv_fluc_avg.append(np.mean(bv_fluc, axis=(-3, -2)))
+        bw_fluc_avg.append(np.mean(bw_fluc, axis=(-3, -2)))
+        # calculate means
+        b_avg.append(np.mean(b, axis=(-3, -2)))
+        T_avg.append(np.mean(T, axis=(-3, -2)))
+        # dense plume analysis
         if salinity:
-            S = reader.lazy_field('S', steps = reader.t_save[it])
-        if stokes:
-            u = u - reader.u_s
-        # interpolate velocities to cell centers
-        u, v, w = velocities_to_center(u, v, w)
-        # convert temperature and salinity to buoyancy 
-        bs = buoyancy(reader, T, S = S)
-        b = bs['b_total']
-        rho = bs['rho']
-        rho_fluc = rho - np.mean(rho, axis=(-3, -2))
-
-        # calcualte buoyancy fluxes
-        bu_fluc = a_fluc_b(b, u)
-        bv_fluc = a_fluc_b(b, v)
-        bw_fluc = a_fluc_b(b, w)
-
-        # vertical lines to save for plotting
-        if plot_1d_z:
-            # rms fluctuations
-            u_rms.append(rms(u))
-            v_rms.append(rms(v))
-            w_rms.append(rms(w))
-            bu_fluc_avg.append(np.mean(bu_fluc, axis=(-3, -2)))
-            bv_fluc_avg.append(np.mean(bv_fluc, axis=(-3, -2)))
-            bw_fluc_avg.append(np.mean(bw_fluc, axis=(-3, -2)))
-            # calculate means
-            b_avg.append(np.mean(b, axis=(-3, -2)))
-            T_avg.append(np.mean(T, axis=(-3, -2)))
-            # dense plume analysis
-            if salinity:
-                S_avg.append(np.mean(S, axis=(-3, -2)))
-                dense_plume[i].input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
-                r_profile.append(dense_plume[i].plume_tracer_radius(x, y))
-                b_center.append(vertical_line(b, x, y, x0, y0))
-                T_fluc_center.append(vertical_line(T-T_avg[i], x, y, x0, y0))
-                S_fluc_center.append(vertical_line(S-S_avg[i], x, y, x0, y0))
-        # horizontal lines to save for plotting
-        if plot_1d_y:
-            u_hor.append(horizontal_line(u, y, z[i, :], y0, loc_z[i]))
-            v_hor.append(horizontal_line(v, y, z[i, :], y0, loc_z[i]))
-            w_hor.append(horizontal_line(w, y, z[i, :], y0, loc_z[i]))
-            b_fluc_hor.append(horizontal_line(b-b_avg[i], y, z[i, :], y0, loc_z[i]))
-            bu_fluc_hor.append(horizontal_line(bu_fluc, y, z[i, :], y0, loc_z[i]))
-            bv_fluc_hor.append(horizontal_line(bv_fluc, y, z[i, :], y0, loc_z[i]))
-            bw_fluc_hor.append(horizontal_line(bw_fluc, y, z[i, :], y0, loc_z[i]))
-            T_hor.append(horizontal_line(T, y, z[i, :], y0, loc_z[i]))
-            S_hor.append(horizontal_line(S, y, z[i, :], y0, loc_z[i]))
-        # plane slices to save for plotting
-        if plot_variables and planeslice == 'vertical':
+            S_avg.append(np.mean(S, axis=(-3, -2)))
+            dense_plume[i].input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
+            r_profile.append(dense_plume[i].plume_tracer_radius(x, y))
+            b_center.append(vertical_line(b, x, y, x0, y0))
+            T_fluc_center.append(vertical_line(T-T_avg[i], x, y, x0, y0))
+            S_fluc_center.append(vertical_line(S-S_avg[i], x, y, x0, y0))
+    # horizontal lines to save for plotting
+    if plot_1d_y:
+        u_hor.append(horizontal_line(u, y, z[i], y0, loc_z[i]))
+        v_hor.append(horizontal_line(v, y, z[i], y0, loc_z[i]))
+        w_hor.append(horizontal_line(w, y, z[i], y0, loc_z[i]))
+        b_fluc_hor.append(horizontal_line(b-b_avg[i], y, z[i], y0, loc_z[i]))
+        bu_fluc_hor.append(horizontal_line(bu_fluc, y, z[i], y0, loc_z[i]))
+        bv_fluc_hor.append(horizontal_line(bv_fluc, y, z[i], y0, loc_z[i]))
+        bw_fluc_hor.append(horizontal_line(bw_fluc, y, z[i], y0, loc_z[i]))
+        T_hor.append(horizontal_line(T, y, z[i], y0, loc_z[i]))
+        S_hor.append(horizontal_line(S, y, z[i], y0, loc_z[i]))
+    # plane slices to save for plotting
+    if plot_variables:
+        if planeslice == 'vertical':
             T_plane.append(yz_plane(T, x, x0))
             u_plane.append(yz_plane(u, x, x0))
             v_plane.append(yz_plane(v, x, x0))
@@ -256,7 +254,7 @@ for it in nt:
             rho_plane.append(yz_plane(rho, x, x0))
             if salinity:
                 S_plane.append(yz_plane(S, x, x0))
-        elif plot_variables and planeslice == 'horizontal':
+        else:
             if loc == 'z':
                 T_plane.append(xy_plane(T, z, loc_z[i]))
                 u_plane.append(xy_plane(u, z, loc_z[i]))
@@ -266,20 +264,22 @@ for it in nt:
                 if salinity:
                     S_plane.append(xy_plane(S, z, loc_z[i]))
             else:
-                T_plane.append(T[:, :, n])
-                u_plane.append(u[:, :, n])
-                v_plane.append(v[:, :, n])
-                w_plane.append(w[:, :, n])
-                rho_plane.append(rho[:, :, n])
+                T_plane.append(T[:, :, :, n])
+                u_plane.append(u[:, :, :, n])
+                v_plane.append(v[:, :, :, n])
+                w_plane.append(w[:, :, :, n])
+                rho_plane.append(rho[:, :, :, n])
                 if salinity:
-                    S_plane.append(S[:, :, n])
+                    S_plane.append(S[:, :, :, n])
+############ PLOTTING ############
+for it in nt:
     if plot_variables:
         if salinity: #'Tracer', 'T', 'Density', 'u', 'v', 'w'
-            variables = [S_plane, T_plane, rho_plane, u_plane, v_plane, w_plane]
+            variables = [S_plane[it], T_plane[it], rho_plane[it], u_plane[it], v_plane[it], w_plane[it]]
             colorbar_labels = [r"g/kg", r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
             cmaps = ['viridis', 'viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
         else: #'T', 'Density', 'u', 'v', 'w'
-            variables = [T_plane, rho_plane, u_plane, v_plane, w_plane]
+            variables = [T_plane[it], rho_plane[it], u_plane[it], v_plane[it], w_plane[it]]
             colorbar_labels = [r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
             cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
         if planeslice == 'vertical':
@@ -289,11 +289,9 @@ for it in nt:
             for dir, var in enumerate(variables):
                 variable_dir[var_names[dir]] = plot_variable_xy_slice(time[it], it, ranges, fig_folder, lx[-1], x, y, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir])
     if plot_1d_z:
-        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx[-1], z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
+        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx[-1], z, S_avg[it], u_rms[it], v_rms[it], w_rms[it], b_avg[it], b_center[it], r_profile[it], bu_fluc_avg[it], bv_fluc_avg[it], bw_fluc_avg[it], T_avg[it], T_fluc_center[it], S_fluc_center[it])
     if plot_1d_y:
-        buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx[-1], y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
-
-############ PLOTTING ############
+        buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx[-1], y, u_hor[it], v_hor[it], w_hor[it], b_fluc_hor[it], bu_fluc_hor[it], bv_fluc_hor[it], bw_fluc_hor[it], T_hor[it], S_hor[it])
 
 print("All frames created.")
 # creating videos

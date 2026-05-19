@@ -5,13 +5,13 @@ import h5py
 from reader import OceananigansData
 from physics import buoyancy
 from interpolation import velocities_to_center
-from plotting_functions import plot_binning
+from plotting_general import plot_binning
 # set flags
 binning_flag = True
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 70'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
 output_folder = os.path.join(folder, 'binning')
 os.makedirs(output_folder, exist_ok=True)
 file_path = os.path.join(output_folder, 'binning_rtz.h5')

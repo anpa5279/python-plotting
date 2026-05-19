@@ -24,8 +24,8 @@ alpha = 2e-4
 # proposed cases
 h_ml = np.array([0.0, 1.0, 3.2, 10.0, 32.0, 3.2, 3.2, 3.2, 3.2])*rp
 Ln = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 0.1, 10.0, 1e2, 1e3])*rp
-N = (g * alpha * 0.01) * np.ones(len(h_ml))
-F0 = (g * alpha * 0.01)**3 * Ln**4
+N = (g * alpha * 0.01)**0.5 * np.ones(len(h_ml))
+F0 = (N)**3 * Ln**4
 # 2016 experiment
 r_exp = 0.4572/100.0
 rho_b = 1.0572*1000
@@ -408,7 +408,7 @@ else:
     # ── Figure ─────────────────────────────────────────────────────────────────────
     scale = [0.15, 0.9, 0.05]
     gridspec_kw = {'height_ratios': scale}
-    fig, axes_grid = plt.subplots(3, 1, figsize=(12, 9), sharex = True,  gridspec_kw=gridspec_kw)
+    fig, axes_grid = plt.subplots(3, 1, figsize=(16, 9), sharex = True,  gridspec_kw=gridspec_kw)
 
     # Remove the dummy bottom row axes used for legend space
     axes_grid[0].remove()

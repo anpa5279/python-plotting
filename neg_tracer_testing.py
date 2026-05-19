@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from matplotlib.lines import Line2D
 
-from plotting_functions import plot_format, comparison_plot_opt
+from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
 salinity = True

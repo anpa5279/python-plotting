@@ -4,11 +4,11 @@ import numpy as np
 from reader import OceananigansData
 from physics import buoyancy, rms
 from diagnostics import comparison_info
-from plotting_functions import plot_format, plot_ranges, create_video, plot_variable_vert_slice, plot_turb_stats_bin, comparison_plot_opt
+from plotting_general import plot_format, plot_ranges, create_video, plot_variable_vert_slice, plot_turb_stats_bin, comparison_plot_opt
 
 # flags for what to plot
 video = True
-plot_rz_plane = False
+plot_rz_plane = True
 plot_turb_stats = True
 
 # flags for how to read data
@@ -19,39 +19,50 @@ stokes = False
 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/resolution testing'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
 
 # selecting cases to compare
-variations = 'resolution' # 'MLD', 'flux', 'strat', 'all', 'length', 'resolution', 'else'
-cases_info = comparison_info(variations, universal_folder)
-mld = cases_info['mld']
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
+if variations != 'else':
+    cases_info = comparison_info(variations, universal_folder = universal_folder)
+else:
+    folder_names = ['proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 70', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70']
+    num_cases = len(folder_names)
+    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'binning', 'MLD = 70m')
+    case_names =[r'L$_z = 96$m', r'L$_z = 160$m']#r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m'#[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
+    cases_info = {
+            "folder_names": folder_names,
+            "fig_folder": fig_folder,
+            "case_names": case_names,
+            "num_cases": num_cases,
+            "dTdz": 0.01*np.ones(num_cases),
+            "mld": np.array([70, 70]),
+        }
+
 dTdz = cases_info['dTdz']
-F_s = cases_info['F_s']
 case_names = cases_info['case_names']
 num_cases = cases_info['num_cases']
 fig_folder = cases_info['fig_folder']
-os.makedirs(fig_folder, exist_ok=True)
+mld = cases_info['mld']
 
 readers = []
-nz = []
-lz = []
-for name in cases_info["folder_names"]:
+z = []
+nx = []
+lx = []
+for i, name in enumerate(cases_info["folder_names"]):
     folder = os.path.join(universal_folder, name)
     readers.append(OceananigansData(folder, salinity = salinity))
     readers[-1].load_grid()
-    nz.append(readers[-1].nx[-1])
-    lz.append(readers[-1].lx[-1])
-
-readers[0].load_grid()
-readers[0].load_time()
-z = readers[0].z
-nx = readers[0].nx
-lx = readers[0].lx
-lx = [lx[0]/2, lx[-1]]
-nt = readers[0].nt
-
-x = readers[0].x
-y = readers[0].y
+    readers[-1].load_time()
+    z.append(readers[-1].z)
+    nx.append(readers[-1].nx)
+    lx.append(readers[-1].lx)
+    if i == 0:
+        nt = readers[-1].nt
+        nz = readers[-1].nx[2]
+    else:
+        nt = np.min([nt, readers[-1].nt])
+        nz = np.max([nz, readers[-1].nx[2]])
 
 # physical parameters
 rho0 = 1026
@@ -85,24 +96,24 @@ ranges['Cw'] = [-3.5*10**(-5), 3.5*10**(-5)]
 ranges['b_avg'] = [-1.0*10**(-3), 1.0*10**(-5)]
 for i, reader in enumerate(readers):
     if plot_rz_plane:
-        S_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
-        T_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
-        ur_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
-        w_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
-        b_fluc_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
-        T_fluc_n = np.empty((nt, num_cases, nx[0]//2, nz[i]))
+        S_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
+        T_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
+        ur_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
+        w_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
+        b_fluc_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
+        T_fluc_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
 
     if plot_turb_stats:
-        u_rms = np.empty((nt, num_cases, nz[i]))
-        w_rms = np.empty((nt, num_cases, nz[i]))
-        uw = np.empty((nt, num_cases, nz[i]))
-        b_avg = np.empty((nt, num_cases, nz[i]))
-        bu_fluc_avg = np.empty((nt, num_cases, nz[i]))
-        bw_fluc_avg = np.empty((nt, num_cases, nz[i]))
-        Tu = np.empty((nt, num_cases, nz[i]))
-        Tw = np.empty((nt, num_cases, nz[i]))
-        Cu = np.empty((nt, num_cases, nz[i]))
-        Cw = np.empty((nt, num_cases, nz[i]))
+        u_rms = np.empty((nt, num_cases, nx[i][-1]))
+        w_rms = np.empty((nt, num_cases, nx[i][-1]))
+        uw = np.empty((nt, num_cases, nx[i][-1]))
+        b_avg = np.empty((nt, num_cases, nx[i][-1]))
+        bu_fluc_avg = np.empty((nt, num_cases, nx[i][-1]))
+        bw_fluc_avg = np.empty((nt, num_cases, nx[i][-1]))
+        Tu = np.empty((nt, num_cases, nx[i][-1]))
+        Tw = np.empty((nt, num_cases, nx[i][-1]))
+        Cu = np.empty((nt, num_cases, nx[i][-1]))
+        Cw = np.empty((nt, num_cases, nx[i][-1]))
     # Load binning from files
     r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
     if plot_rz_plane:
@@ -140,8 +151,8 @@ if plot_rz_plane:
         variables = [S_n[it, :, :, :], T_n[it, :, :, :], T_fluc_n[it, :, :, :], ur_n[it, :, :, :], w_n[it, :, :, :], b_fluc_n[it, :, :, :]] 
         colorbar_labels = [r"g/kg", r"$^\circ$C", r"$^\circ$C", r"m/s", r"m/s", r"m/s$^2$"]
         cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
-        for n, var in enumerate(variables):
-            variable_dir[var_names[n]] = plot_variable_vert_slice(t, it, ranges, fig_folder, lx, r, z, var, case_names, var_names[n], range_names[n], colorbar_label = colorbar_labels[n], cmap = cmaps[n], plane='binning')
+        for n, var in enumerate(variables): #time, it, ranges, fig_folder, lx, hor, z
+            variable_dir[var_names[n]] = plot_variable_vert_slice(t, it, ranges, fig_folder, lx[-1], r, z, var, case_names, var_names[n], range_names[n], colorbar_label = colorbar_labels[n], cmap = cmaps[n], plane='binning')
 if plot_turb_stats:
     for it, t in enumerate(time):
         turb_plot = plot_turb_stats_bin(t, it, ranges, color_opt, fig_folder, case_names, z, u_rms[it], w_rms[it], uw[it], b_avg[it], bu_fluc_avg[it], bw_fluc_avg[it], Tu[it], Tw[it], Cu[it], Cw[it])

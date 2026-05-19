@@ -180,7 +180,7 @@ class OceananigansData:
         if steps is None:
             return np.array(arrayst)
         else:
-            return np.array(arrayst).squeeze() # remove time dimension if only one step
+            return np.array(arrayst).squeeze() # remove time dimension if only one step because [1, nx, ny, nz]
     def field_slice(self, field, steps = None, with_halos=False, slice = 'YZ', loc = 0.0):
         """
         Returns a 2D slice of the field throughout time with shape (2d slice, nt). 

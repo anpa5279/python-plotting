@@ -22,9 +22,15 @@ def rms(a):
     avg = np.mean(a, axis=(-3, -2))
     return np.mean((a-avg)**2, axis=(-3, -2))**0.5
 # fluctuations of one variable 
-def a_fluc_b(a, b):
-    a_avg = np.mean(a, axis=(-3, -2))
+def a_fluc_b(a, b, a_avg = None):
+    if a_avg is None:
+                a_avg = np.mean(a, axis=(-3, -2))
+    if a.ndim == 4: # [nt, nx, ny, nz]
+        if a_avg is None:
+                a_avg = np.mean(a, axis=(-3, -2))
+        a = a.transpose(1, 2, 0, 3) # [nx, ny, nt, nz]
     return (a - a_avg)*b
+
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
 # calculate buoyancy 

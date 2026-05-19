@@ -7,7 +7,7 @@ from reader import OceananigansData
 from physics import buoyancy
 from interpolation import point
 from diagnostics import comparison_info
-from plotting_functions import plot_format, comparison_plot_opt
+from plotting_general import plot_format, comparison_plot_opt
 
 # flags for how to read data
 with_halos = False
