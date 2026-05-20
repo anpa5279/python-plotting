@@ -13,7 +13,6 @@ from interpolation import velocities_to_center, vertical_line, horizontal_line, 
 plot_variables = False
 plot_1d_z = True
 plot_1d_y = False
-transient_mld = False
 temporal_averages_flag = False
 video = True
 
@@ -206,8 +205,8 @@ for it in nt:
         # interpolate velocities to cell centers
         u, v, w = velocities_to_center(u, v, w)
         # convert temperature and salinity to buoyancy 
-        bs = buoyancy(reader, T, S = S)
-        b = bs['b_total']
+        bs = buoyancy(reader)
+        b = bs['b']
         rho = bs['rho']
         rho_fluc = rho - np.mean(rho, axis=(-3, -2))
 
@@ -219,9 +218,9 @@ for it in nt:
         # vertical lines to save for plotting
         if plot_1d_z:
             # rms fluctuations
-            u_rms.append(rms(u))
-            v_rms.append(rms(v))
-            w_rms.append(rms(w))
+            u_rms.append(rms(reader, 'u'))
+            v_rms.append(rms(reader, 'v'))
+            w_rms.append(rms(reader, 'w'))
             bu_fluc_avg.append(np.mean(bu_fluc, axis=(-3, -2)))
             bv_fluc_avg.append(np.mean(bv_fluc, axis=(-3, -2)))
             bw_fluc_avg.append(np.mean(bw_fluc, axis=(-3, -2)))
@@ -232,7 +231,7 @@ for it in nt:
             if salinity:
                 S_avg.append(np.mean(S, axis=(-3, -2)))
                 dense_plume[i].input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
-                r_profile.append(dense_plume[i].plume_tracer_radius(x, y))
+                r_profile.append(dense_plume[i].plume_tracer_radius(x = x, y = y))
                 b_center.append(vertical_line(b, x, y, x0, y0))
                 T_fluc_center.append(vertical_line(T-T_avg[i], x, y, x0, y0))
                 S_fluc_center.append(vertical_line(S-S_avg[i], x, y, x0, y0))

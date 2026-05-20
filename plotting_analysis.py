@@ -369,68 +369,41 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
     plt.close(fig)
 
 ### -------------------------PLOTTING R FUNCTIONS------------------------- ###
-def plot_r_at_depth_in_time(color_opt,fig_folder, case_names, name, time, r, tol, mld, neutral):
-    num_cases = len(case_names)
-    if num_cases==1:
-        outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
-        os.makedirs(outdir, exist_ok=True)
-    else:
-        outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
-        os.makedirs(outdir, exist_ok=True)
-        gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
-        fig, ax = plt.subplots(3, 4, figsize=(12, 10), gridspec_kw=gridspec_kw)
-        for a in ax[2, :]:
-            a.remove()
-        case_handles = [
-            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
-            for i in range(num_cases)
-        ]
-
-        fig.legend(handles=case_handles,
-                loc='lower center',
-                ncol=num_cases,
-                bbox_to_anchor=(0.52, 0.015))
+def plot_r_at_depth_in_time(color_opt, fig_folder, time, r, tol, neutral, r_max, z_max):
+    outdir = os.path.join(fig_folder)
+    os.makedirs(outdir, exist_ok=True)
     num_plots = 1 + len(tol)
-    if len(tol) < 6:
-        ncols = num_plots
-    else:
-        ncols = 3
-    nrows = int(math.ceil(num_plots/ncols))
-    ratio = np.ones(nrows) + 1 
-    if num_cases > 1:
-        nrows += 1 # add row for legend
-        ratio = np.ones(nrows)
-        ratio[-1] = 0.02
-    gridspec_kw={'height_ratios': ratio} # add space for universal legend
+    ncols = num_plots
     hor_len = 12.0
-    vert_len = hor_len * nrows / (ncols) + 0.25 * nrows + 2.0
-    fig, ax = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, gridspec_kw=gridspec_kw)
-    if num_cases > 1:
-        for a in ax[-1, :]:
-            a.remove()
-        case_handles = [
-            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
-            for i in range(num_cases)
-        ]
-        fig.legend(handles=case_handles,
-                loc='lower center',
-                ncol=num_cases,
-                bbox_to_anchor=(0.52, 0.015))
-    ax = ax.ravel()
-    for i, a in enumerate(ax):
+    vert_len = 10.0
+    fig, axes = plt.subplots(2, ncols, figsize=(hor_len, vert_len))
+    td = time / 3600 / 24
+    rmin = np.min(r)
+    rmax = np.max(r_max)
+    for i, ax in enumerate(axes[0, :]):
         if i == 0:
-            ax.set_title("Depths")
-            for j in range(num_cases):
-                ax.plot(time, neutral[:, j], color=color_opt[j], label = 'Neutral Depth')
-                ax.plot(time, mld[:, j], color=color_opt[j], linestyle='--', label = 'Mixed Layer Depth')
-                ax.legend(loc = 'lower right', handlelength = 0.75)
+            ax.set_title("Neutral Buoyancy Depth")
+            ax.plot(td, neutral, color=color_opt)
+            ax.set_ylabel('Depth (m)')
+        else:
+            ax.set_title(f"neutral buoyancy depth radius with contour = {tol[i-1]:.2e} ")
+            ax.plot(td, r[i-1], color=color_opt)
+            ax.set_ylim(rmin, rmax)
+            ax.set_ylabel('Radius (m)')
+        ax.set_xlabel("Time (days)")
+    for i, ax in enumerate(axes[1, :]):
+        if i == 0:
+            ax.set_title("Largest Radius Depth")
+            ax.plot(td, z_max, color=color_opt)
+            ax.set_ylabel('Depth (m)')
         else:
             ax.set_title(f"Contour = {tol[i-1]:.2e}")
-            for j in range(num_cases):
-                ax.plot(time, r[:, j, i-1], color=color_opt[j])
+            ax.plot(td, r_max, color=color_opt)
+            ax.set_ylim(rmin, rmax)
+            ax.set_ylabel('Radius (m)')
+        ax.set_xlabel("Time (days)")
     # --- Save Frame ---
     frame_path = os.path.join(outdir, f"tracer_radius.svg")
-    plt.tight_layout()
     plt.savefig(frame_path)
     plt.close(fig)
     return outdir

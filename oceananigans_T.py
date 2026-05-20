@@ -2,7 +2,9 @@ import os
 import re
 import numpy as np
 
-from plotting_general import plot_format, plot_ranges, create_video, plot_momentum_plume, plot_tracer_plume, plot_vert_plane_slices, plot_xy_plane_slices, buoyancy_analysis_plot, turb_stats_plot
+from plotting_general import plot_format, plot_ranges, create_video
+from plotting_lines import plot_momentum_plume, plot_tracer_plume, buoyancy_analysis_plot
+from plotting_planes import plot_vert_plane_slices, plot_xy_plane_slices
 
 from reader import OceananigansData
 from physics import reynolds_stress, buoyancy, rms, a_fluc_b
@@ -52,7 +54,7 @@ hx = reader.hx
 reader.load_time()
 reader.load_equation_of_state()
 
-
+if salinity:
     S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
     S_contour = S_value*contour
     dense_plume = PlumeAnalysis(S_value*contour)
@@ -73,7 +75,7 @@ ranges['vel'] = [-1e-5, 1e-5]
 ranges['b'] = [-6.0*10**(-4), 6.0*10**(-4)]
 ranges['rho'] = [rho0-0.01, rho0+0.1]#0.1] # <--for stratification [rho0-0.01, rho0+0.1] # 
 ranges['rho_fluc'] = [-0.01, 0.01]
-S_tol = 10**(-5)
+S_tol = 10**(-6)
 ranges['Tracer'] = [S_tol, 0.04]
 ranges['T'] = [T0-0.4, T0 + 0.005] # <--for stratification [T0-0.4, T0 + 0.005] # 
 ranges['u'] = [-6*10**(-3), 6*10**(-3)]
@@ -133,8 +135,8 @@ for it, t in enumerate(reader.t_save):
     # interpolate velocities to cell centers
     u, v, w = velocities_to_center(u, v, w)
     # convert temperature and salinity to buoyancy 
-    bs = buoyancy(reader, T, S = S)
-    b = bs['b_total']
+    bs = buoyancy(reader)
+    b = bs['b']
     rho = bs['rho']
 
     if stokes:
@@ -164,9 +166,9 @@ for it, t in enumerate(reader.t_save):
 
         uv_fluc_avg = np.mean(reynolds_stress(u, v, u_avg, v_avg), axis=(-3, -2))
         # rms fluctuations
-        u_rms = rms(u)
-        v_rms = rms(v)
-        w_rms = rms(w)
+        u_rms = rms(reader, 'u')
+        v_rms = rms(reader, 'v')
+        w_rms = rms(reader, 'w')
         b_rms = rms(b)
 
     # calculating density 
@@ -180,7 +182,7 @@ for it, t in enumerate(reader.t_save):
         centery = 0.0
         bw_fluc = a_fluc_b(b, w)
         dense_plume.input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
-        rp_profile = dense_plume.plume_tracer_radius(x, y)
+        rp_profile = dense_plume.plume_tracer_radius(x = x, y = y)
         S_fluc_center = vertical_line(S_fluc, x, y, x0, centery)
         T_fluc_center = vertical_line(T_fluc, x, y, x0, centery)
 

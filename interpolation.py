@@ -43,14 +43,15 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
 
         # find index below target
         if f_new == 0:
-            idx = np.where(np.diff(np.sign(f))!=0)[0][0]
+            idx = np.where(np.diff(np.sign(f))!=0)[0]#[0]
         else:
             idx = np.searchsorted(f, f_new) - 1
             idx = np.clip(idx, 0, len(f) - 2)
 
         f0 = f[idx]
+        if np.any(idx + 1 >= len(f)):
+            return coord[idx]
         f1 = f[idx + 1]
-
         # slice helpers
         sl0 = [slice(None)] * coord.ndim
         sl1 = [slice(None)] * coord.ndim

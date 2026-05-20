@@ -5,23 +5,25 @@ import h5py
 from reader import OceananigansData
 from physics import buoyancy
 from interpolation import velocities_to_center
-from plotting_general import plot_binning
+from plotting_planes import plot_binning
 # set flags
-binning_flag = True
+binning_flag = False
+plot_flag = False
+contour_flag = True
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70'
 output_folder = os.path.join(folder, 'binning')
 os.makedirs(output_folder, exist_ok=True)
 file_path = os.path.join(output_folder, 'binning_rtz.h5')
 
 reader = OceananigansData(folder, salinity = salinity)
-if binning_flag:
+if contour_flag:
+    contours = np.array([0.001, 0.005, 0.01, 0.05])
+    S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
 
-    # inital paramreters
-    rho0 = 1026
-    T0 = 25
+if binning_flag:
     reader.load_equation_of_state()
     # grid info
     reader.load_grid()
@@ -65,8 +67,8 @@ if binning_flag:
         T_fluc = T - T_avg
 
         # calculate b and b_fluc
-        bs = buoyancy(reader, T, S = S)
-        b = bs['b_total']
+        bs = buoyancy(reader)
+        b = bs['b']
         b_avg = np.mean(b, axis=(-3, -2), keepdims=True)
         b_fluc = b - b_avg
         for k in range(nx[2]):
@@ -99,4 +101,30 @@ if binning_flag:
 else:
     r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
 
-plot_binning(S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz, r, z, time, output_folder)
+if contour_flag: # calculate radius of contour at each depth and time that is not in the default
+    reader.load_grid()
+    reader.load_time()
+    nx = reader.nx
+    nt = len(reader.t_save)
+    for contour in contours:
+        r_contour = np.empty((nx[2], nt))
+        for it, t in enumerate(reader.t_save):
+            plume = S_rz[:, :, it] >= S_value*contour
+            ri, zi = np.where(plume)
+            plume_index = [ri, zi]
+            counts = np.bincount(zi, minlength=nx[2])
+
+            r_values = r[ri]
+            sums   = np.bincount(zi, weights=r_values, minlength=nx[2])
+
+            radius_tracer = np.zeros(nx[2])
+            mask = counts > 0
+            if np.any(mask):
+                radius_tracer[mask] = sums[mask] / counts[mask]
+            else:
+                radius_tracer = np.zeros(nx[2])
+            r_contour[:, it] = radius_tracer
+        with h5py.File(file_path, "a") as f:
+            f.create_dataset(f"r given contour/contour = {contour}", data = r_contour)
+if plot_flag:
+    plot_binning(S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz, r, z, time, output_folder)

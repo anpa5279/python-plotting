@@ -127,7 +127,7 @@ for i, reader in enumerate(readers):
         b_fluc_n[:, i, :, :] = b_fluc_rz.transpose(2, 0, 1)
     if plot_turb_stats:
         bs = buoyancy(reader, T_rz, S = S_rz)
-        b = bs['b_total']
+        b = bs['b']
         # Average over the radial dimension (axis=0), keeping time and z
         u_avg = np.mean(ur_rz, axis=0)  # shape: (nz, nt) or (nr_bins, nt) etc.
         w_avg = np.mean(w_rz, axis=0)

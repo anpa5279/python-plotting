@@ -61,24 +61,36 @@ class PlumeAnalysis:
 
         return self.max_depth
     ### -------------------------TRACER CALCULATIONS------------------------- ###
-    def plume_tracer_radius(self, x, y):
+    def plume_tracer_radius(self, x, y = None):
         plume_contour = self.tracer >= self.tracer_contour
-        xi, yi, zi = np.where(plume_contour)
-        self.plume_index = [xi, yi, zi]
+        if y is not None:
+            xi, yi, zi = np.where(plume_contour)
+            self.plume_index = [xi, yi, zi]
+            x0 = np.mean(x)
+            centery = np.mean(y)
+            r = np.sqrt((x[xi] - x0)**2 + (y[yi] - centery)**2)
+            counts = np.bincount(zi, minlength=self.nz)
+            sums   = np.bincount(zi, weights=r, minlength=self.nz)
 
-        x0 = np.mean(x)
-        centery = np.mean(y)
-
-        r = np.sqrt((x[xi] - x0)**2 + (y[yi] - centery)**2)
-        counts = np.bincount(zi, minlength=self.nz)
-        sums   = np.bincount(zi, weights=r, minlength=self.nz)
-
-        self.radius_tracer = np.zeros(self.nz)
-        mask = counts > 0
-        if np.any(mask):
-            self.radius_tracer[mask] = sums[mask] / counts[mask]
-        else:
             self.radius_tracer = np.zeros(self.nz)
+            mask = counts > 0
+            if np.any(mask):
+                self.radius_tracer[mask] = sums[mask] / counts[mask]
+            else:
+                self.radius_tracer = np.zeros(self.nz)
+        else: #binning 
+            ri, zi = np.where(plume_contour)
+            self.plume_index = [ri, zi]
+            counts = np.bincount(zi, minlength=self.nz)
+            sums   = np.bincount(zi, weights=r, minlength=self.nz)
+
+            self.radius_tracer = np.zeros(self.nz)
+            mask = counts > 0
+            if np.any(mask):
+                self.radius_tracer[mask] = sums[mask] / counts[mask]
+            else:
+                self.radius_tracer = np.zeros(self.nz)
+
         return self.radius_tracer
 
     ### -------------------------MOMENTUM ANALYSIS------------------------- ###

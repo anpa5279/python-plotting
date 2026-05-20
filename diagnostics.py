@@ -150,8 +150,8 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10, T0 = 25.0, rh
         # center velocities
         u, v, w = velocities_to_center(u, v, w)
         # buoyancy
-        bs = buoyancy(reader, T, S = S)
-        b = bs['b_total']
+        bs = buoyancy(reader)
+        b = bs['b']
 
         # ---------------- horizontal means ---------------- #
         S_xy = np.mean(S, axis=(-3, -2))
@@ -168,9 +168,9 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10, T0 = 25.0, rh
         Sw = np.mean(S * w, axis=(-3, -2))
         bw = np.mean(b_fluc * w, axis=(-3, -2))
         # ---------------- RMS ---------------- #
-        u_rms += rms(u)
-        v_rms += rms(v)
-        w_rms += rms(w)
+        u_rms += rms(reader, 'u')
+        v_rms += rms(reader, 'v')
+        w_rms += rms(reader, 'w')
         # ---------------- contour values ---------------- #
         bw_idx = np.where(bw==np.max(bw))[0][0]
         S_value += point(S, z, z0 = z[bw_idx], x=x, x0 = x0, y = y, y0 = y0)
@@ -235,7 +235,7 @@ def compute_temporal_radius_avg(reader, tracer0, contour_bound = 0.05, start = 1
     for it in range(start, nt):
         S = reader.lazy_field('S', t_save[it])
         dense_plume.input_info(S)
-        r = dense_plume.plume_tracer_radius(x, y)
+        r = dense_plume.plume_tracer_radius(x = x, y = y)
         r_avg += r
         n += 1
 
@@ -270,5 +270,3 @@ def write_temporal_averages(file_path, data, contour_bound = 0.05):
 
         f.create_group(f'{folder_plume}')
         f.create_dataset(f'{folder_plume}/plume tracer radius with depth', data=data['radius_tracer'])
-
-
