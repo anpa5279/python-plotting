@@ -1,25 +1,20 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import h5py
-from scipy.optimize import curve_fit
 
 from reader import OceananigansData
-from dense_plume import PlumeAnalysis
 from diagnostics import comparison_info
-from interpolation import point
-from physics import buoyancy
-from plotting_general import plot_format, comparison_plot_opt
-from plotting_analysis import plot_r_at_depth_in_time
+from plotting_general import plot_format, comparison_plot_opt, create_video
 
-def func(x, a, b):
-    return x**b + a
 # flags for how to read data
 with_halos = False
 closure = False
 salinity = True
 stokes = False
 
-contours = np.array([0.001, 0.005, 0.01, 0.05])
+contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
@@ -60,8 +55,8 @@ g = 9.80665  # gravity in m/s^2
 
 # collecting model information for all cases
 lz = 0
+nt = 1000
 nx = []
-bS = []
 dense_plume = []
 time = []
 
@@ -71,20 +66,18 @@ for i, reader in enumerate(readers):
     lz = np.max((lz, reader.lx[-1]))
     reader.load_time()
     time.append(reader.time)
+    nt = min((nt, len(time[i])))
 
     S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
     reader.load_equation_of_state()
-    bS.append(-g*reader.beta*S_value)
-lz = []
+
+z = []
 r_scale = []
 neutral_depths = []
-r_contour = []
-r_maximum = []
-where_max = []
-best_fit = []
+r_contour = [] 
 for i, reader in enumerate(readers):
     start = 7
-    r_max = np.zeros([len(time[i]) - start, len(contours)])
+    r_profile = np.zeros([len(contours), reader.nx[2], len(time[i])])
     z_max = np.zeros([len(time[i]) - start, len(contours)])
     neutral = np.zeros([len(time[i]) - start, len(contours)])
     r_c = np.zeros([len(time[i]) - start, len(contours)])
@@ -93,46 +86,46 @@ for i, reader in enumerate(readers):
         # Load data from files
         fname = os.path.join(reader.folder, 'binning', 'binning_rtz.h5')
         with h5py.File(fname, 'r') as f:
-            r_profile = f[f'r given contour/contour = {contour}'][()]
-            z = f['ccc/dimensions/z'][()]
+            r_profile[j, :, :] = f[f'r given contour/contour = {contour}'][()]
+            z.append(f['ccc/dimensions/z'][()])
             S_rz = f['ccc/S_rz'][()]
-            T_rz = f['ccc/T_rz'][()]
             r_bin = f['ccc/dimensions/r_bin'][()]
-        # calculate buoyancy differences
-        bT = np.mean(g*reader.alpha*np.mean(T_rz, axis = 2) - g*reader.alpha*reader.T0, axis = 0)
 
-        # calculate neutral buoyancy depth and relative r
-        for it in range(start, len(reader.t_save)):
-            if it == 0:
-                r_max[it-start, j] = 0
-                z_max[it-start, j] = 0
-                neutral[it-start, j] = point(bT-bS[i], z, f0 = 0)
-                r_c[it-start, j] = 0
-            else:
-                r_max[it-start, j] = r_profile[:, it].max()
-                z_temp = z[r_profile[:, it] == r_max[it-start, j]]
-                nmax = np.size(z_temp)
-                if np.size(z_temp) > 1:
-                    z_temp = z_temp[nmax // 2]
-                z_max[it-start, j] = z_temp
-                neutral[it-start, j] = point(bT-bS[i], z, f0 = 0)
-                r_c[it-start, j] = point(r_profile[:, it], z, z0 = neutral[it-start, j])
-        params[:, j], _ = curve_fit(func, time[i][start:], r_c[:, j])
-    lz.append(np.min(z_max))
-    lz.append(np.max(z_max))
-    r_scale.append(np.min(r_c))
-    r_scale.append(np.max(r_c))
-    r_scale.append(np.min(r_max))
-    r_scale.append(np.max(r_max))
-    time[i] = time[i][start:]
-    best_fit.append(params)
-    neutral_depths.append(neutral)
-    r_contour.append(r_c)
-    r_maximum.append(r_max)
-    where_max.append(z_max)
-    lz = [np.min(lz), np.max(lz)]
-    r_scale = [np.min(r_scale), np.max(r_scale)]
+    r_contour.append(r_profile)
 
 ############ PLOTTING ############
 plot_format(fontsize = 10)
-plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, r_scale, best_fit)
+num_cases = len(case_names)
+outdir = os.path.join(fig_folder, 'tracer radius with depth in time')
+os.makedirs(outdir, exist_ok=True)
+ncols = num_cases
+gridspec_kw={'height_ratios': [1, 0.15]}
+width = 0.8
+for it in range(nt):
+    fig, axes = plt.subplots(2, ncols, figsize=(3.5*ncols, 5), sharey = True, gridspec_kw=gridspec_kw)
+    for a in axes[-1, :]:
+        a.remove()
+    fig.suptitle(f"Time = {time[0][it]/3600/24:.2f} days", fontsize=12)
+    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=f"Contour = {contours[i]:.2e} ")for i in range(len(contours))]
+    fig.legend(handles=case_handles,
+            loc='lower center',
+            ncol=3,
+            bbox_to_anchor=(0.52, 0.005))
+
+    for i, ax in enumerate(axes[0, :]):
+        for n, color in enumerate(color_opt):
+            ax.plot(r_contour[i][n, :, it], z[i], color=color, linewidth = width)
+        ax.set_ylim(-lz, 0)
+        ax.set_xlim(0, max(r_bin))
+        ax.set_xlabel("Radius [m]")
+        ax.set_title(case_names[i], fontsize = 10)
+        ax.set_aspect('equal')
+        if i == 0:
+            ax.set_ylabel('Depth [m]')
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"tracer_radius with depth_{it:04d}.png")
+    plt.savefig(frame_path, bbox_inches='tight')
+    plt.close(fig)
+
+
+create_video(outdir, fig_folder, 'binning', f'radius contours')

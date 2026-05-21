@@ -62,7 +62,7 @@ Ln = (F0/N**3)**(1/4)
 length_scale = []
 neutral_depth = []
 for i, reader in enumerate(readers):
-    r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
+    r, z, time, S_rz, T_rz, ur_rz, w_rz = reader.load_binning()
 
     S_avg = np.mean(S_rz[0, :, 5:], axis=(-1))
     S_mld = point(S_avg, z, z0 = -mld[i])

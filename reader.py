@@ -36,6 +36,7 @@ class OceananigansData:
         # equation of state information
         self.temperature = temperature
         self.salinity = salinity
+        self.T0 = None
         self.alpha = None
         self.beta = None
         self.b = None
@@ -119,11 +120,12 @@ class OceananigansData:
             self.u_f = f['IC/friction_velocity'][()]
 
     # ------------------------- BUOYANCY INFORMATION -------------------- #
-    def load_equation_of_state(self):
+    def load_equation_of_state(self, T0 = 25):
         """
         Load thermal expansion (alpha) and optionally
         haline contraction (beta).
         """
+        self.T0 = T0
         fname = os.path.join(self.folder, self.files[0])
         with h5py.File(fname, 'r') as f:
             self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
@@ -444,12 +446,10 @@ class OceananigansData:
             z = f['ccc/dimensions/z'][()]
             time = f['ccc/dimensions/time'][()]
             S_rz = f['ccc/S_rz'][()]
-            T_fluc_rz = f['ccc/T\'_rz'][()]
             T_rz = f['ccc/T_rz'][()]
             ur_rz = f['ccc/horizontal velocity'][()]
             w_rz = f['ccc/w_rz'][()]
-            b_fluc_rz = f['ccc/b\'_rz'][()]
 
-        self._contour_cache[file] = (r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz)
+        self._contour_cache[file] = (r, z, time, S_rz, T_rz, ur_rz, w_rz)
 
-        return r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz
+        return r, z, time, S_rz, T_rz, ur_rz, w_rz

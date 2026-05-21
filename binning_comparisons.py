@@ -115,16 +115,14 @@ for i, reader in enumerate(readers):
         Cu = np.empty((nt, num_cases, nx[i][-1]))
         Cw = np.empty((nt, num_cases, nx[i][-1]))
     # Load binning from files
-    r, z, time, S_rz, T_fluc_rz, T_rz, ur_rz, w_rz, b_fluc_rz = reader.load_binning()
+    r, z, time, S_rz, T_rz, ur_rz, w_rz = reader.load_binning()
     if plot_rz_plane:
         # plane slices to save for plotting
         S_rz[S_rz < S_tol] = S_tol
         S_n[:, i, :, :] = S_rz.transpose(2, 0, 1)
         T_n[:, i, :, :] = T_rz.transpose(2, 0, 1)
-        T_fluc_n[:, i, :, :] = T_fluc_rz.transpose(2, 0, 1)
         ur_n[:, i, :, :] = ur_rz.transpose(2, 0, 1)
         w_n[:, i, :, :] = w_rz.transpose(2, 0, 1)
-        b_fluc_n[:, i, :, :] = b_fluc_rz.transpose(2, 0, 1)
     if plot_turb_stats:
         bs = buoyancy(reader, T_rz, S = S_rz)
         b = bs['b']
@@ -140,17 +138,15 @@ for i, reader in enumerate(readers):
         bu_fluc_avg[:, i, :] = np.mean(b_fluc * ur_rz, axis=0).T
         bw_fluc_avg[:, i, :] = np.mean(b_fluc * w_rz, axis=0).T
         b_avg[:, i, :] = b_avg_temp.T
-        Tu[:, i, :] = np.mean(T_fluc_rz * ur_rz, axis=0).T
-        Tw[:, i, :] = np.mean(T_fluc_rz * w_rz, axis=0).T
         Cu[:, i, :] = np.mean(S_rz * ur_rz, axis=0).T
         Cw[:, i, :] = np.mean(S_rz * w_rz, axis=0).T
 
 ############ PLOTTING ############
 if plot_rz_plane:
     for it, t in enumerate(time):
-        variables = [S_n[it, :, :, :], T_n[it, :, :, :], T_fluc_n[it, :, :, :], ur_n[it, :, :, :], w_n[it, :, :, :], b_fluc_n[it, :, :, :]] 
-        colorbar_labels = [r"g/kg", r"$^\circ$C", r"$^\circ$C", r"m/s", r"m/s", r"m/s$^2$"]
-        cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+        variables = [S_n[it, :, :, :], T_n[it, :, :, :], ur_n[it, :, :, :], w_n[it, :, :, :]] 
+        colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s$^2$"]
+        cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r']
         for n, var in enumerate(variables): #time, it, ranges, fig_folder, lx, hor, z
             variable_dir[var_names[n]] = plot_variable_vert_slice(t, it, ranges, fig_folder, lx[-1], r, z, var, case_names, var_names[n], range_names[n], colorbar_label = colorbar_labels[n], cmap = cmaps[n], plane='binning')
 if plot_turb_stats:

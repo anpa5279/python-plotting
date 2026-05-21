@@ -369,44 +369,54 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
     plt.close(fig)
 
 ### -------------------------PLOTTING R FUNCTIONS------------------------- ###
-def plot_r_at_depth_in_time(color_opt, fig_folder, time, r, tol, neutral, r_max, z_max):
+def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neutral, r_max, z_max, lz, r_range, best_fit):
+    num_cases = len(case_names)
     outdir = os.path.join(fig_folder)
     os.makedirs(outdir, exist_ok=True)
-    num_plots = 1 + len(tol)
-    ncols = num_plots
-    hor_len = 12.0
-    vert_len = 10.0
-    fig, axes = plt.subplots(2, ncols, figsize=(hor_len, vert_len))
-    td = time / 3600 / 24
-    rmin = np.min(r)
-    rmax = np.max(r_max)
-    for i, ax in enumerate(axes[0, :]):
-        if i == 0:
-            ax.set_title("Neutral Buoyancy Depth")
-            ax.plot(td, neutral, color=color_opt)
-            ax.set_ylabel('Depth (m)')
-        else:
-            ax.set_title(f"neutral buoyancy depth radius with contour = {tol[i-1]:.2e} ")
-            ax.plot(td, r[i-1], color=color_opt)
-            ax.set_ylim(rmin, rmax)
-            ax.set_ylabel('Radius (m)')
-        ax.set_xlabel("Time (days)")
-    for i, ax in enumerate(axes[1, :]):
-        if i == 0:
-            ax.set_title("Largest Radius Depth")
-            ax.plot(td, z_max, color=color_opt)
-            ax.set_ylabel('Depth (m)')
-        else:
-            ax.set_title(f"Contour = {tol[i-1]:.2e}")
-            ax.plot(td, r_max, color=color_opt)
-            ax.set_ylim(rmin, rmax)
-            ax.set_ylabel('Radius (m)')
-        ax.set_xlabel("Time (days)")
+    ncols = 1 + len(tol)
+    nrows = num_cases
+    hor_len = ncols * 3
+    vert_len = nrows * 4
+    fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharex = True)
+    rmin = r_range[0]
+    rmax = r_range[-1]
+    width = 0.8
+    for row in range(nrows):
+        td = time[row] / 3600 / 24
+        plt.tight_layout()
+        fig.subplots_adjust(hspace=0.15, top=0.96)
+        ax_row = axes[row, :] if nrows > 1 else axes
+        for i, ax in enumerate(ax_row):
+            if i == 0:
+                for n in range(0, len(color_opt)):
+                    ax.plot(td, z_max[row][:, n], color=color_opt[n], linestyle='--', linewidth=width)
+                    ax.plot(td, neutral[row][:, n], color=color_opt[n])
+                ax.plot(td, z_max[row][:, 0], color=color_opt[0], linestyle='--', label=r'max radius', linewidth=width)
+                ax.plot(td, neutral[row][:, 0], color=color_opt[0], label=r'neutral')
+                ax.set_ylabel('Depth (m)')
+                ax.legend(loc='upper right', handlelength=0.9)
+                ax.set_ylim(lz)
+            else:
+                ax.set_xscale('log')
+                ax.set_yscale('log')
+                ax.plot(td, r_max[row][:, i - 1], color=color_opt[i-1], linestyle='--', linewidth=width)
+                ax.plot(td, r[row][:, i-1], color=color_opt[i-1])
+                ax.plot(td, best_fit[row][0, i-1] + time[row]**best_fit[row][1, i-1], color=color_opt[i-1], linestyle=':', linewidth=width, label = rf"t$^{{{best_fit[row][1, i-1]:.2f}}}$") #{best_fit[row][0]:.2e}
+                ax.set_ylim(rmin, rmax)
+                ax.set_ylabel('Radius (m)')
+                ax.legend(loc='lower right', handlelength=0.9)
+            if row == nrows - 1:
+                ax.set_xlabel("Time (days)")
+            elif row == 0:
+                ax.set_title(f"Contour = {tol[i-1]:.2e} ")
+        x_center = 0.5
+        y_pos = (nrows - row - 0.01*(nrows - row)) / nrows  # approximate vertical center of row
+        fig.text(x_center, y_pos, case_names[row], ha='center', va='center',
+                fontsize=12, fontweight='bold', transform=fig.transFigure)
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"tracer_radius.svg")
-    plt.savefig(frame_path)
+    frame_path = os.path.join(outdir, f"log_tracer_radius.svg")
+    plt.savefig(frame_path, bbox_inches='tight')
     plt.close(fig)
-    return outdir
 
 ### ---------------------- CONVERGENCE TESTS ----------------------------- ###
 def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorted, matrix_N, ver, hor, 

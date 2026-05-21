@@ -10,7 +10,7 @@ import openpyxl
 
 from diagnostics import comparison_info
 # flags for plotting
-with_mld = False
+with_mld = True
 
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ rp    = 5.0
 g     = 9.80665
 alpha = 2e-4
 # proposed cases
-h_ml = np.array([0.0, 1.0, 3.2, 10.0, 32.0, 3.2, 3.2, 3.2, 3.2])*rp
+h_ml = np.array([0.0, 1.0, 3.2, 10.0, 32.0, 10.0, 10.0, 10.0, 10.0])*rp
 Ln = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 0.1, 10.0, 1e2, 1e3])*rp
 N = (g * alpha * 0.01)**0.5 * np.ones(len(h_ml))
 F0 = (N)**3 * Ln**4

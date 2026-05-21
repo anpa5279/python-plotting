@@ -127,29 +127,25 @@ def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_nam
     return outdir
 
 ### -------------------------BINNING PLOTTING FUNCTIONS------------------------- ###
-def plot_binning(S_rz, T_fluc_rz, T_rz, hor_vel_rz, w_rz, b_fluc_rz, r, z, time, output_folder, min_S = 10**(-6)):
+def plot_binning(S_rz, T_rz, hor_vel_rz, w_rz, r, z, time, output_folder, min_S = 10**(-6)):
 
     # ranges for plotting 
     frac = 0.7
     Smax = np.max(np.abs(S_rz))
     S_range = (min_S, Smax)
     S_rz[S_rz<min_S] = min_S # set values below threshold to threshold for log plotting
-    T_flucmax = np.max(np.abs(T_fluc_rz)) * 0.8 * frac**2
-    T_fluc_range = (-T_flucmax, T_flucmax)
     T_range = (np.min(T_rz), 25.01)
     umax = np.max(np.abs(hor_vel_rz)) * frac**2
     u_range = (-umax, umax)
     wmax = np.max(np.abs(w_rz)) * frac
     w_range = (-wmax, wmax)
-    bmax = np.max(np.abs(b_fluc_rz)) * 0.8 * frac**2
-    b_range = (-bmax, bmax)
 
     outdir = os.path.join(output_folder, 'plotting')
     os.makedirs(outdir, exist_ok=True)
 
     # plotting results
     for it, t in enumerate(time):
-        fig, ax = plt.subplots(2, 3, figsize=(16, 9.5), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+        fig, ax = plt.subplots(2, 2, figsize=(10, 9.5), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
         ax = ax.ravel()
         td = t / 3600 / 24
         fig.suptitle(f'{td:.2f} days', y = 0.99, fontsize=12)
@@ -157,9 +153,7 @@ def plot_binning(S_rz, T_fluc_rz, T_rz, hor_vel_rz, w_rz, b_fluc_rz, r, z, time,
         ax0  # temperature
         ax1  # tracer
         ax2  # w velocity
-        ax3  # perturbed temperature
-        ax4  # perturbed buoyancy
-        ax5  # horizontal velocity
+        ax3  # horizontal velocity
         """
 
         im = ax[0].imshow(T_rz[:, :, it].T, vmin=T_range[0], vmax=T_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
@@ -183,26 +177,11 @@ def plot_binning(S_rz, T_fluc_rz, T_rz, hor_vel_rz, w_rz, b_fluc_rz, r, z, time,
         cbar.formatter.set_powerlimits((-2, 2))
         cbar.update_ticks()
 
-        im = ax[3].imshow(T_fluc_rz[:, :, it].T, vmin=T_fluc_range[0], vmax=T_fluc_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
-        ax[3].set_ylabel("Depth [m]")
+        im = ax[3].imshow(hor_vel_rz[:, :, it].T, vmin=u_range[0], vmax=u_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
         ax[3].set_xlabel("radial distance [m]")
-        ax[3].set_title("Perturbed Temperature")
+        ax[3].set_title("Horizontal Velocity")
         ax[3].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[3], label=r"$^\circ$C", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
-
-        im = ax[4].imshow(b_fluc_rz[:, :, it].T, vmin=b_range[0], vmax=b_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
-        ax[4].set_xlabel("radial distance [m]")
-        ax[4].set_title("Perturbed Buoyancy")
-        ax[4].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[4], label=r"m/s$^2$", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
-        cbar.formatter.set_powerlimits((-2, 2))
-        cbar.update_ticks()
-
-        im = ax[5].imshow(hor_vel_rz[:, :, it].T, vmin=u_range[0], vmax=u_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
-        ax[5].set_xlabel("radial distance [m]")
-        ax[5].set_title("Horizontal Velocity")
-        ax[5].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[5], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        cbar = fig.colorbar(im, ax = ax[3], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
         cbar.formatter.set_powerlimits((-2, 2))
         cbar.update_ticks()
         

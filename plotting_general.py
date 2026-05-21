@@ -19,13 +19,13 @@ def stratification_profile(z, a0, dadz, mld):
     return a
 ### -------------------------PLOTTING PREP FUNCTIONS------------------------- ###
 ## default plot formatting 
-def plot_format():
+def plot_format(fontsize = 12):
     plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
     plt.rcParams['font.serif'] = 'cmr10'
     plt.rcParams['font.sans-serif'] = 'cmss10'
     plt.rcParams['font.monospace'] = 'cmtt10'
     plt.rcParams["axes.formatter.use_mathtext"] = True 
-    plt.rcParams['font.size'] = 12
+    plt.rcParams['font.size'] = fontsize
     plt.rcParams['mathtext.fontset'] = 'custom'
     plt.rcParams['mathtext.rm'] = 'DejaVu Serif'
     plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
