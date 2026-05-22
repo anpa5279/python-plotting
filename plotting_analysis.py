@@ -369,7 +369,7 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
     plt.close(fig)
 
 ### -------------------------PLOTTING R FUNCTIONS------------------------- ###
-def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neutral, r_max, z_max, lz, r_range, best_fit):
+def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neutral, r_max, z_max, lz, r_range, best_fit, fit_exp):
     num_cases = len(case_names)
     outdir = os.path.join(fig_folder)
     os.makedirs(outdir, exist_ok=True)
@@ -399,9 +399,10 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
             else:
                 ax.set_xscale('log')
                 ax.set_yscale('log')
-                ax.plot(td, r_max[row][:, i - 1], color=color_opt[i-1], linestyle='--', linewidth=width)
+                ax.plot(td, r_max[row][:, i - 1], color=color_opt[i-1], linestyle='--')
                 ax.plot(td, r[row][:, i-1], color=color_opt[i-1])
-                ax.plot(td, best_fit[row][0, i-1] + time[row]**best_fit[row][1, i-1], color=color_opt[i-1], linestyle=':', linewidth=width, label = rf"t$^{{{best_fit[row][1, i-1]:.2f}}}$") #{best_fit[row][0]:.2e}
+                ax.plot(td, best_fit[0][row][:, i-1], color=color_opt[i-1], linestyle=':', linewidth=width, label = rf"t$^{{{fit_exp[row][0][i-1]:.2f}}}$") 
+                ax.plot(td, best_fit[1][row][:, i-1], color=color_opt[i-1], linestyle='-.', linewidth=width, label = rf"t$^{{{fit_exp[row][1][i-1]:.2f}}}$") 
                 ax.set_ylim(rmin, rmax)
                 ax.set_ylabel('Radius (m)')
                 ax.legend(loc='lower right', handlelength=0.9)

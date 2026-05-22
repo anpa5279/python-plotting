@@ -12,7 +12,7 @@ from plotting_general import plot_format, comparison_plot_opt
 from plotting_analysis import plot_r_at_depth_in_time
 
 def func(x, a, b):
-    return x**b + a
+    return (x - a)**b
 # flags for how to read data
 with_halos = False
 closure = False
@@ -82,13 +82,18 @@ r_contour = []
 r_maximum = []
 where_max = []
 best_fit = []
+best_fit_max = []
+fit_exp = []
 for i, reader in enumerate(readers):
     start = 7
     r_max = np.zeros([len(time[i]) - start, len(contours)])
     z_max = np.zeros([len(time[i]) - start, len(contours)])
     neutral = np.zeros([len(time[i]) - start, len(contours)])
     r_c = np.zeros([len(time[i]) - start, len(contours)])
-    params = np.zeros([2, len(contours)])
+    params_neutral = np.zeros([2, len(contours)])
+    params_max = np.zeros([2, len(contours)])
+    r_n_calc = np.zeros([len(time[i]) - start, len(contours)])
+    r_max_calc = np.zeros([len(time[i]) - start, len(contours)])
     for j, contour in enumerate(contours):
         # Load data from files
         fname = os.path.join(reader.folder, 'binning', 'binning_rtz.h5')
@@ -117,7 +122,10 @@ for i, reader in enumerate(readers):
                 z_max[it-start, j] = z_temp
                 neutral[it-start, j] = point(bT-bS[i], z, f0 = 0)
                 r_c[it-start, j] = point(r_profile[:, it], z, z0 = neutral[it-start, j])
-        params[:, j], _ = curve_fit(func, time[i][start:], r_c[:, j])
+        params_neutral[:, j], _ = curve_fit(func, time[i][start:], r_c[:, j], p0=[0, 0.5], bounds=([-np.inf, 0], [time[i][start], 2]))
+        params_max[:, j], _ = curve_fit(func, time[i][start:], r_max[:, j], p0=[0, 0.5], bounds=([-np.inf, 0], [time[i][start], 2]))
+        r_n_calc[:, j] = func(time[i][start:], *params_neutral[:, j]) #- (params_neutral[0, j])**params_neutral[1, j]
+        r_max_calc[:, j] = func(time[i][start:], *params_max[:, j]) #- (params_max[0, j])**params_max[1, j]
     lz.append(np.min(z_max))
     lz.append(np.max(z_max))
     r_scale.append(np.min(r_c))
@@ -125,14 +133,15 @@ for i, reader in enumerate(readers):
     r_scale.append(np.min(r_max))
     r_scale.append(np.max(r_max))
     time[i] = time[i][start:]
-    best_fit.append(params)
+    best_fit.append(r_n_calc)
+    best_fit_max.append(r_max_calc)
+    fit_exp.append([params_neutral[1, :], params_max[1, :]])
     neutral_depths.append(neutral)
     r_contour.append(r_c)
     r_maximum.append(r_max)
     where_max.append(z_max)
     lz = [np.min(lz), np.max(lz)]
     r_scale = [np.min(r_scale), np.max(r_scale)]
-
 ############ PLOTTING ############
 plot_format(fontsize = 10)
-plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, r_scale, best_fit)
+plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, r_scale, [best_fit, best_fit_max], fit_exp)
