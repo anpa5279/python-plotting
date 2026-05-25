@@ -4,22 +4,20 @@ import h5py
 from scipy.optimize import curve_fit
 
 from reader import OceananigansData
-from dense_plume import PlumeAnalysis
 from diagnostics import comparison_info
 from interpolation import point
-from physics import buoyancy
 from plotting_general import plot_format, comparison_plot_opt
 from plotting_analysis import plot_r_at_depth_in_time
 
 def func(x, a, b):
-    return (x - a)**b
+    return (x)**b - a
 # flags for how to read data
 with_halos = False
 closure = False
 salinity = True
 stokes = False
 
-contours = np.array([0.001, 0.005, 0.01, 0.05])
+contours = np.array([0.0005, 0.005, 0.05])
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
@@ -59,6 +57,7 @@ rj = 5 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
 
 # collecting model information for all cases
+start = 4
 lz = 0
 nx = []
 bS = []
@@ -85,7 +84,6 @@ best_fit = []
 best_fit_max = []
 fit_exp = []
 for i, reader in enumerate(readers):
-    start = 7
     r_max = np.zeros([len(time[i]) - start, len(contours)])
     z_max = np.zeros([len(time[i]) - start, len(contours)])
     neutral = np.zeros([len(time[i]) - start, len(contours)])
@@ -124,8 +122,12 @@ for i, reader in enumerate(readers):
                 r_c[it-start, j] = point(r_profile[:, it], z, z0 = neutral[it-start, j])
         params_neutral[:, j], _ = curve_fit(func, time[i][start:], r_c[:, j], p0=[0, 0.5], bounds=([-np.inf, 0], [time[i][start], 2]))
         params_max[:, j], _ = curve_fit(func, time[i][start:], r_max[:, j], p0=[0, 0.5], bounds=([-np.inf, 0], [time[i][start], 2]))
-        r_n_calc[:, j] = func(time[i][start:], *params_neutral[:, j]) #- (params_neutral[0, j])**params_neutral[1, j]
-        r_max_calc[:, j] = func(time[i][start:], *params_max[:, j]) #- (params_max[0, j])**params_max[1, j]
+        r_n_temp = func(time[i][start:], *params_neutral[:, j]) #+ (params_neutral[0, j])
+        r_n_calc[:, j] = r_n_temp#np.log10(time[i][start:])*np.gradient(np.log10(r_n_temp), np.log10(time[i][start:])) - np.log10(params_neutral[0, j])
+        r_max_temp = func(time[i][start:], *params_max[:, j]) #+ (params_max[0, j])
+        r_max_calc[:, j] = r_max_temp#np.log10(time[i][start:])*np.gradient(np.log10(r_max_temp), np.log10(time[i][start:])) - np.log10(params_max[0, j])
+        #r_max += (params_max[0, j])
+        #r_c += (params_neutral[0, j])
     lz.append(np.min(z_max))
     lz.append(np.max(z_max))
     r_scale.append(np.min(r_c))
@@ -140,8 +142,8 @@ for i, reader in enumerate(readers):
     r_contour.append(r_c)
     r_maximum.append(r_max)
     where_max.append(z_max)
-    lz = [np.min(lz), np.max(lz)]
     r_scale = [np.min(r_scale), np.max(r_scale)]
+lz = [np.min(lz), np.max(lz)]
 ############ PLOTTING ############
 plot_format(fontsize = 10)
 plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, r_scale, [best_fit, best_fit_max], fit_exp)

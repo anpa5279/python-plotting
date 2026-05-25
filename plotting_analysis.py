@@ -382,7 +382,7 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
     rmax = r_range[-1]
     width = 0.8
     for row in range(nrows):
-        td = time[row] / 3600 / 24
+        td = time[row] #/ 3600 / 24
         plt.tight_layout()
         fig.subplots_adjust(hspace=0.15, top=0.96)
         ax_row = axes[row, :] if nrows > 1 else axes
@@ -407,7 +407,7 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
                 ax.set_ylabel('Radius (m)')
                 ax.legend(loc='lower right', handlelength=0.9)
             if row == nrows - 1:
-                ax.set_xlabel("Time (days)")
+                ax.set_xlabel("Time (seconds)")
             elif row == 0:
                 ax.set_title(f"Contour = {tol[i-1]:.2e} ")
         x_center = 0.5
