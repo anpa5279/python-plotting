@@ -17,7 +17,7 @@ stokes = False
 
 contour_bound = 0.05
 name_uni = f'contour-{contour_bound:.2f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/'
 
 # selecting cases to compare
 variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'vertical resolution', 'else'

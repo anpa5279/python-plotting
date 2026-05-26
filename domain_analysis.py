@@ -23,7 +23,7 @@ ND = False # whether to plot non-dimensional time and radius
 auto_log = False # whether to automatically set log scale for radius
 
 contours = np.array([0.0005, 0.005, 0.05])
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
 # selecting cases to compare

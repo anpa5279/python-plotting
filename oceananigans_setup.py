@@ -14,7 +14,7 @@ planelsice_flag = True
 salinity = True
 
 # Set up folder and simulation parameters
-folder = ''
+folder = '/glade/derecho/scratch/apauls/outputs/'
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
 g = 9.80665
