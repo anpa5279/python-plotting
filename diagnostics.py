@@ -3,9 +3,8 @@ import dask.array as da
 import os 
 import h5py
 
-from interpolation import velocities_to_center, vertical_line, point
-from dense_plume import PlumeAnalysis
-from physics import rms, buoyancy
+from interpolation import velocities_to_center
+from physics import rms
 
 ### -------------------------COLLECTING COMPARISON CASE INFO------------------------- ###
 def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
@@ -112,7 +111,7 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
     return case_info
 ### -------------------------CALCULATING TEMPORAL AVERAGES------------------------- ###
 def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
-    x, y, z = reader.x, reader.y, reader.z
+    x, y = reader.x, reader.y
     t_save = reader.t_save[start:]
     x0, y0 = center
 
@@ -121,7 +120,7 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
     g = 9.80665
     T0 = 25
     alpha = reader.alpha
-    beta  = reader.beta if reader.salinity else None
+    beta  = reader.beta
 
     # Pre-cache spatial indices
     ix = np.argmin(np.abs(x - x0))
@@ -129,36 +128,24 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
 
     # Load all fields lazily — shape (nt - start, nx, ny, nz)
     T = reader.lazy_field('T')
+    T = T[start:, :, :, :]
     S = reader.lazy_field('S')
-    u = reader.lazy_field('u')
-    v = reader.lazy_field('v')
+    S = S[start:, :, :, :]
     w = reader.lazy_field('w')
+    w = w[start:, :, :, :]
 
     # Center velocities (still lazy)
-    u = velocities_to_center(u, axis=-3)
-    v = velocities_to_center(v, axis=-2)
     w = velocities_to_center(w, axis=-1)
 
     # Buoyancy (still lazy)
-    b = g * alpha * (T - T0) - (g * beta * S if beta is not None else 0)
+    b = g * alpha * (T - T0) - (g * beta * S)
 
     # Horizontal means over (nx, ny) → shape (nt - start, nz)
-    w_xy = da.mean(w[start:, :, :, :], axis=(1, 2))
-    b_xy = da.mean(b[start:, :, :, :], axis=(1, 2))
+    b_xy = da.mean(b, axis=(1, 2))
 
     # Fluctuation and flux
-    b_fluc = b[start:, :, :, :] - b_xy[:, np.newaxis, np.newaxis, :]
-    bw     = da.mean(b_fluc * w[start:, :, :, :], axis=(1, 2))   # (nt - start, nz)
-
-    # Temporal means of horizontal means → shape (nz,)
-    S_avg = da.mean(S[start:, :, :, :], axis=(0, 1, 2))
-    T_avg = da.mean(T[start:, :, :, :], axis=(0, 1, 2))
-    w_avg = da.mean(w_xy, axis=0)
-
-    # RMS then mean over time
-    u_rms = da.mean(rms(u[start:, :, :, :]), axis=0)
-    v_rms = da.mean(rms(v[start:, :, :, :]), axis=0)
-    w_rms = da.mean(rms(w[start:, :, :, :]), axis=0)
+    b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
+    bw     = da.mean(b_fluc * w, axis=(1, 2))   # (nt - start, nz)
 
     # bw_idx per timestep — argmax not lazy, so compute bw now
     bw_np  = bw.compute()                        # (nt - start, nz) — small, cheap
@@ -168,74 +155,22 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
     nt     = len(t_save)
     it_idx = np.arange(nt)
     # extract the (nt - start, nx, ny, nz) arrays only at needed points
-    S_pts  = S[start:, ix, iy, :].compute()           # (nt - start, nz)
-    w_pts  = w[start:, ix, iy, :].compute()           # (nt - start, nz)
+    S_pts  = S[:, ix, iy, :].compute()
+    w_pts  = w[:, ix, iy, :].compute() 
     S_value = np.mean(S_pts[it_idx, bw_idx])
     w_value = np.mean(w_pts[it_idx, bw_idx])
 
-    # Center profiles — shape (nt - start, nz), mean over time → (nz,)
-    S_center = da.mean(S[start:, ix, iy, :], axis=0)
-    T_center = da.mean(T[start:, ix, iy, :], axis=0)
-    w_center = da.mean(w[start:, ix, iy, :], axis=0)
-
-    # Single compute call for everything still lazy
-    (S_avg, T_avg, w_avg,
-     u_rms, v_rms, w_rms,
-     S_center, T_center, w_center) = da.compute(
-        S_avg, T_avg, w_avg,
-        u_rms, v_rms, w_rms,
-        S_center, T_center, w_center,
-    )
-
     return {
-        "S_avg":    S_avg,
-        "T_avg":    T_avg,
-        "w_avg":    w_avg,
-        "u_rms":    u_rms,
-        "v_rms":    v_rms,
-        "w_rms":    w_rms,
-        "S_center": S_center,
-        "T_center": T_center,
-        "w_center": w_center,
         "S_value":  S_value,
         "w_value":  w_value,
     }
 
-def compute_temporal_radius_avg(reader, tracer0, contour_bound = 0.05, start = 10):
-    dense_plume = PlumeAnalysis(tracer0*contour_bound)
-    x, y = reader.x, reader.y
-    nx = reader.nx
-    nt = reader.nt
-    t_save = reader.t_save
-    # ---------------- initializing arrays ---------------- #
-    r_avg = np.zeros(nx[2])
-    n = 0
-    # ---------------- time loop ---------------- #
-    for it in range(start, nt):
-        S = reader.lazy_field('S'[it])
-        dense_plume.input_info(S)
-        r = dense_plume.plume_tracer_radius(x = x, y = y)
-        r_avg += r
-        n += 1
-
-    return r_avg / n
 ### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
-def write_temporal_averages(file_path, data, contour_bound = 0.05):
-    folder_avg = "1D temporal averages"
-    folder_centerline = "centerline temporal averages"
+def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
-    folder_plume = f"plume statistics/contour {contour_bound}"
 
     with h5py.File(file_path, "w") as f:
-        f.create_group(f'{folder_avg}')
-        f.create_dataset(f'{folder_avg}/S', data=data['S_avg'])
-        f.create_dataset(f'{folder_avg}/T', data=data['T_avg'])
-
-        f.create_group(f'{folder_centerline}')
-        f.create_dataset(f'{folder_centerline}/S', data=data['S_center'])
-        f.create_dataset(f'{folder_centerline}/T', data=data['T_center'])
-        f.create_dataset(f'{folder_centerline}/w', data=data['w_center'])
-
         f.create_group(f'{folder_contour}')
         f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
         f.create_dataset(f'{folder_contour}/w', data=data['w_value'])
+    f.close()
