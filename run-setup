@@ -24,8 +24,6 @@ cat > EXEC_STEP << EXEC
 module --force purge
 module load ncarenv/25.10 uv
 
-uv add numpy pandas h5py dask os
-
 uv run python $file
 
 EXEC
