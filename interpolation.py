@@ -11,12 +11,11 @@ def face_to_center(f, axis, periodic=True):
     sl1[axis] = slice(1, None)
     return 0.5 * (f[tuple(sl0)] + f[tuple(sl1)])
 
-def velocities_to_center(u, v, w):
-    return (
-        face_to_center(u, axis=0),
-        face_to_center(v, axis=1),
-        face_to_center(w, axis=2, periodic=False),
-    )
+def velocities_to_center(vel, axis):
+    if axis == 2 or axis == -1:
+        return face_to_center(vel, axis=axis, periodic=False)
+    else:
+        return face_to_center(vel, axis=axis)
 
 # ------------------------- GENERAL INTERPOLATION ------------------------- #
 def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):

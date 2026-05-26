@@ -133,7 +133,9 @@ for it, t in enumerate(reader.t_save):
     if xy_plot:
         Pdynamic = reader.lazy_field('P_dynamic', t)
     # interpolate velocities to cell centers
-    u, v, w = velocities_to_center(u, v, w)
+    u = velocities_to_center(u, axis=0)
+    v = velocities_to_center(v, axis=1)
+    w = velocities_to_center(w, axis=2)
     # convert temperature and salinity to buoyancy 
     bs = buoyancy(reader)
     b = bs['b']

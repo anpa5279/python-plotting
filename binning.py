@@ -13,7 +13,7 @@ contour_flag = True
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384'
 output_folder = os.path.join(folder, 'binning')
 os.makedirs(output_folder, exist_ok=True)
 file_path = os.path.join(output_folder, 'binning_rtz.h5')
@@ -59,7 +59,10 @@ if binning_flag:
         v = np.array(reader.lazy_field('v', t))
         w = np.array(reader.lazy_field('w', t))
 
-        u, v, w = velocities_to_center(u, v, w)
+        u = velocities_to_center(u, axis=0)
+        v = velocities_to_center(v, axis=1)
+        w = velocities_to_center(w, axis=2)
+
         # u and v 
         ur = u*X/dist + v*Y/dist
         utheta = -u*Y/dist + v*X/dist

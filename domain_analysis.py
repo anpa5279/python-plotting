@@ -9,20 +9,25 @@ from interpolation import point
 from plotting_general import plot_format, comparison_plot_opt
 from plotting_analysis import plot_r_at_depth_in_time
 
-def func(x, a, b):
-    return (x)**b - a
 # flags for how to read data
 with_halos = False
 closure = False
 salinity = True
 stokes = False
 
+def func(x, a, b):
+    return x**b - a
+
+# flags for plotting
+ND = False # whether to plot non-dimensional time and radius
+auto_log = False # whether to automatically set log scale for radius
+
 contours = np.array([0.0005, 0.005, 0.05])
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'#/Lz = 160m'#resolution testing'#vertical domain increase/dTdz = 0.01'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'one case', 'else'
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'vertical resolution', 'one case', 'else'
 if variations != 'else' and variations != 'one':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     case_names = cases_info['case_names']
@@ -41,20 +46,26 @@ elif variations == 'else':
     num_cases = len(folder_names)
     fig_folder = os.path.join(universal_folder, 'comparison figures', 'Lz = 160m' + ' comparison figures', 'binning')
     os.makedirs(fig_folder, exist_ok=True)
+    dTdz = np.ones(num_cases)*0.01
     case_names =[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']#[r'L$_z = 96$m', r'L$_z = 160$m']#r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m'#
 
 color_opt, _ = comparison_plot_opt(len(contours))
 
 readers = []
-for folder in folder_names:
+alpha = np.empty(num_cases)
+for i, folder in enumerate(folder_names):
     folder = os.path.join(universal_folder, folder)
     readers.append(OceananigansData(folder, salinity = salinity))
+    readers[-1].load_equation_of_state()
+    alpha[i] = readers[-1].alpha
+
 
 # physical parameters
 x0 = 0.0
 y0 = 0.0
 rj = 5 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
+N = dTdz*alpha*g # buoyancy frequency in 1/s
 
 # collecting model information for all cases
 start = 4
@@ -122,28 +133,37 @@ for i, reader in enumerate(readers):
                 r_c[it-start, j] = point(r_profile[:, it], z, z0 = neutral[it-start, j])
         params_neutral[:, j], _ = curve_fit(func, time[i][start:], r_c[:, j], p0=[0, 0.5], bounds=([-np.inf, 0], [time[i][start], 2]))
         params_max[:, j], _ = curve_fit(func, time[i][start:], r_max[:, j], p0=[0, 0.5], bounds=([-np.inf, 0], [time[i][start], 2]))
-        r_n_temp = func(time[i][start:], *params_neutral[:, j]) #+ (params_neutral[0, j])
-        r_n_calc[:, j] = r_n_temp#np.log10(time[i][start:])*np.gradient(np.log10(r_n_temp), np.log10(time[i][start:])) - np.log10(params_neutral[0, j])
-        r_max_temp = func(time[i][start:], *params_max[:, j]) #+ (params_max[0, j])
-        r_max_calc[:, j] = r_max_temp#np.log10(time[i][start:])*np.gradient(np.log10(r_max_temp), np.log10(time[i][start:])) - np.log10(params_max[0, j])
-        #r_max += (params_max[0, j])
-        #r_c += (params_neutral[0, j])
-    lz.append(np.min(z_max))
-    lz.append(np.max(z_max))
-    r_scale.append(np.min(r_c))
-    r_scale.append(np.max(r_c))
-    r_scale.append(np.min(r_max))
-    r_scale.append(np.max(r_max))
-    time[i] = time[i][start:]
-    best_fit.append(r_n_calc)
-    best_fit_max.append(r_max_calc)
-    fit_exp.append([params_neutral[1, :], params_max[1, :]])
-    neutral_depths.append(neutral)
-    r_contour.append(r_c)
-    r_maximum.append(r_max)
-    where_max.append(z_max)
-    r_scale = [np.min(r_scale), np.max(r_scale)]
-lz = [np.min(lz), np.max(lz)]
+        #r_n_temp = func(time[i][start:], *params_neutral[:, j]) + (params_neutral[0, j])
+        r_n_calc[:, j] = params_neutral[1, j]*np.log10(time[i][start:]) #+ np.log10(1-params_neutral[0, j]/time[i][start:]**params_neutral[1, j])
+        #r_max_temp = func(time[i][start:], *params_max[:, j]) + (params_max[0, j])
+        r_max_calc[:, j] = params_max[1, j]*np.log10(time[i][start:]) #+ np.log10(1-params_max[0, j]/time[i][start:]**params_max[1, j])
+
+    if ND:
+        lz.append(np.min(z_max))
+        lz.append(np.max(z_max))
+        time[i] = time[i][start:]/N[i]
+        best_fit.append(r_n_calc/rj)
+        best_fit_max.append(r_max_calc/rj)
+        fit_exp.append([params_neutral[1, :], params_max[1, :]])
+        neutral_depths.append(neutral/rj)
+        r_contour.append(np.log10(r_c/rj))
+        r_maximum.append(np.log10(r_max/rj))
+        where_max.append(z_max/rj)
+
+        lz = [np.min(lz)/rj, np.max(lz)/rj]
+    else:
+        lz.append(np.min(z_max))
+        lz.append(np.max(z_max))
+        time[i] = time[i][start:]
+        best_fit.append(r_n_calc)
+        best_fit_max.append(r_max_calc)
+        fit_exp.append([params_neutral[1, :], params_max[1, :]])
+        neutral_depths.append(neutral)
+        r_contour.append(np.log10(r_c))
+        r_maximum.append(np.log10(r_max))
+        where_max.append(z_max)
+
+        lz = [np.min(lz), np.max(lz)]
 ############ PLOTTING ############
 plot_format(fontsize = 10)
-plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, r_scale, [best_fit, best_fit_max], fit_exp)
+plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, [best_fit, best_fit_max], fit_exp, ND, auto_log)

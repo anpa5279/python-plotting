@@ -19,12 +19,17 @@ def reynolds_stress(a, b, a_avg, b_avg):
 
     return ab_fluc
 # Root mean square error function)
-def rms(reader, var, t = None):
-    if t is not None:
-        a = reader.lazy_field(var, steps = t)
+def rms(var, reader = None, t = None):
+    if reader is not None:
+        if t is not None:
+            a = np.array(reader.lazy_field(var, steps = t))
+        else:
+            a = np.array(reader.lazy_field(var))
+        avg = np.mean(a, axis=(-3, -2))
     else:
-        a = reader.lazy_field(var)
-    avg = np.mean(a, axis=(-3, -2))
+        a = np.array(var)
+        avg = np.mean(a, axis=(-3, -2))
+        avg = avg[:, np.newaxis, np.newaxis, :]
     return np.mean((a-avg)**2, axis=(-3, -2))**0.5
 # fluctuations of one variable 
 def a_fluc_b(a, b, a_avg=None):
@@ -45,10 +50,9 @@ def buoyancy(reader, T0 = 25):
         S = reader.lazy_field('S')
         T = reader.lazy_field('T')
         beta = reader.beta
-        b = g * alpha * (T - T0) - g * beta * S,
+        b = np.squeeze(g * alpha * (T - T0) - g * beta * S)
     b_avg = np.mean(b, axis=(-3, -2))
-    b_fluc_avg  = np.mean((b - b_avg), axis=(-3, -2))
-    return {'b':b, 'b_avg':b_avg, 'b_fluc_avg':b_fluc_avg}
+    return {'b':b, 'b_avg':b_avg}
 # calculate buoyancy flux
 def buoyancy_flux_avg_1d(reader, T0=25):
     """
@@ -177,7 +181,10 @@ def buoyancy_flux_line(reader, z0, x0 = None, y0 = None):
         u = reader.lazy_field['u']
         v = reader.lazy_field['v']
         w = reader.lazy_field['w']
-        u, v, w = velocities_to_center(u, v, w)
+
+        u = velocities_to_center(u, axis=0)
+        v = velocities_to_center(v, axis=1)
+        w = velocities_to_center(w, axis=2)
 
         # extract horizontal line at (y0, z0) for each flux
         bu_out[:, it] = horizontal_line(a_fluc_b(b, u), h, reader.z, h0, z0, axis=dir)

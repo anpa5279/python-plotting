@@ -30,7 +30,7 @@ universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/d
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
+variations = 'horizontal resolution' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'vertical resolution', 'horizontal resolution', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']

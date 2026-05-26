@@ -1,4 +1,5 @@
 import numpy as np
+import dask.array as da
 import os 
 import h5py
 
@@ -50,9 +51,16 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
-    elif variations == 'resolution':
+    elif variations == 'vertical resolution':
         folder_names =['nz = 64', 'nz = 128', 'nz = 192', 'nz = 256']
-        case_names =[r'N$_{\text{z}}$ = 64', r'N$_{\text{z}}$ = 128', r'N$_{\text{z}}$ = 192', r'N$_{\text{z}}$ = 256']
+        case_names =[r'$\Delta z = 1.5$m', r'$\Delta z = 0.75$m' r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m']
+        num_cases = len(case_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases) 
+    elif variations == 'horizontal resolution':
+        folder_names =['domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx192', 'domain resolution testing/proposed vertical resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 'domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx320', 'domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384', 'domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx640']
+        case_names =[r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m' r'$\Delta x = 1.0$m', r'$\Delta x = 0.833$m', r'$\Delta x = 0.5$m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -65,7 +73,7 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases)
     else:
-        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', or define your own case info in the comparison_info function.")
+        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'vertical resolution', or define your own case info in the comparison_info function.")
         return None # user defined specific case not defined here
     folder_names = [os.path.join(universal_folder, folder) for folder in folder_names]
     # Set up folder and simulation parameters
@@ -103,123 +111,94 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         }
     return case_info
 ### -------------------------CALCULATING TEMPORAL AVERAGES------------------------- ###
-def compute_temporal_averages(reader, center=(0.0, 0.0), start=10, T0 = 25.0, rho0 = 1026.0):
+def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
     x, y, z = reader.x, reader.y, reader.z
-    nt = reader.nt
-    t_save = reader.t_save
-    nx = reader.nx
+    t_save = reader.t_save[start:]
     x0, y0 = center
 
+    # Load constants once
     reader.load_equation_of_state()
+    g = 9.80665
+    T0 = 25
+    alpha = reader.alpha
+    beta  = reader.beta if reader.salinity else None
 
-    n = 0
-    # ---------------- initializing arrays ---------------- #
-    S_avg = np.zeros(nx[2])
-    T_avg = np.zeros(nx[2])
-    b_avg = np.zeros(nx[2])
-    w_avg = np.zeros(nx[2])
+    # Pre-cache spatial indices
+    ix = np.argmin(np.abs(x - x0))
+    iy = np.argmin(np.abs(y - y0))
 
-    T_fluc_avg = np.zeros(nx[2])
-    b_fluc_avg = np.zeros(nx[2])
+    # Load all fields lazily — shape (nt - start, nx, ny, nz)
+    T = reader.lazy_field('T')
+    S = reader.lazy_field('S')
+    u = reader.lazy_field('u')
+    v = reader.lazy_field('v')
+    w = reader.lazy_field('w')
 
-    Tw_avg = np.zeros(nx[2])
-    Sw_avg = np.zeros(nx[2])
-    bw_avg = np.zeros(nx[2])
+    # Center velocities (still lazy)
+    u = velocities_to_center(u, axis=-3)
+    v = velocities_to_center(v, axis=-2)
+    w = velocities_to_center(w, axis=-1)
 
-    u_rms = np.zeros(nx[2])
-    v_rms = np.zeros(nx[2])
-    w_rms = np.zeros(nx[2])
+    # Buoyancy (still lazy)
+    b = g * alpha * (T - T0) - (g * beta * S if beta is not None else 0)
 
-    S_value = 0
-    w_value = 0
+    # Horizontal means over (nx, ny) → shape (nt - start, nz)
+    w_xy = da.mean(w[start:, :, :, :], axis=(1, 2))
+    b_xy = da.mean(b[start:, :, :, :], axis=(1, 2))
 
-    S_center = np.zeros(nx[2])
-    T_center = np.zeros(nx[2])
-    T_fluc_center = np.zeros(nx[2])
-    b_center = np.zeros(nx[2])
-    b_fluc_center = np.zeros(nx[2])
-    w_center = np.zeros(nx[2])
+    # Fluctuation and flux
+    b_fluc = b[start:, :, :, :] - b_xy[:, np.newaxis, np.newaxis, :]
+    bw     = da.mean(b_fluc * w[start:, :, :, :], axis=(1, 2))   # (nt - start, nz)
 
-    # ---------------- time loop ---------------- #
-    for it in range(start, nt):
-        u = reader.lazy_field('u', t_save[it])
-        v = reader.lazy_field('v', t_save[it])
-        w = reader.lazy_field('w', t_save[it])
-        T = reader.lazy_field('T', t_save[it])
-        S = reader.lazy_field('S', t_save[it])
-        # center velocities
-        u, v, w = velocities_to_center(u, v, w)
-        # buoyancy
-        bs = buoyancy(reader)
-        b = bs['b']
+    # Temporal means of horizontal means → shape (nz,)
+    S_avg = da.mean(S[start:, :, :, :], axis=(0, 1, 2))
+    T_avg = da.mean(T[start:, :, :, :], axis=(0, 1, 2))
+    w_avg = da.mean(w_xy, axis=0)
 
-        # ---------------- horizontal means ---------------- #
-        S_xy = np.mean(S, axis=(-3, -2))
-        T_xy = np.mean(T, axis=(-3, -2))
-        b_xy = np.mean(b, axis=(-3, -2))
-        w_xy = np.mean(w, axis=(-3, -2))
-        # ---------------- fluctuations ---------------- #
-        T_fluc = T - T_xy
-        b_fluc = b - b_xy
-        T_fluc_xy = np.mean(T_fluc, axis=(-3, -2))
-        b_fluc_xy = np.mean(b_fluc, axis=(-3, -2))
-        # ---------------- fluxes ---------------- #
-        Tw = np.mean(T_fluc * w, axis=(-3, -2))
-        Sw = np.mean(S * w, axis=(-3, -2))
-        bw = np.mean(b_fluc * w, axis=(-3, -2))
-        # ---------------- RMS ---------------- #
-        u_rms += rms(reader, 'u')
-        v_rms += rms(reader, 'v')
-        w_rms += rms(reader, 'w')
-        # ---------------- contour values ---------------- #
-        bw_idx = np.where(bw==np.max(bw))[0][0]
-        S_value += point(S, z, z0 = z[bw_idx], x=x, x0 = x0, y = y, y0 = y0)
-        w_value += point(w, z, z0 = z[bw_idx], x=x, x0 = x0, y = y, y0 = y0)
-        # ---------------- accumulation ---------------- #
-        S_avg += S_xy
-        T_avg += T_xy
-        b_avg += b_xy
-        w_avg += w_xy
-        T_fluc_avg += T_fluc_xy
-        b_fluc_avg += b_fluc_xy
-        Tw_avg += Tw
-        Sw_avg += Sw
-        bw_avg += bw
-        S_center += vertical_line(S, x, y, x0, y0)
-        T_center += vertical_line(T, x, y, x0, y0)
-        T_fluc_center += vertical_line(T_fluc, x, y, x0, y0)
-        b_center += vertical_line(b, x, y, x0, y0)
-        b_fluc_center += vertical_line(b_fluc, x, y, x0, y0)
-        w_center += vertical_line(w, x, y, x0, y0)
+    # RMS then mean over time
+    u_rms = da.mean(rms(u[start:, :, :, :]), axis=0)
+    v_rms = da.mean(rms(v[start:, :, :, :]), axis=0)
+    w_rms = da.mean(rms(w[start:, :, :, :]), axis=0)
 
-        n += 1
+    # bw_idx per timestep — argmax not lazy, so compute bw now
+    bw_np  = bw.compute()                        # (nt - start, nz) — small, cheap
+    bw_idx = np.argmax(bw_np, axis=1)            # (nt,)
+
+    # Point values at (ix, iy, bw_idx[it]) per timestep
+    nt     = len(t_save)
+    it_idx = np.arange(nt)
+    # extract the (nt - start, nx, ny, nz) arrays only at needed points
+    S_pts  = S[start:, ix, iy, :].compute()           # (nt - start, nz)
+    w_pts  = w[start:, ix, iy, :].compute()           # (nt - start, nz)
+    S_value = np.mean(S_pts[it_idx, bw_idx])
+    w_value = np.mean(w_pts[it_idx, bw_idx])
+
+    # Center profiles — shape (nt - start, nz), mean over time → (nz,)
+    S_center = da.mean(S[start:, ix, iy, :], axis=0)
+    T_center = da.mean(T[start:, ix, iy, :], axis=0)
+    w_center = da.mean(w[start:, ix, iy, :], axis=0)
+
+    # Single compute call for everything still lazy
+    (S_avg, T_avg, w_avg,
+     u_rms, v_rms, w_rms,
+     S_center, T_center, w_center) = da.compute(
+        S_avg, T_avg, w_avg,
+        u_rms, v_rms, w_rms,
+        S_center, T_center, w_center,
+    )
 
     return {
-        "S_avg": S_avg / n,
-        "T_avg": T_avg / n,
-        "b_avg": b_avg / n,
-        "w_avg": w_avg / n,
-
-        "T_fluc_avg": T_fluc_avg / n,
-        "b_fluc_avg": b_fluc_avg / n,
-
-        "Tw_avg": Tw_avg / n,
-        "Sw_avg": Sw_avg / n,
-        "bw_avg": bw_avg / n,
-
-        "u_rms": u_rms / n,
-        "v_rms": v_rms / n,
-        "w_rms": w_rms / n,
-
-        "S_center": S_center / n,
-        "T_center": T_center / n,
-        "T_fluc_center": T_fluc_center / n,
-        "b_center": b_center / n,
-        "b_fluc_center": b_fluc_center / n,
-        "w_center": w_center / n,
-
-        "S_value": S_value / n,
-        "w_value": w_value / n
+        "S_avg":    S_avg,
+        "T_avg":    T_avg,
+        "w_avg":    w_avg,
+        "u_rms":    u_rms,
+        "v_rms":    v_rms,
+        "w_rms":    w_rms,
+        "S_center": S_center,
+        "T_center": T_center,
+        "w_center": w_center,
+        "S_value":  S_value,
+        "w_value":  w_value,
     }
 
 def compute_temporal_radius_avg(reader, tracer0, contour_bound = 0.05, start = 10):
@@ -233,7 +212,7 @@ def compute_temporal_radius_avg(reader, tracer0, contour_bound = 0.05, start = 1
     n = 0
     # ---------------- time loop ---------------- #
     for it in range(start, nt):
-        S = reader.lazy_field('S', t_save[it])
+        S = reader.lazy_field('S'[it])
         dense_plume.input_info(S)
         r = dense_plume.plume_tracer_radius(x = x, y = y)
         r_avg += r
@@ -251,22 +230,12 @@ def write_temporal_averages(file_path, data, contour_bound = 0.05):
         f.create_group(f'{folder_avg}')
         f.create_dataset(f'{folder_avg}/S', data=data['S_avg'])
         f.create_dataset(f'{folder_avg}/T', data=data['T_avg'])
-        f.create_dataset(f'{folder_avg}/b', data=data['b_avg'])
-        f.create_dataset(f'{folder_avg}/w', data=data['w_avg'])
-        f.create_dataset(f'{folder_avg}/T\'', data=data['T_fluc_avg'])
-        f.create_dataset(f'{folder_avg}/b\'w', data=data['bw_fluc_avg'])
 
         f.create_group(f'{folder_centerline}')
         f.create_dataset(f'{folder_centerline}/S', data=data['S_center'])
         f.create_dataset(f'{folder_centerline}/T', data=data['T_center'])
-        f.create_dataset(f'{folder_centerline}/T\'', data=data['T_fluc_center'])
-        f.create_dataset(f'{folder_centerline}/b', data=data['b_center'])
-        f.create_dataset(f'{folder_centerline}/b\'', data=data['b_fluc_center'])
         f.create_dataset(f'{folder_centerline}/w', data=data['w_center'])
 
         f.create_group(f'{folder_contour}')
         f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
         f.create_dataset(f'{folder_contour}/w', data=data['w_value'])
-
-        f.create_group(f'{folder_plume}')
-        f.create_dataset(f'{folder_plume}/plume tracer radius with depth', data=data['radius_tracer'])

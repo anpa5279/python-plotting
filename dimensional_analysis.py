@@ -40,7 +40,7 @@ if ND:
         name_uni += '_temporal_averages'
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'resolution', 'else'
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'vertical resolution', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder, ND = ND)
 else:
@@ -304,7 +304,9 @@ else:
             if stokes:
                 u = u - reader.u_s
             # interpolate velocities to cell centers
-            u, v, w = velocities_to_center(u, v, w)
+            u = velocities_to_center(u, axis=0)
+            v = velocities_to_center(v, axis=1)
+            w = velocities_to_center(w, axis=2)
             # convert temperature and salinity to buoyancy 
             bs = buoyancy(reader)
             b = bs['b']

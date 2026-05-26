@@ -369,7 +369,7 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
     plt.close(fig)
 
 ### -------------------------PLOTTING R FUNCTIONS------------------------- ###
-def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neutral, r_max, z_max, lz, r_range, best_fit, fit_exp):
+def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neutral, r_max, z_max, lz, best_fit, fit_exp, ND = False, log_auto = True):
     num_cases = len(case_names)
     outdir = os.path.join(fig_folder)
     os.makedirs(outdir, exist_ok=True)
@@ -378,9 +378,25 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
     hor_len = ncols * 3
     vert_len = nrows * 4
     fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharex = True)
-    rmin = r_range[0]
-    rmax = r_range[-1]
+    rmin = np.min(np.concatenate(r))
+    rmax = np.max(np.concatenate(r_max))
     width = 0.8
+    if ND and log_auto:
+        x_label = r"Time, tN"
+        y_label = r"Radius, r/r$_j$"
+        z_label = r"Depth, z/r$_j$"
+    elif ND and not log_auto:
+        x_label = r"Time, log(tN)"
+        y_label = r"Radius, log(r/r$_j$)"
+        z_label = r"Depth, (z/r$_j$)"
+    elif not ND and log_auto:
+        x_label = r"Time, log(seconds)"
+        y_label = r"Radius, log(m)"
+        z_label = r"Depth, (m)"
+    else:
+        x_label = r"Time (seconds)"
+        y_label = r"Radius (m)"
+        z_label = r"Depth (m)"
     for row in range(nrows):
         td = time[row] #/ 3600 / 24
         plt.tight_layout()
@@ -393,21 +409,22 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
                     ax.plot(td, neutral[row][:, n], color=color_opt[n])
                 ax.plot(td, z_max[row][:, 0], color=color_opt[0], linestyle='--', label=r'max radius', linewidth=width)
                 ax.plot(td, neutral[row][:, 0], color=color_opt[0], label=r'neutral')
-                ax.set_ylabel('Depth (m)')
+                ax.set_ylabel(z_label)
                 ax.legend(loc='upper right', handlelength=0.9)
                 ax.set_ylim(lz)
             else:
-                ax.set_xscale('log')
-                ax.set_yscale('log')
+                if log_auto:
+                    ax.set_xscale('log')
+                    ax.set_yscale('log')
                 ax.plot(td, r_max[row][:, i - 1], color=color_opt[i-1], linestyle='--')
                 ax.plot(td, r[row][:, i-1], color=color_opt[i-1])
                 ax.plot(td, best_fit[0][row][:, i-1], color=color_opt[i-1], linestyle=':', linewidth=width, label = rf"t$^{{{fit_exp[row][0][i-1]:.2f}}}$") 
                 ax.plot(td, best_fit[1][row][:, i-1], color=color_opt[i-1], linestyle='-.', linewidth=width, label = rf"t$^{{{fit_exp[row][1][i-1]:.2f}}}$") 
                 ax.set_ylim(rmin, rmax)
-                ax.set_ylabel('Radius (m)')
+                ax.set_ylabel(y_label)
                 ax.legend(loc='lower right', handlelength=0.9)
             if row == nrows - 1:
-                ax.set_xlabel("Time (seconds)")
+                ax.set_xlabel(x_label)
             elif row == 0:
                 ax.set_title(f"Contour = {tol[i-1]:.2e} ")
         x_center = 0.5
@@ -415,7 +432,8 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
         fig.text(x_center, y_pos, case_names[row], ha='center', va='center',
                 fontsize=12, fontweight='bold', transform=fig.transFigure)
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"log_tracer_radius.svg")
+    file_name = 'ND_log_tracer_radius.svg' if ND else 'log_tracer_radius.svg'
+    frame_path = os.path.join(outdir, file_name)
     plt.savefig(frame_path, bbox_inches='tight')
     plt.close(fig)
 

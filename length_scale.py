@@ -20,7 +20,7 @@ name_uni = f'contour-{contour_bound:.2f}'
 universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
 
 # selecting cases to compare
-variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'resolution', 'else'
+variations = 'all' # 'MLD', 'flux', 'strat', 'all', 'length', 'vertical resolution', 'else'
 cases_info = comparison_info(variations, universal_folder)
 mld = cases_info['mld']
 dTdz = cases_info['dTdz']
