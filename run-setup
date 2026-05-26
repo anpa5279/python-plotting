@@ -2,8 +2,13 @@
 nodes=1
 cpus=16
 jobn=postprocessing
+file=oceananigans_setup.py
 
-uv init scripts
+cp $file scripts/
+cp diagnostics.py scripts/
+cp interpolation.py scripts/
+cp reader.py scripts/
+###uv init scripts
 cd scripts
 
 cat > EXEC_STEP << EXEC
