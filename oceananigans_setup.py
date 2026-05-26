@@ -3,14 +3,15 @@ import numpy as np
 import h5py
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, write_temporal_averages
+from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages
 from interpolation import velocities_to_center
 
 # set flags
-binning_flag = True
-contour_flag = True
-write_temporal_avg = True
-planelsice_flag = True
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+contour_flag = True # calculates radius of contour at each depth and time that is not in the default
+planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+fluc_flag = True # calculates turbulent statistics from binning information
+
 salinity = True
 
 # Set up folder and simulation parameters
@@ -103,6 +104,8 @@ if binning_flag:
             del f["ccc/T_rz"]
         if "ccc/horizontal velocity" in f:
             del f["ccc/horizontal velocity"]
+        if "ccc/rotation velocity" in f:
+            del f["ccc/rotation velocity"]
         if "ccc/w_rz" in f:
             del f["ccc/w_rz"]
         f.create_dataset("ccc/dimensions/r_bin", data = r)
@@ -159,4 +162,20 @@ if planelsice_flag:
         f.create_dataset("YZ/x = 0/u", data=u)
         f.create_dataset("YZ/x = 0/v", data=v)
         f.create_dataset("YZ/x = 0/w", data=w)
+    f.close()
+
+if fluc_flag:
+    file_path = os.path.join(folder, 'fluctuations.h5')
+    data = compute_fluct_averages(reader)
+    with h5py.File(file_path, "a") as f:
+        if "fluctuations/T_fluc" in f:
+            del f["fluctuations/T_fluc"]
+        if "fluctuations/S_fluc" in f:
+            del f["fluctuations/S_fluc"]
+        f.create_dataset("fluctuations/T_fluc", data=data['T_fluc'])
+        f.create_dataset("fluctuations/S_fluc", data=data['S_fluc'])
+        f.create_dataset("fluctuations/ur_fluc", data=data['ur_fluc'])
+        f.create_dataset("fluctuations/utheta_fluc", data=data['utheta_fluc'])
+        f.create_dataset("fluctuations/w_fluc", data=data['w_fluc'])
+        f.create_dataset("fluctuations/b_fluc", data=data['b_fluc'])
     f.close()

@@ -164,6 +164,59 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
         "S_value":  S_value,
         "w_value":  w_value,
     }
+def compute_fluct_averages(reader):
+    # Load constants once
+    reader.load_equation_of_state()
+    g = 9.80665
+    T0 = 25
+    alpha = reader.alpha
+    beta  = reader.beta
+
+    # Load all fields lazily — shape (nt, nx, ny, nz)
+    T = reader.load_binning_var('T')
+    S = reader.load_binning_var('S')
+    u = reader.load_binning_var('horizontal velocity')
+    v = reader.load_binning_var('rotation velocity')
+    w = reader.load_binning_var('w')
+
+    # Center velocities (still lazy)
+    u = velocities_to_center(u, axis=-3)
+    v = velocities_to_center(v, axis=-2)
+    w = velocities_to_center(w, axis=-1)
+
+    # Buoyancy (still lazy)
+    b = g * alpha * (T - T0) - (g * beta * S)
+
+    # Horizontal means over (nx, ny) → shape (nt, nz)
+    T_xy = da.mean(T, axis=(1, 2))
+    S_xy = da.mean(S, axis=(1, 2))
+    u_xy = da.mean(u, axis=(1, 2))
+    v_xy = da.mean(v, axis=(1, 2))
+    w_xy = da.mean(w, axis=(1, 2))
+    b_xy = da.mean(b, axis=(1, 2))
+
+    # Fluctuation and flux
+    T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
+    S_fluc = S - S_xy[:, np.newaxis, np.newaxis, :]
+    u_fluc = u - u_xy[:, np.newaxis, np.newaxis, :]
+    v_fluc = v - v_xy[:, np.newaxis, np.newaxis, :]
+    w_fluc = w - w_xy[:, np.newaxis, np.newaxis, :]
+    b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
+
+    # averages of fluctuations
+    T_fluc_avg = da.mean(T_fluc, axis=(1, 2))
+    S_fluc_avg = da.mean(S_fluc, axis=(1, 2))
+    u_fluc_avg = da.mean(u_fluc, axis=(1, 2))
+    v_fluc_avg = da.mean(v_fluc, axis=(1, 2))
+    w_fluc_avg = da.mean(w_fluc, axis=(1, 2))
+    b_fluc_avg = da.mean(b_fluc, axis=(1, 2))
+
+    return {'T_fluc': T_fluc_avg,
+            'S_fluc': S_fluc_avg,
+            'ur_fluc': u_fluc_avg,
+            'utheta_fluc': v_fluc_avg,
+            'w_fluc': w_fluc_avg,
+            'b_fluc': b_fluc_avg}
 
 ### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
 def write_temporal_averages(file_path, data):

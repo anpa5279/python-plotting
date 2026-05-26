@@ -453,3 +453,17 @@ class OceananigansData:
         self._contour_cache[file] = (r, z, time, S_rz, T_rz, ur_rz, w_rz)
 
         return r, z, time, S_rz, T_rz, ur_rz, w_rz
+    def load_binning_var(self, var, file = 'binning_rtz.h5'):
+        """
+        Loads binning (cached).
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        if file in self._contour_cache:
+            return self._contour_cache[file]
+
+        with h5py.File(fname, 'r') as f:
+            a = f['ccc/'+var+'_rz'][()]
+
+        return a

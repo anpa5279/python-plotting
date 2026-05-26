@@ -1,0 +1,24 @@
+#!/bin/bash
+nodes=1
+cpus=16
+jobn=postprocessing
+
+cat > EXEC_STEP << EXEC
+#!/bin/sh
+
+#PBS -A UCUB0166
+#PBS -N $jobn
+#PBS -q develop 
+#PBS -j oe
+#PBS -l walltime=00:10:00
+#PBS -l select=1:ncpus=$cpus:mem=16GB
+
+module unload conda
+module --force purge
+module load uv
+
+uv run python $file
+
+EXEC
+
+qsub < EXEC_STEP
