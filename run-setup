@@ -3,6 +3,7 @@ nodes=1
 cpus=16
 jobn=postprocessing
 
+uv init scripts
 cd scripts
 
 cat > EXEC_STEP << EXEC
