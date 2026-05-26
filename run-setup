@@ -8,6 +8,7 @@ cp $file scripts/
 cp diagnostics.py scripts/
 cp interpolation.py scripts/
 cp reader.py scripts/
+cp physics.py scripts/
 ###uv init scripts
 cd scripts
 
