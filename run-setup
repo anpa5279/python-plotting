@@ -3,6 +3,8 @@ nodes=1
 cpus=16
 jobn=postprocessing
 
+cd scripts
+
 cat > EXEC_STEP << EXEC
 #!/bin/sh
 
@@ -15,7 +17,7 @@ cat > EXEC_STEP << EXEC
 
 module unload conda
 module --force purge
-module load uv
+module load ncarenv-basic/25.10 ncarenv/25.10 uv
 
 uv run python $file
 
