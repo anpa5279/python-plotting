@@ -208,16 +208,16 @@ class OceananigansData:
         # Map slice type to the coordinate axis being sliced through
         slice_cfg = {
             #        coord      axis  plane_fn    files_coord
-            'YZ': (self.x,  0, yz_plane,  True),
-            'XZ': (self.y,  1, xz_plane,  False),
-            'XY': (self.z,  2, xy_plane,  False),
+            'YZ': (self.x,  -3, yz_plane,  True),
+            'XZ': (self.y,  -2, xz_plane,  False),
+            'XY': (self.z,  -1, xy_plane,  False),
         }
 
         coord, interp_axis, plane_fn, rank_split = slice_cfg[slice]
 
         # ------------------------------------------------------------------ #
         # Decide which file(s) to open.                                        #
-        # For YZ the x-axis is split across ranks, so we may need 1 or 2 files.
+        # For YZ the x-axis could be split across ranks, so we may need 1 or 2 files.
         # For XZ/XY all ranks are needed (y/z are not split).                 #
         # ------------------------------------------------------------------ #
         if rank_split:
@@ -229,6 +229,8 @@ class OceananigansData:
                 nearest = np.argsort(np.abs(coord - loc))[:2]
                 file_indices = np.sort(nearest)
                 needs_interp = True
+            print(file_indices)
+            print(needs_interp)
             files = self.files[file_indices]
         else:
             files = self.files

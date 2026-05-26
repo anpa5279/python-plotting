@@ -7,7 +7,7 @@ from diagnostics import compute_temporal_averages, write_temporal_averages, comp
 from interpolation import velocities_to_center
 
 # set flags
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 fluc_flag = True # calculates turbulent statistics from binning information
@@ -120,6 +120,8 @@ if binning_flag:
 
 
 if contour_flag: # calculate radius of contour at each depth and time that is not in the default
+    if not binning_flag:
+        S_rz = reader.load_binning_var('S')
     for contour in contours:
         r_contour = np.empty((nx[2], nt))
         for it, t in enumerate(reader.t_save):
