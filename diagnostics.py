@@ -222,7 +222,7 @@ def compute_fluct_averages(reader):
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
 
-    with h5py.File(file_path, "w") as f:
+    with h5py.File(file_path, "a") as f:
         f.create_group(f'{folder_contour}')
         f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
         f.create_dataset(f'{folder_contour}/w', data=data['w_value'])

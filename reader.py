@@ -464,8 +464,8 @@ class OceananigansData:
 
         if file in self._contour_cache:
             return self._contour_cache[file]
-
+        opt = 'ccc/'+var
         with h5py.File(fname, 'r') as f:
-            a = f['ccc/'+var+'_rz'][()]
+            a = f[opt][()]
 
         return a
