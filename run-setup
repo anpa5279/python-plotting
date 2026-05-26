@@ -15,9 +15,8 @@ cat > EXEC_STEP << EXEC
 #PBS -l walltime=00:10:00
 #PBS -l select=1:ncpus=$cpus:mem=16GB
 
-module unload conda
 module --force purge
-module load ncarenv-basic/25.10 ncarenv/25.10 uv
+module load ncarenv/25.10 uv
 
 uv add numpy pandas h5py dask os
 
