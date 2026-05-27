@@ -4,6 +4,7 @@ import os
 import h5py
 
 from interpolation import velocities_to_center
+from physics import rms
 
 ### -------------------------COLLECTING COMPARISON CASE INFO------------------------- ###
 def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
@@ -42,9 +43,17 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = np.array([60, 50, 70, 60, 60, 60, 60, 60, 60]) # mld in m
         dTdz = np.array([0.01, 0.01, 0.01, 0.005, 0.05, 0.1, 0.01, 0.01, 0.01]) # background temperature gradient in K/m
         F_s = wp * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
-    elif variations == 'length':
+    elif variations == 'vertical length':
         folder_names =['nz = 77 z = 96.25 m', 'nz = 128 z = 160 m', 'nz = 192 z = 240 m']
         case_names =[r'L$_{\text{z}}$ = 96.25 m', r'L$_{\text{z}}$ = 160 m', r'L$_{\text{z}}$ = 240 m']
+        num_cases = len(case_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases) 
+    elif variations == 'horizontal length':
+        folder_names =['/domain testing/proposed vertical resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', '/domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-400-nx320', 
+                       '/domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-480-nx384', '/domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-560-nx448', '/domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-640-nx512', ]
+        case_names =[r'L$_{\text{x}}$ = L$_{\text{y}}$ = 320 m', r'L$_{\text{x}}$ = L$_{\text{y}}$ = 400 m', r'L$_{\text{x}}$ = L$_{\text{y}}$ = 480 m', r'L$_{\text{x}}$ = L$_{\text{y}}$ = 240 m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -57,7 +66,9 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'horizontal resolution':
-        folder_names =['domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx192', 'domain resolution testing/proposed vertical resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 'domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx320', 'domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384', 'domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx640']
+        folder_names =['/domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx192', '/domain testing/proposed vertical resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 
+                       '/domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx320', '/domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384', 
+                       '/domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx640']
         case_names =[r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m' r'$\Delta x = 1.0$m', r'$\Delta x = 0.833$m', r'$\Delta x = 0.5$m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
@@ -71,7 +82,7 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases)
     else:
-        print("Variation type not recognized. Please choose from 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'vertical resolution', or define your own case info in the comparison_info function.")
+        print("Variation type not recognized.")
         return None # user defined specific case not defined here
     folder_names = [os.path.join(universal_folder, folder) for folder in folder_names]
     # Set up folder and simulation parameters
@@ -108,7 +119,7 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
             "F_s": F_s
         }
     return case_info
-### -------------------------CALCULATING TEMPORAL AVERAGES------------------------- ###
+### -------------------------CALCULATING 1D AVERAGES------------------------- ###
 def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
     x, y = reader.x, reader.y
     t_save = reader.t_save[start:]
@@ -222,7 +233,13 @@ def compute_fluct_averages(reader):
             'bu_fluc': bu_fluc_avg,
             'bv_fluc': bv_fluc_avg,
             'bw_fluc': bw_fluc_avg}
-
+def compute_rms(reader):
+        u_rms = rms(reader, 'u')
+        v_rms = rms(reader, 'v')
+        w_rms = rms(reader, 'w')
+        return {'u_rms': u_rms,
+                'v_rms': v_rms,
+                'w_rms': w_rms}
 ### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"

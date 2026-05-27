@@ -3,20 +3,22 @@ import numpy as np
 import h5py
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages
+from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages, compute_rms
 from interpolation import velocities_to_center
 
 # set flags
-compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
-contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-fluc_flag = True # calculates turbulent statistics from binning information
+compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+contour_flag = False # calculates radius of contour at each depth and time that is not in the default
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+fluc_flag = False # calculates turbulent statistics from binning information
+rms_flag = True # calculates RMS from 3D fields
 
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/res-horizontal/sj0.1-mld60-dTdz0.01-lx320-nx192' #480-nx384
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384'
+#'/glade/derecho/scratch/apauls/outputs/res-horizontal/sj0.1-mld60-dTdz0.01-lx320-nx192' #480-nx384
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
 g = 9.80665
@@ -171,6 +173,20 @@ if fluc_flag:
             del f["fluctuations/T_fluc"]
         if "fluctuations/S_fluc" in f:
             del f["fluctuations/S_fluc"]
+        if "fluctuations/ur_fluc" in f:
+            del f["fluctuations/ur_fluc"]
+        if "fluctuations/utheta_fluc" in f:
+            del f["fluctuations/utheta_fluc"]
+        if "fluctuations/w_fluc" in f:
+            del f["fluctuations/w_fluc"]
+        if "fluctuations/b_fluc" in f:
+            del f["fluctuations/b_fluc"]
+        if "fluctuations/bur_fluc" in f:
+            del f["fluctuations/bur_fluc"]
+        if "fluctuations/butheta_fluc" in f:
+            del f["fluctuations/butheta_fluc"]
+        if "fluctuations/bw_fluc" in f:
+            del f["fluctuations/bw_fluc"]
         f.create_dataset("fluctuations/T_fluc", data=data['T_fluc'])
         f.create_dataset("fluctuations/S_fluc", data=data['S_fluc'])
         f.create_dataset("fluctuations/ur_fluc", data=data['ur_fluc'])
@@ -180,4 +196,19 @@ if fluc_flag:
         f.create_dataset("fluctuations/bur_fluc", data=data['bu_fluc'])
         f.create_dataset("fluctuations/butheta_fluc", data=data['bv_fluc'])
         f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
+    f.close()
+
+if rms_flag:
+    file_path = os.path.join(folder, 'fluctuations.h5')
+    rms_values = compute_rms(reader)
+    with h5py.File(file_path, "a") as f:
+        if "rms/u" in f:
+            del f["rms/u"]
+        if "rms/v" in f:
+            del f["rms/v"]
+        if "rms/w" in f:
+            del f["rms/w"]
+        f.create_dataset("rms/u", data=rms_values['u_rms'])
+        f.create_dataset("rms/v", data=rms_values['v_rms'])
+        f.create_dataset("rms/w", data=rms_values['w_rms'])
     f.close()

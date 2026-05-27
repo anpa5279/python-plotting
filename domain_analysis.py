@@ -27,7 +27,7 @@ universal_folder = '/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'length', 'WENO', 'vertical resolution', 'one case', 'else'
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'WENO', 'vertical resolution', 'one case', 'else'
 if variations != 'else' and variations != 'one':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     case_names = cases_info['case_names']

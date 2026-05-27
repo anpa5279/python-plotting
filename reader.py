@@ -51,6 +51,7 @@ class OceananigansData:
             self.files = [f'{name}_rank{n}.jld2' for n in range(self.Nranks)]
         else:
             self.files = all_files
+    
     # ------------------------- GRID ------------------------------------ #
     def load_grid(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -471,6 +472,38 @@ class OceananigansData:
         if file in self._contour_cache:
             return self._contour_cache[file]
         opt = 'ccc/'+var+'_rz' if len(var) < 3 else 'ccc/'+var
+        with h5py.File(fname, 'r') as f:
+            a = f[opt][()]
+
+        return a
+
+    # ------------------------ FLUCTUATIONS ----------------------------- #
+    def load_fluc_var(self, var, file = 'fluctuations.h5'):
+        """
+        Loads fluctuation variables (cached).
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        if file in self._contour_cache:
+            return self._contour_cache[file]
+        opt = 'fluctuations/'+var+'_fluc'
+        with h5py.File(fname, 'r') as f:
+            a = f[opt][()]
+
+        return a
+
+    # ------------------------ PLANE SLICE ----------------------------- #
+    def load_plane_var(self, var, file = 'plane_slice.h5'):
+        """
+        Loads plane slice variables (cached).
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        if file in self._contour_cache:
+            return self._contour_cache[file]
+        opt = 'YZ/x = 0/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
 
