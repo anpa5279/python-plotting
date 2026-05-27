@@ -7,7 +7,7 @@ from diagnostics import compute_temporal_averages, write_temporal_averages, comp
 from interpolation import velocities_to_center
 
 # set flags
-compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
+compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
 binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
@@ -80,7 +80,6 @@ if binning_flag:
             utheta_rz[:, k, it] = np.bincount(r_bin.flat, weights=utheta[:, :, k].flat)
             ur_rz[:, k, it] = np.bincount(r_bin.flat, weights=ur[:, :, k].flat)
             w_rz[:, k, it] = np.bincount(r_bin.flat, weights=w[:, :, k].flat) 
-    print("Finished binning data in r-z space.")
     # cut off the corners that aren't full circles.
     S_rz = (1 / counts[:ncirc, None, None]) * S_rz[:ncirc, :, :]
     T_rz = (1 / counts[:ncirc, None, None]) * T_rz[:ncirc, :, :]
@@ -114,8 +113,6 @@ if binning_flag:
         f.create_dataset("ccc/rotation velocity", data=utheta_rz)
         f.create_dataset("ccc/w_rz", data=w_rz)
     f.close()
-    print("Finished writing binned data to file.")
-
 
 if contour_flag: # calculate radius of contour at each depth and time that is not in the default
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
@@ -180,4 +177,7 @@ if fluc_flag:
         f.create_dataset("fluctuations/utheta_fluc", data=data['utheta_fluc'])
         f.create_dataset("fluctuations/w_fluc", data=data['w_fluc'])
         f.create_dataset("fluctuations/b_fluc", data=data['b_fluc'])
+        f.create_dataset("fluctuations/bur_fluc", data=data['bu_fluc'])
+        f.create_dataset("fluctuations/butheta_fluc", data=data['bv_fluc'])
+        f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
     f.close()

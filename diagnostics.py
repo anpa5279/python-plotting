@@ -4,7 +4,6 @@ import os
 import h5py
 
 from interpolation import velocities_to_center
-from physics import rms
 
 ### -------------------------COLLECTING COMPARISON CASE INFO------------------------- ###
 def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
@@ -179,44 +178,50 @@ def compute_fluct_averages(reader):
     v = reader.load_binning_var('rotation velocity')
     w = reader.load_binning_var('w')
 
-    # Center velocities (still lazy)
-    u = velocities_to_center(u, axis=-3)
-    v = velocities_to_center(v, axis=-2)
-    w = velocities_to_center(w, axis=-1)
-
     # Buoyancy (still lazy)
     b = g * alpha * (T - T0) - (g * beta * S)
 
     # Horizontal means over (nx, ny) → shape (nt, nz)
-    T_xy = da.mean(T, axis=(1, 2))
-    S_xy = da.mean(S, axis=(1, 2))
-    u_xy = da.mean(u, axis=(1, 2))
-    v_xy = da.mean(v, axis=(1, 2))
-    w_xy = da.mean(w, axis=(1, 2))
-    b_xy = da.mean(b, axis=(1, 2))
+    T_xy = da.mean(T, axis=0)
+    S_xy = da.mean(S, axis=0)
+    u_xy = da.mean(u, axis=0)
+    v_xy = da.mean(v, axis=0)
+    w_xy = da.mean(w, axis=0)
+    b_xy = da.mean(b, axis=0)
 
-    # Fluctuation and flux
-    T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
-    S_fluc = S - S_xy[:, np.newaxis, np.newaxis, :]
-    u_fluc = u - u_xy[:, np.newaxis, np.newaxis, :]
-    v_fluc = v - v_xy[:, np.newaxis, np.newaxis, :]
-    w_fluc = w - w_xy[:, np.newaxis, np.newaxis, :]
-    b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
+    # Fluctuation
+    T_fluc = T - T_xy
+    S_fluc = S - S_xy
+    u_fluc = u - u_xy
+    v_fluc = v - v_xy
+    w_fluc = w - w_xy
+    b_fluc = b - b_xy
+
+    #Flux fluctuations
+    bu_fluc = da.mean(b_fluc * w, axis=0)
+    bv_fluc = da.mean(b_fluc * w, axis=0)
+    bw_fluc = da.mean(b_fluc * w, axis=0)
 
     # averages of fluctuations
-    T_fluc_avg = da.mean(T_fluc, axis=(1, 2))
-    S_fluc_avg = da.mean(S_fluc, axis=(1, 2))
-    u_fluc_avg = da.mean(u_fluc, axis=(1, 2))
-    v_fluc_avg = da.mean(v_fluc, axis=(1, 2))
-    w_fluc_avg = da.mean(w_fluc, axis=(1, 2))
-    b_fluc_avg = da.mean(b_fluc, axis=(1, 2))
+    T_fluc_avg = da.mean(T_fluc, axis=0)
+    S_fluc_avg = da.mean(S_fluc, axis=0)
+    u_fluc_avg = da.mean(u_fluc, axis=0)
+    v_fluc_avg = da.mean(v_fluc, axis=0)
+    w_fluc_avg = da.mean(w_fluc, axis=0)
+    b_fluc_avg = da.mean(b_fluc, axis=0)
+    bu_fluc_avg = da.mean(bu_fluc, axis=0)
+    bv_fluc_avg = da.mean(bv_fluc, axis=0)
+    bw_fluc_avg = da.mean(bw_fluc, axis=0)
 
     return {'T_fluc': T_fluc_avg,
             'S_fluc': S_fluc_avg,
             'ur_fluc': u_fluc_avg,
             'utheta_fluc': v_fluc_avg,
             'w_fluc': w_fluc_avg,
-            'b_fluc': b_fluc_avg}
+            'b_fluc': b_fluc_avg,
+            'bu_fluc': bu_fluc_avg,
+            'bv_fluc': bv_fluc_avg,
+            'bw_fluc': bw_fluc_avg}
 
 ### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
 def write_temporal_averages(file_path, data):

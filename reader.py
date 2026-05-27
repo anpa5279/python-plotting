@@ -217,24 +217,29 @@ class OceananigansData:
 
         # ------------------------------------------------------------------ #
         # Decide which file(s) to open.                                        #
-        # For YZ the x-axis could be split across ranks, so we may need 1 or 2 files.
+        # For YZ the x-axis could be split across ranks, so we may need 1 or 2 files, depending on locations and halo output.
         # For XZ/XY all ranks are needed (y/z are not split).                 #
         # ------------------------------------------------------------------ #
         if rank_split:
-            exact = np.where(coord == loc)[0]
-            if exact.size:                          # loc sits on a grid point
-                file_indices = exact[:1]
+            exact = coord == loc
+            if any(exact):                          # loc sits on a grid point
+                file_indices = np.where(exact)[0]
                 needs_interp = False
-            else:                                   # loc lies between two ranks
+                if self.halos:
+                    halos_needed = False
+            else:                                   # loc lies between two ranks, must interpolate, but only need one file with halos
                 nearest = np.argsort(np.abs(coord - loc))[:2]
-                file_indices = np.sort(nearest)
+                file_indices = np.array([int(i) for i in np.floor(np.sort(nearest)/self.nx[0]*self.Nranks)])
                 needs_interp = True
-            print(file_indices)
-            print(needs_interp)
-            files = self.files[file_indices]
+                if self.halos:
+                    halos_needed = True
+                    file_indices = file_indices[0]
+            files = self.files[file_indices] if any(exact) else [self.files[i] for i in file_indices]
         else:
             files = self.files
             needs_interp = True                     # always interpolate in y/z
+            if self.halos:
+                halos_needed = False
 
         # ------------------------------------------------------------------ #
         # Build per-rank chunk shape for dask                                  #
@@ -256,12 +261,13 @@ class OceananigansData:
                     dset = f[f'timeseries/{field}/{int(t)}']   # (z, y, x_local)
 
                     if self.halos:
-                        # HDF5 is (z, y, x) → halo order matches
-                        dset = dset[
-                            self.hx[2] : -self.hx[2] or None,  # z
-                            self.hx[1] : -self.hx[1] or None,  # y
-                            self.hx[0] : -self.hx[0] or None,  # x
-                        ]
+                        if not halos_needed:
+                            # HDF5 is (z, y, x) → halo order matches
+                            dset = dset[
+                                self.hx[2] : -self.hx[2] or None,  # z
+                                self.hx[1] : -self.hx[1] or None,  # y
+                                self.hx[0] : -self.hx[0] or None,  # x
+                            ]
 
                     darr = da.from_array(dset, chunks=chunk_shape)  # (z, y, x_local)
                     darr = darr.transpose(2, 1, 0)                  # → (x_local, y, z)
@@ -464,7 +470,7 @@ class OceananigansData:
 
         if file in self._contour_cache:
             return self._contour_cache[file]
-        opt = 'ccc/'+var
+        opt = 'ccc/'+var+'_rz' if len(var) < 3 else 'ccc/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
 
