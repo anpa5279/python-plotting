@@ -234,12 +234,23 @@ def compute_fluct_averages(reader):
             'bv_fluc': bv_fluc_avg,
             'bw_fluc': bw_fluc_avg}
 def compute_rms(reader):
-        u_rms = rms(reader, 'u')
-        v_rms = rms(reader, 'v')
-        w_rms = rms(reader, 'w')
-        return {'u_rms': u_rms,
-                'v_rms': v_rms,
-                'w_rms': w_rms}
+    u_rms = np.empty((reader.nt, reader.nx[2]))
+    v_rms = np.empty((reader.nt, reader.nx[2]))
+    w_rms = np.empty((reader.nt, reader.nx[2]))
+    for it, t in enumerate(reader.t_save):
+        print(t)
+        u = reader.lazy_field('u', steps=t)
+        v = reader.lazy_field('v', steps=t)
+        w = reader.lazy_field('w', steps=t)
+        u = velocities_to_center(u, axis=-3)
+        v = velocities_to_center(v, axis=-2) 
+        w = velocities_to_center(w, axis=-1)
+        u_rms[it, :] = rms(u)
+        v_rms[it, :] = rms(v)
+        w_rms[it, :] = rms(w)
+    return {'u_rms': u_rms,
+            'v_rms': v_rms,
+            'w_rms': w_rms}
 ### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"

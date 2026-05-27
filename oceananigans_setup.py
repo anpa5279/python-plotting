@@ -7,17 +7,17 @@ from diagnostics import compute_temporal_averages, write_temporal_averages, comp
 from interpolation import velocities_to_center
 
 # set flags
-compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
-contour_flag = False # calculates radius of contour at each depth and time that is not in the default
-planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-fluc_flag = False # calculates turbulent statistics from binning information
+compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+contour_flag = True # calculates radius of contour at each depth and time that is not in the default
+planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+fluc_flag = True # calculates turbulent statistics from binning information
 rms_flag = True # calculates RMS from 3D fields
 
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/horizontal-domain/sj0.1-mld60-dTdz0.01-lx-400-nx320' 
+folder = '/glade/derecho/scratch/apauls/outputs/horizontal-domain/sj0.1-mld60-dTdz0.01-lx-320-nx320'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384'
 file_path = os.path.join(folder, 'binning_rtz.h5')
 

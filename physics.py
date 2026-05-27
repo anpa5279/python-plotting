@@ -27,9 +27,13 @@ def rms(var, reader = None, t = None):
             a = np.array(reader.lazy_field(var))
         avg = np.mean(a, axis=(-3, -2))
     else:
-        a = np.array(var)
-        avg = np.mean(a, axis=(-3, -2))
-        avg = avg[:, np.newaxis, np.newaxis, :]
+        if var.ndim == 4: # all time stesp
+            a = np.array(var)
+            avg = np.mean(a, axis=(-3, -2))
+            avg = avg[:, np.newaxis, np.newaxis, :]
+        else:
+            a = var
+            avg = np.mean(a, axis=(-3, -2))
     return np.mean((a-avg)**2, axis=(-3, -2))**0.5
 # fluctuations of one variable 
 def a_fluc_b(a, b, a_avg=None):
