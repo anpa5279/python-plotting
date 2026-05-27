@@ -16,7 +16,7 @@ fluc_flag = True # calculates turbulent statistics from binning information
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/horizontal-domain/sj0.1-mld60-dTdz0.01-lx-640-nx512'
+folder = '/glade/derecho/scratch/apauls/outputs/res-horizontal/sj0.1-mld60-dTdz0.01-lx320-nx192' #480-nx384
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
 g = 9.80665
