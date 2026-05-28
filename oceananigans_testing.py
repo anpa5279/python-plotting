@@ -13,6 +13,7 @@ fluc_flag = False # calculates turbulent statistics from binning information
 rms_flag = False # calculates RMS from 3D fields
 
 salinity = True
+idx_slice = False
 
 # Set up folder and simulation parameters
 folder = '/glade/derecho/scratch/apauls/outputs/horizontal-domain/sj0.1-mld60-dTdz0.01-lx-400-nx320'
@@ -36,28 +37,33 @@ reader.load_equation_of_state()
 
 if planelsice_flag:
     file_path = os.path.join(folder, 'plane_slice.h5')
-    x_opt = reader.nx[0]//2
+    if idx_slice:
+        x_opt = reader.nx[0]//2
+        x_save = reader.x[x_opt]
+    else:
+        x_slice = 0.0
+        x_save = x_slice
     T = reader.field_slice('T', N = x_opt)
     S = reader.field_slice('S', N = x_opt)
     u = reader.field_slice('u', N = x_opt)
     v = reader.field_slice('v', N = x_opt)
     w = reader.field_slice('w', N = x_opt)
     with h5py.File(file_path, "a") as f:
-        if f"YZ/x = {reader.x[x_opt]}/S" in f:
-            del f[f"YZ/x = {reader.x[x_opt]}/S"]
-        if f"YZ/x = {reader.x[x_opt]}/T" in f:
-            del f[f"YZ/x = {reader.x[x_opt]}/T"]
-        if f"YZ/x = {reader.x[x_opt]}/u" in f:
-            del f[f"YZ/x = {reader.x[x_opt]}/u"]
-        if f"YZ/x = {reader.x[x_opt]}/v" in f:
-            del f[f"YZ/x = {reader.x[x_opt]}/v"]
-        if f"YZ/x = {reader.x[x_opt]}/w" in f:
-            del f[f"YZ/x = {reader.x[x_opt]}/w"]
-        f.create_dataset(f"YZ/x = {reader.x[x_opt]}/S", data = S)
-        f.create_dataset(f"YZ/x = {reader.x[x_opt]}/T", data=T)
-        f.create_dataset(f"YZ/x = {reader.x[x_opt]}/u", data=u)
-        f.create_dataset(f"YZ/x = {reader.x[x_opt]}/v", data=v)
-        f.create_dataset(f"YZ/x = {reader.x[x_opt]}/w", data=w)
+        if f"YZ/x = {x_save}/S" in f:
+            del f[f"YZ/x = {x_save}/S"]
+        if f"YZ/x = {x_save}/T" in f:
+            del f[f"YZ/x = {x_save}/T"]
+        if f"YZ/x = {x_save}/u" in f:
+            del f[f"YZ/x = {x_save}/u"]
+        if f"YZ/x = {x_save}/v" in f:
+            del f[f"YZ/x = {x_save}/v"]
+        if f"YZ/x = {x_save}/w" in f:
+            del f[f"YZ/x = {x_save}/w"]
+        f.create_dataset(f"YZ/x = {x_save}/S", data = S)
+        f.create_dataset(f"YZ/x = {x_save}/T", data=T)
+        f.create_dataset(f"YZ/x = {x_save}/u", data=u)
+        f.create_dataset(f"YZ/x = {x_save}/v", data=v)
+        f.create_dataset(f"YZ/x = {x_save}/w", data=w)
     f.close()
     print(f"Saved plane slices to {file_path}")
 
