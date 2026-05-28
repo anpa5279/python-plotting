@@ -510,7 +510,7 @@ class OceananigansData:
         return a
 
     # ------------------------ PLANE SLICE ----------------------------- #
-    def load_plane_var(self, var, file = 'plane_slice.h5'):
+    def load_plane_var(self, var, loc = 0.0, file = 'plane_slice.h5'):
         """
         Loads plane slice variables (cached).
         """
@@ -519,7 +519,7 @@ class OceananigansData:
 
         #if file in self._contour_cache:
             #return self._contour_cache[file]
-        opt = 'YZ/x = 0/'+var
+        opt = f'YZ/x = {loc}/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
 
