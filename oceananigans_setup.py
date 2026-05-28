@@ -17,7 +17,7 @@ rms_flag = True # calculates RMS from 3D fields
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/horizontal-domain/sj0.1-mld60-dTdz0.01-lx-400-nx320'
+folder = '/glade/derecho/scratch/apauls/outputs/res-horizontal/sj0.1-mld60-dTdz0.01-lx-480-nx384'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384'
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
