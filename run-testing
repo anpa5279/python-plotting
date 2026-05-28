@@ -1,8 +1,8 @@
 #!/bin/bash
 nodes=1
 cpus=128
-jobn=postprocessing
-file=oceananigans_setup.py
+jobn=testing-postprocessing
+file=oceananigans_testing.py
 
 cp $file scripts/
 cp diagnostics.py scripts/

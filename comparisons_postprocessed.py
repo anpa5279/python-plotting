@@ -12,8 +12,8 @@ from plotting_planes import plot_variable_vert_slice
 
 # flags for what to plot
 plot_variables = True
-plot_var_bin = True
-plot_turb_stats = True
+plot_var_bin = False
+plot_turb_stats = False
 video = True
 
 # flags for how to read data
@@ -54,19 +54,21 @@ for folder in folder_names:
 # collecting model information for all cases
 mld_idx = []
 x = []
+r_bin = []
 y = []
 z = []
-nx = []
-lx = []
+nx = np.empty((3, num_cases), dtype=object)
+lx = np.empty((3, num_cases), dtype=object)
 
 for i, reader in enumerate(readers):
     reader.load_time()
     reader.load_grid()
+    r_bin.append(reader.loading_bin_radius())
     x.append(reader.x)
     y.append(reader.y)
     z.append(reader.z)
-    nx.append(reader.nx)
-    lx.append(reader.lx)
+    nx[:, i] = reader.nx
+    lx[:, i] = reader.lx
     if i == 0:
         nt = reader.nt
         nz = reader.nx[2]
@@ -95,7 +97,7 @@ else:
 plot_format()
 if plot_variables:
     if salinity:
-        var_names = ['Tracer', 'Temperature', 'u', 'v', 'w']
+        var_names = ['Tracer negative', 'Temperature', 'u', 'v', 'w']
         range_names = ['Tracer', 'T', 'u', 'v', 'w']
     else:
         var_names = ['Temperature', 'u', 'v', 'w']
@@ -105,6 +107,7 @@ if plot_variables:
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['Tracer'] =[S_tol, 0.15]
+ranges['Tracer negative'] = [-0.15, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
 ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
 ranges['T'] = [T0-1.0, T0 + 0.01]
@@ -143,12 +146,17 @@ if plot_variables:
     v_plane = []
     w_plane = []
     bw_plane = []
+if plot_var_bin:
+    T_bin = []
+    S_bin = []
+    ur_bin = []
+    utheta_bin = []
+    w_bin = []
+    b_bin = []
 
 for i, reader in enumerate(readers):
     # Load data from files [nt, nx, ny, nz]
-    print(i)
     if plot_variables:
-        print('loading plane variables')
         T_plane.append(reader.load_plane_var('T'))
         u_plane.append(reader.load_plane_var('u'))
         v_plane.append(reader.load_plane_var('v'))
@@ -158,16 +166,22 @@ for i, reader in enumerate(readers):
         b_plane = buoyancy(reader, type = 'plane')
     # Load binning from files
     if plot_var_bin or plot_turb_stats:
-        print('loading binning variables')
         ur_rz = reader.load_binning_var('horizontal velocity')
         utheta_rz = reader.load_binning_var('rotation velocity')
         w_rz = reader.load_binning_var('w')
         T_rz = reader.load_binning_var('T')
-        print(T_rz)
         S_rz = reader.load_binning_var('S')
-        r = reader.loading_bin_radius()
+        r = reader.loading_bin_contours()
         b_rz = buoyancy(reader, type = 'bin')
         b_xy = np.mean(b_rz, axis=0)
+    if plot_var_bin:
+        T_bin.append(T_rz)
+        ur_bin.append(ur_rz)
+        utheta_bin.append(utheta_rz)
+        w_bin.append(w_rz)
+        if salinity:
+            S_bin.append(S_rz)
+        b_bin.append(b_rz)
     if plot_turb_stats:
         # rms fluctuations
         u_rms.append(reader.load_vel_rms('u'))
@@ -185,27 +199,39 @@ for i, reader in enumerate(readers):
         # dense plume analysis
         if salinity:
             S_avg.append(np.mean(S_rz, axis=0))
-            r_profile.append(reader.loading_bin_radius())
+            r_profile.append(reader.loading_bin_contours())
             b_center.append(b_rz[0, :, :])
             T_fluc_center.append(T_rz[0, :, :])
             S_fluc_center.append(S_rz[0, :, :])
 
 ############ PLOTTING ############
-for it in nt:
+for it in range(nt):
     if plot_variables:
         if salinity: #'Tracer', 'T', 'u', 'v', 'w'
-            variables = [S_plane[it], T_plane[it], u_plane[it], v_plane[it], w_plane[it]]
+            variables = [[S_plane[i][:, :, it].T for i in range(num_cases)], ]#[S_plane[it],]# T_plane[it], u_plane[it], v_plane[it], w_plane[it]]
             colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
             cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
         else: #'T', 'u', 'v', 'w'
-            variables = [T_plane[it], u_plane[it], v_plane[it], w_plane[it]]
+            variables = [T_plane[i][it] for i in range(num_cases)]#[T_plane[it],]# u_plane[it], v_plane[it], w_plane[it]]
             colorbar_labels = [r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
             cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
 
         for dir, var in enumerate(variables):
-            variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx[-1], reader.y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
+            variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
+    if plot_var_bin:
+        if salinity: #'Tracer', 'T', 'u', 'v', 'w'
+            variables = [S_bin[it]]#,, T_bin[it], ur_bin[it], utheta_bin[it], w_bin[it]]
+            colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
+            cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+        else: #'T', 'u', 'v', 'w'
+            variables = [T_bin[it], ur_bin[it], utheta_bin[it], w_bin[it]]
+            colorbar_labels = [r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
+            cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+
+        for dir, var in enumerate(variables):
+            variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, r_bin, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='binning')
     if plot_turb_stats:
-        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx[-1], z, S_avg[it], u_rms[it], v_rms[it], w_rms[it], b_avg[it], b_center[it], r_profile[it], bu_fluc_avg[it], bv_fluc_avg[it], bw_fluc_avg[it], T_avg[it], T_fluc_center[it], S_fluc_center[it])
+        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg[it], u_rms[it], v_rms[it], w_rms[it], b_avg[it], b_center[it], r_profile[it], bu_fluc_avg[it], bv_fluc_avg[it], bw_fluc_avg[it], T_avg[it], T_fluc_center[it], S_fluc_center[it])
 
 
 # creating videos
@@ -217,4 +243,4 @@ if video:
         for dir, name in enumerate(var_names):
             create_video(variable_dir[var_names[dir]], fig_folder, name_uni, name)
     if plot_turb_stats:
-        create_video(turb_plot, fig_folder, 'binning', 'turb_stats')
+        create_video(buoyancy_dir_z, fig_folder, 'binning', 'turb_stats')

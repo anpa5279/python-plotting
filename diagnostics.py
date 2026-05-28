@@ -66,10 +66,12 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'horizontal resolution':
-        folder_names =['domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx192', 'domain testing/proposed vertical resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 
-                       'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx320', 'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384', 
+        folder_names =['domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx192', 
+                       'domain testing/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60', 
+                       'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx320', 
+                       'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384', 
                        'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx640']
-        case_names =[r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m' r'$\Delta x = 1.0$m', r'$\Delta x = 0.833$m', r'$\Delta x = 0.5$m']
+        case_names =[r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.833$m', r'$\Delta x = 0.5$m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)

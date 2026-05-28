@@ -195,7 +195,7 @@ class OceananigansData:
 
         out = da.stack(time_slabs, axis=0)               # (Nt, Nx, Ny, Nz)
         return out.squeeze()                             # drop time axis if Nt == 1
-    def field_slice(self, field, steps=None, slice='YZ', loc=0.0):
+    def field_slice(self, field, steps=None, slice='YZ', loc=0.0, N=None):
         """
         Returns a 2D slice of the field throughout time.
         'YZ' -> shape (Ny, Nz, nt),  loc is x-position
@@ -204,106 +204,90 @@ class OceananigansData:
         """
         if steps is None:
             steps = self.t_save
-        steps = np.atleast_1d(steps)   # replaces the broken size==1 branch
+        steps = np.atleast_1d(steps)
 
-        # Map slice type to the coordinate axis being sliced through
+        # ------------------------------------------------------------------ #
+        # Fast path: N is a raw grid index — use lazy_field and index directly #
+        # ------------------------------------------------------------------ #
+        if N is not None:
+            lazy = self.lazy_field(field, steps)   # (nt, Nx, Ny, Nz) or (Nx, Ny, Nz) if nt==1
+            # Ensure time axis is present
+            if lazy.ndim == 3:
+                lazy = lazy[np.newaxis]            # (1, Nx, Ny, Nz)
+
+            if slice == 'YZ':
+                out = lazy[:, int(N), :, :]        # (nt, Ny, Nz)
+            elif slice == 'XZ':
+                out = lazy[:, :, int(N), :]        # (nt, Nx, Nz)
+            elif slice == 'XY':
+                out = lazy[:, :, :, int(N)]        # (nt, Nx, Ny)
+
+            if field == 'u' and self.u_s is not None:
+                out = out - self.u_s
+
+            out = out.compute()                    # materialise here
+            return out.squeeze()                   # drop time axis if nt == 1
+
+        # ------------------------------------------------------------------ #
+        # Slow path: loc is a physical coordinate — interpolate               #
+        # ------------------------------------------------------------------ #
         slice_cfg = {
-            #        coord      axis  plane_fn    files_coord
-            'YZ': (self.x,  -3, yz_plane,  True),
-            'XZ': (self.y,  -2, xz_plane,  False),
-            'XY': (self.z,  -1, xy_plane,  False),
+            'YZ': (self.x, True),
+            'XZ': (self.y, False),
+            'XY': (self.z, False),
         }
+        coord, rank_split = slice_cfg[slice]
 
-        coord, interp_axis, plane_fn, rank_split = slice_cfg[slice]
-
-        # ------------------------------------------------------------------ #
-        # Decide which file(s) to open.                                        #
-        # For YZ the x-axis could be split across ranks, so we may need 1 or 2 files, depending on locations and halo output.
-        # For XZ/XY all ranks are needed (y/z are not split).                 #
-        # ------------------------------------------------------------------ #
         if rank_split:
             exact = coord == loc
-            if any(exact):                          # loc sits on a grid point
+            if any(exact):
                 file_indices = np.where(exact)[0]
                 needs_interp = False
-                if self.halos:
-                    halos_needed = False
-            else:                                   # loc lies between two ranks, must interpolate, but only need one file with halos
+                halos_needed = False
+            else:
                 nearest = np.argsort(np.abs(coord - loc))[:2]
-                file_indices = np.array([int(i) for i in np.floor(np.sort(nearest)/self.nx[0]*self.Nranks)])
+                file_indices = np.array([int(i) for i in np.floor(np.sort(nearest) / self.nx[0] * self.Nranks)])
                 needs_interp = True
-                if self.halos:
-                    halos_needed = True
-                    file_indices = file_indices[0]
-            files = self.files[file_indices] if any(exact) else [self.files[i] for i in file_indices]
+                halos_needed = self.halos
+                if halos_needed:
+                    file_indices = file_indices[:1]
+            files = [self.files[i] for i in np.atleast_1d(file_indices)]
         else:
             files = self.files
-            needs_interp = True                     # always interpolate in y/z
-            if self.halos:
-                halos_needed = False
+            needs_interp = True
+            halos_needed = False
 
-        # ------------------------------------------------------------------ #
-        # Build per-rank chunk shape for dask                                  #
-        # HDF5 layout on disk is (z, y, x_local)                              #
-        # ------------------------------------------------------------------ #
-        nx_local = self.nx[0] // self.Nranks
-        chunk_shape = {
-            'YZ': (self.nx[2], self.nx[1], 1),          # we load 1 or 2 x-slabs
-            'XZ': (self.nx[2], 1,          nx_local),   # full x, one y at a time
-            'XY': (1,          self.nx[1], nx_local),   # full x, one z at a time
-        }[slice]
+        def _load_slab(fname, t):
+            with h5py.File(fname, 'r') as f:
+                data = f[f'timeseries/{field}/{int(t)}'][...]   # (z, y, x_local)
+            if self.halos and not halos_needed:
+                data = data[
+                    self.hx[2] : -self.hx[2] or None,
+                    self.hx[1] : -self.hx[1] or None,
+                    self.hx[0] : -self.hx[0] or None,
+                ]
+            return data.transpose(2, 1, 0)   # → (x_local, y, z)
 
         arrayst = []
         for t in steps:
-            slabs = []
-            for file in files:
-                fname = os.path.join(self.folder, file)
-                with h5py.File(fname, 'r') as f:
-                    dset = f[f'timeseries/{field}/{int(t)}']   # (z, y, x_local)
+            slabs = [_load_slab(os.path.join(self.folder, f), t) for f in files]
+            block = np.concatenate(slabs, axis=0)   # (x_local_or_total, y, z)
 
-                    if self.halos:
-                        if not halos_needed:
-                            # HDF5 is (z, y, x) → halo order matches
-                            dset = dset[
-                                self.hx[2] : -self.hx[2] or None,  # z
-                                self.hx[1] : -self.hx[1] or None,  # y
-                                self.hx[0] : -self.hx[0] or None,  # x
-                            ]
-
-                    darr = da.from_array(dset, chunks=chunk_shape)  # (z, y, x_local)
-                    darr = darr.transpose(2, 1, 0)                  # → (x_local, y, z)
-                    slabs.append(darr.compute())
-
-            # Concatenate along x to get (x_total, y, z) or (x_slab, y, z)
-            block = np.concatenate(slabs, axis=0)
-
-            # ---------------------------------------------------------------- #
-            # Apply the appropriate plane function                              #
-            # block is always (x, y, z) at this point                          #
-            # ---------------------------------------------------------------- #
             if slice == 'YZ':
-                x_local = coord[file_indices]           # 1 or 2 x values
-                if needs_interp:
-                    s = yz_plane(block, x_local, loc)   # → (y, z)
-                else:
-                    s = block[0]                        # single slab, shape (y, z)
-                if field == 'u' and self.u_s is not None:
-                    # Subtract stokes velocity if available
-                    s = s - self.u_s
-
+                x_local = coord[file_indices]
+                s = yz_plane(block, x_local, loc) if needs_interp else block[0]   # (y, z)
             elif slice == 'XZ':
-                s = xz_plane(block, self.y, loc)        # → (x, z)
-                if field == 'u' and self.u_s is not None:
-                    # Subtract stokes velocity if available
-                    s = s - self.u_s
-
+                s = xz_plane(block, self.y, loc)   # (x, z)
             elif slice == 'XY':
-                s = xy_plane(block, self.z, loc)        # → (x, y)
+                s = xy_plane(block, self.z, loc)   # (x, y)
+
+            if field == 'u' and self.u_s is not None:
+                s = s - self.u_s
 
             arrayst.append(s)
 
-        out = np.stack(arrayst, axis=-1)    # (..., nt)
-        return out.squeeze()                # drop time axis when nt == 1
+        out = np.stack(arrayst, axis=-1)   # (..., nt)
+        return out.squeeze()
     def field_line(self, field, steps=None, axis='Y', x0=None, y0=None, z0=None):
         """
         Returns a 1D horizontal line through the field, shape (N, nt).
@@ -454,7 +438,7 @@ class OceananigansData:
             a = f[opt][()]
 
         return a
-    def loading_bin_radius(self, file = 'binning_rtz.h5', contour = 0.05):
+    def loading_bin_contours(self, file = 'binning_rtz.h5', contour = 0.05):
         """
         Loads binning radius (cached).
         """
@@ -466,6 +450,19 @@ class OceananigansData:
         
         with h5py.File(fname, 'r') as f:
             r = f[f'r given contour/contour = {contour}'][()]
+        return r
+    def loading_bin_radius(self, file = 'binning_rtz.h5', contour = 0.05):
+        """
+        Loads binning radius (cached).
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        #if file in self._contour_cache:
+            #return self._contour_cache[file]
+        
+        with h5py.File(fname, 'r') as f:
+            r = f[f'ccc/dimensions/r_bin'][()]
         return r
     # ------------------------ FLUCTUATIONS ----------------------------- #
     def load_fluc_var(self, var, file = 'fluctuations.h5'):

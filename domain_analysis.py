@@ -141,7 +141,7 @@ for i, reader in enumerate(readers):
     if ND:
         lz.append(np.min(z_max))
         lz.append(np.max(z_max))
-        time[i] = time[i][start:]/N[i]
+        time[i] = time[i][start:]*N[i]
         best_fit.append(r_n_calc/rj)
         best_fit_max.append(r_max_calc/rj)
         fit_exp.append([params_neutral[1, :], params_max[1, :]])

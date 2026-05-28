@@ -212,7 +212,7 @@ for i, reader in enumerate(readers):
         if salinity:
             S_avg.append(reader.xy_avg_1d('S'))
             dense_plume[i].input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
-            r_profile.append(reader.loading_bin_radius())
+            r_profile.append(reader.loading_bin_contours())
             b_center.append(vertical_line(b, reader.x, reader.y, x0, y0))
             T_fluc_center.append(reader.field_line('T', x0 = x0, y0 = y0) - T_avg[i])
             S_fluc_center.append(reader.field_line('S', x0 = x0, y0 = y0) - S_avg[i])

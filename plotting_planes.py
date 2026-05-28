@@ -16,27 +16,33 @@ from plotting_general import create_video
 ## variable vertical plane slice across all cases
 def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r', plane='YZ'):
     td = time / 3600 / 24
-    print(hor)
-    print(z)
+    #print(hor)
+    #print(z)
     if plane == 'YZ': #yz plane
-        ar = lx[1]/lx[2]
+        lhor = np.max(lx[1])
+        lz = np.max(lx[2])
+        ar = lhor/lz
         plane = 'YZ plane'
         xlabel = "y [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
     elif plane == 'XZ': #xz plane
-        ar = lx[0]/lx[2]
+        lhor = np.max(lx[0])
+        lz = np.max(lx[2])
+        ar = lhor/lz
         plane = 'XZ plane'
         xlabel = "x [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
     elif plane == 'binning':
-        ar = lx[0]/lx[-1]
+        lhor = np.max(lx[0])/2
+        lz = np.max(lx[2])
+        ar = lhor/lz
         xlabel = "r [m]"
         title = name + ', ' + f'{td:.2f} days'
     else:
         raise ValueError("Invalid plane specified. Choose from 'YZ', 'XZ', or 'binning'.")
-    if plane != 'binning':
-        for n, case_name in enumerate(case_names):
-            var[n] = var[n].T
+    #if plane != 'binning':
+    #    for n, case_name in enumerate(case_names):
+    #        var[n] = var[n].T
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
     os.makedirs(outdir, exist_ok=True)
     num_cases = len(case_names)
@@ -64,9 +70,9 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     for n, case_name in enumerate(case_names):
         if name == 'Tracer':
             var[n][var[n] <= 0] = 10**(-16)
-            im = ax[n].imshow(var[n], extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+            im = ax[n].imshow(var[n], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
-            im = ax[n].imshow(var[n], vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor.min(), hor.max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
+            im = ax[n].imshow(var[n], vmin=ranges['Tracer negative'][0], vmax=ranges['Tracer negative'][-1], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
         ax[n].set_title(case_name, fontsize=10)
         ax[n].set_aspect('equal')
         if n == 0 or n%ncols == 0:

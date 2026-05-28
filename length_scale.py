@@ -67,7 +67,7 @@ utheta_rz = reader.load_binning_var('rotational velocity')
 w_rz = reader.load_binning_var('w')
 T_rz = reader.load_binning_var('T')
 S_rz = reader.load_binning_var('S')
-r = reader.loading_bin_radius()
+r = reader.loading_bin_contours()
 
     S_avg = np.mean(S_rz[0, :, 5:], axis=(-1))
     S_mld = point(S_avg, z, z0 = -mld[i])

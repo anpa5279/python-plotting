@@ -120,7 +120,7 @@ for i, reader in enumerate(readers):
     w_rz = reader.load_binning_var('w')
     T_rz = reader.load_binning_var('T')
     S_rz = reader.load_binning_var('S')
-    r = reader.loading_bin_radius()
+    r = reader.loading_bin_contours()
     if plot_var_bin:
         # plane slices to save for plotting
         S_rz[S_rz < S_tol] = S_tol

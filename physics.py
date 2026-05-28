@@ -50,7 +50,6 @@ def buoyancy(reader, type = 'plane'):
          = 'field' --> from reader.lazy_field, one time step at a time
          = 'bi' --> from reader.load_binning_var, all time steps
     """
-    print(type)
     if type == 'plane':
         T = reader.load_plane_var('T')
         if reader.salinity:
