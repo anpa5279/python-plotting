@@ -235,6 +235,7 @@ class OceananigansData:
             'XY': (self.z, False),
         }
         coord, rank_split = slice_cfg[slice]
+        nx_local = self.nx[0] // self.Nranks
 
         if rank_split:
             exact = coord == loc
@@ -245,6 +246,8 @@ class OceananigansData:
             else:
                 nearest = np.argsort(np.abs(coord - loc))[:2]
                 file_indices = np.array([int(i) for i in np.floor(np.sort(nearest) / self.nx[0] * self.Nranks)])
+                # deduplicate in case both nearest points are in the same rank file
+                file_indices = np.unique(file_indices)
                 needs_interp = True
                 halos_needed = self.halos
                 if halos_needed:
@@ -257,7 +260,7 @@ class OceananigansData:
 
         def _load_slab(fname, t):
             with h5py.File(fname, 'r') as f:
-                data = f[f'timeseries/{field}/{int(t)}'][...]   # (z, y, x_local), in memory
+                data = f[f'timeseries/{field}/{int(t)}'][...]   # (z, y, x_local)
             if self.halos and not halos_needed:
                 data = data[
                     self.hx[2] : -self.hx[2] or None,   # z
@@ -272,19 +275,31 @@ class OceananigansData:
             block = np.concatenate(slabs, axis=0)        # (x_local_or_total, y, z)
 
             if slice == 'YZ':
-                x_local = coord[file_indices]
-                s = yz_plane(block, x_local, loc) if needs_interp else block[0]   # (y, z)
+                if needs_interp:
+                    # build the actual x-coordinates corresponding to rows of block
+                    x_slab_coords = np.concatenate([
+                        coord[i * nx_local : (i + 1) * nx_local]
+                        for i in np.atleast_1d(file_indices)
+                    ])
+                    s = yz_plane(block, x_slab_coords, loc)   # (y, z)
+                else:
+                    # loc sits exactly on a grid point — find its local index
+                    global_idx = np.where(coord == loc)[0][0]
+                    local_idx = global_idx % nx_local
+                    s = block[local_idx]                       # (y, z)
+
             elif slice == 'XZ':
-                s = xz_plane(block, self.y, loc)         # (x, z)
+                s = xz_plane(block, self.y, loc)               # (x, z)
+
             elif slice == 'XY':
-                s = xy_plane(block, self.z, loc)         # (x, y)
+                s = xy_plane(block, self.z, loc)               # (x, y)
 
             if field == 'u' and self.u_s is not None:
                 s = s - self.u_s
 
             arrayst.append(s)
 
-        out = np.stack(arrayst, axis=0)   # (nt, ...) consistent with fast path
+        out = np.stack(arrayst, axis=0)   # (nt, Ny, Nz) or (nt, Nx, Nz) or (nt, Nx, Ny)
         return out.squeeze()
     def field_line(self, field, steps=None, axis='Y', x0=None, y0=None, z0=None):
         """
