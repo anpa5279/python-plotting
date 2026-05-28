@@ -206,14 +206,14 @@ for i, reader in enumerate(readers):
         bv_fluc_avg.append(bv_avg, axis=(-3, -2))
         bw_fluc_avg.append(bw_avg)
         # calculate means
-        b_avg.append(b['b_avg'])
+        b_avg.append(b_xy)
         T_avg.append(reader.xy_avg_1d('T'))
         # dense plume analysis
         if salinity:
             S_avg.append(reader.xy_avg_1d('S'))
             dense_plume[i].input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
-            r_profile.append(dense_plume[i].plume_tracer_radius(x = reader.x, y = reader.y))
-            b_center.append(vertical_line(b['b'], reader.x, reader.y, x0, y0))
+            r_profile.append(reader.loading_bin_radius())
+            b_center.append(vertical_line(b, reader.x, reader.y, x0, y0))
             T_fluc_center.append(reader.field_line('T', x0 = x0, y0 = y0) - T_avg[i])
             S_fluc_center.append(reader.field_line('S', x0 = x0, y0 = y0) - S_avg[i])
     # horizontal lines to save for plotting
@@ -223,7 +223,7 @@ for i, reader in enumerate(readers):
         w_hor.append(reader.field_line('w', y0 = y0, z0 = loc_z[i]))
         T_hor.append(reader.field_line('T', y0 = y0, z0 = loc_z[i]))
         S_hor.append(reader.field_line('S', y0 = y0, z0 = loc_z[i]))
-        b_fluc_hor.append(horizontal_line(b['b'] - b['b_avg'], reader.x, reader.y, x0, y0, loc_z[i]))
+        b_fluc_hor.append(horizontal_line(b - b_avg, reader.x, reader.y, x0, y0, loc_z[i]))
 
         bu_fluc, bv_fluc, bw_fluc = buoyancy_flux_line(reader, loc_z[i], y0 = y0)
         bu_fluc_hor.append(reader.field_line('bu_fluc', y0 = y0, z0 = loc_z[i]))

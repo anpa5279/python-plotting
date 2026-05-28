@@ -8,7 +8,7 @@ from plotting_general import plot_format, plot_ranges, create_video, plot_variab
 
 # flags for what to plot
 video = True
-plot_rz_plane = True
+plot_var_bin = True
 plot_turb_stats = True
 
 # flags for how to read data
@@ -95,7 +95,7 @@ ranges['Tw_fluc'] = [-1.6*10**(-4), 1.6*10**(-4)]
 ranges['Cw'] = [-3.5*10**(-5), 3.5*10**(-5)]
 ranges['b_avg'] = [-1.0*10**(-3), 1.0*10**(-5)]
 for i, reader in enumerate(readers):
-    if plot_rz_plane:
+    if plot_var_bin:
         S_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
         T_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
         ur_n = np.empty((nt, num_cases, nx[i][0]//2, nx[i][-1]))
@@ -115,8 +115,13 @@ for i, reader in enumerate(readers):
         Cu = np.empty((nt, num_cases, nx[i][-1]))
         Cw = np.empty((nt, num_cases, nx[i][-1]))
     # Load binning from files
-    r, z, time, S_rz, T_rz, ur_rz, w_rz = reader.load_binning()
-    if plot_rz_plane:
+    ur_rz = reader.load_binning_var('horizontal velocity')
+    utheta_rz = reader.load_binning_var('rotational velocity')
+    w_rz = reader.load_binning_var('w')
+    T_rz = reader.load_binning_var('T')
+    S_rz = reader.load_binning_var('S')
+    r = reader.loading_bin_radius()
+    if plot_var_bin:
         # plane slices to save for plotting
         S_rz[S_rz < S_tol] = S_tol
         S_n[:, i, :, :] = S_rz.transpose(2, 0, 1)
@@ -124,8 +129,7 @@ for i, reader in enumerate(readers):
         ur_n[:, i, :, :] = ur_rz.transpose(2, 0, 1)
         w_n[:, i, :, :] = w_rz.transpose(2, 0, 1)
     if plot_turb_stats:
-        bs = buoyancy(reader, T_rz, S = S_rz)
-        b = bs['b']
+        b = buoyancy(reader)
         # Average over the radial dimension (axis=0), keeping time and z
         u_avg = np.mean(ur_rz, axis=0)  # shape: (nz, nt) or (nr_bins, nt) etc.
         w_avg = np.mean(w_rz, axis=0)
@@ -142,7 +146,7 @@ for i, reader in enumerate(readers):
         Cw[:, i, :] = np.mean(S_rz * w_rz, axis=0).T
 
 ############ PLOTTING ############
-if plot_rz_plane:
+if plot_var_bin:
     for it, t in enumerate(time):
         variables = [S_n[it, :, :, :], T_n[it, :, :, :], ur_n[it, :, :, :], w_n[it, :, :, :]] 
         colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s$^2$"]
@@ -155,7 +159,7 @@ if plot_turb_stats:
 print("All frames created.")
 # creating videos
 if video:
-    if plot_rz_plane:
+    if plot_var_bin:
         for n, name in enumerate(var_names):
             create_video(variable_dir[var_names[n]], fig_folder, 'binning', name)
     if plot_turb_stats:

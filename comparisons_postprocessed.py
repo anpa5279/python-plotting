@@ -3,17 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from reader import OceananigansData
-from dense_plume import PlumeAnalysis
 from diagnostics import comparison_info
-from physics import rms, buoyancy, buoyancy_flux_avg_1d, buoyancy_flux_line
+from physics import rms, buoyancy, buoyancy_flux_avg_1d
 from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
 from plotting_lines import plot_plume_vertical_spatial, plot_plume_horizontal_spatial
-from plotting_planes import plot_variable_vert_slice, plot_variable_xy_slice
+from plotting_planes import plot_variable_vert_slice
 from interpolation import vertical_line, horizontal_line
 
 # flags for what to plot
 plot_variables = False
-plot_1d_z = True
+plot_var_bin = False
+plot_turb_stats = True
 plot_1d_y = False
 video = True
 
@@ -53,15 +53,17 @@ for folder in folder_names:
 
 # collecting model information for all cases
 mld_idx = []
+x = []
+y = []
 z = []
 nx = []
 lx = []
-if salinity:
-    dense_plume = []
 
 for i, reader in enumerate(readers):
     reader.load_time()
     reader.load_grid()
+    x.append(reader.x)
+    y.append(reader.y)
     z.append(reader.z)
     nx.append(reader.nx)
     lx.append(reader.lx)
@@ -73,9 +75,8 @@ for i, reader in enumerate(readers):
         nt = np.min([nt, reader.nt])
         nz = np.max([nz, reader.nx[2]])
         ny = np.max([ny, reader.nx[1]])
-    if salinity and plot_1d_z:
+    if salinity and plot_turb_stats:
         S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
-        dense_plume.append(PlumeAnalysis(S_value*contour_bound))
 
 # physical parameters
 x0 = 0.0
@@ -122,7 +123,7 @@ ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel_rms'] = [0, 4*10**-3]
 ranges['bw_fluc'] = [-5*10**(-9), 5*10**(-9)]
-if plot_1d_z:
+if plot_turb_stats:
     color_opt, line_opt = comparison_plot_opt(num_cases)
 
 if salinity:
@@ -130,7 +131,7 @@ if salinity:
     S_fluc_center = []
     S_hor = []
     S_plane = []
-if plot_1d_z:
+if plot_turb_stats:
     T_avg = []
     b_avg = []
     u_rms = []
@@ -156,36 +157,41 @@ if plot_variables:
 for i, reader in enumerate(readers):
     # Load data from files [nt, nx, ny, nz]
     if plot_variables:
-        u = reader.field_slice('u')
-        v = reader.field_slice('v')
-        w = reader.field_slice('w')
-        T = reader.field_slice('T')
-
-        T_plane.append(T)
-        u_plane.append(u)
-        v_plane.append(v)
-        w_plane.append(w)
+        T_plane.append(reader.load_plane_var('T'))
+        u_plane.append(reader.load_plane_var('u'))
+        v_plane.append(reader.load_plane_var('v'))
+        w_plane.append(reader.load_plane_var('w'))
         if salinity:
-            S = reader.field_slice('S')
-            S_plane.append(S)
-        b = buoyancy(reader, T0 = T0)
-    if plot_1d_z:
+            S_plane.append(reader.load_plane_var('S'))
+        b_plane = buoyancy(reader, type = 'plane')
+    # Load binning from files
+    if plot_var_bin or plot_turb_stats:
+        ur_rz = reader.load_binning_var('horizontal velocity')
+        utheta_rz = reader.load_binning_var('rotational velocity')
+        w_rz = reader.load_binning_var('w')
+        T_rz = reader.load_binning_var('T')
+        S_rz = reader.load_binning_var('S')
+        r = reader.loading_bin_radius()
+        b_rz = buoyancy(reader, type = 'bin')
+        b_xy = np.mean(b_rz, axis=0)
+    if plot_turb_stats:
         # rms fluctuations
-        u_rms.append(rms(reader, 'u'))
-        v_rms.append(rms(reader, 'v'))
-        w_rms.append(rms(reader, 'w'))
-        bu_avg, bv_avg, bw_avg = buoyancy_flux_avg_1d(reader)
-        bu_fluc_avg.append(bu_avg, axis=(-3, -2))
-        bv_fluc_avg.append(bv_avg, axis=(-3, -2))
+        u_rms.append(reader.load_vel_rms('u'))
+        v_rms.append(reader.load_vel_rms('v'))
+        w_rms.append(reader.load_vel_rms('w'))
+        bu_avg = np.mean(b_rz * ur_rz, axis=0)
+        bv_avg = np.mean(b_rz * utheta_rz, axis=0)
+        bw_avg = np.mean(b_rz * w_rz, axis=0)
+        bu_fluc_avg.append(bu_avg)
+        bv_fluc_avg.append(bv_avg)
         bw_fluc_avg.append(bw_avg)
         # calculate means
-        b_avg.append(b['b_avg'])
-        T_avg.append(reader.xy_avg_1d('T'))
+        b_avg.append(b_xy)
+        T_avg.append(np.mean(T_rz, axis=0))
         # dense plume analysis
         if salinity:
             S_avg.append(reader.xy_avg_1d('S'))
-            dense_plume[i].input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
-            r_profile.append(dense_plume[i].plume_tracer_radius(x = reader.x, y = reader.y))
+            r_profile.append(reader.loading_bin_radius())
             b_center.append(vertical_line(b['b'], reader.x, reader.y, x0, y0))
             T_fluc_center.append(reader.field_line('T', x0 = x0, y0 = y0) - T_avg[i])
             S_fluc_center.append(reader.field_line('S', x0 = x0, y0 = y0) - S_avg[i])
@@ -204,14 +210,17 @@ for it in nt:
 
         for dir, var in enumerate(variables):
             variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx[-1], reader.y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
-    if plot_1d_z:
+    if plot_turb_stats:
         buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx[-1], z, S_avg[it], u_rms[it], v_rms[it], w_rms[it], b_avg[it], b_center[it], r_profile[it], bu_fluc_avg[it], bv_fluc_avg[it], bw_fluc_avg[it], T_avg[it], T_fluc_center[it], S_fluc_center[it])
 
-print("All frames created.")
+
 # creating videos
 if video:
+    if plot_var_bin:
+        for n, name in enumerate(var_names):
+            create_video(variable_dir[var_names[n]], fig_folder, 'binning', name)
     if plot_variables:
         for dir, name in enumerate(var_names):
             create_video(variable_dir[var_names[dir]], fig_folder, name_uni, name)
-    if plot_1d_z:
-        create_video(buoyancy_dir_z, fig_folder, name_uni, 'vertical profile')
+    if plot_turb_stats:
+        create_video(turb_plot, fig_folder, 'binning', 'turb_stats')

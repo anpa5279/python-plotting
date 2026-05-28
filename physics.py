@@ -43,159 +43,34 @@ def a_fluc_b(a, b, a_avg=None):
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
 # calculate buoyancy 
-def buoyancy(reader, T0 = 25):
+def buoyancy(reader, T0 = 25, type = 'plane'):
+    """
+    calculates buoyancy relative to type
+    type = 'plane' --> from reader.load_plane_var, all time steps
+         = 'field' --> from reader.lazy_field, one time step at a time
+         = 'bin' --> from reader.load_binning_var, all time steps
+    """
+    if type == 'plane':
+        T = reader.load_plane_var('T')
+        if reader.salinity:
+            S = reader.load_plane_var('S')
+    elif type == 'field':
+        T = reader.lazy_field('T')
+        if reader.salinity:
+            S = reader.lazy_field('S')
+    elif type == 'bin':
+        T = reader.load_binning_var('T')
+        if reader.salinity:
+            S = reader.load_binning_var('S')
     g = 9.80665
     reader.load_equation_of_state()
     alpha = reader.alpha
     if not reader.salinity:
-        T = reader.lazy_field('T')
         b = g * alpha * (T - T0)
     else:
-        S = reader.lazy_field('S')
-        T = reader.lazy_field('T')
         beta = reader.beta
         b = np.squeeze(g * alpha * (T - T0) - g * beta * S)
-    b_avg = np.mean(b, axis=(-3, -2))
-    return {'b':b, 'b_avg':b_avg}
-# calculate buoyancy flux
-def buoyancy_flux_avg_1d(reader, T0=25):
-    """
-    Computes <b'u'>, <b'v'>, <b'w'> vs depth (Nz, Nt) 
-    without ever loading the full 4D field.
-    Processes one timestep and one rank at a time.
-    """
-    g = 9.80665
-    reader.load_equation_of_state()
-    alpha = reader.alpha
-    beta = reader.beta if reader.salinity else None
-    nx_local = reader.nx[0] // reader.Nranks
-
-    bu_avg = np.zeros((reader.nx[2], reader.nt))
-    bv_avg = np.zeros((reader.nx[2], reader.nt))
-    bw_avg = np.zeros((reader.nx[2], reader.nt))
-
-    for i, t in enumerate(reader.t_save):
-        # --- accumulate xy-mean of each field across ranks ---
-        T_sum  = np.zeros(reader.nx[2])
-        S_sum  = np.zeros(reader.nx[2]) if reader.salinity else None
-        u_sum  = np.zeros(reader.nx[2])
-        v_sum  = np.zeros(reader.nx[2])
-        w_sum  = np.zeros(reader.nx[2])
-
-        n_pts = reader.nx[0] * reader.nx[1]  # total xy points
-
-        for file in reader.files:
-            fname = os.path.join(reader.folder, file)
-            with h5py.File(fname, 'r') as f:
-                def load(name):
-                    d = f[f'timeseries/{name}/{int(t)}']
-                    if reader.halos:
-                        d = d[reader.hx[2]:-reader.hx[2] or None,
-                              reader.hx[1]:-reader.hx[1] or None,
-                              reader.hx[0]:-reader.hx[0] or None]
-                    return np.asarray(d)  # (z, y, x_local)
-
-                T_sum += load('T').mean(axis=(1, 2)) * (nx_local * reader.nx[1])
-                u_sum += load('u').mean(axis=(1, 2)) * (nx_local * reader.nx[1])
-                v_sum += load('v').mean(axis=(1, 2)) * (nx_local * reader.nx[1])
-                w_sum += load('w').mean(axis=(1, 2)) * (nx_local * reader.nx[1])
-                if reader.salinity:
-                    S_sum += load('S').mean(axis=(1, 2)) * (nx_local * reader.nx[1])
-
-        # xy-means, shape (Nz,)
-        T_avg = T_sum / n_pts
-        u_avg = u_sum / n_pts
-        v_avg = v_sum / n_pts
-        w_avg = w_sum / n_pts
-        b_avg = g * alpha * (T_avg - T0)
-        if reader.salinity:
-            S_avg = S_sum / n_pts
-            b_avg -= g * beta * S_avg
-
-        # --- second pass: accumulate <b'u'>, <b'v'>, <b'w'> ---
-        bu_sum = np.zeros(reader.nx[2])
-        bv_sum = np.zeros(reader.nx[2])
-        bw_sum = np.zeros(reader.nx[2])
-        count  = 0
-
-        for file in reader.files:
-            fname = os.path.join(reader.folder, file)
-            with h5py.File(fname, 'r') as f:
-                def load(name):
-                    d = f[f'timeseries/{name}/{int(t)}']
-                    if reader.halos:
-                        d = d[reader.hx[2]:-reader.hx[2] or None,
-                              reader.hx[1]:-reader.hx[1] or None,
-                              reader.hx[0]:-reader.hx[0] or None]
-                    return np.asarray(d)  # (z, y, x_local)
-
-                T = load('T')   # (z, y, x_local)
-                u = load('u')
-                v = load('v')
-                w = load('w')
-                if reader.salinity:
-                    S = load('S')
-
-                # buoyancy fluctuation (z, y, x_local)
-                b = g * alpha * (T - T0)
-                if reader.salinity:
-                    b -= g * beta * S
-                b_fluc = b - b_avg[:, None, None]   # broadcast (Nz,) → (z,y,x)
-
-                u_fluc = u - u_avg[:, None, None]
-                v_fluc = v - v_avg[:, None, None]
-                w_fluc = w - w_avg[:, None, None]
-
-                nx_loc = T.shape[2]
-                ny_loc = T.shape[1]
-
-                bu_sum += (b_fluc * u_fluc).sum(axis=(1, 2))
-                bv_sum += (b_fluc * v_fluc).sum(axis=(1, 2))
-                bw_sum += (b_fluc * w_fluc).sum(axis=(1, 2))
-                count  += nx_loc * ny_loc
-
-        bu_avg[:, i] = bu_sum / count
-        bv_avg[:, i] = bv_sum / count
-        bw_avg[:, i] = bw_sum / count
-
-    return bu_avg, bv_avg, bw_avg   # (Nz, Nt)
-def buoyancy_flux_line(reader, z0, x0 = None, y0 = None):
-    """
-    Returns b'u', b'v', b'w' along a horizontal line at fixed (y0, z0)
-    as a function of x, for each timestep — shape (Nx, Nt).
-    Never loads full 4D field.
-    """
-    if x0 is not None:
-        h0 = x0 
-        h = reader.x
-        dir = 'x'
-    elif y0 is not None:
-        h0 = y0
-        h = reader.y
-        dir = 'y'
-
-    reader.load_equation_of_state()
-    b = reader.load_buoyancy()
-
-    bu_out = np.zeros((reader.nx[0], reader.nt))
-    bv_out = np.zeros((reader.nx[0], reader.nt))
-    bw_out = np.zeros((reader.nx[0], reader.nt))
-
-    for it, t in enumerate(reader.t_save):
-        u = reader.lazy_field['u']
-        v = reader.lazy_field['v']
-        w = reader.lazy_field['w']
-
-        u = velocities_to_center(u, axis=0)
-        v = velocities_to_center(v, axis=1)
-        w = velocities_to_center(w, axis=2)
-
-        # extract horizontal line at (y0, z0) for each flux
-        bu_out[:, it] = horizontal_line(a_fluc_b(b, u), h, reader.z, h0, z0, axis=dir)
-        bv_out[:, it] = horizontal_line(a_fluc_b(b, v), h, reader.z, h0, z0, axis=dir)
-        bw_out[:, it] = horizontal_line(a_fluc_b(b, w), h, reader.z, h0, z0, axis=dir)
-
-    return bu_out, bv_out, bw_out   # (Nx, Nt)
+    return b
 # Richardson number
 def richardson_number(dbdz, z, u, v):
     du_dz = np.gradient(u, z, axis=-1)

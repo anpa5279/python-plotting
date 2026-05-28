@@ -238,7 +238,6 @@ def compute_rms(reader):
     v_rms = np.empty((reader.nt, reader.nx[2]))
     w_rms = np.empty((reader.nt, reader.nx[2]))
     for it, t in enumerate(reader.t_save):
-        print(t)
         u = reader.lazy_field('u', steps=t)
         v = reader.lazy_field('v', steps=t)
         w = reader.lazy_field('w', steps=t)

@@ -308,9 +308,9 @@ else:
             v = velocities_to_center(v, axis=1)
             w = velocities_to_center(w, axis=2)
             # convert temperature and salinity to buoyancy 
-            bs = buoyancy(reader)
-            b = bs['b']
-            rho = bs['rho']
+            b = buoyancy(reader)
+            b = b['b']
+            rho = b['rho']
             rho_fluc = rho - np.mean(rho, axis=(-3, -2))
 
             # calcualte buoyancy fluxes
@@ -333,7 +333,7 @@ else:
                 # dense plume analysis
                 if salinity:
                     S_avg.append(np.mean(S, axis=(-3, -2)))
-                    dense_plume[i].input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
+                    dense_plume[i].input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
                     r_profile.append(dense_plume[i].plume_tracer_radius(x = x, y = y))
                     b_center.append(vertical_line(b, x, y, x0, centery))
                     T_fluc_center.append(vertical_line(T-T_avg[i], x, y, x0, centery))

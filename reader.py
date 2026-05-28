@@ -140,9 +140,9 @@ class OceananigansData:
                 T = self.lazy_field('T', steps=np.array([t])).compute()  # (Nx, Ny, Nz)
                 S = self.lazy_field('S', steps=np.array([t])).compute() if self.salinity else []
 
-                bs = buoyancy(self, T, S=S)
+                b = buoyancy(self, T, S=S)
 
-                b[:, :, :, i] = bs['b']
+                b[:, :, :, i] = b['b']
             self.b = b
     # ------------------------- INTERNAL UTILS -------------------------- #
     def _slice(self, arr):
@@ -440,31 +440,9 @@ class OceananigansData:
         return S, w
 
     # ------------------------- BINNING --------------------------------- #
-    def load_binning(self, file = 'binning_rtz.h5'):
-        """
-        Loads binning (cached).
-        """
-
-        fname = os.path.join(self.folder, 'binning', file)
-
-        if file in self._contour_cache:
-            return self._contour_cache[file]
-
-        with h5py.File(fname, 'r') as f:
-            r = f['ccc/dimensions/r_bin'][()]
-            z = f['ccc/dimensions/z'][()]
-            time = f['ccc/dimensions/time'][()]
-            S_rz = f['ccc/S_rz'][()]
-            T_rz = f['ccc/T_rz'][()]
-            ur_rz = f['ccc/horizontal velocity'][()]
-            w_rz = f['ccc/w_rz'][()]
-
-        self._contour_cache[file] = (r, z, time, S_rz, T_rz, ur_rz, w_rz)
-
-        return r, z, time, S_rz, T_rz, ur_rz, w_rz
     def load_binning_var(self, var, file = 'binning_rtz.h5'):
         """
-        Loads binning (cached).
+        Loads binning (cached). [nr, nz, nt]
         """
 
         fname = os.path.join(self.folder, file)
@@ -476,7 +454,19 @@ class OceananigansData:
             a = f[opt][()]
 
         return a
+    def loading_bin_radius(self, file = 'binning_rtz.h5', contour = 0.05):
+        """
+        Loads binning radius (cached).
+        """
 
+        fname = os.path.join(self.folder, file)
+
+        if file in self._contour_cache:
+            return self._contour_cache[file]
+        
+        with h5py.File(fname, 'r') as f:
+            r = f[f'r given contour/contour = {contour}'][()]
+        return r
     # ------------------------ FLUCTUATIONS ----------------------------- #
     def load_fluc_var(self, var, file = 'fluctuations.h5'):
         """
@@ -488,6 +478,22 @@ class OceananigansData:
         if file in self._contour_cache:
             return self._contour_cache[file]
         opt = 'fluctuations/'+var+'_fluc'
+        with h5py.File(fname, 'r') as f:
+            a = f[opt][()]
+
+        return a
+
+    # ------------------------ RMS ----------------------------- #
+    def load_vel_rms(self, var, file = 'fluctuations.h5'):
+        """
+        Loads velocity RMS 
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        if file in self._contour_cache:
+            return self._contour_cache[file]
+        opt = 'rms/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
 

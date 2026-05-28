@@ -17,7 +17,7 @@ rms_flag = True # calculates RMS from 3D fields
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/res-horizontal/sj0.1-mld60-dTdz0.01-lx320-nx320'
+folder = '/glade/derecho/scratch/apauls/outputs/horizontal-domain/sj0.1-mld60-dTdz0.01-lx-400-nx320'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384'
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
@@ -45,13 +45,13 @@ if compute_temporal_averages_flag:
 
 if binning_flag:
     x, y, z = reader.x, reader.y, reader.z
-    X, Y, Z= np.meshgrid(x, y, z)
+    X, Y, Z = np.meshgrid(x, y, z)
     dist = np.sqrt(X**2 + Y**2)
     dx_scale = max(dx[:-1])
     r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
     r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
-    counts = np.bincount(r_bin.flat)      # number of points in each radial shell, including corners
+    counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
     ncirc = max(nx[0], nx[1])//2      # full circular shells
 
     S_rz = np.empty((counts.size, nx[2], nt)) 

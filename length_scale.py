@@ -62,16 +62,21 @@ Ln = (F0/N**3)**(1/4)
 length_scale = []
 neutral_depth = []
 for i, reader in enumerate(readers):
-    r, z, time, S_rz, T_rz, ur_rz, w_rz = reader.load_binning()
+    ur_rz = reader.load_binning_var('horizontal velocity')
+utheta_rz = reader.load_binning_var('rotational velocity')
+w_rz = reader.load_binning_var('w')
+T_rz = reader.load_binning_var('T')
+S_rz = reader.load_binning_var('S')
+r = reader.loading_bin_radius()
 
     S_avg = np.mean(S_rz[0, :, 5:], axis=(-1))
     S_mld = point(S_avg, z, z0 = -mld[i])
     b_mld = g * S_mld * beta
     length_scale.append(b_mld/(g*alpha*dTdz[i]))
     """
-    bs = buoyancy(reader, T_rz, S_rz)
-    bT = bs['b_T']
-    bS = bs['b_C']
+    b = buoyancy(reader, T_rz, S_rz)
+    bT = b['b_T']
+    bS = b['b_C']
     b_fluc = 
     """
     b_fluc_avg = np.mean(b_fluc_rz[0, :, 5:], axis=(-1))

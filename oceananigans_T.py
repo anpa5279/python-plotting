@@ -137,9 +137,9 @@ for it, t in enumerate(reader.t_save):
     v = velocities_to_center(v, axis=1)
     w = velocities_to_center(w, axis=2)
     # convert temperature and salinity to buoyancy 
-    bs = buoyancy(reader)
-    b = bs['b']
-    rho = bs['rho']
+    b = buoyancy(reader)
+    b = b['b']
+    rho = b['rho']
 
     if stokes:
         u = u - reader.u_s
@@ -183,7 +183,7 @@ for it, t in enumerate(reader.t_save):
         x0 = 0.0
         centery = 0.0
         bw_fluc = a_fluc_b(b, w)
-        dense_plume.input_info(S, b_tracer = bs['b_C'], b_background = bs['b_T'], bw_fluc = bw_fluc)
+        dense_plume.input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
         rp_profile = dense_plume.plume_tracer_radius(x = x, y = y)
         S_fluc_center = vertical_line(S_fluc, x, y, x0, centery)
         T_fluc_center = vertical_line(T_fluc, x, y, x0, centery)
