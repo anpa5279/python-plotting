@@ -43,13 +43,14 @@ def a_fluc_b(a, b, a_avg=None):
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
 # calculate buoyancy 
-def buoyancy(reader, T0 = 25, type = 'plane'):
+def buoyancy(reader, type = 'plane'):
     """
     calculates buoyancy relative to type
     type = 'plane' --> from reader.load_plane_var, all time steps
          = 'field' --> from reader.lazy_field, one time step at a time
-         = 'bin' --> from reader.load_binning_var, all time steps
+         = 'bi' --> from reader.load_binning_var, all time steps
     """
+    print(type)
     if type == 'plane':
         T = reader.load_plane_var('T')
         if reader.salinity:
@@ -66,10 +67,10 @@ def buoyancy(reader, T0 = 25, type = 'plane'):
     reader.load_equation_of_state()
     alpha = reader.alpha
     if not reader.salinity:
-        b = g * alpha * (T - T0)
+        b = g * alpha * (T - reader.T0)
     else:
         beta = reader.beta
-        b = np.squeeze(g * alpha * (T - T0) - g * beta * S)
+        b = np.squeeze(g * alpha * (T - reader.T0) - g * beta * S)
     return b
 # Richardson number
 def richardson_number(dbdz, z, u, v):

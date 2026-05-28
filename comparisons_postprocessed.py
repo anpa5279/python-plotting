@@ -4,17 +4,16 @@ import matplotlib.pyplot as plt
 
 from reader import OceananigansData
 from diagnostics import comparison_info
-from physics import rms, buoyancy, buoyancy_flux_avg_1d
+from physics import buoyancy
 from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
-from plotting_lines import plot_plume_vertical_spatial, plot_plume_horizontal_spatial
+from plotting_lines import plot_plume_vertical_spatial #, plot_plume_horizontal_spatial
 from plotting_planes import plot_variable_vert_slice
-from interpolation import vertical_line, horizontal_line
+#from interpolation import vertical_line, horizontal_line
 
 # flags for what to plot
-plot_variables = False
-plot_var_bin = False
+plot_variables = True
+plot_var_bin = True
 plot_turb_stats = True
-plot_1d_y = False
 video = True
 
 # flags for how to read data
@@ -25,7 +24,8 @@ stokes = False
 
 contour_bound = 0.001
 name_uni = f'contour-{contour_bound:.4f}'
-universal_folder = '/glade/derecho/scratch/apauls/outputs/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
+#'/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 # selecting cases to compare
@@ -76,7 +76,7 @@ for i, reader in enumerate(readers):
         nz = np.max([nz, reader.nx[2]])
         ny = np.max([ny, reader.nx[1]])
     if salinity and plot_turb_stats:
-        S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
+        S_value, w_value = reader.load_contour_temporal_averages('binning_rtz.h5')
 
 # physical parameters
 x0 = 0.0
@@ -100,17 +100,7 @@ if plot_variables:
     else:
         var_names = ['Temperature', 'u', 'v', 'w']
         range_names = ['T', 'u', 'v', 'w']
-    planeslice = 'vertical' # 'vertical' or 'horizontal'
     variable_dir = {}
-    if planeslice == 'horizontal':
-        name_uni += '_horizontal_slice'
-        loc = 'z' # 'cell' or 'z'
-        if loc == 'z':
-            loc_z = -mld
-            name_uni += '_at_mld'
-        else:
-            n = 254
-            loc_z = z[:, n]
 
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
@@ -156,7 +146,9 @@ if plot_variables:
 
 for i, reader in enumerate(readers):
     # Load data from files [nt, nx, ny, nz]
+    print(i)
     if plot_variables:
+        print('loading plane variables')
         T_plane.append(reader.load_plane_var('T'))
         u_plane.append(reader.load_plane_var('u'))
         v_plane.append(reader.load_plane_var('v'))
@@ -166,10 +158,12 @@ for i, reader in enumerate(readers):
         b_plane = buoyancy(reader, type = 'plane')
     # Load binning from files
     if plot_var_bin or plot_turb_stats:
+        print('loading binning variables')
         ur_rz = reader.load_binning_var('horizontal velocity')
-        utheta_rz = reader.load_binning_var('rotational velocity')
+        utheta_rz = reader.load_binning_var('rotation velocity')
         w_rz = reader.load_binning_var('w')
         T_rz = reader.load_binning_var('T')
+        print(T_rz)
         S_rz = reader.load_binning_var('S')
         r = reader.loading_bin_radius()
         b_rz = buoyancy(reader, type = 'bin')
@@ -190,11 +184,11 @@ for i, reader in enumerate(readers):
         T_avg.append(np.mean(T_rz, axis=0))
         # dense plume analysis
         if salinity:
-            S_avg.append(reader.xy_avg_1d('S'))
+            S_avg.append(np.mean(S_rz, axis=0))
             r_profile.append(reader.loading_bin_radius())
-            b_center.append(vertical_line(b['b'], reader.x, reader.y, x0, y0))
-            T_fluc_center.append(reader.field_line('T', x0 = x0, y0 = y0) - T_avg[i])
-            S_fluc_center.append(reader.field_line('S', x0 = x0, y0 = y0) - S_avg[i])
+            b_center.append(b_rz[0, :, :])
+            T_fluc_center.append(T_rz[0, :, :])
+            S_fluc_center.append(S_rz[0, :, :])
 
 ############ PLOTTING ############
 for it in nt:

@@ -7,17 +7,18 @@ from diagnostics import compute_temporal_averages, write_temporal_averages, comp
 from interpolation import velocities_to_center
 
 # set flags
-compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
-contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-fluc_flag = True # calculates turbulent statistics from binning information
+compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+contour_flag = False # calculates radius of contour at each depth and time that is not in the default
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+fluc_flag = False # calculates turbulent statistics from binning information
 rms_flag = True # calculates RMS from 3D fields
 
 salinity = True
 
 # Set up folder and simulation parameters
 folder = '/glade/derecho/scratch/apauls/outputs/res-horizontal/sj0.1-mld60-dTdz0.01-lx-480-nx384'
+print(f"Reading data from {folder}")
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain resolution testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384'
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
@@ -115,6 +116,7 @@ if binning_flag:
         f.create_dataset("ccc/rotation velocity", data=utheta_rz)
         f.create_dataset("ccc/w_rz", data=w_rz)
     f.close()
+    print(f"Saved binning to {file_path}")
 
 if contour_flag: # calculate radius of contour at each depth and time that is not in the default
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
@@ -139,6 +141,7 @@ if contour_flag: # calculate radius of contour at each depth and time that is no
                 del f[f"r given contour/contour = {contour}"]
             f.create_dataset(f"r given contour/contour = {contour}", data = r_contour)
     f.close()
+    print(f"Saved contours to {file_path}")
 
 if planelsice_flag:
     file_path = os.path.join(folder, 'plane_slice.h5')
@@ -164,6 +167,7 @@ if planelsice_flag:
         f.create_dataset("YZ/x = 0/v", data=v)
         f.create_dataset("YZ/x = 0/w", data=w)
     f.close()
+    print(f"Saved plane slices to {file_path}")
 
 if fluc_flag:
     file_path = os.path.join(folder, 'fluctuations.h5')
@@ -197,6 +201,7 @@ if fluc_flag:
         f.create_dataset("fluctuations/butheta_fluc", data=data['bv_fluc'])
         f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
     f.close()
+    print(f"Saved fluctuations to {file_path}")
 
 if rms_flag:
     file_path = os.path.join(folder, 'fluctuations.h5')
@@ -212,3 +217,4 @@ if rms_flag:
         f.create_dataset("rms/v", data=rms_values['v_rms'])
         f.create_dataset("rms/w", data=rms_values['w_rms'])
     f.close()
+    print(f"Saved RMS to {file_path}")

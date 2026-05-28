@@ -428,8 +428,8 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        if file in self._contour_cache:
-            return self._contour_cache[file]
+        #if file in self._contour_cache:
+            #return self._contour_cache[file]
 
         with h5py.File(fname, 'r') as f:
             S = f['contour temporal averages/S'][()]
@@ -446,10 +446,10 @@ class OceananigansData:
         """
 
         fname = os.path.join(self.folder, file)
-
-        if file in self._contour_cache:
-            return self._contour_cache[file]
+        #if file in self._contour_cache:
+        #    return self._contour_cache[file]
         opt = 'ccc/'+var+'_rz' if len(var) < 3 else 'ccc/'+var
+
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
 
@@ -461,8 +461,8 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        if file in self._contour_cache:
-            return self._contour_cache[file]
+        #if file in self._contour_cache:
+            #return self._contour_cache[file]
         
         with h5py.File(fname, 'r') as f:
             r = f[f'r given contour/contour = {contour}'][()]
@@ -475,8 +475,8 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        if file in self._contour_cache:
-            return self._contour_cache[file]
+        #if file in self._contour_cache:
+            #return self._contour_cache[file]
         opt = 'fluctuations/'+var+'_fluc'
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
@@ -491,8 +491,8 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        if file in self._contour_cache:
-            return self._contour_cache[file]
+        #if file in self._contour_cache:
+            #return self._contour_cache[file]
         opt = 'rms/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
@@ -507,8 +507,8 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        if file in self._contour_cache:
-            return self._contour_cache[file]
+        #if file in self._contour_cache:
+            #return self._contour_cache[file]
         opt = 'YZ/x = 0/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
