@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages, compute_rms
+from diagnostics import compute_fluct_averages, compute_rms
 from interpolation import velocities_to_center
 
 # set flags
@@ -40,14 +40,18 @@ if planelsice_flag:
     if idx_slice:
         x_opt = reader.nx[0]//2
         x_save = reader.x[x_opt]
+        T = reader.field_slice('T', N = x_opt)
+        S = reader.field_slice('S', N = x_opt)
+        u = reader.field_slice('u', N = x_opt)
+        v = reader.field_slice('v', N = x_opt)
+        w = reader.field_slice('w', N = x_opt)
     else:
-        x_slice = 0.0
-        x_save = x_slice
-    T = reader.field_slice('T', N = x_opt)
-    S = reader.field_slice('S', N = x_opt)
-    u = reader.field_slice('u', N = x_opt)
-    v = reader.field_slice('v', N = x_opt)
-    w = reader.field_slice('w', N = x_opt)
+        x_save = 0.0
+        T = reader.field_slice('T', loc = x_save)
+        S = reader.field_slice('S', loc = x_save)
+        u = reader.field_slice('u', loc = x_save)
+        v = reader.field_slice('v', loc = x_save)
+        w = reader.field_slice('w', loc = x_save)
     with h5py.File(file_path, "a") as f:
         if f"YZ/x = {x_save}/S" in f:
             del f[f"YZ/x = {x_save}/S"]
