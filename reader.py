@@ -198,9 +198,9 @@ class OceananigansData:
     def field_slice(self, field, steps=None, slice='YZ', loc=0.0, N=None):
         """
         Returns a 2D slice of the field throughout time.
-        'YZ' -> shape (Ny, Nz, nt),  loc is x-position
-        'XZ' -> shape (Nx, Nz, nt),  loc is y-position
-        'XY' -> shape (Nx, Ny, nt),  loc is z-position
+        'YZ' -> shape (nt, Ny, Nz),  loc is x-position
+        'XZ' -> shape (nt, Nx, Nz),  loc is y-position
+        'XY' -> shape (nt, Nx, Ny),  loc is z-position
         """
         if steps is None:
             steps = self.t_save
@@ -211,7 +211,6 @@ class OceananigansData:
         # ------------------------------------------------------------------ #
         if N is not None:
             lazy = self.lazy_field(field, steps)   # (nt, Nx, Ny, Nz) or (Nx, Ny, Nz) if nt==1
-            # Ensure time axis is present
             if lazy.ndim == 3:
                 lazy = lazy[np.newaxis]            # (1, Nx, Ny, Nz)
 
@@ -225,8 +224,7 @@ class OceananigansData:
             if field == 'u' and self.u_s is not None:
                 out = out - self.u_s
 
-            out = out.compute()                    # materialise here
-            return out.squeeze()                   # drop time axis if nt == 1
+            return out.compute().squeeze()
 
         # ------------------------------------------------------------------ #
         # Slow path: loc is a physical coordinate — interpolate               #
@@ -259,34 +257,34 @@ class OceananigansData:
 
         def _load_slab(fname, t):
             with h5py.File(fname, 'r') as f:
-                data = f[f'timeseries/{field}/{int(t)}'][...]   # (z, y, x_local)
+                data = f[f'timeseries/{field}/{int(t)}'][...]   # (z, y, x_local), in memory
             if self.halos and not halos_needed:
                 data = data[
-                    self.hx[2] : -self.hx[2] or None,
-                    self.hx[1] : -self.hx[1] or None,
-                    self.hx[0] : -self.hx[0] or None,
+                    self.hx[2] : -self.hx[2] or None,   # z
+                    self.hx[1] : -self.hx[1] or None,   # y
+                    self.hx[0] : -self.hx[0] or None,   # x_local
                 ]
-            return data.transpose(2, 1, 0)   # → (x_local, y, z)
+            return data.transpose(2, 1, 0)               # → (x_local, y, z)
 
         arrayst = []
         for t in steps:
             slabs = [_load_slab(os.path.join(self.folder, f), t) for f in files]
-            block = np.concatenate(slabs, axis=0)   # (x_local_or_total, y, z)
+            block = np.concatenate(slabs, axis=0)        # (x_local_or_total, y, z)
 
             if slice == 'YZ':
                 x_local = coord[file_indices]
                 s = yz_plane(block, x_local, loc) if needs_interp else block[0]   # (y, z)
             elif slice == 'XZ':
-                s = xz_plane(block, self.y, loc)   # (x, z)
+                s = xz_plane(block, self.y, loc)         # (x, z)
             elif slice == 'XY':
-                s = xy_plane(block, self.z, loc)   # (x, y)
+                s = xy_plane(block, self.z, loc)         # (x, y)
 
             if field == 'u' and self.u_s is not None:
                 s = s - self.u_s
 
             arrayst.append(s)
 
-        out = np.stack(arrayst, axis=-1)   # (..., nt)
+        out = np.stack(arrayst, axis=0)   # (nt, ...) consistent with fast path
         return out.squeeze()
     def field_line(self, field, steps=None, axis='Y', x0=None, y0=None, z0=None):
         """

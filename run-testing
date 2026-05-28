@@ -1,7 +1,7 @@
 #!/bin/bash
 nodes=1
 cpus=128
-jobn=testing-postprocessing
+jobn=testing
 file=oceananigans_testing.py
 
 cp $file scripts/
@@ -19,7 +19,7 @@ cat > EXEC_STEP << EXEC
 #PBS -N $jobn
 #PBS -q develop 
 #PBS -j oe
-#PBS -l walltime=01:10:00
+#PBS -l walltime=00:10:00
 #PBS -l select=1:ncpus=$cpus
 
 module --force purge
