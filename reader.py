@@ -73,7 +73,6 @@ class OceananigansData:
                     f['grid/Δy'][()],
                     f['grid/Δz'][()]
                 ]
-                print('self.lx[0]', self.lx[0], 'self.dx[0]', self.dx[0])
                 self.x = np.linspace(-self.lx[0]/2 + self.dx[0]/2, self.lx[0]/2 + self.dx[0]/2, self.nx[0])
                 self.y = np.linspace(-self.lx[1]/2 + self.dx[1]/2, self.lx[1]/2 + self.dx[1]/2, self.nx[1])# f['grid/y']#[self.hx[1]:-self.hx[1]]
                 self.z = np.linspace(-self.lx[2] - self.dx[2]/2, -self.dx[2]/2, self.nx[2])#f['grid/z']#[self.hx[2]:-self.hx[2]]
@@ -148,7 +147,7 @@ class OceananigansData:
         haline contraction (beta).
         """
         self.T0 = T0
-        fname = os.path.join(self.folder, self.files[0])
+        fname = os.path.join(self.folder, self.files[-1])
         with h5py.File(fname, 'r') as f:
             self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
             if self.salinity:
