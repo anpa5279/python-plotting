@@ -137,6 +137,8 @@ def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
     # Pre-cache spatial indices
     ix = np.argmin(np.abs(x - x0))
     iy = np.argmin(np.abs(y - y0))
+    print(ix)
+    print(iy)
 
     # Load all fields lazily — shape (nt - start, nx, ny, nz)
     T = reader.lazy_field('T')
