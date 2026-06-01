@@ -75,8 +75,9 @@ class OceananigansData:
                 ]
                 print(f['grid/y'])
                 self.x = np.linspace(self.dx[0]/2, self.lx[0] + self.dx[0]/2, self.nx[0])
-                self.y = f['grid/y'][self.hx[1]:-self.hx[1]]
-                self.z = f['grid/z'][self.hx[2]:-self.hx[2]]
+                self.y = f['grid/y']#[self.hx[1]:-self.hx[1]]
+                print(self.y)
+                self.z = f['grid/z']#[self.hx[2]:-self.hx[2]]
                 self.zf = np.linspace(-self.lx[2], 0, self.nx[2])
         else:
             with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
