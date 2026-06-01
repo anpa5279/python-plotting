@@ -26,7 +26,7 @@ g = 9.80665
 T0 = 25.0
 
 reader = OceananigansData(folder, salinity = salinity)
-reader.load_grid()
+reader.load_grid(grid_specs = False)
 # grid info
 nx = reader.nx
 dx = reader.dx

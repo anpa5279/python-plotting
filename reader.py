@@ -53,18 +53,18 @@ class OceananigansData:
             self.files = all_files
     
     # ------------------------- GRID ------------------------------------ #
-    def load_grid(self):
+    def load_grid(self, grid_specs = True):
         if 'grid_info.jld2' in os.listdir(self.folder):
             with h5py.File(os.path.join(self.folder, 'grid_info.jld2'), 'r') as f:
                 self.Nranks = f['grid/Nranks'][()]
                 self.nx = [
-                    f['grid/Nx'][()]*self.Nranks,
+                    f['grid/Nx'][()]*self.Nranks if grid_specs else f['grid/Nx'][()],
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
                 self.hx = [3, 3, 3]
                 self.lx = [
-                    f['grid/Lx'][()]*self.Nranks,
+                    f['grid/Lx'][()]*self.Nranks if grid_specs else f['grid/Lx'][()],
                     f['grid/Ly'][()],
                     f['grid/Lz'][()]
                 ]
