@@ -49,7 +49,7 @@ x, y, z = reader.x, reader.y, reader.z
 nx = reader.nx
 lx = reader.lx
 dx = reader.dx
-hx = reader.hx
+
 # load time and equation of state info
 reader.load_time()
 reader.load_equation_of_state()

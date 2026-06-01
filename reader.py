@@ -62,7 +62,8 @@ class OceananigansData:
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
-                self.hx = [3, 3, 3]
+                if not self.with_halos:
+                    self.hx = [3, 3, 3]
                 self.lx = [
                     f['grid/Lx'][()],
                     f['grid/Ly'][()],
@@ -84,10 +85,11 @@ class OceananigansData:
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
-                self.hx = [
-                    f['grid/Hx'][()],
-                    f['grid/Hy'][()],
-                    f['grid/Hz'][()]
+                if not self.with_halos:
+                    self.hx = [
+                        f['grid/Hx'][()],
+                        f['grid/Hy'][()],
+                        f['grid/Hz'][()]
                 ]
                 self.lx = [
                     f['grid/Lx'][()] * self.Nranks,

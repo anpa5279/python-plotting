@@ -29,7 +29,7 @@ reader.load_grid()
 # grid info
 nx = reader.nx
 dx = reader.dx
-hx = reader.hx
+
 lx = reader.lx
 time, t_save = reader.load_time()
 nt = len(t_save)
