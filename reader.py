@@ -62,8 +62,7 @@ class OceananigansData:
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
-                if not self.with_halos:
-                    self.hx = [3, 3, 3]
+                self.hx = [3, 3, 3]
                 self.lx = [
                     f['grid/Lx'][()],
                     f['grid/Ly'][()],
@@ -74,6 +73,7 @@ class OceananigansData:
                     f['grid/Δy'][()],
                     f['grid/Δz'][()]
                 ]
+                print(f['grid/y'])
                 self.x = np.linspace(self.dx[0]/2, self.lx[0] + self.dx[0]/2, self.nx[0])
                 self.y = f['grid/y'][self.hx[1]:-self.hx[1]]
                 self.z = f['grid/z'][self.hx[2]:-self.hx[2]]
@@ -85,11 +85,10 @@ class OceananigansData:
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
-                if not self.with_halos:
-                    self.hx = [
-                        f['grid/Hx'][()],
-                        f['grid/Hy'][()],
-                        f['grid/Hz'][()]
+                self.hx = [
+                    f['grid/Hx'][()],
+                    f['grid/Hy'][()],
+                    f['grid/Hz'][()]
                 ]
                 self.lx = [
                     f['grid/Lx'][()] * self.Nranks,
