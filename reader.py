@@ -58,13 +58,13 @@ class OceananigansData:
             with h5py.File(os.path.join(self.folder, 'grid_info.jld2'), 'r') as f:
                 self.Nranks = f['grid/Nranks'][()]
                 self.nx = [
-                    f['grid/Nx'][()],
+                    f['grid/Nx'][()]*self.Nranks,
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
                 self.hx = [3, 3, 3]
                 self.lx = [
-                    f['grid/Lx'][()],
+                    f['grid/Lx'][()]*self.Nranks,
                     f['grid/Ly'][()],
                     f['grid/Lz'][()]
                 ]
