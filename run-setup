@@ -1,6 +1,6 @@
 #!/bin/bash
 nodes=1
-cpus=4
+cpus=16
 jobn=postprocessing
 file=oceananigans_setup.py
 
@@ -19,7 +19,7 @@ cat > EXEC_STEP << EXEC
 #PBS -N $jobn
 #PBS -q develop 
 #PBS -j oe
-#PBS -l walltime=00:20:00
+#PBS -l walltime=00:40:00
 #PBS -l select=1:ncpus=$cpus
 
 module --force purge
