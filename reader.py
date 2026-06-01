@@ -54,44 +54,68 @@ class OceananigansData:
     
     # ------------------------- GRID ------------------------------------ #
     def load_grid(self):
-        with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
-            self.nx = [
-                f['grid/Nx'][()] * self.Nranks,
-                f['grid/Ny'][()],
-                f['grid/Nz'][()]
-            ]
-            self.hx = [
-                f['grid/Hx'][()],
-                f['grid/Hy'][()],
-                f['grid/Hz'][()]
-            ]
-            self.lx = [
-                f['grid/Lx'][()] * self.Nranks,
-                f['grid/Ly'][()],
-                f['grid/Lz'][()]
-            ]
-            self.dx = [
-                f['grid/Δxᶜᵃᵃ'][()],
-                f['grid/Δyᵃᶜᵃ'][()],
-                f['grid/z/Δᵃᵃᶜ'][()]
-            ]
-
-            self.y = f['grid/yᵃᶜᵃ'][self.hx[1]:-self.hx[1]]
-            self.z = f['grid/z/cᵃᵃᶜ'][self.hx[2]:-self.hx[2]]
-            self.zf = f['grid/z/cᵃᵃᶠ'][self.hx[2]:-self.hx[2]]
-
-        # Assemble x (distributed if needed)
-        if self.Nranks == 1:
-            with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
-                self.x = f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
+        if 'grid_info.jld2' in os.listdir(self.folder):
+            with h5py.File(os.path.join(self.folder, 'grid_info.jld2'), 'r') as f:
+                self.Nranks = f['grid/Nranks'][()]
+                self.nx = [
+                    f['grid/Nx'][()] * self.Nranks,
+                    f['grid/Ny'][()],
+                    f['grid/Nz'][()]
+                ]
+                self.hx = [3, 3, 3]
+                self.lx = [
+                    f['grid/Lx'][()],
+                    f['grid/Ly'][()],
+                    f['grid/Lz'][()]
+                ]
+                self.dx = [
+                    f['grid/Δx'][()],
+                    f['grid/Δy'][()],
+                    f['grid/Δz'][()]
+                ]
+                self.x = np.linspace(self.dx[0]/2, self.lx[0] + self.dx[0]/2, self.nx[0])
+                self.y = f['grid/y'][self.hx[1]:-self.hx[1]]
+                self.z = f['grid/z'][self.hx[2]:-self.hx[2]]
+                self.zf = np.linspace(-self.lx[2], 0, self.nx[2])
         else:
-            xrange = self.nx[0] // self.Nranks
-            self.x = np.zeros(self.nx[0])
+            with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+                self.nx = [
+                    f['grid/Nx'][()] * self.Nranks,
+                    f['grid/Ny'][()],
+                    f['grid/Nz'][()]
+                ]
+                self.hx = [
+                    f['grid/Hx'][()],
+                    f['grid/Hy'][()],
+                    f['grid/Hz'][()]
+                ]
+                self.lx = [
+                    f['grid/Lx'][()] * self.Nranks,
+                    f['grid/Ly'][()],
+                    f['grid/Lz'][()]
+                ]
+                self.dx = [
+                    f['grid/Δxᶜᵃᵃ'][()],
+                    f['grid/Δyᵃᶜᵃ'][()],
+                    f['grid/z/Δᵃᵃᶜ'][()]
+                ]
 
-            for i, file in enumerate(self.files):
-                with h5py.File(os.path.join(self.folder, file), 'r') as f:
-                    self.x[i*xrange:(i+1)*xrange] = \
-                        f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
+                self.y = f['grid/yᵃᶜᵃ'][self.hx[1]:-self.hx[1]]
+                self.z = f['grid/z/cᵃᵃᶜ'][self.hx[2]:-self.hx[2]]
+                self.zf = f['grid/z/cᵃᵃᶠ'][self.hx[2]:-self.hx[2]]
+
+            # Assemble x (distributed if needed)
+            if self.Nranks == 1:
+                with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+                    self.x = f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
+            else:
+                xrange = self.nx[0] // self.Nranks
+                self.x = np.zeros(self.nx[0])
+
+                for i, file in enumerate(self.files):
+                    with h5py.File(os.path.join(self.folder, file), 'r') as f:
+                        self.x[i*xrange:(i+1)*xrange] = \
+                            f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
     # ------------------------- TIME ------------------------------------ #
     def load_time(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
