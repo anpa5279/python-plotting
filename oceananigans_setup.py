@@ -48,14 +48,19 @@ if binning_flag:
     X, Y, Z = np.meshgrid(x, y, z)
     dist = np.sqrt(X**2 + Y**2)
     dx_scale = max(dx[:-1])
+    print('dx_scale = ', dx_scale)
     r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
     r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
     ncirc = max(nx[0], nx[1])//2      # full circular shells
+    print('x')
     print(x)
+    print('y')
     print(y)
+    print('z')
     print(z)
+    print('r')
     print(r)
     S_rz = np.empty((counts.size, nx[2], nt)) 
     T_rz = np.empty((counts.size, nx[2], nt)) 

@@ -73,10 +73,8 @@ class OceananigansData:
                     f['grid/Δy'][()],
                     f['grid/Δz'][()]
                 ]
-                print(f['grid/y'])
                 self.x = np.linspace(-self.lx[0]/2 + self.dx[0]/2, self.lx[0]/2 + self.dx[0]/2, self.nx[0])
                 self.y = np.linspace(-self.lx[1]/2 + self.dx[1]/2, self.lx[1]/2 + self.dx[1]/2, self.nx[1])# f['grid/y']#[self.hx[1]:-self.hx[1]]
-                print(self.y)
                 self.z = np.linspace(-self.lx[2] - self.dx[2]/2, -self.dx[2]/2, self.nx[2])#f['grid/z']#[self.hx[2]:-self.hx[2]]
                 self.zf = np.linspace(-self.lx[2], 0, self.nx[2])
         else:
