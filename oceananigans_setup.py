@@ -17,7 +17,7 @@ rms_flag = True # calculates RMS from 3D fields
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/mod-default'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/fine1'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60'
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
@@ -48,12 +48,13 @@ if binning_flag:
     X, Y, Z = np.meshgrid(x, y, z)
     dist = np.sqrt(X**2 + Y**2)
     dx_scale = max(dx[:-1])
-    print('dx_scale = ', dx_scale)
+    #print('dx_scale = ', dx_scale)
     r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
     r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
     ncirc = max(nx[0], nx[1])//2      # full circular shells
+    """
     print('x')
     print(x)
     print('y')
@@ -62,6 +63,7 @@ if binning_flag:
     print(z)
     print('r')
     print(r)
+    """
     S_rz = np.empty((counts.size, nx[2], nt)) 
     T_rz = np.empty((counts.size, nx[2], nt)) 
     ur_rz = np.empty((counts.size, nx[2], nt))
@@ -139,7 +141,6 @@ if contour_flag: # calculate radius of contour at each depth and time that is no
             for k in range(nx[2]):
                 plume_at_depth = plume[:, k]
                 if np.any(plume_at_depth):
-                    print(np.max(np.where(plume_at_depth)))
                     radius_tracer[k] = r[np.max(np.where(plume_at_depth))]
                 # else stays 0
             
