@@ -79,7 +79,7 @@ class OceananigansData:
                 self.z = np.linspace(-self.lx[2] - self.dx[2]/2, -self.dx[2]/2, self.nx[2])#f['grid/z']#[self.hx[2]:-self.hx[2]]
                 self.zf = np.linspace(-self.lx[2], 0, self.nx[2])
         else:
-            with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
+            with h5py.File(os.path.join(self.folder, self.files[-1]), 'r') as f:
                 self.nx = [
                     f['grid/Nx'][()] * self.Nranks,
                     f['grid/Ny'][()],
