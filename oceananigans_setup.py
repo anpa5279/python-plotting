@@ -17,8 +17,8 @@ rms_flag = True # calculates RMS from 3D fields
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/coarse2'
-#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/coarse2 '
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
+#'/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/fine4'
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
@@ -118,7 +118,7 @@ if binning_flag:
 
 if contour_flag: # calculate radius of contour at each depth and time that is not in the default
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
-    S_value, w_value = reader.load_contour_temporal_averages(file_path)
+    S_value = reader.load_S_temporal_avg(file_path)
     if not binning_flag:
         S_rz = reader.load_binning_var('S_rz')
     for contour in contours:

@@ -15,11 +15,11 @@ salinity = True
 stokes = False
 
 contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
-universal_folder = '/glade/derecho/scratch/apauls/outputs/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'WENO', 'vertical resolution', 'one case', 'else'
+variations = 'horizontal resolution' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'one case', 'else'
 if variations != 'else' and variations != 'one':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     case_names = cases_info['case_names']
@@ -68,12 +68,11 @@ for i, reader in enumerate(readers):
     time.append(reader.time)
     nt = min((nt, len(time[i])))
 
-    S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
+    S_value = reader.load_S_temporal_avg('binning_rtz.h5')
     reader.load_equation_of_state()
 
 z = []
 r_scale = []
-neutral_depths = []
 r_contour = [] 
 for i, reader in enumerate(readers):
     start = 7
@@ -84,7 +83,7 @@ for i, reader in enumerate(readers):
     params = np.zeros([2, len(contours)])
     for j, contour in enumerate(contours):
         # Load data from files
-        fname = os.path.join(reader.folder, 'binning', 'binning_rtz.h5')
+        fname = os.path.join(reader.folder, 'binning_rtz.h5')
         with h5py.File(fname, 'r') as f:
             r_profile[j, :, :] = f[f'r given contour/contour = {contour}'][()]
             z.append(f['ccc/dimensions/z'][()])
@@ -116,9 +115,9 @@ for it in range(nt):
         for n, color in enumerate(color_opt):
             ax.plot(r_contour[i][n, :, it], z[i], color=color, linewidth = width)
         ax.set_ylim(-lz, 0)
-        ax.set_xlim(0, max(r_bin))
+        ax.set_xlim(0, max(r_bin)*1.1)
         ax.set_xlabel("Radius [m]")
-        ax.set_title(case_names[i], fontsize = 10)
+        ax.set_title(case_names[i], fontsize = 12)
         ax.set_aspect('equal')
         if i == 0:
             ax.set_ylabel('Depth [m]')

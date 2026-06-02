@@ -10,9 +10,10 @@ from diagnostics import comparison_info
 from reader import OceananigansData
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/'
 
-cases_info = comparison_info('WENO')
+variations = 'horizontal resolution'
+cases_info = comparison_info(variations, universal_folder = universal_folder)
 num_cases = cases_info['num_cases']
 case_names = cases_info['case_names']
 readers = []
@@ -30,35 +31,32 @@ nt = readers[0].nt
 
 domain = math.prod(nx)
 
-percents = np.empty((3, nt))
-S_min = np.empty((3, nt))
-neg_avg = np.empty((3, nt))
-S_avg = np.empty((3, nt))
-S_sum = np.empty((3, nt))
-S_div = np.empty((3, nt))
-S_prior = np.empty((3, nx[0], nx[1], nx[2]))
+percents = []
+S_min = []
+neg_avg = []
+S_avg = []
+S_sum = []
+S_div = []
+t = []
 
-for it in range(nt):
-    # Load data from files
-    for n, reader in enumerate(readers):
-        # load tracer
-        S = reader.lazy_field('S', reader.t_save[it])
-        # negative number of negative values appearing in domain 
-        S_neg_sum = np.sum(S<0)
-        if S_neg_sum>0:
-            percents[n, it] = S_neg_sum/domain*100
-            neg_avg[n, it] = np.mean(S[S<0])
-        else:
-            percents[n, it] = 0
-            neg_avg[n, it] = 0
-        # average S value in domain
-        S_avg[n, it] = np.mean(S)
-        # sum of S values in domain
-        S_sum[n, it] = np.sum(S)
-        # minimum negative S value in domain
-        S_min[n, it] = np.min(S)
+# Load data from files
+for n, reader in enumerate(readers):
+    t.append(reader.time / 3600 / 24)
+    # load tracer
+    S = reader.lazy_field('S')
+    S_neg = S
+    S_neg[S>=0] = 0
+    # negative number of negative values appearing in domain 
+    S_neg_sum = np.sum(S_neg, axis = (0, 1))
+    percents.append(S_neg_sum/domain*100)
+    neg_avg.append(np.mean(S_neg, axis = (0, 1)))
+    # average S value in domain
+    S_avg.append(np.mean(S, axis = (0, 1)))
+    # sum of S values in domain
+    S_sum.append(np.sum(S, axis = (0, 1)))
+    # minimum negative S value in domain
+    S_min.append(np.min(S, axis = (0, 1)))
 
-t = readers[0].time / 3600 / 24
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 scale = [1, 1, 0.02]
@@ -95,12 +93,12 @@ ax[4].set_xlabel('Time (days)', fontsize = 12)
 ax[4].set_ylabel('[g/kg]', fontsize = 12)
 
 for n in range(num_cases):
-    ax[0].plot(t, percents[n, :], color = color_opt[n], label=case_names[n])
-    ax[1].plot(t, S_min[n, :], color = color_opt[n], label=case_names[n])
-    ax[2].plot(t, neg_avg[n, :], color = color_opt[n], label=case_names[n])
-    ax[3].plot(t, S_avg[n, :], color = color_opt[n], label=case_names[n])
-    ax[4].plot(t, S_sum[n, :], color = color_opt[n], label=case_names[n])
+    ax[0].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
+    ax[1].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
+    ax[2].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
+    ax[3].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
+    ax[4].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
 
 outdir = os.path.join(universal_folder, 'callback comparisons')
 os.makedirs(outdir, exist_ok=True)
-plt.savefig(os.path.join(outdir, 'WENO comparisons.svg'))
+plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))

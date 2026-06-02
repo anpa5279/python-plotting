@@ -40,7 +40,7 @@ if ND:
         name_uni += '_temporal_averages'
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'WENO', 'vertical resolution', 'else'
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder, ND = ND)
 else:
@@ -95,7 +95,7 @@ for i, reader in enumerate(readers):
         nt = np.min([nt, reader.nt])
         nz = np.max([nz, reader.nx[2]])
     if salinity and plot_1d_z:
-        S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
+        S_value = reader.load_S_temporal_avg('interp_temporal_averages.h5')
         dense_plume.append(PlumeAnalysis(S_value*contour_bound))
 
 x = readers[0].x

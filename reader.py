@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import h5py
+import re
 import dask.array as da
 from interpolation import xy_plane, xz_plane, yz_plane, horizontal_line
 from physics import buoyancy
@@ -438,24 +439,38 @@ class OceananigansData:
                 r_plume = None
 
         return rms, bw, T, S, r_plume
-    def load_contour_temporal_averages(self, file):
+    def load_S_temporal_avg(self, file = 'binning_rtz.h5'):
         """
         Loads contour temporal averages (cached).
         """
 
         fname = os.path.join(self.folder, file)
 
-        #if file in self._contour_cache:
-            #return self._contour_cache[file]
+        if 'S value' in self._contour_cache:
+            return self._contour_cache['S value']
 
         with h5py.File(fname, 'r') as f:
             S = f['contour temporal averages/S'][()]
+
+        self._contour_cache['S value'] = S
+
+        return S
+    def load_w_temporal_avg(self, file = 'binning_rtz.h5'):
+        """
+        Loads contour temporal averages (cached).
+        """
+
+        fname = os.path.join(self.folder, file)
+
+        if 'w value' in self._contour_cache:
+            return self._contour_cache['w value']
+
+        with h5py.File(fname, 'r') as f:
             w = f['contour temporal averages/w'][()]
 
-        self._contour_cache[file] = (S, w)
+        self._contour_cache['w value'] = w
 
-        return S, w
-
+        return w
     # ------------------------- BINNING --------------------------------- #
     def load_binning_var(self, var, file = 'binning_rtz.h5'):
         """
@@ -478,13 +493,16 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        #if file in self._contour_cache:
-            #return self._contour_cache[file]
-        
-        with h5py.File(fname, 'r') as f:
-            r = f[f'r given contour/contour = {contour}'][()]
+        if contour.size == 1:
+            with h5py.File(fname, 'r') as f:
+                r = f[f'r given contour/contour = {contour}'][()]
+        else:
+            r = np.empty(contour.size, self.nx[2], dtype=object)
+            for i, p in enumerate(contour):
+                with h5py.File(fname, 'r') as f:
+                    r[i, :] = f[f'r given contour/contour = {p}'][()]
         return r
-    def loading_bin_radius(self, file = 'binning_rtz.h5', contour = 0.05):
+    def loading_bin_radius(self, file = 'binning_rtz.h5'):
         """
         Loads binning radius (cached).
         """
@@ -519,6 +537,9 @@ class OceananigansData:
         Loads velocity RMS 
         """
 
+        if var + 'rms' in self._contour_cache:
+            return self._contour_cache[var + 'rms']
+
         fname = os.path.join(self.folder, file)
 
         #if file in self._contour_cache:
@@ -526,21 +547,30 @@ class OceananigansData:
         opt = 'rms/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
-
+        self._contour_cache[var + 'rms'] = a
         return a
 
     # ------------------------ PLANE SLICE ----------------------------- #
-    def load_plane_var(self, var, loc = 0.0, file = 'plane_slice.h5'):
+    def load_plane_var(self, var, loc=0.0, file='plane_slice.h5'):
         """
         Loads plane slice variables (cached).
         """
-
         fname = os.path.join(self.folder, file)
-
-        #if file in self._contour_cache:
-            #return self._contour_cache[file]
-        opt = f'YZ/x = {loc}/'+var
+        
+        import re
+        pattern = r'x = ' + str(int(loc)) + r'(?:\.\d+)?'
+        
         with h5py.File(fname, 'r') as f:
-            a = f[opt][()]
-
+            yz_group = f['YZ']
+            # Find the matching key inside YZ group
+            matching_key = None
+            for key in yz_group.keys():
+                if re.fullmatch(pattern, key):
+                    matching_key = key
+                    break
+            
+            if matching_key is None:
+                raise KeyError(f"No key matching '{pattern}' in YZ group. Available: {list(yz_group.keys())}")
+            
+            a = yz_group[matching_key][var][()]
         return a

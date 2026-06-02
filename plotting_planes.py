@@ -2,14 +2,7 @@ import os
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import imageio.v2 as imageio
-import matplotlib.ticker as mticker
-
-from matplotlib.lines import Line2D
-from matplotlib import cm
 from matplotlib import colors
-from fractions import Fraction
 
 from plotting_general import create_video
 ### -------------------------PLOTTING PLANE SLICES FUNCTIONS------------------------- ###
@@ -72,7 +65,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
             var[n][var[n] <= 0] = 10**(-16)
             im = ax[n].imshow(var[n], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
-            im = ax[n].imshow(var[n], vmin=ranges['Tracer negative'][0], vmax=ranges['Tracer negative'][-1], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
+            im = ax[n].imshow(var[n], vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
         ax[n].set_title(case_name, fontsize=10)
         ax[n].set_aspect('equal')
         if n == 0 or n%ncols == 0:

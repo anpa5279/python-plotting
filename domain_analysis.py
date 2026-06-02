@@ -27,7 +27,7 @@ universal_folder = '/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
 # selecting cases to compare
-variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'WENO', 'vertical resolution', 'one case', 'else'
+variations = 'else' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'one case', 'else'
 if variations != 'else' and variations != 'one':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     case_names = cases_info['case_names']
@@ -82,7 +82,7 @@ for i, reader in enumerate(readers):
     reader.load_time()
     time.append(reader.time)
 
-    S_value, w_value = reader.load_contour_temporal_averages('interp_temporal_averages.h5')
+    S_value = reader.load_S_temporal_avg('interp_temporal_averages.h5')
     reader.load_equation_of_state()
     bS.append(-g*reader.beta*S_value)
 lz = []
@@ -105,7 +105,7 @@ for i, reader in enumerate(readers):
     r_max_calc = np.zeros([len(time[i]) - start, len(contours)])
     for j, contour in enumerate(contours):
         # Load data from files
-        fname = os.path.join(reader.folder, 'binning', 'binning_rtz.h5')
+        fname = os.path.join(reader.folder, 'binning_rtz.h5')
         with h5py.File(fname, 'r') as f:
             r_profile = f[f'r given contour/contour = {contour}'][()]
             z = f['ccc/dimensions/z'][()]

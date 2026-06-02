@@ -292,7 +292,7 @@ def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_na
         ax5.plot(r_profile[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
     ax5.set_title("Plume Radius with Depth")
     #ax5.set_ylim(ymin = np.min(z), ymax = np.max(z))
-    ax5.set_xlim(0, lx[0]/2)
+    ax5.set_xlim(0, lx[0].max()/2)
 
     # perturbed buoyancy flux 
     for i in range(num_cases):
@@ -1252,3 +1252,66 @@ def plot_momentum_plume(time, it, ranges, fig_folder, lx, z, zf, mld, b_avg, tra
     print(f"Time step {it + 1} captured: {frame_path}")
 
     return outdir # return the directory where frames are saved for video creation
+## plume depths
+def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp, zneutral, zc, contour_bound, trend = True):
+    num_cases = len(case_names)
+    ncols = 3
+    nrows = 2
+    outdir = os.path.join(fig_folder, 'binning', 'plume_depths')
+    os.makedirs(outdir, exist_ok=True)
+    ar = np.ones(nrows)
+    ar[-1] = 0.05 # add space for universal legend
+    gridspec_kw={'height_ratios': ar} # add space for universal legend
+    fig, ax = plt.subplots(nrows, ncols, figsize=(15, 6), gridspec_kw=gridspec_kw, sharey = True)
+    for a in ax[-1, :]:
+        a.remove()
+    case_handles = [
+        Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
+        for i in range(num_cases)
+    ]
+    fig.legend(handles=case_handles,
+            loc='lower center',
+            ncol=num_cases,
+            bbox_to_anchor=(0.52, 0.01))
+    ax = ax.ravel()
+    """
+    ax[0] = zp, where w = 0
+    ax[1] = zneutral, where buoyancy = 0
+    ax[2] = zc, where tracer is at the contour value
+    """
+    ax[0].set_ylabel("Depth [m]")
+    ax[0].set_xlabel("Time [hrs]")
+    ax[1].set_xlabel("Time [hrs]")
+    ax[2].set_xlabel("Time [s]")
+
+    ax[0].set_title("Depth of w = 0")
+    ax[1].set_title("Depth of Neutral Buoyancy")
+    ax[2].set_title(rf"Depth of Tracer Contour = {contour_bound:.4f}")
+
+    for i in range(num_cases):
+        if trend:
+            start = 10
+            vars = np.polyfit(time[i][start:]/3600, zp[i][start:], 1)
+            z_trend = time[i]/3600 * vars[0] + vars[1]
+        if i == 0:
+            tmax = time[i].max() / 3600
+            ax[0].plot(time[i]/3600, zp[i], label=r"z$_{w=0}$", color = color_opt[i], linewidth = 0.75)
+            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
+            ax[1].plot(time[i]/3600, zneutral[i], label=r"z$_{b=0}$", color = color_opt[i], linewidth = 0.75)
+            ax[2].plot(time[i]/3600, zc[i], label=rf"z$_{{contour = {contour_bound:.3f}}}$", color = color_opt[i], linewidth = 0.75)
+        else:
+            tmax = max(tmax, time[i].max() / 3600)
+            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
+            ax[0].plot(time[i]/3600, zp[i], color = color_opt[i], linewidth = 0.75)
+            ax[1].plot(time[i]/3600, zneutral[i], color = color_opt[i], linewidth = 0.75)
+            ax[2].plot(time[i]/3600, zc[i], color = color_opt[i], linewidth = 0.75)
+    for a in ax:
+        a.set_ylim(ymin = -lx[-1].max(), ymax = 0.0)
+        a.set_xlim(0, tmax)
+        a.legend(loc='upper right')
+
+    # --- Save Frame ---
+    frame_path = os.path.join(outdir, f"comparison_depths.png")
+    plt.savefig(frame_path)
+    plt.close(fig)
+    return outdir # return the directory where frames are saved for video creation 

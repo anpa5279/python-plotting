@@ -43,17 +43,19 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = np.array([60, 50, 70, 60, 60, 60, 60, 60, 60]) # mld in m
         dTdz = np.array([0.01, 0.01, 0.01, 0.005, 0.05, 0.1, 0.01, 0.01, 0.01]) # background temperature gradient in K/m
         F_s = wp * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
+    elif variations == 'Lz160m':
+        folder_names =['Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70', 'Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60']
+        case_names =[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', 
+                     r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', 
+                     r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
+        num_cases = len(case_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = [60, 70, 60]
+        F_s = wp * 0.1 * np.ones(num_cases) 
+        F_s[2] = wp * 0.2
     elif variations == 'vertical length':
         folder_names =['nz = 77 z = 96.25 m', 'nz = 128 z = 160 m', 'nz = 192 z = 240 m']
         case_names =[r'L$_{\text{z}}$ = 96.25 m', r'L$_{\text{z}}$ = 160 m', r'L$_{\text{z}}$ = 240 m']
-        num_cases = len(case_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases) 
-    elif variations == 'horizontal length':
-        folder_names =['domain testing/proposed vertical resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 'domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-400-nx320', 
-                       'domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-480-nx384', 'domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-560-nx448', 'domain testing/horizontal domain/sj0.1-mld60-dTdz0.01-lx-640-nx512', ]
-        case_names =[r'L$_{\text{x}}$ = L$_{\text{y}}$ = 320 m', r'L$_{\text{x}}$ = L$_{\text{y}}$ = 400 m', r'L$_{\text{x}}$ = L$_{\text{y}}$ = 480 m', r'L$_{\text{x}}$ = L$_{\text{y}}$ = 240 m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -66,12 +68,13 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'horizontal resolution':
-        folder_names =['domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx192', 
-                       'domain testing/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60', 
-                       'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx320', 
-                       'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx384', 
-                       'domain testing/horizontal resolution/sj0.1-mld60-dTdz0.01-lx320-nx640']
-        case_names =[r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.833$m', r'$\Delta x = 0.5$m']
+        folder_names =['horizontal domain/coarse2', 
+                       'horizontal domain/coarse1', 
+                       'horizontal domain/mod-default', 
+                       'horizontal domain/fine1', 
+                       'horizontal domain/fine2',
+                       'horizontal domain/fine3']
+        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)

@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
 from reader import OceananigansData
 from diagnostics import comparison_info
@@ -12,7 +11,7 @@ from plotting_planes import plot_variable_vert_slice
 
 # flags for what to plot
 plot_variables = True
-plot_var_bin = False
+plot_var_bin = True
 plot_turb_stats = False
 video = True
 
@@ -24,12 +23,12 @@ stokes = False
 
 contour_bound = 0.001
 name_uni = f'contour-{contour_bound:.4f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/'
 #'/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 # selecting cases to compare
-variations = 'horizontal resolution' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'WENO', 'vertical resolution', 'horizontal resolution', 'else'
+variations = 'horizontal resolution' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']
@@ -59,10 +58,11 @@ y = []
 z = []
 nx = np.empty((3, num_cases), dtype=object)
 lx = np.empty((3, num_cases), dtype=object)
-
+grid_specs = False*np.ones(num_cases)
+grid_specs[2] = True # flag for whether to plot grid specs in title
 for i, reader in enumerate(readers):
     reader.load_time()
-    reader.load_grid()
+    reader.load_grid(grid_specs = grid_specs[i])
     r_bin.append(reader.loading_bin_radius())
     x.append(reader.x)
     y.append(reader.y)
@@ -78,7 +78,7 @@ for i, reader in enumerate(readers):
         nz = np.max([nz, reader.nx[2]])
         ny = np.max([ny, reader.nx[1]])
     if salinity and plot_turb_stats:
-        S_value, w_value = reader.load_contour_temporal_averages('binning_rtz.h5')
+        S_value = reader.load_S_temporal_avg('binning_rtz.h5')
 
 # physical parameters
 x0 = 0.0
@@ -97,12 +97,20 @@ else:
 plot_format()
 if plot_variables:
     if salinity:
-        var_names = ['Tracer negative', 'Temperature', 'u', 'v', 'w']
+        var_names = ['Tracer', 'Temperature', 'u', 'v', 'w']
         range_names = ['Tracer', 'T', 'u', 'v', 'w']
     else:
         var_names = ['Temperature', 'u', 'v', 'w']
         range_names = ['T', 'u', 'v', 'w']
     variable_dir = {}
+if plot_var_bin:
+    if salinity:
+        bin_var_names = ['Tracer', 'Temperature', r'u$_r$', r'u$_{\theta}$', 'w']
+        bin_range_names = ['Tracer', 'T', 'u', 'v', 'w']
+    else:
+        bin_var_names = ['Temperature', 'u', 'v', 'w']
+        bin_range_names = ['T', 'u', 'v', 'w']
+    bin_dir = {}
 
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
@@ -208,7 +216,7 @@ for i, reader in enumerate(readers):
 for it in range(nt):
     if plot_variables:
         if salinity: #'Tracer', 'T', 'u', 'v', 'w'
-            variables = [[S_plane[i][:, :, it].T for i in range(num_cases)], ]#[S_plane[it],]# T_plane[it], u_plane[it], v_plane[it], w_plane[it]]
+            variables = [[S_plane[i][it, :, :].T for i in range(num_cases)], [T_plane[i][it, :, :].T for i in range(num_cases)], [u_plane[i][it, :, :].T for i in range(num_cases)], [v_plane[i][it, :, :].T for i in range(num_cases)], [w_plane[i][it, :, :].T for i in range(num_cases)]]
             colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
             cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
         else: #'T', 'u', 'v', 'w'
@@ -220,7 +228,7 @@ for it in range(nt):
             variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
     if plot_var_bin:
         if salinity: #'Tracer', 'T', 'u', 'v', 'w'
-            variables = [S_bin[it]]#,, T_bin[it], ur_bin[it], utheta_bin[it], w_bin[it]]
+            variables = [[S_bin[i][:, :, it].T for i in range(num_cases)], [T_bin[i][:, :, it].T for i in range(num_cases)], [ur_bin[i][:, :, it].T for i in range(num_cases)], [utheta_bin[i][:, :, it].T for i in range(num_cases)], [w_bin[i][:, :, it].T for i in range(num_cases)]]
             colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
             cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
         else: #'T', 'u', 'v', 'w'
@@ -229,16 +237,29 @@ for it in range(nt):
             cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
 
         for dir, var in enumerate(variables):
-            variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, r_bin, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='binning')
+            bin_dir[bin_var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, r_bin, z, var, case_names, bin_var_names[dir], bin_range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='binning')
     if plot_turb_stats:
-        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg[it], u_rms[it], v_rms[it], w_rms[it], b_avg[it], b_center[it], r_profile[it], bu_fluc_avg[it], bv_fluc_avg[it], bw_fluc_avg[it], T_avg[it], T_fluc_center[it], S_fluc_center[it])
+        S_avg_it = [S_avg[i][:, it] for i in range(num_cases)]
+        u_rms_it = [u_rms[i][it, :] for i in range(num_cases)]
+        v_rms_it = [v_rms[i][it, :] for i in range(num_cases)]
+        w_rms_it = [w_rms[i][it, :] for i in range(num_cases)]
+        b_avg_it = [b_avg[i][:, it] for i in range(num_cases)]
+        b_center_it = [b_center[i][:, it] for i in range(num_cases)]
+        r_profile_it = [r_profile[i][:, it] for i in range(num_cases)]
+        bu_fluc_avg_it = [bu_fluc_avg[i][:, it] for i in range(num_cases)]
+        bv_fluc_avg_it = [bv_fluc_avg[i][:, it] for i in range(num_cases)]
+        bw_fluc_avg_it = [bw_fluc_avg[i][:, it] for i in range(num_cases)]
+        T_avg_it = [T_avg[i][:, it] for i in range(num_cases)]
+        T_fluc_center_it = [T_fluc_center[i][:, it] for i in range(num_cases)]
+        S_fluc_center_it = [S_fluc_center[i][:, it] for i in range(num_cases)]
+        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg_it, u_rms_it, v_rms_it, w_rms_it, b_avg_it, b_center_it, r_profile_it, bu_fluc_avg_it, bv_fluc_avg_it, bw_fluc_avg_it, T_avg_it, T_fluc_center_it, S_fluc_center_it)
 
 
 # creating videos
 if video:
     if plot_var_bin:
-        for n, name in enumerate(var_names):
-            create_video(variable_dir[var_names[n]], fig_folder, 'binning', name)
+        for n, name in enumerate(bin_var_names):
+            create_video(bin_dir[bin_var_names[n]], fig_folder, 'binning', name)
     if plot_variables:
         for dir, name in enumerate(var_names):
             create_video(variable_dir[var_names[dir]], fig_folder, name_uni, name)

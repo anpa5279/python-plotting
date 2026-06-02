@@ -115,16 +115,47 @@ def horizontal_line(f, hor, z, hor0, z0, axis='y'):
     return interp1d_axis(fh, z, coord_new = z0, axis=-1)
 
 # ------------------------- GRID POINT ------------------------- #
-def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
-    if f0 is not None:
-        znew = interp1d_axis(f, z, f_new = f0) 
-        new = znew
-    if z0 is not None:
-        fnew = interp1d_axis(f, z, coord_new = z0)
-        new = fnew
-    if x is not None and y is not None:
-        fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=1)
-        new = interp1d_axis(fnewyz, x, coord_new = x0, axis = 0)
+def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0, nt = 1):
+    """
+    Interpolate to a single point in space.
+    time: if greater than 1, time is included in the matrix f and it should output a 1d array
+    """
+    if nt > 1:
+        # find which dimension is time
+        t_dim = np.where(np.array(f.shape) == nt)[0][0]
+        # for loop through time
+        new = np.zeros(nt)
+        for it in range(nt):
+            if it == 0:
+                new[it] = np.max(z)
+            else:
+                f_t = np.take(f, it, axis=t_dim)
+                if f0 is not None:
+                    znew = interp1d_axis(f_t, z, f_new = f0) 
+                    if znew.size==0 and it == 0:
+                        #print(f"it: {it}: f0 is out of bounds, returning max z")
+                        #print(f_t)
+                        new[it] = np.max(z)
+                    elif znew.size==0:
+                        new[it] = new[it-1]
+                    else:
+                        new[it] = np.max(znew)
+                if z0 is not None:
+                    fnew = interp1d_axis(f_t, z, coord_new = z0)
+                    new[it] = fnew
+                if x is not None and y is not None:
+                    fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=1)
+                    new[it] = interp1d_axis(fnewyz, x, coord_new = x0, axis = 0)
+    else:
+        if f0 is not None:
+            znew = interp1d_axis(f, z, f_new = f0) 
+            new = znew
+        if z0 is not None:
+            fnew = interp1d_axis(f, z, coord_new = z0)
+            new = fnew
+        if x is not None and y is not None:
+            fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=1)
+            new = interp1d_axis(fnewyz, x, coord_new = x0, axis = 0)
     return new
 
 
