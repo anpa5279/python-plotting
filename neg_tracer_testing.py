@@ -20,6 +20,7 @@ readers = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
     readers.append(OceananigansData(folder, salinity = salinity))
+    print(f"Loaded reader for {name}, Nranks = {readers[-1].Nranks}")
 
 # collecting model information for all cases
 nx = np.empty((3, num_cases), dtype=object)
