@@ -20,16 +20,21 @@ readers = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
     readers.append(OceananigansData(folder, salinity = salinity))
-    readers[-1].load_grid()
-    readers[-1].load_time()
 
-x = readers[0].x
-y = readers[0].y
-z = readers[0].z
-nx = readers[0].nx
-nt = readers[0].nt
-
-domain = math.prod(nx)
+# collecting model information for all cases
+nx = np.empty((3, num_cases), dtype=object)
+lx = np.empty((3, num_cases), dtype=object)
+nt = np.empty(num_cases, dtype=int)
+time  = []
+grid_specs = False*np.ones(num_cases)
+grid_specs[2] = True # flag for whether to plot grid specs in title
+for i, reader in enumerate(readers):
+    reader.load_time()
+    reader.load_grid(grid_specs = grid_specs[i])
+    time.append(reader.time)
+    nx[:, i] = reader.nx
+    lx[:, i] = reader.lx
+    nt[i] = reader.nt
 
 percents = []
 S_min = []
@@ -41,14 +46,15 @@ t = []
 
 # Load data from files
 for n, reader in enumerate(readers):
-    t.append(reader.time / 3600 / 24)
+    t.append(reader.time[n] / 3600 / 24)
     # load tracer
     S = reader.lazy_field('S')
     S_neg = S
     S_neg[S>=0] = 0
     # negative number of negative values appearing in domain 
     S_neg_sum = np.sum(S_neg, axis = (0, 1))
-    percents.append(S_neg_sum/domain*100)
+    domain = math.prod(reader.nx)
+    percents.append(S_neg_sum/domain[n]*100)
     neg_avg.append(np.mean(S_neg, axis = (0, 1)))
     # average S value in domain
     S_avg.append(np.mean(S, axis = (0, 1)))
