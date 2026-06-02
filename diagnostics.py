@@ -68,12 +68,12 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'horizontal resolution':
-        folder_names =['horizontal domain/coarse2', 
-                       'horizontal domain/coarse1', 
-                       'horizontal domain/mod-default', 
-                       'horizontal domain/fine1', 
-                       'horizontal domain/fine2',
-                       'horizontal domain/fine3']
+        folder_names =['coarse2', 
+                       'coarse1', 
+                       'mod-default', 
+                       'fine1', 
+                       'fine2',
+                       'fine3']
         case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m

@@ -10,7 +10,7 @@ from diagnostics import comparison_info
 from reader import OceananigansData
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain'
 
 variations = 'horizontal resolution'
 cases_info = comparison_info(variations, universal_folder = universal_folder)

@@ -2,9 +2,11 @@ import os
 import numpy as np
 
 from reader import OceananigansData
-from physics import buoyancy, rms
+from physics import buoyancy
 from diagnostics import comparison_info
-from plotting_general import plot_format, plot_ranges, create_video, plot_variable_vert_slice, plot_turb_stats_bin, comparison_plot_opt
+from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
+from plotting_planes import plot_variable_vert_slice
+from plotting_lines import plot_turb_stats_bin
 
 # flags for what to plot
 video = True
