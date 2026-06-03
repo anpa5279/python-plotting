@@ -91,7 +91,7 @@ for n, reader in enumerate(readers):
             S_neg_sum.append(np.sum(S_neg, axis = (1, 2, 3)))
     percents.append(S_neg_count/domain*100)
     print(case_names[n], ' domain: ', domain)
-    print(case_names[n], ' S_neg: ', S_neg)
+    print(case_names[n], ' S_neg_count: ', S_neg_count)
 print('negative average: ', neg_avg)
 print('negative sum: ', S_neg_sum)
 print('% negative: ', percents)
@@ -113,22 +113,18 @@ fig.legend(handles=case_handles,
 
 
 ax[0].set_title(r'-S$_{avg}$', fontsize = 12)
-ax[0].set_yscale('log')
-ax[0].set_xlabel('Time (days)', fontsize = 12)
+#ax[0].set_yscale('log')
 ax[0].set_ylabel('[g/kg]', fontsize = 12)
 
 ax[1].set_title('Maximum magnitude of -S values', fontsize = 12)
 ax[1].set_yscale('log')
-ax[1].set_xlabel('Time (days)', fontsize = 12)
 ax[1].set_ylabel('[g/kg]', fontsize = 12)
 
-ax[3].set_title('Percent of -S values', fontsize = 12)
-ax[3].set_xlabel('Time (days)', fontsize = 12)
-ax[3].set_ylabel('% of domain', fontsize = 12)
-
 ax[2].set_title('Sum of -S in domain', fontsize = 12)
-ax[2].set_xlabel('Time (days)', fontsize = 12)
 ax[2].set_ylabel('[g/kg]', fontsize = 12)
+
+ax[3].set_title('Percent of -S values', fontsize = 12)
+ax[3].set_ylabel('% of domain', fontsize = 12)
 
 ax[4].set_title(r'S$_{avg}$', fontsize = 12)
 ax[4].set_xlabel('Time (days)', fontsize = 12)
