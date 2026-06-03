@@ -19,7 +19,7 @@ cat > EXEC_STEP << EXEC
 #PBS -N $jobn
 #PBS -q develop 
 #PBS -j oe
-#PBS -l walltime=00:05:00
+#PBS -l walltime=00:10:00
 #PBS -l select=1:ncpus=$cpus:mem=90GB
 
 module --force purge
