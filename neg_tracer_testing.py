@@ -158,4 +158,4 @@ if "/glade" in universal_folder:
     variations += ' with fields'
 else:
     variations += ' with binned data'
-plt.savefig(os.path.join(outdir, variations + ' comparisons.png'))
+plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))
