@@ -10,7 +10,8 @@ from diagnostics import comparison_info
 from reader import OceananigansData
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
+#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
 #'/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
 
 variations = 'horizontal resolution'
@@ -40,10 +41,12 @@ for i, reader in enumerate(readers):
 percents = []
 S_min = []
 neg_avg = []
+S_neg_sum = []
 S_avg = []
 S_sum = []
 S_div = []
 dSdt = []
+dSavgdt = []
 t = []
 
 # Load data from files
@@ -51,41 +54,43 @@ for n, reader in enumerate(readers):
     t.append(reader.time / 3600 / 24)
     # load tracer
     if "/glade" in universal_folder:
-        domain = nx[0, n]//2*nx[2, n]
+        domain = math.prod(reader.nx)
         S = reader.lazy_field('S')
         # average S value in domain
         S_avg.append(np.mean(S, axis = (1, 2, 3)))
         # sum of S values in domain
         S_sum.append(np.sum(S, axis = (1, 2, 3)))
-        # minimum negative S value in domain
+        # minimum -S value in domain
         S_min.append(np.min(S, axis = (1, 2, 3)))
     else:
-        domain = math.prod(reader.nx)
+        domain = nx[0, n]//2*nx[2, n]
         S = reader.load_binning_var('S')
         # average S value in domain
         S_avg.append(np.mean(S, axis = (0, 1)))
         # sum of S values in domain
         S_sum.append(np.sum(S, axis = (0, 1)))
-        # minimum negative S value in domain
+        # minimum -S value in domain
         S_min.append(np.min(S, axis = (0, 1)))
     dSdt.append(np.gradient(S_sum[n], t[n]))
+    dSavgdt.append(np.gradient(S_avg[n], t[n]))
     S_neg = S
-    S_neg[S>=0] = 0
+    S_neg[S>=0] = None
     # negative number of negative values appearing in domain 
     if "/glade" not in universal_folder:
-        neg_avg.append(np.mean(S_neg, axis = (0, 1)))
-        S_neg_sum = np.sum(S_neg, axis = (0, 1))
-        percents.append(S_neg_sum/domain*100)
+        neg_avg.append(np.nanmean(S_neg, axis = (0, 1)))
+        S_neg_count = np.sum(S<0, axis = (0, 1))
+        S_neg_sum.append(np.nansum(S_neg, axis = (0, 1)))
     else:
         neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
-        S_neg_sum = np.sum(S_neg, axis = (1, 2, 3))
-        percents.append(S_neg_sum/domain*100)
+        S_neg_count = np.sum(S_neg, axis = (1, 2, 3))
+        S_neg_sum.append(np.sum(S_neg, axis = (1, 2, 3)))
+    percents.append(S_neg_count/domain*100)
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 scale = [1, 1, 0.02]
 gridspec_kw={'height_ratios': scale}
-fig, ax = plt.subplots(3, 3, figsize=(12, 8), dpi = 300, gridspec_kw = gridspec_kw)
+fig, ax = plt.subplots(3, 4, figsize=(16, 8), dpi = 300, gridspec_kw = gridspec_kw)
 for a in ax[-1, :]:
         a.remove()
 ax = ax.ravel()
@@ -96,38 +101,59 @@ fig.legend(handles=case_handles,
         ncol=num_cases,
         bbox_to_anchor=(0.52, 0.005), fontsize = 12)
 
-ax[0].set_title('Percent of negative S values', fontsize = 12)
-ax[0].set_xlabel('Time (days)', fontsize = 12)
-ax[0].set_ylabel('% of domain', fontsize = 12)
 
-ax[1].set_title('Maximum negative S value', fontsize = 12)
+ax[0].set_title(r'-S$_{avg}$', fontsize = 12)
+ax[0].set_yscale('log')
+ax[0].set_xlabel('Time (days)', fontsize = 12)
+ax[0].set_ylabel('[g/kg]', fontsize = 12)
+
+ax[1].set_title('Maximum magnitude of -S values', fontsize = 12)
+ax[1].set_yscale('log')
 ax[1].set_xlabel('Time (days)', fontsize = 12)
 ax[1].set_ylabel('[g/kg]', fontsize = 12)
 
-ax[2].set_title('Average negative S value', fontsize = 12)
+ax[3].set_title('Percent of -S values', fontsize = 12)
+ax[3].set_xlabel('Time (days)', fontsize = 12)
+ax[3].set_ylabel('% of domain', fontsize = 12)
+
+ax[2].set_title('Sum of -S in domain', fontsize = 12)
 ax[2].set_xlabel('Time (days)', fontsize = 12)
 ax[2].set_ylabel('[g/kg]', fontsize = 12)
 
-ax[3].set_title('Average S value', fontsize = 12)
-ax[3].set_xlabel('Time (days)', fontsize = 12)
-ax[3].set_ylabel('[g/kg]', fontsize = 12)
-
-ax[4].set_title('Sum of S in domain', fontsize = 12)
+ax[4].set_title(r'S$_{avg}$', fontsize = 12)
 ax[4].set_xlabel('Time (days)', fontsize = 12)
 ax[4].set_ylabel('[g/kg]', fontsize = 12)
 
-ax[5].set_title('Rate of change of S', fontsize = 12)
+ax[5].set_title(r'dS$_{avg}$/dt', fontsize = 12)
 ax[5].set_xlabel('Time (days)', fontsize = 12)
 ax[5].set_ylabel('[g/kg/days]', fontsize = 12)
 
+ax[6].set_title('Sum of S in domain', fontsize = 12)
+ax[6].set_xlabel('Time (days)', fontsize = 12)
+ax[6].set_ylabel('[g/kg]', fontsize = 12)
+
+ax[7].set_title(r'dS$_{sum}$/dt', fontsize = 12)
+ax[7].set_xlabel('Time (days)', fontsize = 12)
+ax[7].set_ylabel('[g/kg/days]', fontsize = 12)
+
 for n in range(num_cases):
-    ax[0].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
-    ax[1].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
-    ax[2].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
-    ax[3].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
-    ax[4].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
-    ax[5].plot(t[n], dSdt[n], color = color_opt[n], label=case_names[n])
+    ax[0].plot(t[n], np.abs(neg_avg[n]), color = color_opt[n], label=case_names[n])
+    ax[1].plot(t[n], np.abs(S_min[n]), color = color_opt[n], label=case_names[n])
+    ax[3].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
+    ax[2].plot(t[n], S_neg_sum[n], color = color_opt[n], label=case_names[n])
+    ax[4].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
+    ax[5].plot(t[n], dSavgdt[n], color = color_opt[n], label=case_names[n])
+    ax[6].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
+    ax[7].plot(t[n], dSdt[n], color = color_opt[n], label=case_names[n])
+
+for a in ax[:8]:
+    if a.get_yscale() != 'log':
+        a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3))
 
 outdir = os.path.join(universal_folder, 'callback comparisons')
 os.makedirs(outdir, exist_ok=True)
+if "/glade" in universal_folder:
+    variations += ' with fields'
+else:
+    variations += ' with binned data'
 plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))

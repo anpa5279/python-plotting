@@ -25,6 +25,7 @@ class OceananigansData:
         # Time-related (set by load_time)
         self.nt = None
         self.time = None
+        self.dt = None
         self.t_save = None
 
         # possible additional paraemters
@@ -123,6 +124,7 @@ class OceananigansData:
             self.time = np.array([t_group[str(int(k))][()] for k in self.t_save])
 
             self.nt = len(self.time)
+            self.dt = self.time[1] - self.time[0] if self.nt > 1 else None
             return self.time, self.t_save
     # ------------------------ ADDITIONAL PARAMETERS -------------------- #
     def load_coriolis(self):

@@ -87,7 +87,6 @@ def comparison_plot_opt(ncases):
     line_styles = ['solid', 'dashed', 'dotted', 'dashdot', 'dashdotted']
 
     return colors[:ncases], line_styles[:ncases]
-
 ### -------------------------SAVING FRAMES AND MAKING VIDEOS------------------------- ###
 def create_video(outdir, fig_folder, name, plot_type):
     print("Creating video...")
