@@ -86,7 +86,8 @@ for n, reader in enumerate(readers):
             S_neg_count = np.sum(S<0, axis = (0, 1))
             S_neg_sum.append(np.nansum(S_neg, axis = (0, 1)))
         else:
-            neg_avg.append(np.nanmean(S_neg, axis = (1, 2, 3)))
+            S_neg_case = np.nanmean(S_neg, axis = (1, 2, 3))
+            neg_avg.append(S_neg_case)
             S_neg_count = np.sum(S<0, axis = (1, 2, 3))
             S_neg_sum.append(np.nansum(S_neg, axis = (1, 2, 3)))
     percents.append(S_neg_count/domain*100)
@@ -108,7 +109,6 @@ fig.legend(handles=case_handles,
 
 
 ax[0].set_title(r'-S$_{avg}$', fontsize = 12)
-#ax[0].set_yscale('log')
 ax[0].set_ylabel('[g/kg]', fontsize = 12)
 
 ax[1].set_title('Maximum magnitude of -S values', fontsize = 12)
@@ -150,6 +150,7 @@ for n in range(num_cases):
 for a in ax[:8]:
     if a.get_yscale() != 'log':
         a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3))
+fig.tight_layout(pad=2.0)
 
 outdir = os.path.join(universal_folder, 'callback comparisons')
 os.makedirs(outdir, exist_ok=True)
@@ -157,4 +158,4 @@ if "/glade" in universal_folder:
     variations += ' with fields'
 else:
     variations += ' with binned data'
-plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))
+plt.savefig(os.path.join(outdir, variations + ' comparisons.png'))
