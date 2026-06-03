@@ -71,6 +71,9 @@ for n, reader in enumerate(readers):
         S_sum.append(np.sum(S, axis = (0, 1)))
         # minimum -S value in domain
         S_min.append(np.min(S, axis = (0, 1)))
+    print('size of S: ', S.shape)
+    print('size of S_sum: ', S_sum.shape)
+    print('size of t: ', t[n])
     dSdt.append(np.gradient(S_sum[n], t[n]))
     dSavgdt.append(np.gradient(S_avg[n], t[n]))
     S_neg = S
