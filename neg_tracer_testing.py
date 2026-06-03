@@ -57,9 +57,11 @@ for n, reader in enumerate(readers):
         domain = math.prod(reader.nx)
         S = np.array(reader.lazy_field('S'))
         # average S value in domain
-        S_avg.append(np.mean(S, axis = (1, 2, 3)))
+        S_avg_case = np.mean(S, axis = (1, 2, 3), out = S_avg_case)
+        S_avg.append(S_avg_case)
         # sum of S values in domain
-        S_sum.append(np.sum(S, axis = (1, 2, 3)))
+        S_sum_case = np.sum(S, axis = (1, 2, 3), out = S_sum_case)
+        S_sum.append(S_sum_case)
         # minimum -S value in domain
         S_min.append(np.min(S, axis = (1, 2, 3)))
     else:
@@ -71,29 +73,36 @@ for n, reader in enumerate(readers):
         S_sum.append(np.sum(S, axis = (0, 1)))
         # minimum -S value in domain
         S_min.append(np.min(S, axis = (0, 1)))
-    print('size of S: ', S.shape)
-    print('size of S_sum: ', S_sum[n].shape)
-    print('size of t: ', t[n])
     dSdt.append(np.gradient(S_sum[n], t[n]))
     dSavgdt.append(np.gradient(S_avg[n], t[n]))
     S_neg = S
     S_neg[S>=0] = None
     # negative number of negative values appearing in domain 
-    if "/glade" not in universal_folder:
-        neg_avg.append(np.nanmean(S_neg, axis = (0, 1)))
-        S_neg_count = np.sum(S<0, axis = (0, 1))
-        S_neg_sum.append(np.nansum(S_neg, axis = (0, 1)))
+    if S_neg.all() == None:
+        neg_avg.append(np.zeros(nt[n]))
+        S_neg_sum.append(np.zeros(nt[n]))
+        S_neg_count = np.zeros(nt[n])
     else:
-        neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
-        S_neg_count = np.sum(S_neg, axis = (1, 2, 3))
-        S_neg_sum.append(np.sum(S_neg, axis = (1, 2, 3)))
+        if "/glade" not in universal_folder:
+            neg_avg.append(np.nanmean(S_neg, axis = (0, 1)))
+            S_neg_count = np.sum(S<0, axis = (0, 1))
+            S_neg_sum.append(np.nansum(S_neg, axis = (0, 1)))
+        else:
+            neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
+            S_neg_count = np.sum(S_neg, axis = (1, 2, 3))
+            S_neg_sum.append(np.sum(S_neg, axis = (1, 2, 3)))
     percents.append(S_neg_count/domain*100)
+    print(case_names[n], ' domain: ', domain)
+    print(case_names[n], ' S_neg: ', S_neg)
+print('negative average: ', neg_avg)
+print('negative sum: ', S_neg_sum)
+print('% negative: ', percents)
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 scale = [1, 1, 0.02]
 gridspec_kw={'height_ratios': scale}
-fig, ax = plt.subplots(3, 4, figsize=(16, 8), dpi = 300, gridspec_kw = gridspec_kw)
+fig, ax = plt.subplots(3, 4, figsize=(16, 8), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
 for a in ax[-1, :]:
         a.remove()
 ax = ax.ravel()
