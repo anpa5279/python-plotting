@@ -49,6 +49,13 @@ for n, reader in enumerate(readers):
     t.append(reader.time / 3600 / 24)
     # load tracer
     S = reader.lazy_field('S')
+    # average S value in domain
+    S_avg.append(np.mean(S, axis = (1, 2, 3)))
+    # sum of S values in domain
+    S_sum.append(np.sum(S, axis = (1, 2, 3)))
+    # minimum negative S value in domain
+    S_min.append(np.min(S, axis = (1, 2, 3)))
+
     S_neg = S
     S_neg[S>=0] = 0
     # negative number of negative values appearing in domain 
@@ -56,12 +63,6 @@ for n, reader in enumerate(readers):
     domain = math.prod(reader.nx)
     percents.append(S_neg_sum/domain*100)
     neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
-    # average S value in domain
-    S_avg.append(np.mean(S, axis = (1, 2, 3)))
-    # sum of S values in domain
-    S_sum.append(np.sum(S, axis = (1, 2, 3)))
-    # minimum negative S value in domain
-    S_min.append(np.min(S, axis = (1, 2, 3)))
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()

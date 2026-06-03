@@ -9,16 +9,16 @@ from interpolation import velocities_to_center
 # set flags
 compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
 binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
-contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-fluc_flag = True # calculates turbulent statistics from binning information
-rms_flag = True # calculates RMS from 3D fields
+contour_flag = False # calculates radius of contour at each depth and time that is not in the default
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+fluc_flag = False # calculates turbulent statistics from binning information
+rms_flag = False # calculates RMS from 3D fields
 
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
-#'/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/fine4'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/fine4'
+#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
@@ -52,8 +52,8 @@ if binning_flag:
     r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
-    ncirc = max(nx[0], nx[1])//2      # full circular shells
-    S_rz = np.empty((counts.size, nx[2], nt)) 
+    ncirc = min(nx[0], nx[1])//2      # full circular shells
+    S_rz = np.empty((counts.size, nx[2], nt))
     T_rz = np.empty((counts.size, nx[2], nt)) 
     ur_rz = np.empty((counts.size, nx[2], nt))
     utheta_rz = np.empty((counts.size, nx[2], nt))
