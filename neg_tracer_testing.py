@@ -57,11 +57,9 @@ for n, reader in enumerate(readers):
         domain = math.prod(reader.nx)
         S = np.array(reader.lazy_field('S'))
         # average S value in domain
-        S_avg_case = np.mean(S, axis = (1, 2, 3), out = S_avg_case)
-        S_avg.append(S_avg_case)
+        S_avg.append(np.mean(S, axis = (1, 2, 3)))
         # sum of S values in domain
-        S_sum_case = np.sum(S, axis = (1, 2, 3), out = S_sum_case)
-        S_sum.append(S_sum_case)
+        S_sum.append(np.sum(S, axis = (1, 2, 3)))
         # minimum -S value in domain
         S_min.append(np.min(S, axis = (1, 2, 3)))
     else:
