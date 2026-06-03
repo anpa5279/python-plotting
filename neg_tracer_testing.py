@@ -90,7 +90,7 @@ for n, reader in enumerate(readers):
             S_neg_count = np.sum(S<0, axis = (1, 2, 3))
             S_neg_sum.append(np.nansum(S_neg, axis = (1, 2, 3)))
     percents.append(S_neg_count/domain*100)
-
+print(S_avg)
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 scale = [1, 1, 0.02]
