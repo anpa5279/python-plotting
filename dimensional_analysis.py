@@ -1,13 +1,12 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
 from reader import OceananigansData
-from dense_plume import PlumeAnalysis
 from diagnostics import comparison_info
 from physics import rms, a_fluc_b, buoyancy
-from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt, plot_plume_vertical_spatial, plot_plume_horizontal_spatial, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
-from interpolation import velocities_to_center, vertical_line, horizontal_line, yz_plane, xy_plane, xz_plane
+from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
+from plotting_lines import plot_plume_horizontal_spatial, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
+from interpolation import velocities_to_center, vertical_line, horizontal_line, yz_plane, xy_plane
 
 # flags for what to plot
 plot_variables = True

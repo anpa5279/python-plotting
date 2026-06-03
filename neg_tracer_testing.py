@@ -10,7 +10,8 @@ from diagnostics import comparison_info
 from reader import OceananigansData
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
+#'/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
 
 variations = 'horizontal resolution'
 cases_info = comparison_info(variations, universal_folder = universal_folder)
@@ -42,27 +43,43 @@ neg_avg = []
 S_avg = []
 S_sum = []
 S_div = []
+dSdt = []
 t = []
 
 # Load data from files
 for n, reader in enumerate(readers):
     t.append(reader.time / 3600 / 24)
     # load tracer
-    S = reader.lazy_field('S')
-    # average S value in domain
-    S_avg.append(np.mean(S, axis = (1, 2, 3)))
-    # sum of S values in domain
-    S_sum.append(np.sum(S, axis = (1, 2, 3)))
-    # minimum negative S value in domain
-    S_min.append(np.min(S, axis = (1, 2, 3)))
-
+    if "/glade" in universal_folder:
+        domain = nx[0, n]//2*nx[2, n]
+        S = reader.lazy_field('S')
+        # average S value in domain
+        S_avg.append(np.mean(S, axis = (1, 2, 3)))
+        # sum of S values in domain
+        S_sum.append(np.sum(S, axis = (1, 2, 3)))
+        # minimum negative S value in domain
+        S_min.append(np.min(S, axis = (1, 2, 3)))
+    else:
+        domain = math.prod(reader.nx)
+        S = reader.load_binning_var('S')
+        # average S value in domain
+        S_avg.append(np.mean(S, axis = (0, 1)))
+        # sum of S values in domain
+        S_sum.append(np.sum(S, axis = (0, 1)))
+        # minimum negative S value in domain
+        S_min.append(np.min(S, axis = (0, 1)))
+    dSdt.append(np.gradient(S_sum[n], t[n]))
     S_neg = S
     S_neg[S>=0] = 0
     # negative number of negative values appearing in domain 
-    S_neg_sum = np.sum(S_neg, axis = (1, 2, 3))
-    domain = math.prod(reader.nx)
-    percents.append(S_neg_sum/domain*100)
-    neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
+    if "/glade" not in universal_folder:
+        neg_avg.append(np.mean(S_neg, axis = (0, 1)))
+        S_neg_sum = np.sum(S_neg, axis = (0, 1))
+        percents.append(S_neg_sum/domain*100)
+    else:
+        neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
+        S_neg_sum = np.sum(S_neg, axis = (1, 2, 3))
+        percents.append(S_neg_sum/domain*100)
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
@@ -99,12 +116,17 @@ ax[4].set_title('Sum of S in domain', fontsize = 12)
 ax[4].set_xlabel('Time (days)', fontsize = 12)
 ax[4].set_ylabel('[g/kg]', fontsize = 12)
 
+ax[5].set_title('Rate of change of S', fontsize = 12)
+ax[5].set_xlabel('Time (days)', fontsize = 12)
+ax[5].set_ylabel('[g/kg/days]', fontsize = 12)
+
 for n in range(num_cases):
     ax[0].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
     ax[1].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
     ax[2].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
     ax[3].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
     ax[4].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
+    ax[5].plot(t[n], dSdt[n], color = color_opt[n], label=case_names[n])
 
 outdir = os.path.join(universal_folder, 'callback comparisons')
 os.makedirs(outdir, exist_ok=True)

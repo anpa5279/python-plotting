@@ -493,11 +493,11 @@ class OceananigansData:
 
         fname = os.path.join(self.folder, file)
 
-        if contour.size == 1:
+        if contour.len == 1:
             with h5py.File(fname, 'r') as f:
                 r = f[f'r given contour/contour = {contour}'][()]
         else:
-            r = np.empty(contour.size, self.nx[2], dtype=object)
+            r = np.empty(contour.len, self.nx[2], dtype=object)
             for i, p in enumerate(contour):
                 with h5py.File(fname, 'r') as f:
                     r[i, :] = f[f'r given contour/contour = {p}'][()]

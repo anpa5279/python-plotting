@@ -68,12 +68,12 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'horizontal resolution':
-        folder_names =['coarse2', 
-                       'coarse1', 
-                       'mod-default', 
-                       'fine1', 
-                       'fine2',
-                       'fine3']
+        folder_names =['coarse2/mod grid', 
+                       'coarse1/mod grid', 
+                       'mod-default/mod grid', 
+                       'fine1/mod grid', 
+                       'fine2/mod grid',
+                       'fine3/mod grid']
         case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
         num_cases = len(case_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
@@ -259,7 +259,7 @@ def compute_rms(reader):
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
 
-    with h5py.File(file_path, "a") as f:
+    with h5py.File(file_path, "w") as f:
         f.create_group(f'{folder_contour}')
         f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
         f.create_dataset(f'{folder_contour}/w', data=data['w_value'])

@@ -5,7 +5,7 @@ from reader import OceananigansData
 from diagnostics import comparison_info
 from physics import buoyancy
 from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
-from plotting_lines import plot_plume_vertical_spatial #, plot_plume_horizontal_spatial
+from plotting_lines import plot_turb_stats_bin #, plot_plume_horizontal_spatial
 from plotting_planes import plot_variable_vert_slice
 #from interpolation import vertical_line, horizontal_line
 
@@ -23,7 +23,7 @@ stokes = False
 
 contour_bound = 0.001
 name_uni = f'contour-{contour_bound:.4f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
 #'/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
@@ -179,7 +179,6 @@ for i, reader in enumerate(readers):
         w_rz = reader.load_binning_var('w')
         T_rz = reader.load_binning_var('T')
         S_rz = reader.load_binning_var('S')
-        r = reader.loading_bin_contours()
         b_rz = buoyancy(reader, type = 'bin')
         b_xy = np.mean(b_rz, axis=0)
     if plot_var_bin:
@@ -252,16 +251,15 @@ for it in range(nt):
         T_avg_it = [T_avg[i][:, it] for i in range(num_cases)]
         T_fluc_center_it = [T_fluc_center[i][:, it] for i in range(num_cases)]
         S_fluc_center_it = [S_fluc_center[i][:, it] for i in range(num_cases)]
-        buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg_it, u_rms_it, v_rms_it, w_rms_it, b_avg_it, b_center_it, r_profile_it, bu_fluc_avg_it, bv_fluc_avg_it, bw_fluc_avg_it, T_avg_it, T_fluc_center_it, S_fluc_center_it)
-
+        buoyancy_dir_z = plot_turb_stats_bin(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg_it, u_rms_it, v_rms_it, w_rms_it, b_avg_it, b_center_it, r_profile_it, bu_fluc_avg_it, bv_fluc_avg_it, bw_fluc_avg_it, T_avg_it, T_fluc_center_it, S_fluc_center_it)
 
 # creating videos
 if video:
     if plot_var_bin:
         for n, name in enumerate(bin_var_names):
-            create_video(bin_dir[bin_var_names[n]], fig_folder, 'binning', name)
+            create_video(bin_dir[bin_var_names[n]], fig_folder, 'modgrid-binning', name)
     if plot_variables:
         for dir, name in enumerate(var_names):
-            create_video(variable_dir[var_names[dir]], fig_folder, name_uni, name)
+            create_video(variable_dir[var_names[dir]], fig_folder, 'modgrid-'+name_uni, name)
     if plot_turb_stats:
-        create_video(buoyancy_dir_z, fig_folder, 'binning', 'turb_stats')
+        create_video(buoyancy_dir_z, fig_folder, 'modgrid-binning', 'turb_stats')
