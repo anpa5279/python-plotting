@@ -55,7 +55,7 @@ for n, reader in enumerate(readers):
     # load tracer
     if "/glade" in universal_folder:
         domain = math.prod(reader.nx)
-        S = reader.lazy_field('S')
+        S = np.array(reader.lazy_field('S'))
         # average S value in domain
         S_avg.append(np.mean(S, axis = (1, 2, 3)))
         # sum of S values in domain
@@ -72,7 +72,7 @@ for n, reader in enumerate(readers):
         # minimum -S value in domain
         S_min.append(np.min(S, axis = (0, 1)))
     print('size of S: ', S.shape)
-    print('size of S_sum: ', S_sum.shape)
+    print('size of S_sum: ', S_sum[n].shape)
     print('size of t: ', t[n])
     dSdt.append(np.gradient(S_sum[n], t[n]))
     dSavgdt.append(np.gradient(S_avg[n], t[n]))
