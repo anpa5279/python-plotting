@@ -20,7 +20,6 @@ readers = []
 for name in cases_info["folder_names"]:
     folder = os.path.join(universal_folder, name)
     readers.append(OceananigansData(folder, salinity = salinity))
-    print(f"Loaded reader for {name}, Nranks = {readers[-1].Nranks}")
 
 # collecting model information for all cases
 nx = np.empty((3, num_cases), dtype=object)
@@ -47,22 +46,22 @@ t = []
 
 # Load data from files
 for n, reader in enumerate(readers):
-    t.append(reader.time[n] / 3600 / 24)
+    t.append(reader.time / 3600 / 24)
     # load tracer
     S = reader.lazy_field('S')
     S_neg = S
     S_neg[S>=0] = 0
     # negative number of negative values appearing in domain 
-    S_neg_sum = np.sum(S_neg, axis = (0, 1))
+    S_neg_sum = np.sum(S_neg, axis = (1, 2, 3))
     domain = math.prod(reader.nx)
-    percents.append(S_neg_sum/domain[n]*100)
-    neg_avg.append(np.mean(S_neg, axis = (0, 1)))
+    percents.append(S_neg_sum/domain*100)
+    neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
     # average S value in domain
-    S_avg.append(np.mean(S, axis = (0, 1)))
+    S_avg.append(np.mean(S, axis = (1, 2, 3)))
     # sum of S values in domain
-    S_sum.append(np.sum(S, axis = (0, 1)))
+    S_sum.append(np.sum(S, axis = (1, 2, 3)))
     # minimum negative S value in domain
-    S_min.append(np.min(S, axis = (0, 1)))
+    S_min.append(np.min(S, axis = (1, 2, 3)))
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
