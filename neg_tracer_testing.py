@@ -86,15 +86,10 @@ for n, reader in enumerate(readers):
             S_neg_count = np.sum(S<0, axis = (0, 1))
             S_neg_sum.append(np.nansum(S_neg, axis = (0, 1)))
         else:
-            neg_avg.append(np.mean(S_neg, axis = (1, 2, 3)))
-            S_neg_count = np.sum(S_neg, axis = (1, 2, 3))
-            S_neg_sum.append(np.sum(S_neg, axis = (1, 2, 3)))
+            neg_avg.append(np.nanmean(S_neg, axis = (1, 2, 3)))
+            S_neg_count = np.sum(S<0, axis = (1, 2, 3))
+            S_neg_sum.append(np.nansum(S_neg, axis = (1, 2, 3)))
     percents.append(S_neg_count/domain*100)
-    print(case_names[n], ' domain: ', domain)
-    print(case_names[n], ' S_neg_count: ', S_neg_count)
-print('negative average: ', neg_avg)
-print('negative sum: ', S_neg_sum)
-print('% negative: ', percents)
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
