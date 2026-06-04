@@ -10,7 +10,7 @@ from diagnostics import comparison_info
 from reader import OceananigansData
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
 #'/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
 
