@@ -118,6 +118,8 @@ for n, reader in enumerate(readers):
         S_avg[n] = S_avg[n]*factor[n]
         dSdt[n] = dSdt[n]*factor[n]
         dSavgdt[n] = dSavgdt[n]*factor[n]
+        print(f"case: {case_names[n]}, grid area: {grid_area}, factor: {factor[n]}")
+        print(f"case: {case_names[n]}, S_avg after scaling: {S_avg[n]}")
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
