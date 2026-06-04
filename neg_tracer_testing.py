@@ -8,12 +8,25 @@ from matplotlib.lines import Line2D
 from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
+
+def area_scale(r, dx):
+    kmin = (np.floor(-r/dx + 0.5)).astype(int)
+    kmax = (np.floor(r/dx - 0.5)).astype(int)
+    np.arange(kmin, kmax + 1)
+    x = np.arange(kmin, kmax + 1) * dx + dx/2
+    y = x
+    X, Y = np.meshgrid(x, y)
+    dist_squared = X**2 + Y**2
+
+    return np.sum(dist_squared <= (r)**2)
+
 salinity = True
+area_scaling = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
+#'/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
 #'/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
-
 variations = 'horizontal resolution'
 cases_info = comparison_info(variations, universal_folder = universal_folder)
 num_cases = cases_info['num_cases']
@@ -48,6 +61,11 @@ S_div = []
 dSdt = []
 dSavgdt = []
 t = []
+
+if area_scaling:
+    rp = 5.0 #m
+    area = np.pi*rp**2
+    factor = []
 
 # Load data from files
 for n, reader in enumerate(readers):
@@ -91,7 +109,16 @@ for n, reader in enumerate(readers):
             S_neg_count = np.sum(S<0, axis = (1, 2, 3))
             S_neg_sum.append(np.nansum(S_neg, axis = (1, 2, 3)))
     percents.append(S_neg_count/domain*100)
-print(S_avg)
+    if area_scaling:
+        Nr = area_scale(rp, reader.dx[0])
+        factor.append(area/Nr)
+        neg_avg[n] = neg_avg[n]*factor[n]
+        S_neg_sum[n] = S_neg_sum[n]*factor[n]
+        S_sum[n] = S_sum[n]*factor[n]
+        S_avg[n] = S_avg[n]*factor[n]
+        dSdt[n] = dSdt[n]*factor[n]
+        dSavgdt[n] = dSavgdt[n]*factor[n]
+
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 scale = [1, 1, 0.02]
@@ -106,7 +133,8 @@ fig.legend(handles=case_handles,
         loc='lower center',
         ncol=num_cases,
         bbox_to_anchor=(0.52, 0.005), fontsize = 12)
-
+if area_scaling:
+    fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
 
 ax[0].set_title(r'-S$_{avg}$', fontsize = 12)
 ax[0].set_ylabel('[g/kg]', fontsize = 12)
@@ -158,4 +186,6 @@ if "/glade" in universal_folder:
     variations += ' with fields'
 else:
     variations += ' with binned data'
+if area_scaling:
+    variations += f' and area scaling'
 plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))
