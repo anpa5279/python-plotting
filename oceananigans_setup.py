@@ -4,7 +4,7 @@ import h5py
 
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages, compute_rms
-from interpolation import velocities_to_center
+from interpolation import velocities_to_center, interp1d_axis
 
 # set flags
 compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
@@ -17,7 +17,7 @@ rms_flag = True # calculates RMS from 3D fields
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/horizontal-domain/fine4'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/flux-res-match/default/horizontal-domain/coarse1'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
@@ -34,6 +34,10 @@ lx = reader.lx
 time, t_save = reader.load_time()
 nt = len(t_save)
 reader.load_equation_of_state()
+
+dx_scale = max(dx[:-1]) # not including dz
+r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
+
 if compute_temporal_averages_flag:
     data_temp = compute_temporal_averages(reader)
     # compute radius of plume 
@@ -47,8 +51,6 @@ if binning_flag:
     x, y, z = reader.x, reader.y, reader.z
     X, Y, Z = np.meshgrid(x, y, z)
     dist = np.sqrt(X**2 + Y**2)
-    dx_scale = max(dx[:-1])
-    r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
     r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
@@ -121,16 +123,22 @@ if contour_flag: # calculate radius of contour at each depth and time that is no
     S_value = reader.load_S_temporal_avg(file_path)
     if not binning_flag:
         S_rz = reader.load_binning_var('S_rz')
+    r_opt = np.flip(np.insert(r, 0, 0))
+    S_opt = np.flip(np.insert(S_rz, 0, S_rz[0, :, :], axis=0))  # add a column for r=0 with the same values as the first column (since it's a circular plume)
     for contour in contours:
         r_contour = np.empty((nx[2], nt))
         for it, t in enumerate(reader.t_save):
-            plume = S_rz[:, :, it] >= S_value * contour  # shape: (nr, nz)
+            plume = S_opt[:, :, it] >= S_value * contour  # shape: (nr, nz)
             
             radius_tracer = np.zeros(nx[2])
             for k in range(nx[2]):
                 plume_at_depth = plume[:, k]
                 if np.any(plume_at_depth):
-                    radius_tracer[k] = r[np.max(np.where(plume_at_depth))]
+                    if r_opt[np.max(np.where(plume_at_depth))] == r[0]:
+                        r_z = r[0]
+                    else:
+                        r_z = interp1d_axis(S_opt[:, k, it], r_opt, f_new = S_value * contour)
+                    radius_tracer[k] = r_z
                 # else stays 0
             
             r_contour[:, it] = radius_tracer

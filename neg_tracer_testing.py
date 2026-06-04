@@ -150,7 +150,7 @@ for n in range(num_cases):
 for a in ax[:8]:
     if a.get_yscale() != 'log':
         a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3))
-fig.tight_layout(pad=2.0)
+fig.tight_layout(pad=1.5)
 
 outdir = os.path.join(universal_folder, 'callback comparisons')
 os.makedirs(outdir, exist_ok=True)

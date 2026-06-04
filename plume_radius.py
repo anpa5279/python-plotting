@@ -15,7 +15,7 @@ salinity = True
 stokes = False
 
 contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/'#
 
 # selecting cases to compare

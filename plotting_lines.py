@@ -820,7 +820,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
         a.legend(loc='upper right')
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"comparison_depths.png")
+    frame_path = os.path.join(outdir, f"comparison_depths.svg")
     plt.savefig(frame_path)
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation 
