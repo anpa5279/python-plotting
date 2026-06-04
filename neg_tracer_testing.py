@@ -18,7 +18,7 @@ def area_scale(r, dx):
     X, Y = np.meshgrid(x, y)
     dist_squared = X**2 + Y**2
 
-    return np.sum(dist_squared <= (r)**2)
+    return np.sum(dist_squared < (r)**2)
 
 salinity = True
 area_scaling = True
