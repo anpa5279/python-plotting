@@ -12,20 +12,17 @@ from reader import OceananigansData
 def area_scale(r, dx):
     kmin = (np.floor(-r/dx + 0.5)).astype(int)
     kmax = (np.floor(r/dx - 0.5)).astype(int)
-    np.arange(kmin, kmax + 1)
     x = np.arange(kmin, kmax + 1) * dx + dx/2
     y = x
     X, Y = np.meshgrid(x, y)
     dist_squared = X**2 + Y**2
-
     return np.sum(dist_squared <= (r)**2)
 
 salinity = True
 area_scaling = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
+universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/max-flux/horizontal-domain/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
-#'/glade/derecho/scratch/apauls/outputs/version109/default/horizontal-domain'
 variations = 'horizontal resolution'
 cases_info = comparison_info(variations, universal_folder = universal_folder)
 num_cases = cases_info['num_cases']
@@ -118,8 +115,8 @@ for n, reader in enumerate(readers):
         S_avg[n] = S_avg[n]*factor[n]
         dSdt[n] = dSdt[n]*factor[n]
         dSavgdt[n] = dSavgdt[n]*factor[n]
-        print(f"case: {case_names[n]}, grid area: {grid_area}, factor: {factor[n]}, Nx:, {reader.nx[0]}, Lx: {reader.lx[0]}, dx: {reader.dx[0]}")
-        print(f"case: {case_names[n]}, S_avg after scaling: {S_avg[n]}")
+        print(f"case: {case_names[n]}\nNr: {Nr}\ngrid area: {grid_area} vs circle area: {area}\nfactor: {factor[n]}\nNx: {reader.nx}\nLx: {reader.lx}\ndx: {reader.dx}\nx: {reader.x}\ny: {reader.y}")
+        print(f"case: {case_names[n]} S_avg after scaling:\n {S_avg[n]}")
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
