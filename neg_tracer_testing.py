@@ -110,7 +110,8 @@ for n, reader in enumerate(readers):
     percents.append(S_neg_count/domain*100)
     if area_scaling:
         Nr = area_scale(rp, reader.dx[0])
-        factor.append(area/Nr)
+        grid_area = Nr*reader.dx[0]*reader.dx[1]
+        factor.append(area/grid_area)
         neg_avg[n] = neg_avg[n]*factor[n]
         S_neg_sum[n] = S_neg_sum[n]*factor[n]
         S_sum[n] = S_sum[n]*factor[n]
