@@ -18,7 +18,7 @@ def area_scale(r, dx):
     X, Y = np.meshgrid(x, y)
     dist_squared = X**2 + Y**2
 
-    return np.sum(dist_squared < (r)**2)
+    return np.sum(dist_squared <= (r)**2)
 
 salinity = True
 area_scaling = True
@@ -118,7 +118,7 @@ for n, reader in enumerate(readers):
         S_avg[n] = S_avg[n]*factor[n]
         dSdt[n] = dSdt[n]*factor[n]
         dSavgdt[n] = dSavgdt[n]*factor[n]
-        print(f"case: {case_names[n]}, grid area: {grid_area}, factor: {factor[n]}")
+        print(f"case: {case_names[n]}, grid area: {grid_area}, factor: {factor[n]}, Nx:, {reader.nx[0]}, Lx: {reader.lx[0]}, dx: {reader.dx[0]}")
         print(f"case: {case_names[n]}, S_avg after scaling: {S_avg[n]}")
 
 color_opt, line_opt = comparison_plot_opt(num_cases)
