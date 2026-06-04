@@ -2,22 +2,25 @@ import os
 import numpy as np
 import h5py
 
+from scipy.ndimage import binary_erosion
+
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages, compute_rms
 from interpolation import velocities_to_center, interp1d_axis
 
 # set flags
-compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-fluc_flag = True # calculates turbulent statistics from binning information
-rms_flag = True # calculates RMS from 3D fields
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+fluc_flag = False # calculates turbulent statistics from binning information
+rms_flag = False # calculates RMS from 3D fields
 
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/flux-res-match/default/horizontal-domain/coarse1'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
+#'/glade/derecho/scratch/apauls/outputs/version109/flux-res-match/default/horizontal-domain/coarse1'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
@@ -37,6 +40,10 @@ reader.load_equation_of_state()
 
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
+x, y, z = reader.x, reader.y, reader.z
+X, Y, Z = np.meshgrid(x, y, z)
+dist = np.sqrt(X**2 + Y**2)
+ncirc = min(nx[0], nx[1])//2      # full circular shells
 
 if compute_temporal_averages_flag:
     data_temp = compute_temporal_averages(reader)
@@ -48,13 +55,9 @@ if compute_temporal_averages_flag:
     write_temporal_averages(file_path, data)
 
 if binning_flag:
-    x, y, z = reader.x, reader.y, reader.z
-    X, Y, Z = np.meshgrid(x, y, z)
-    dist = np.sqrt(X**2 + Y**2)
     r_bin = np.sqrt((X[:, :, 0]/dx_scale)**2 + (Y[:, :, 0]/dx_scale)**2).astype(int)
     r_max = r_bin.max() + 1 
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
-    ncirc = min(nx[0], nx[1])//2      # full circular shells
     S_rz = np.empty((counts.size, nx[2], nt))
     T_rz = np.empty((counts.size, nx[2], nt)) 
     ur_rz = np.empty((counts.size, nx[2], nt))
@@ -115,38 +118,66 @@ if binning_flag:
         f.create_dataset("ccc/horizontal velocity", data=ur_rz)
         f.create_dataset("ccc/rotation velocity", data=utheta_rz)
         f.create_dataset("ccc/w_rz", data=w_rz)
-    f.close()
     print(f"Saved binning to {file_path}")
 
-if contour_flag: # calculate radius of contour at each depth and time that is not in the default
+if contour_flag:
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
     S_value = reader.load_S_temporal_avg(file_path)
     if not binning_flag:
-        S_rz = reader.load_binning_var('S_rz')
-    r_opt = np.flip(np.insert(r, 0, 0))
-    S_opt = np.flip(np.insert(S_rz, 0, S_rz[0, :, :], axis=0))  # add a column for r=0 with the same values as the first column (since it's a circular plume)
+        S_rz = reader.load_binning_var('S')
+
     for contour in contours:
-        r_contour = np.empty((nx[2], nt))
-        for it, t in enumerate(reader.t_save):
-            plume = S_opt[:, :, it] >= S_value * contour  # shape: (nr, nz)
-            
+        r_contour = np.zeros((nx[2], nt))
+
+        for it in range(nt):
             radius_tracer = np.zeros(nx[2])
+            level = S_value * contour
+
             for k in range(nx[2]):
-                plume_at_depth = plume[:, k]
-                if np.any(plume_at_depth):
-                    if r_opt[np.max(np.where(plume_at_depth))] == r[0]:
-                        r_z = r[0]
-                    else:
-                        r_z = interp1d_axis(S_opt[:, k, it], r_opt, f_new = S_value * contour)
-                    radius_tracer[k] = r_z
-                # else stays 0
-            
+                S_radial = S_rz[:ncirc, k, it]
+
+                # Guard 1: level not reached at this depth/time
+                if np.max(S_radial) < level:
+                    continue
+
+                # Guard 2: ensure monotonically decreasing outward
+                if S_radial[0] < S_radial[-1]:
+                    S_radial = S_radial[::-1]
+                    r_search = r[::-1]
+                else:
+                    r_search = r
+
+                # Guard 3: trim to only the region that brackets the level
+                # avoids flat tails (divide by zero) and irrelevant outer zeros
+                above = np.where(S_radial >= level)[0]
+                if len(above) == 0:
+                    continue
+                # keep one point beyond the last above-threshold index
+                i_last = above[-1]
+                i_end = min(i_last + 2, len(S_radial))
+                S_trimmed = S_radial[:i_end]
+                r_trimmed = r_search[:i_end]
+
+                # Guard 4: need at least 2 points and a sign change
+                if len(S_trimmed) < 2:
+                    continue
+                if not np.any(np.diff(S_trimmed) != 0):
+                    # flat profile — take the outermost above-threshold r directly
+                    radius_tracer[k] = r_search[i_last]
+                    continue
+
+                r_interp = interp1d_axis(S_trimmed, r_trimmed, f_new=level)
+                r_val = np.max(r_interp) if np.ndim(r_interp) > 0 else float(r_interp)
+                radius_tracer[k] = r_val
+
             r_contour[:, it] = radius_tracer
+
         with h5py.File(file_path, "a") as f:
-            if f"r given contour/contour = {contour}" in f:
-                del f[f"r given contour/contour = {contour}"]
-            f.create_dataset(f"r given contour/contour = {contour}", data = r_contour)
-    f.close()
+            key = f"r given contour/contour = {contour}"
+            if key in f:
+                del f[key]
+            f.create_dataset(key, data=r_contour)
+
     print(f"Saved contours to {file_path}")
 
 if planelsice_flag:
@@ -172,7 +203,7 @@ if planelsice_flag:
         f.create_dataset("YZ/x = 0/u", data=u)
         f.create_dataset("YZ/x = 0/v", data=v)
         f.create_dataset("YZ/x = 0/w", data=w)
-    f.close()
+    
     print(f"Saved plane slices to {file_path}")
 
 if fluc_flag:
@@ -206,7 +237,7 @@ if fluc_flag:
         f.create_dataset("fluctuations/bur_fluc", data=data['bu_fluc'])
         f.create_dataset("fluctuations/butheta_fluc", data=data['bv_fluc'])
         f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
-    f.close()
+    
     print(f"Saved fluctuations to {file_path}")
 
 if rms_flag:
@@ -222,5 +253,5 @@ if rms_flag:
         f.create_dataset("rms/u", data=rms_values['u_rms'])
         f.create_dataset("rms/v", data=rms_values['v_rms'])
         f.create_dataset("rms/w", data=rms_values['w_rms'])
-    f.close()
+    
     print(f"Saved RMS to {file_path}")

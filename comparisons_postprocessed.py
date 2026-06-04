@@ -23,7 +23,7 @@ stokes = False
 
 contour_bound = 0.001
 name_uni = f'contour-{contour_bound:.4f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/matching flux to res'
 #'/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
@@ -59,7 +59,6 @@ z = []
 nx = np.empty((3, num_cases), dtype=object)
 lx = np.empty((3, num_cases), dtype=object)
 grid_specs = False*np.ones(num_cases)
-grid_specs[2] = True # flag for whether to plot grid specs in title
 for i, reader in enumerate(readers):
     reader.load_time()
     reader.load_grid(grid_specs = grid_specs[i])
@@ -257,9 +256,9 @@ for it in range(nt):
 if video:
     if plot_var_bin:
         for n, name in enumerate(bin_var_names):
-            create_video(bin_dir[bin_var_names[n]], fig_folder, 'modgrid-binning', name)
+            create_video(bin_dir[bin_var_names[n]], fig_folder, 'binning', name)
     if plot_variables:
         for dir, name in enumerate(var_names):
-            create_video(variable_dir[var_names[dir]], fig_folder, 'modgrid-'+name_uni, name)
+            create_video(variable_dir[var_names[dir]], fig_folder, '', name)
     if plot_turb_stats:
-        create_video(buoyancy_dir_z, fig_folder, 'modgrid-binning', 'turb_stats')
+        create_video(buoyancy_dir_z, fig_folder, 'binning', 'turb_stats')

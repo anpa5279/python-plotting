@@ -39,10 +39,9 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
     os.makedirs(outdir, exist_ok=True)
     num_cases = len(case_names)
-    if num_cases < 4:
+    ncols = 3
+    if num_cases < ncols*2:
         ncols = num_cases
-    else:
-        ncols = 3
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols * ar) + 0.25 * nrows + 2.0

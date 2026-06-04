@@ -1,15 +1,7 @@
 import os
 import numpy as np
-import math
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import imageio.v2 as imageio
-import matplotlib.ticker as mticker
-
-from matplotlib.lines import Line2D
-from matplotlib import cm
-from matplotlib import colors
-from fractions import Fraction
 ### ----------------------------------PROFILES------------------------------- ###
 ## stratification profile
 def stratification_profile(z, a0, dadz, mld):
