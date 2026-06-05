@@ -15,7 +15,8 @@ tracer_integral = True
 
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
+#'/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
 variations = 'horizontal resolution'
 cases_info = comparison_info(variations, universal_folder = universal_folder)

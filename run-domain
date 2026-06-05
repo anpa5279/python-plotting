@@ -2,7 +2,7 @@
 nodes=1
 cpus=16
 jobn=tracer-testing
-file=neg_tracer_testing.py
+file=domain_testing.py
 
 cp $file scripts/
 cp diagnostics.py scripts/
