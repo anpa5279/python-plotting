@@ -113,6 +113,7 @@ for n, reader in enumerate(readers):
         if tracer_integral:
             S_mass[n] = S_int[n]*rho0
             dmdt[n] = np.gradient(S_mass[n], t[n])
+
         if neg_tracer:
             neg_avg[n] = neg_avg[n]*factor[n]
             S_neg_sum[n] = S_neg_sum[n]*factor[n]
@@ -144,6 +145,8 @@ if tracer_integral:
     ax[1].set_title(r'dS$_{vol}$/dt', fontsize = 12)
     ax[1].set_xlabel('Time (days)', fontsize = 12)
     ax[1].set_ylabel(r'[m$^3$g/kg/days]', fontsize = 12)
+    S_rate = [min(dS_intdt), max(dS_intdt)]
+    ax[1].set_ylim(S_rate[0]*0.9, S_rate[1]*1.1)
 
     ax[2].set_title('Mass of S', fontsize = 12)
     ax[2].set_xlabel('Time (days)', fontsize = 12)
@@ -152,6 +155,8 @@ if tracer_integral:
     ax[3].set_title(r'dm$_S$/dt', fontsize = 12)
     ax[3].set_xlabel('Time (days)', fontsize = 12)
     ax[3].set_ylabel('[g/days]', fontsize = 12)
+    mass_rate = [min(dmdt), max(dmdt)]
+    ax[3].set_ylim(mass_rate[0]*0.9, mass_rate[1]*1.1)
 
     for n in range(num_cases):
         ax[0].plot(t[n], S_int[n], color = color_opt[n], label=case_names[n])
