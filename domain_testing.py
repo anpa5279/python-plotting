@@ -58,9 +58,6 @@ for i, reader in enumerate(readers):
 S_int = []
 dS_intdt = []
 t = []
-if tracer_integral:
-    dmdt = []
-    S_mass = []
 if neg_tracer:
     S_sum = []
     neg_avg = []
@@ -89,9 +86,6 @@ for n, reader in enumerate(readers):
         # volume integral of S value in domain
         S_int.append(np.mean(S*r_bins[:, None, None], axis = dims)*vol)
     dS_intdt.append(np.gradient(S_int[n], t[n]))
-    if tracer_integral:
-        S_mass.append(S_int[n]*rho0)
-        dmdt.append(np.gradient(S_mass[n], t[n]))
     if neg_tracer:
         S_neg = S
         S_neg[S>=0] = None
@@ -111,9 +105,6 @@ for n, reader in enumerate(readers):
         factor.append(area/grid_area)
         S_int[n] = S_int[n]*factor[n]
         dS_intdt[n] = dS_intdt[n]*factor[n]
-        if tracer_integral:
-            S_mass[n] = S_int[n]*rho0
-            dmdt[n] = np.gradient(S_mass[n], t[n])
 
         if neg_tracer:
             neg_avg[n] = neg_avg[n]*factor[n]
@@ -126,7 +117,7 @@ plot_format()
 if tracer_integral:
     scale = [1, 0.02]
     gridspec_kw={'height_ratios': scale}
-    fig, ax = plt.subplots(2, 4, figsize=(16, 5), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
+    fig, ax = plt.subplots(2, 2, figsize=(10, 5), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
     for a in ax[-1, :]:
             a.remove()
     ax = ax.ravel()
@@ -150,22 +141,9 @@ if tracer_integral:
     S_rate = [min(dS_flat), max(dS_flat)]
     ax[1].set_ylim(S_rate[0]*0.9, S_rate[1]*1.1)
 
-    ax[2].set_title('Mass of S', fontsize = 12)
-    ax[2].set_xlabel('Time (days)', fontsize = 12)
-    ax[2].set_ylabel('[g]', fontsize = 12)
-
-    ax[3].set_title(r'dm$_S$/dt', fontsize = 12)
-    ax[3].set_xlabel('Time (days)', fontsize = 12)
-    ax[3].set_ylabel('[g/days]', fontsize = 12)
-    dmdt_flat = list(itertools.chain.from_iterable(dmdt))
-    mass_rate = [min(dmdt_flat), max(dmdt_flat)]
-    ax[3].set_ylim(mass_rate[0]*0.9, mass_rate[1]*1.1)
-
     for n in range(num_cases):
         ax[0].plot(t[n], S_int[n], color = color_opt[n], label=case_names[n])
         ax[1].plot(t[n], dS_intdt[n], color = color_opt[n], label=case_names[n])
-        ax[2].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
-        ax[3].plot(t[n], dmdt[n], color = color_opt[n], label=case_names[n])
 
     for a in ax[:4]:
         if a.get_yscale() != 'log':
