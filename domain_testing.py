@@ -113,11 +113,6 @@ for n, reader in enumerate(readers):
         if tracer_integral:
             S_mass[n] = S_int[n]*rho0
             dmdt[n] = np.gradient(S_mass[n], t[n])
-        print(f"case: {case_names[n]}\nNr: {Nr}\ngrid area: {grid_area} vs circle area: {area}")
-        print(f"\ttime: {t[n]}")
-        print(f"\tS_int after scaling:\n {S_int[n]}")
-        print(f"\tdS_int/dt before scaling:\n {dS_intdt[n]/factor[n]}")
-        print(f"\tdS_int/dt after scaling:\n {dS_intdt[n]}\n")
         if neg_tracer:
             neg_avg[n] = neg_avg[n]*factor[n]
             S_neg_sum[n] = S_neg_sum[n]*factor[n]
@@ -164,9 +159,9 @@ if tracer_integral:
         ax[2].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
         ax[3].plot(t[n], dmdt[n], color = color_opt[n], label=case_names[n])
 
-    for a in ax[:8]:
+    for a in ax[:4]:
         if a.get_yscale() != 'log':
-            a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3))
+            a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3), useOffset=False)
     fig.tight_layout(pad=1.5)
 
     outdir = os.path.join(universal_folder, 'callback comparisons')
