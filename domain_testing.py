@@ -88,7 +88,7 @@ for n, reader in enumerate(readers):
         S_int = np.mean(S*r_bins[:, None, None], axis = dims)*vol
     if tracer_integral:
         S_mass.append(S_int*rho0)
-        dmdt.append(np.gradient(S_mass, t[n]))
+        dmdt.append(np.gradient(S_mass[n], t[n]))
     if neg_tracer:
         S_neg = S
         S_neg[S>=0] = None
