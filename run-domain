@@ -9,7 +9,8 @@ cp diagnostics.py scripts/
 cp interpolation.py scripts/
 cp reader.py scripts/
 cp plotting_general.py scripts/
-###uv init scripts
+cp physics.py scripts/
+
 cd scripts
 
 cat > EXEC_STEP << EXEC
@@ -24,7 +25,14 @@ cat > EXEC_STEP << EXEC
 
 module --force purge
 module load ncarenv/25.10 uv
-
+###uv init
+###uv add math
+###uv add matplotlib
+###uv add h5py
+###uv add numpy
+###uv add imageio
+###uv add re
+###uv add dask
 uv run python $file
 
 EXEC

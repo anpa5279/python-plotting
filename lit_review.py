@@ -6,12 +6,9 @@ matplotlib.use('Agg')
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
-import openpyxl
 
-from diagnostics import comparison_info
 # flags for plotting
 with_mld = True
-
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 output_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/literature review/'
