@@ -113,8 +113,11 @@ for n, reader in enumerate(readers):
         if tracer_integral:
             S_mass[n] = S_int[n]*rho0
             dmdt[n] = np.gradient(S_mass[n], t[n])
-        print(f"case: {case_names[n]}\nNr: {Nr}\ngrid area: {grid_area} vs circle area: {area}\nfactor: {factor[n]}\nNx: {reader.nx}\nLx: {reader.lx}\ndx: {reader.dx}")
-        print(f"case: {case_names[n]} S_int after scaling:\n {S_int[n]}")
+        print(f"case: {case_names[n]}\nNr: {Nr}\ngrid area: {grid_area} vs circle area: {area}")
+        print(f"\ttime: {t[n]}")
+        print(f"\tS_int after scaling:\n {S_int[n]}")
+        print(f"\tdS_int/dt before scaling:\n {dS_intdt[n]/factor[n]}")
+        print(f"\tdS_int/dt after scaling:\n {dS_intdt[n]}\n")
         if neg_tracer:
             neg_avg[n] = neg_avg[n]*factor[n]
             S_neg_sum[n] = S_neg_sum[n]*factor[n]
@@ -145,7 +148,7 @@ if tracer_integral:
 
     ax[1].set_title(r'dS$_{vol}$/dt', fontsize = 12)
     ax[1].set_xlabel('Time (days)', fontsize = 12)
-    ax[1].set_ylabel(r'[m$^3$/kg/days]', fontsize = 12)
+    ax[1].set_ylabel(r'[m$^3$g/kg/days]', fontsize = 12)
 
     ax[2].set_title('Mass of S', fontsize = 12)
     ax[2].set_xlabel('Time (days)', fontsize = 12)
