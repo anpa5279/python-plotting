@@ -33,6 +33,7 @@ module load ncarenv/25.10 uv
 ###uv add imageio
 ###uv add re
 ###uv add dask
+uv add itertools
 uv run python $file
 
 EXEC

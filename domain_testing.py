@@ -2,6 +2,7 @@ import os
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import itertools
 
 from matplotlib.lines import Line2D
 
@@ -145,7 +146,8 @@ if tracer_integral:
     ax[1].set_title(r'dS$_{vol}$/dt', fontsize = 12)
     ax[1].set_xlabel('Time (days)', fontsize = 12)
     ax[1].set_ylabel(r'[m$^3$g/kg/days]', fontsize = 12)
-    S_rate = [min(dS_intdt), max(dS_intdt)]
+    dS_flat = list(itertools.chain.from_iterable(dS_intdt))
+    S_rate = [min(dS_flat), max(dS_flat)]
     ax[1].set_ylim(S_rate[0]*0.9, S_rate[1]*1.1)
 
     ax[2].set_title('Mass of S', fontsize = 12)
@@ -155,7 +157,8 @@ if tracer_integral:
     ax[3].set_title(r'dm$_S$/dt', fontsize = 12)
     ax[3].set_xlabel('Time (days)', fontsize = 12)
     ax[3].set_ylabel('[g/days]', fontsize = 12)
-    mass_rate = [min(dmdt), max(dmdt)]
+    dmdt_flat = list(itertools.chain.from_iterable(dmdt))
+    mass_rate = [min(dmdt_flat), max(dmdt_flat)]
     ax[3].set_ylim(mass_rate[0]*0.9, mass_rate[1]*1.1)
 
     for n in range(num_cases):
