@@ -119,9 +119,9 @@ for n, reader in enumerate(readers):
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 if tracer_integral:
-    scale = [1, 0.02]
+    scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
-    fig, ax = plt.subplots(2, 2, figsize=(8, 5), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
+    fig, ax = plt.subplots(2, 2, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
     for a in ax[-1, :]:
             a.remove()
     ax = ax.ravel()
@@ -129,14 +129,14 @@ if tracer_integral:
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
     fig.legend(handles=case_handles,
             loc='lower center',
-            ncol=num_cases,
+            ncol=num_cases//2,
             bbox_to_anchor=(0.52, 0.005), fontsize = 12)
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
         mass_label = r'$\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\langle\text{C}\rangle_{\text{xyz}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g]'
-        mass_rate_label = r'$\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g/days]'
+        mass_rate_label = r'$\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g/days]'
     else:
-        mass_label = r'$\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\langle\text{C}\rangle_{\text{xyz}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g]'
+        mass_label = r'$\langle\text{C}\rangle_{\text{xyz}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g]'
         mass_rate_label = r'$\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g/days]'
 
     ax[0].set_title('Mass', fontsize = 12)
