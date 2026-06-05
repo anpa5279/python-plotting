@@ -121,7 +121,7 @@ plot_format()
 if tracer_integral:
     scale = [1, 0.02]
     gridspec_kw={'height_ratios': scale}
-    fig, ax = plt.subplots(2, 2, figsize=(16, 5), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
+    fig, ax = plt.subplots(2, 2, figsize=(8, 5), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
     for a in ax[-1, :]:
             a.remove()
     ax = ax.ravel()
