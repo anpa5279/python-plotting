@@ -56,7 +56,7 @@ for k in range(reader.nx[2]):
     columns: the 4 center grid cells around the center
     interpolated w averaged between with grid cells vs interpolated w using velocities_to_center vs interpolated w using interpolation.py
 """
-color_opt, line_opt  = comparison_plot_opt(4)
+color_opt, line_opt  = comparison_plot_opt(nvars)
 plot_format()
 os.makedirs(fig_folder, exist_ok=True)
 ncols = idx.size
@@ -65,7 +65,7 @@ width = 0.8
 labels = ['raw output', 'class function', 'averaging', 'point interpolation function']
 case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
 for it in range(nt):
-    fig, axes = plt.subplots(3, ncols, figsize=(16, 9), sharey = True, gridspec_kw=gridspec_kw)
+    fig, axes = plt.subplots(3, ncols, figsize=(16, 8.5), sharey = True, gridspec_kw=gridspec_kw)
     for ax in axes[-1, :]:
         ax.remove()
     for ax in axes[0, :]:
@@ -93,8 +93,7 @@ for it in range(nt):
             axes[i + j + count].plot(w_averaging[it, i, j, :], z, label = labels[2], color = color_opt[2], linestyle = line_opt[1])
             axes[i + j + count].plot(w_interpolation[it, i, j, :], z, label = labels[3], color = color_opt[3], linestyle = line_opt[1])
         count += 1
-    labels_diff = ['class function vs w[:-1]', 'averaging vs w[:-1]', 'point interpolation function vs w[:-1]', 
-                   'class function vs w[1:]', 'averaging vs w[1:]', 'point interpolation function vs w[1:]']
+    labels_diff = ['manipulated vs w[:-1]', 'mainpulated vs w[1:]']
     count += ix.size + jy.size
     for i, ix in enumerate(i_opt):
         for j, jy in enumerate(j_opt):
@@ -104,13 +103,17 @@ for it in range(nt):
             center_diff1 = (w_center_function[it, i, j, :] - w[it, i, j, 1:])
             avg_diff1 = (w_averaging[it, i, j, :] - w[it, i, j, 1:])
             interp_diff1 = (w_interpolation[it, i, j, :] - w[it, i, j, 1:])
-            axes[i + j + count].set_title(f"Percent difference at ({ix}, {jy})")
-            axes[i + j + count].plot(center_diff, z, label = labels[1], color = color_opt[1], linestyle = line_opt[2])
-            axes[i + j + count].plot(avg_diff, z, label = labels[2], color = color_opt[2], linestyle = line_opt[2])
-            axes[i + j + count].plot(interp_diff, z, label = labels[3], color = color_opt[3], linestyle = line_opt[2])
-            axes[i + j + count].plot(center_diff1, z, label = labels[1], color = color_opt[1], linestyle = line_opt[3])
-            axes[i + j + count].plot(avg_diff1, z, label = labels[2], color = color_opt[2], linestyle = line_opt[3])
-            axes[i + j + count].plot(interp_diff1, z, label = labels[3], color = color_opt[3], linestyle = line_opt[3])
+            axes[i + j + count].set_title(f"Difference at ({ix}, {jy})")
+            axes[i + j + count].plot(center_diff, z, label = labels_diff[0], color = color_opt[0], linestyle = line_opt[2])
+            axes[i + j + count].plot(center_diff1, z, label = labels_diff[1], color = color_opt[0], linestyle = line_opt[3])
+
+            axes[i + j + count].plot(center_diff, z, color = color_opt[1], linestyle = line_opt[2])
+            axes[i + j + count].plot(avg_diff, z, color = color_opt[2], linestyle = line_opt[2])
+            axes[i + j + count].plot(interp_diff, z, color = color_opt[3], linestyle = line_opt[2])
+            axes[i + j + count].plot(center_diff1, z, color = color_opt[1], linestyle = line_opt[3])
+            axes[i + j + count].plot(avg_diff1, z, color = color_opt[2], linestyle = line_opt[3])
+            axes[i + j + count].plot(interp_diff1, z, color = color_opt[3], linestyle = line_opt[3])
+            axes[i + j + count].legend(loc = 'lower right')
         count += 1
     # --- Save Frame ---
     frame_path = os.path.join(fig_folder, f"interpolation_testing_{it:04d}.png")

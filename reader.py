@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import re
 import dask.array as da
-from interpolation import xy_plane, xz_plane, yz_plane, horizontal_line
+from interpolation import plane_slice_calc, plane_slice_calc, plane_slice_calc, horizontal_line
 from physics import buoyancy
 class OceananigansData:
     def __init__(self, folder, name = 'fields', temperature=True, salinity = False, with_halos=False):
@@ -155,18 +155,6 @@ class OceananigansData:
             self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
             if self.salinity:
                 self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
-    def load_buoyancy(self):
-        if self.temperature or self.salinity:
-            b = np.empty((self.nx[0], self.nx[1], self.nx[2], self.nt))
-            for i, t in enumerate(self.t_save):
-                # load only one timestep into memory at a time
-                T = self.lazy_field('T', steps=np.array([t])).compute()  # (Nx, Ny, Nz)
-                S = self.lazy_field('S', steps=np.array([t])).compute() if self.salinity else []
-
-                b = buoyancy(self, T, S=S)
-
-                b[:, :, :, i] = b['b']
-            self.b = b
     # ------------------------- INTERNAL UTILS -------------------------- #
     def _slice(self, arr):
         if self.halos:
@@ -304,7 +292,7 @@ class OceananigansData:
                         coord[i * nx_local : (i + 1) * nx_local]
                         for i in np.atleast_1d(file_indices)
                     ])
-                    s = yz_plane(block, x_slab_coords, loc)   # (y, z)
+                    s = plane_slice_calc(block, x_slab_coords, loc)   # (y, z)
                 else:
                     # loc sits exactly on a grid point — find its local index
                     global_idx = np.where(coord == loc)[0][0]
@@ -312,10 +300,10 @@ class OceananigansData:
                     s = block[local_idx]                       # (y, z)
 
             elif slice == 'XZ':
-                s = xz_plane(block, self.y, loc)               # (x, z)
+                s = plane_slice_calc(block, self.y, loc)               # (x, z)
 
             elif slice == 'XY':
-                s = xy_plane(block, self.z, loc)               # (x, y)
+                s = plane_slice_calc(block, self.z, loc)               # (x, y)
 
             if field == 'u' and self.u_s is not None:
                 s = s - self.u_s

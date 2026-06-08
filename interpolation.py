@@ -88,21 +88,15 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
         
         return (1 - w) * f0 + w * f1
 # ------------------------- PLANE SLICES ------------------------- #
-def xy_plane(f, z, z0):
-    return interp1d_axis(f, z, coord_new = z0, axis=2)
+def plane_slice_calc(f, coord, coord0, axis = -3):
+    return interp1d_axis(f, coord, coord_new = coord0, axis=axis)
 
-def yz_plane(f, x, x0):
-    return interp1d_axis(f, x, coord_new = x0, axis=0)
-
-def xz_plane(f, y, y0):
-    return interp1d_axis(f, y, coord_new = y0, axis=1)
-
-def vertical_line(f, x, y, x0, y0):
+def vertical_line(f, x, y, x0 = 0.0, y0 = 0.0):
     # interpolate in x
-    fx = interp1d_axis(f, x, coord_new = x0, axis=0)
+    fx = interp1d_axis(f, x, coord_new = x0, axis=-3)
 
     # interpolate in y
-    fxy = interp1d_axis(fx, y, coord_new = y0, axis=0)
+    fxy = interp1d_axis(fx, y, coord_new = y0, axis=-2)
 
     return fxy  # shape: (Nz,)
 
@@ -115,47 +109,24 @@ def horizontal_line(f, hor, z, hor0, z0, axis='y'):
     return interp1d_axis(fh, z, coord_new = z0, axis=-1)
 
 # ------------------------- GRID POINT ------------------------- #
-def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0, nt = 1):
+def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
     """
     Interpolate to a single point in space.
-    time: if greater than 1, time is included in the matrix f and it should output a 1d array
+    time: if time is included in the matrix f, it should output a 1d array
     """
-    if nt > 1:
-        # find which dimension is time
-        t_dim = np.where(np.array(f.shape) == nt)[0][0]
-        # for loop through time
-        new = np.zeros(nt)
-        for it in range(nt):
-            if it == 0:
-                new[it] = np.max(z)
-            else:
-                f_t = np.take(f, it, axis=t_dim)
-                if f0 is not None:
-                    znew = interp1d_axis(f_t, z, f_new = f0) 
-                    if znew.size==0 and it == 0:
-                        #print(f"it: {it}: f0 is out of bounds, returning max z")
-                        #print(f_t)
-                        new[it] = np.max(z)
-                    elif znew.size==0:
-                        new[it] = new[it-1]
-                    else:
-                        new[it] = np.max(znew)
-                if z0 is not None:
-                    fnew = interp1d_axis(f_t, z, coord_new = z0)
-                    new[it] = fnew
-                if x is not None and y is not None:
-                    fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=1)
-                    new[it] = interp1d_axis(fnewyz, x, coord_new = x0, axis = 0)
-    else:
-        if f0 is not None:
-            znew = interp1d_axis(f, z, f_new = f0) 
-            new = znew
-        if z0 is not None:
-            fnew = interp1d_axis(f, z, coord_new = z0)
-            new = fnew
-        if x is not None and y is not None:
-            fnewyz = interp1d_axis(fnew, y, coord_new = y0, axis=1)
-            new = interp1d_axis(fnewyz, x, coord_new = x0, axis = 0)
+    if f0 is not None: # if field, inputs z, f
+        znew = interp1d_axis(f, z, f_new = f0) 
+        new = znew
+    if z0 is not None: # if field, inputs z, f
+        fnew = interp1d_axis(f, z, coord_new = z0)
+        new = fnew
+
+    if x is not None or y is not None: 
+        if f0 is None: # if field, inputs x, y, z
+            fnewy = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
+            new = interp1d_axis(fnewy, x, coord_new = x0, axis = -3)
+        elif y is None: # if field, inputs x, z, f
+            new = interp1d_axis(fnew, x, coord_new = x0, axis = -3)
+        elif x is None: # if field, inputs y, z, f
+            new = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
     return new
-
-

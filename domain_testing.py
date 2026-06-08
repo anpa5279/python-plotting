@@ -133,11 +133,11 @@ if tracer_integral:
             bbox_to_anchor=(0.52, 0.005), fontsize = 12)
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
-        mass_label = r'$\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\langle\text{C}\rangle_{\text{xyz}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g]'
-        mass_rate_label = r'$\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g/days]'
+        mass_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\langle\text{C}\rangle_{\text{xyz}}$[g]'
+        mass_rate_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}$[g/days]'
     else:
-        mass_label = r'$\langle\text{C}\rangle_{\text{xyz}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g]'
-        mass_rate_label = r'$\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}\frac{\rho_{0}}{L_{x}L_{y}L_{z}}$[g/days]'
+        mass_label = r'$\rho_{0}L_{x}L_{y}L_{z}\langle\text{C}\rangle_{\text{xyz}}$[g]'
+        mass_rate_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}$[g/days]'
 
     ax[0].set_title('Mass', fontsize = 12)
     ax[0].set_xlabel('Time (days)', fontsize = 12)

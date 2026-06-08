@@ -6,7 +6,7 @@ from diagnostics import comparison_info
 from physics import rms, a_fluc_b, buoyancy
 from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
 from plotting_lines import plot_plume_horizontal_spatial, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
-from interpolation import velocities_to_center, vertical_line, horizontal_line, yz_plane, xy_plane
+from interpolation import velocities_to_center, vertical_line, horizontal_line, plane_slice_calc, plane_slice_calc
 
 # flags for what to plot
 plot_variables = True
@@ -350,22 +350,22 @@ else:
                 S_hor.append(horizontal_line(S, y, z[i, :], centery, loc_z[i]))
             # plane slices to save for plotting
             if plot_variables and planeslice == 'vertical':
-                T_plane.append(yz_plane(T, x, x0))
-                u_plane.append(yz_plane(u, x, x0))
-                v_plane.append(yz_plane(v, x, x0))
-                w_plane.append(yz_plane(w, x, x0))
-                rho_plane.append(yz_plane(rho, x, x0))
+                T_plane.append(plane_slice_calc(T, x, x0))
+                u_plane.append(plane_slice_calc(u, x, x0))
+                v_plane.append(plane_slice_calc(v, x, x0))
+                w_plane.append(plane_slice_calc(w, x, x0))
+                rho_plane.append(plane_slice_calc(rho, x, x0))
                 if salinity:
-                    S_plane.append(yz_plane(S, x, x0))
+                    S_plane.append(plane_slice_calc(S, x, x0))
             elif plot_variables and planeslice == 'horizontal':
                 if loc == 'z':
-                    T_plane.append(xy_plane(T, z, loc_z[i]))
-                    u_plane.append(xy_plane(u, z, loc_z[i]))
-                    v_plane.append(xy_plane(v, z, loc_z[i]))
-                    w_plane.append(xy_plane(w, z, loc_z[i]))
-                    rho_plane.append(xy_plane(rho, z, loc_z[i]))
+                    T_plane.append(plane_slice_calc(T, z, loc_z[i]))
+                    u_plane.append(plane_slice_calc(u, z, loc_z[i]))
+                    v_plane.append(plane_slice_calc(v, z, loc_z[i]))
+                    w_plane.append(plane_slice_calc(w, z, loc_z[i]))
+                    rho_plane.append(plane_slice_calc(rho, z, loc_z[i]))
                     if salinity:
-                        S_plane.append(xy_plane(S, z, loc_z[i]))
+                        S_plane.append(plane_slice_calc(S, z, loc_z[i]))
                 else:
                     T_plane.append(T[:, :, n])
                     u_plane.append(u[:, :, n])
