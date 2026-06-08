@@ -88,3 +88,4 @@ def create_video(outdir, fig_folder, name, plot_type):
         for filename in filenames:
             image = imageio.imread(f"{outdir}/{filename}")
             writer.append_data(image)
+    print(f"Video saved as {vid_name}")

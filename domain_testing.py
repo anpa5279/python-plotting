@@ -75,7 +75,7 @@ for n, reader in enumerate(readers):
         domain = math.prod(reader.nx)
         vol = math.prod(reader.lx)
         dims = (1, 2, 3)
-        S = np.array(reader.lazy_field('S'))
+        S = reader.lazy_field('S').compute()
         # volume integral of S value in domain
         S_int = np.mean(S, axis = dims)*vol
     else:

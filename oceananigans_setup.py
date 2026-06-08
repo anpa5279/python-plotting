@@ -66,11 +66,11 @@ if binning_flag:
 
     for it, t in enumerate(reader.t_save):
         # Load data from files
-        T = np.array(reader.lazy_field('T', t))
-        S = np.array(reader.lazy_field('S', t))
-        u = np.array(reader.lazy_field('u', t))
-        v = np.array(reader.lazy_field('v', t))
-        w = np.array(reader.lazy_field('w', t))
+        T = reader.lazy_field('T', t).compute()
+        S = reader.lazy_field('S', t).compute()
+        u = reader.lazy_field('u', t).compute()
+        v = reader.lazy_field('v', t).compute()
+        w = reader.lazy_field('w', t).compute()
 
         u = velocities_to_center(u, axis=0)
         v = velocities_to_center(v, axis=1)
