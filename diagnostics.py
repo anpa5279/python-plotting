@@ -172,10 +172,11 @@ def binning_oc(reader, center=(0.0, 0.0)):
     for it, t in enumerate(t_save):
         # Load data from files
         T = reader.lazy_field('T', t).compute()
-        S = reader.lazy_field('S', t).compute()
         u = reader.lazy_field('u', t).compute()
         v = reader.lazy_field('v', t).compute()
         w = reader.lazy_field('w', t).compute()
+        if reader.salinity:
+            S = reader.lazy_field('S', t).compute()
 
         u = velocities_to_center(u, axis=-3)
         v = velocities_to_center(v, axis=-2)
@@ -186,11 +187,13 @@ def binning_oc(reader, center=(0.0, 0.0)):
         utheta = -u*Y/dist + v*X/dist
 
         for k in range(nx[2]):
-            S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+            if reader.salinity:
+                S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
             T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
             utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
             ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
             w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+
     return S_rz, T_rz, ur_rz, utheta_rz, w_rz
 
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
@@ -254,27 +257,28 @@ def compute_fluct_averages(reader):
     g = 9.80665
     T0 = 25
     alpha = reader.alpha
-    beta  = reader.beta
 
     # Load all fields lazily — shape (nt, nx, ny, nz)
     dims = (-3, -2)
     T = reader.lazy_field('T').compute()
-    S = reader.lazy_field('S').compute()
     u = reader.lazy_field('u').compute()
     v = reader.lazy_field('v').compute()
     w = reader.lazy_field('w').compute()
+    if reader.salinity:
+        S = reader.lazy_field('S').compute()
+        # Buoyancy (still lazy)
+        beta  = reader.beta
+        b = g * alpha * (T - T0) - (g * beta * S)
+    else:
+        b = g * alpha * (T - T0)
     
     # Center velocities (still lazy)
     u = velocities_to_center(u, axis=-3)
     v = velocities_to_center(v, axis=-2)
     w = velocities_to_center(w, axis=-1)
 
-    # Buoyancy (still lazy)
-    b = g * alpha * (T - T0) - (g * beta * S)
-
     # Horizontal means over (nx, ny) → shape (nt, nz)
     T_xy = da.mean(T, axis=dims)
-    S_xy = da.mean(S, axis=dims)
     u_xy = da.mean(u, axis=dims)
     v_xy = da.mean(v, axis=dims)
     w_xy = da.mean(w, axis=dims)
@@ -282,7 +286,6 @@ def compute_fluct_averages(reader):
 
     # Fluctuation
     T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
-    S_fluc = S - S_xy[:, np.newaxis, np.newaxis, :]
     u_fluc = u - u_xy[:, np.newaxis, np.newaxis, :]
     v_fluc = v - v_xy[:, np.newaxis, np.newaxis, :]
     w_fluc = w - w_xy[:, np.newaxis, np.newaxis, :]
@@ -290,7 +293,6 @@ def compute_fluct_averages(reader):
 
     # averages of fluctuations
     T_fluc_avg = da.mean(T_fluc, axis=dims)
-    S_fluc_avg = da.mean(S_fluc, axis=dims)
     u_fluc_avg = da.mean(u_fluc, axis=dims)
     v_fluc_avg = da.mean(v_fluc, axis=dims)
     w_fluc_avg = da.mean(w_fluc, axis=dims)
@@ -298,16 +300,29 @@ def compute_fluct_averages(reader):
     bu_fluc_avg = da.mean(b_fluc * u, axis=dims)
     bv_fluc_avg = da.mean(b_fluc * v, axis=dims)
     bw_fluc_avg = da.mean(b_fluc * w, axis=dims)
+    if reader.salinity:
+        S_xy = da.mean(S, axis=dims)
+        S_fluc = S - S_xy[:, np.newaxis, np.newaxis, :]
+        S_fluc_avg = da.mean(S_fluc, axis=dims)
+        return {'T_fluc': T_fluc_avg,
+                'S_fluc': S_fluc_avg,
+                'ur_fluc': u_fluc_avg,
+                'utheta_fluc': v_fluc_avg,
+                'w_fluc': w_fluc_avg,
+                'b_fluc': b_fluc_avg,
+                'bu_fluc': bu_fluc_avg,
+                'bv_fluc': bv_fluc_avg,
+                'bw_fluc': bw_fluc_avg}
+    else:
+        return {'T_fluc': T_fluc_avg,
+                'ur_fluc': u_fluc_avg,
+                'utheta_fluc': v_fluc_avg,
+                'w_fluc': w_fluc_avg,
+                'b_fluc': b_fluc_avg,
+                'bu_fluc': bu_fluc_avg,
+                'bv_fluc': bv_fluc_avg,
+                'bw_fluc': bw_fluc_avg}
 
-    return {'T_fluc': T_fluc_avg,
-            'S_fluc': S_fluc_avg,
-            'ur_fluc': u_fluc_avg,
-            'utheta_fluc': v_fluc_avg,
-            'w_fluc': w_fluc_avg,
-            'b_fluc': b_fluc_avg,
-            'bu_fluc': bu_fluc_avg,
-            'bv_fluc': bv_fluc_avg,
-            'bw_fluc': bw_fluc_avg}
 def compute_rms(reader):
     u_rms = np.empty((reader.nt, reader.nx[2]))
     v_rms = np.empty((reader.nt, reader.nx[2]))

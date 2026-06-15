@@ -18,10 +18,14 @@ buoyancy_flag = False
 
 salinity = True
 
+if not salinity:
+    compute_temporal_averages_flag = False
+    contour_flag = False
+
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/coarse2'
+folder = '/glade/derecho/scratch/apauls/outputs/vertical-domain/no-plume-case'
+#'/glade/derecho/scratch/apauls/outputs/version109/square-inlet/coarse2'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
-#
 
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
@@ -48,8 +52,6 @@ ncirc = min(nx[0], nx[1])//2      # full circular shells
 if buoyancy_flag:
     buoyancy_file = os.path.join(folder, 'buoyancy_profile.h5')
     alpha = reader.alpha
-    if salinity:
-        beta = reader.beta
     T = reader.lazy_field('T').compute()
     if salinity:
         beta = reader.beta
@@ -84,8 +86,6 @@ if binning_flag:
             del f["ccc/dimensions/z"]
         if "ccc/dimensions/time" in f:
             del f["ccc/dimensions/time"]
-        if "ccc/S" in f:
-            del f["ccc/S"]
         if "ccc/T" in f:
             del f["ccc/T"]
         if "ccc/horizontal velocity" in f:
@@ -97,11 +97,14 @@ if binning_flag:
         f.create_dataset("ccc/dimensions/r_bin", data = r)
         f.create_dataset("ccc/dimensions/z", data=z)
         f.create_dataset("ccc/dimensions/time", data=time)
-        f.create_dataset("ccc/S", data=S_rz)
         f.create_dataset("ccc/T", data=T_rz)
         f.create_dataset("ccc/horizontal velocity", data=ur_rz)
         f.create_dataset("ccc/rotation velocity", data=utheta_rz)
         f.create_dataset("ccc/w", data=w_rz)
+        if reader.salinity:
+            if "ccc/S" in f:
+                del f["ccc/S"]
+            f.create_dataset("ccc/S", data=S_rz)
     print(f"Saved binning to {file_path}")
 
 if contour_flag:
@@ -191,13 +194,12 @@ if centerline_flag:
 if planelsice_flag:
     file_path = os.path.join(folder, 'plane_slice.h5')
     T = reader.field_slice('T')
-    S = reader.field_slice('S')
     u = reader.field_slice('u')
     v = reader.field_slice('v')
     w = reader.field_slice('w')
+    if reader.salinity:
+         S = reader.field_slice('S')
     with h5py.File(file_path, "a") as f:
-        if "YZ/x = 0/S" in f:
-            del f["YZ/x = 0/S"]
         if "YZ/x = 0/T" in f:
             del f["YZ/x = 0/T"]
         if "YZ/x = 0/u" in f:
@@ -206,7 +208,10 @@ if planelsice_flag:
             del f["YZ/x = 0/v"]
         if "YZ/x = 0/w" in f:
             del f["YZ/x = 0/w"]
-        f.create_dataset("YZ/x = 0/S", data = S)
+        if reader.salinity:
+            if "YZ/x = 0/S" in f:
+                del f["YZ/x = 0/S"]
+            f.create_dataset("YZ/x = 0/S", data = S)
         f.create_dataset("YZ/x = 0/T", data=T)
         f.create_dataset("YZ/x = 0/u", data=u)
         f.create_dataset("YZ/x = 0/v", data=v)
@@ -220,8 +225,6 @@ if fluc_flag:
     with h5py.File(file_path, "a") as f:
         if "fluctuations/T_fluc" in f:
             del f["fluctuations/T_fluc"]
-        if "fluctuations/S_fluc" in f:
-            del f["fluctuations/S_fluc"]
         if "fluctuations/ur_fluc" in f:
             del f["fluctuations/ur_fluc"]
         if "fluctuations/utheta_fluc" in f:
@@ -237,7 +240,6 @@ if fluc_flag:
         if "fluctuations/bw_fluc" in f:
             del f["fluctuations/bw_fluc"]
         f.create_dataset("fluctuations/T_fluc", data=data['T_fluc'])
-        f.create_dataset("fluctuations/S_fluc", data=data['S_fluc'])
         f.create_dataset("fluctuations/ur_fluc", data=data['ur_fluc'])
         f.create_dataset("fluctuations/utheta_fluc", data=data['utheta_fluc'])
         f.create_dataset("fluctuations/w_fluc", data=data['w_fluc'])
@@ -245,7 +247,10 @@ if fluc_flag:
         f.create_dataset("fluctuations/bur_fluc", data=data['bu_fluc'])
         f.create_dataset("fluctuations/butheta_fluc", data=data['bv_fluc'])
         f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
-    
+        if salinity:
+            if "fluctuations/S_fluc" in f:
+                del f["fluctuations/S_fluc"]
+            f.create_dataset("fluctuations/S_fluc", data=data['S_fluc'])
     print(f"Saved fluctuations to {file_path}")
 
 if rms_flag:
