@@ -21,7 +21,7 @@ cat > EXEC_STEP << EXEC
 #PBS -q develop 
 #PBS -j oe
 #PBS -l walltime=00:40:00
-#PBS -l select=1:ncpus=$cpus
+#PBS -l select=1:ncpus=$cpus:mem=30GB
 
 module --force purge
 module load ncarenv/25.10 uv

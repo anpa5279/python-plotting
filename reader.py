@@ -243,8 +243,9 @@ class OceananigansData:
                 time_slabs.append(da.concatenate(rank_slabs, axis=0))  # (Nx, Ny, Nz)
 
             out = da.stack(time_slabs, axis=0)               # (Nt, Nx, Ny, Nz)
-            self._cache[key] = out.squeeze()                 # drop time axis if Nt == 1
-        return self._cache[key]
+        else:
+            out = self._cache[key]
+        return out.squeeze()                                 # drop time axis if Nt == 1
     def field_slice(self, field, steps=None, slice='YZ', loc=0.0, N=None):
         """
         Returns a 2D slice of the field throughout time.

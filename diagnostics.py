@@ -151,19 +151,15 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
         r = np.arange(np.min(np.abs([X_bin, Y_bin]))/2, ncirc*dx_scale, dx_scale)
         return r, bin_var
     return bin_var
-
 def binning_oc(reader, center=(0.0, 0.0)):
     nx = reader.nx
-    dx = reader.dx
-    lx = reader.lx
     time, t_save = reader.load_time()
     nt = len(t_save)
 
-    dx_scale = max(dx[:-1]) # not including dz, want to bin at the coarsest resolution
-    r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
     x = reader.x - center[0]
     y = reader.y - center[1]
-    X, Y = np.meshgrid(x, y)
+    z = reader.z
+    X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     dist = np.sqrt(X**2 + Y**2)
     nr = np.min(nx[:-1])//2
     S_rz = np.empty((nr, nx[2], nt))
@@ -172,7 +168,7 @@ def binning_oc(reader, center=(0.0, 0.0)):
     utheta_rz = np.empty((nr, nx[2], nt))
     w_rz = np.empty((nr, nx[2], nt))
 
-    for it, t in enumerate(reader.t_save):
+    for it, t in enumerate(t_save):
         # Load data from files
         T = reader.lazy_field('T', t).compute()
         S = reader.lazy_field('S', t).compute()
