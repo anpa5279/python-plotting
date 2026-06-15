@@ -263,6 +263,11 @@ def compute_fluct_averages(reader):
     u = reader.lazy_field('u')
     v = reader.lazy_field('v')
     w = reader.lazy_field('w')
+    
+    # Center velocities (still lazy)
+    u = velocities_to_center(u, axis=-3)
+    v = velocities_to_center(v, axis=-2)
+    w = velocities_to_center(w, axis=-1)
 
     # Buoyancy (still lazy)
     b = g * alpha * (T - T0) - (g * beta * S)
