@@ -289,9 +289,6 @@ def compute_fluct_averages(reader):
     b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
 
     #Flux fluctuations
-    bu_fluc = da.mean(b_fluc * w, axis=dims)
-    bv_fluc = da.mean(b_fluc * w, axis=dims)
-    bw_fluc = da.mean(b_fluc * w, axis=dims)
 
     # averages of fluctuations
     T_fluc_avg = da.mean(T_fluc, axis=dims)
@@ -300,9 +297,9 @@ def compute_fluct_averages(reader):
     v_fluc_avg = da.mean(v_fluc, axis=dims)
     w_fluc_avg = da.mean(w_fluc, axis=dims)
     b_fluc_avg = da.mean(b_fluc, axis=dims)
-    bu_fluc_avg = da.mean(bu_fluc, axis=dims)
-    bv_fluc_avg = da.mean(bv_fluc, axis=dims)
-    bw_fluc_avg = da.mean(bw_fluc, axis=dims)
+    bu_fluc_avg = da.mean(b_fluc * u, axis=dims)
+    bv_fluc_avg = da.mean(b_fluc * v, axis=dims)
+    bw_fluc_avg = da.mean(b_fluc * w, axis=dims)
 
     return {'T_fluc': T_fluc_avg,
             'S_fluc': S_fluc_avg,
