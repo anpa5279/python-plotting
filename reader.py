@@ -395,8 +395,11 @@ class OceananigansData:
             s_centerline = s_centerline - self.u_s
         return s_centerline.squeeze()
     # ------------------------- AVERAGES -------------------------------- #
-    def load_temporal_averages(self, file, contour_bound = 0.05):
-        fname = os.path.join(self.folder, self.bin_file)
+    def load_temporal_averages(self, file_path = None, contour_bound = 0.05):
+        if file_path is None:
+            file_path = self.bin_file
+
+        fname = os.path.join(self.folder, file_path)
 
         with h5py.File(fname, 'r') as f:
             rms = {
@@ -430,12 +433,14 @@ class OceananigansData:
                 r_plume = None
 
         return rms, bw, T, S, r_plume
-    def load_S_temporal_avg(self):
+    def load_S_temporal_avg(self, file_path = None):
         """
         Loads contour temporal averages (cached).
         """
+        if file_path is None:
+            file_path = self.bin_file
 
-        fname = os.path.join(self.folder, self.bin_file)
+        fname = os.path.join(self.folder, file_path)
 
         if 'S value' in self._cache:
             return self._cache['S value']
