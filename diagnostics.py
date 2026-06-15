@@ -265,6 +265,17 @@ def compute_fluct_averages(reader):
         u = reader.load_binning_var('horizontal velocity')
         v = reader.load_binning_var('rotation velocity')
         w = reader.load_binning_var('w')
+
+        # Buoyancy (still lazy)
+        b = g * alpha * (T - T0) - (g * beta * S)
+
+        # Horizontal means over (nx, ny) → shape (nt, nz)
+        T_xy = np.mean(T, axis=dims)
+        S_xy = np.mean(S, axis=dims)
+        u_xy = np.mean(u, axis=dims)
+        v_xy = np.mean(v, axis=dims)
+        w_xy = np.mean(w, axis=dims)
+        b_xy = np.mean(b, axis=dims)
     else:
         dims = (-3, -2)
         T = reader.lazy_field('T')
@@ -273,16 +284,16 @@ def compute_fluct_averages(reader):
         v = reader.lazy_field('v')
         w = reader.lazy_field('w')
 
-    # Buoyancy (still lazy)
-    b = g * alpha * (T - T0) - (g * beta * S)
+        # Buoyancy (still lazy)
+        b = g * alpha * (T - T0) - (g * beta * S)
 
-    # Horizontal means over (nx, ny) → shape (nt, nz)
-    T_xy = da.mean(T, axis=dims)
-    S_xy = da.mean(S, axis=dims)
-    u_xy = da.mean(u, axis=dims)
-    v_xy = da.mean(v, axis=dims)
-    w_xy = da.mean(w, axis=dims)
-    b_xy = da.mean(b, axis=dims)
+        # Horizontal means over (nx, ny) → shape (nt, nz)
+        T_xy = da.mean(T, axis=dims)
+        S_xy = da.mean(S, axis=dims)
+        u_xy = da.mean(u, axis=dims)
+        v_xy = da.mean(v, axis=dims)
+        w_xy = da.mean(w, axis=dims)
+        b_xy = da.mean(b, axis=dims)
 
     # Fluctuation
     T_fluc = T - T_xy
