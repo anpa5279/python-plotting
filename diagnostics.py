@@ -258,11 +258,11 @@ def compute_fluct_averages(reader):
 
     # Load all fields lazily — shape (nt, nx, ny, nz)
     dims = (-3, -2)
-    T = reader.lazy_field('T')
-    S = reader.lazy_field('S')
-    u = reader.lazy_field('u')
-    v = reader.lazy_field('v')
-    w = reader.lazy_field('w')
+    T = reader.lazy_field('T').compute()
+    S = reader.lazy_field('S').compute()
+    u = reader.lazy_field('u').compute()
+    v = reader.lazy_field('v').compute()
+    w = reader.lazy_field('w').compute()
     
     # Center velocities (still lazy)
     u = velocities_to_center(u, axis=-3)
@@ -299,32 +299,32 @@ def compute_fluct_averages(reader):
     bv_fluc_avg = da.mean(b_fluc * v, axis=dims)
     bw_fluc_avg = da.mean(b_fluc * w, axis=dims)
 
-    return {'T_fluc': T_fluc_avg.compute(),
-            'S_fluc': S_fluc_avg.compute(),
-            'ur_fluc': u_fluc_avg.compute(),
-            'utheta_fluc': v_fluc_avg.compute(),
-            'w_fluc': w_fluc_avg.compute(),
-            'b_fluc': b_fluc_avg.compute(),
-            'bu_fluc': bu_fluc_avg.compute(),
-            'bv_fluc': bv_fluc_avg.compute(),
-            'bw_fluc': bw_fluc_avg.compute()}
+    return {'T_fluc': T_fluc_avg,
+            'S_fluc': S_fluc_avg,
+            'ur_fluc': u_fluc_avg,
+            'utheta_fluc': v_fluc_avg,
+            'w_fluc': w_fluc_avg,
+            'b_fluc': b_fluc_avg,
+            'bu_fluc': bu_fluc_avg,
+            'bv_fluc': bv_fluc_avg,
+            'bw_fluc': bw_fluc_avg}
 def compute_rms(reader):
     u_rms = np.empty((reader.nt, reader.nx[2]))
     v_rms = np.empty((reader.nt, reader.nx[2]))
     w_rms = np.empty((reader.nt, reader.nx[2]))
     for it, t in enumerate(reader.t_save):
-        u = reader.lazy_field('u', steps=t)
-        v = reader.lazy_field('v', steps=t)
-        w = reader.lazy_field('w', steps=t)
+        u = reader.lazy_field('u', steps=t).compute()
+        v = reader.lazy_field('v', steps=t).compute()
+        w = reader.lazy_field('w', steps=t).compute()
         u = velocities_to_center(u, axis=-3)
         v = velocities_to_center(v, axis=-2) 
         w = velocities_to_center(w, axis=-1)
         u_rms[it, :] = rms(u)
         v_rms[it, :] = rms(v)
         w_rms[it, :] = rms(w)
-    return {'u_rms': u_rms.compute(),
-            'v_rms': v_rms.compute(),
-            'w_rms': w_rms.compute()}
+    return {'u_rms': u_rms,
+            'v_rms': v_rms,
+            'w_rms': w_rms}
 ### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
