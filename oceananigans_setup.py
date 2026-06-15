@@ -2,8 +2,6 @@ import os
 import numpy as np
 import h5py
 
-from scipy.ndimage import binary_erosion
-
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages, compute_rms, binning_oc
 from interpolation import interp1d_axis, vertical_line
@@ -16,7 +14,7 @@ centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 fluc_flag = True # calculates turbulent statistics from binning information
 rms_flag = True # calculates RMS from 3D fields
-buoyancy_flag = True
+buoyancy_flag = False
 
 salinity = True
 
@@ -64,8 +62,6 @@ if buoyancy_flag:
         f.create_dataset("z", data = z)
         f.create_dataset("b_rms", data = b_rms)
         f.create_dataset("b_avg", data = b_avg)
-        f.create_dataset("centerline/b", data = vertical_line(b_profile, x, y))
-        f.create_dataset("centerline/b_fluc", data = vertical_line(b_fluc, x, y))
     print(f"Saved buoyancy information to {buoyancy_file}")
 if compute_temporal_averages_flag:
     data_temp = compute_temporal_averages(reader)

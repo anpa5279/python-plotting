@@ -156,6 +156,7 @@ def binning_oc(reader, center=(0.0, 0.0)):
     time, t_save = reader.load_time()
     nt = len(t_save)
 
+    dx_scale = np.max(reader.dx[:-1]) # not including dz
     x = reader.x - center[0]
     y = reader.y - center[1]
     z = reader.z
@@ -185,11 +186,11 @@ def binning_oc(reader, center=(0.0, 0.0)):
         utheta = -u*Y/dist + v*X/dist
 
         for k in range(nx[2]):
-            S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X[:, :, k], Y[:, :, k])
-            T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X[:, :, k], Y[:, :, k])
-            utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X[:, :, k], Y[:, :, k])
-            ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X[:, :, k], Y[:, :, k])
-            w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X[:, :, k], Y[:, :, k])
+            S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+            T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+            utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+            ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+            w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
     return S_rz, T_rz, ur_rz, utheta_rz, w_rz
 
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
