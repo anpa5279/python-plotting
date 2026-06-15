@@ -257,51 +257,31 @@ def compute_fluct_averages(reader):
     beta  = reader.beta
 
     # Load all fields lazily — shape (nt, nx, ny, nz)
-    if reader.binning:
-        dims = 0
-        T = reader.load_binning_var('T')
-        if reader.salinity:
-            S = reader.load_binning_var('S')
-        u = reader.load_binning_var('horizontal velocity')
-        v = reader.load_binning_var('rotation velocity')
-        w = reader.load_binning_var('w')
+    dims = (-3, -2)
+    T = reader.lazy_field('T')
+    S = reader.lazy_field('S')
+    u = reader.lazy_field('u')
+    v = reader.lazy_field('v')
+    w = reader.lazy_field('w')
 
-        # Buoyancy (still lazy)
-        b = g * alpha * (T - T0) - (g * beta * S)
+    # Buoyancy (still lazy)
+    b = g * alpha * (T - T0) - (g * beta * S)
 
-        # Horizontal means over (nx, ny) → shape (nt, nz)
-        T_xy = np.mean(T, axis=dims)
-        S_xy = np.mean(S, axis=dims)
-        u_xy = np.mean(u, axis=dims)
-        v_xy = np.mean(v, axis=dims)
-        w_xy = np.mean(w, axis=dims)
-        b_xy = np.mean(b, axis=dims)
-    else:
-        dims = (-3, -2)
-        T = reader.lazy_field('T')
-        S = reader.lazy_field('S')
-        u = reader.lazy_field('u')
-        v = reader.lazy_field('v')
-        w = reader.lazy_field('w')
-
-        # Buoyancy (still lazy)
-        b = g * alpha * (T - T0) - (g * beta * S)
-
-        # Horizontal means over (nx, ny) → shape (nt, nz)
-        T_xy = da.mean(T, axis=dims)
-        S_xy = da.mean(S, axis=dims)
-        u_xy = da.mean(u, axis=dims)
-        v_xy = da.mean(v, axis=dims)
-        w_xy = da.mean(w, axis=dims)
-        b_xy = da.mean(b, axis=dims)
+    # Horizontal means over (nx, ny) → shape (nt, nz)
+    T_xy = da.mean(T, axis=dims)
+    S_xy = da.mean(S, axis=dims)
+    u_xy = da.mean(u, axis=dims)
+    v_xy = da.mean(v, axis=dims)
+    w_xy = da.mean(w, axis=dims)
+    b_xy = da.mean(b, axis=dims)
 
     # Fluctuation
-    T_fluc = T - T_xy
-    S_fluc = S - S_xy
-    u_fluc = u - u_xy
-    v_fluc = v - v_xy
-    w_fluc = w - w_xy
-    b_fluc = b - b_xy
+    T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
+    S_fluc = S - S_xy[:, np.newaxis, np.newaxis, :]
+    u_fluc = u - u_xy[:, np.newaxis, np.newaxis, :]
+    v_fluc = v - v_xy[:, np.newaxis, np.newaxis, :]
+    w_fluc = w - w_xy[:, np.newaxis, np.newaxis, :]
+    b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
 
     #Flux fluctuations
     bu_fluc = da.mean(b_fluc * w, axis=dims)
