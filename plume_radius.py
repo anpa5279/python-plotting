@@ -87,7 +87,7 @@ for i, reader in enumerate(readers):
         with h5py.File(fname, 'r') as f:
             r_profile[j, :, :] = f[f'r given contour/contour = {contour}'][()]
             z.append(f['ccc/dimensions/z'][()])
-            S_rz = f['ccc/S_rz'][()]
+            S_rz = f['ccc/S'][()]
             r_bin = f['ccc/dimensions/r_bin'][()]
 
     r_contour.append(r_profile)

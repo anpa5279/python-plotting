@@ -109,8 +109,8 @@ for i, reader in enumerate(readers):
         with h5py.File(fname, 'r') as f:
             r_profile = f[f'r given contour/contour = {contour}'][()]
             z = f['ccc/dimensions/z'][()]
-            S_rz = f['ccc/S_rz'][()]
-            T_rz = f['ccc/T_rz'][()]
+            S_rz = f['ccc/S'][()]
+            T_rz = f['ccc/T'][()]
             r_bin = f['ccc/dimensions/r_bin'][()]
         # calculate buoyancy differences
         bT = np.mean(g*reader.alpha*np.mean(T_rz, axis = 2) - g*reader.alpha*reader.T0, axis = 0)
