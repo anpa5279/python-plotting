@@ -80,7 +80,7 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
 
         sl0[axis] = idx
         sl1[axis] = idx + 1
-        
+
         f0 = f[tuple(sl0)]
         f1 = f[tuple(sl1)]
         
@@ -91,12 +91,17 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
 def plane_slice_calc(f, coord, coord0, axis = -3):
     return interp1d_axis(f, coord, coord_new = coord0, axis=axis)
 
-def vertical_line(f, x, y, x0 = 0.0, y0 = 0.0):
-    # interpolate in x
-    fx = interp1d_axis(f, x, coord_new = x0, axis=-3)
-
-    # interpolate in y
-    fxy = interp1d_axis(fx, y, coord_new = y0, axis=-2)
+def vertical_line(f, x = None, y = None, x0 = 0.0, y0 = 0.0):
+    if x is not None:
+        # interpolate in x
+        fx = interp1d_axis(f, x, coord_new = x0, axis=-3)
+    else:
+        fx = f
+    if y is not None:
+        # interpolate in y
+        fxy = interp1d_axis(fx, y, coord_new = y0, axis=-2)
+    else:
+        fxy = fx
 
     return fxy  # shape: (Nz,)
 

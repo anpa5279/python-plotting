@@ -125,6 +125,77 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
             "F_s": F_s
         }
     return case_info
+### -------------------------BINNING------------------------- ###
+def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
+    if dx_scale is None:
+        X_bin = X
+        dx_scale = max([np.diff(X)[0, 0], np.diff(Y, axis=0)[0, 0]]) 
+    else:
+        x_bin = np.arange(X.min(), X.max()+dx_scale, dx_scale)
+        y_bin = np.arange(Y.min(), Y.max()+dx_scale, dx_scale)
+        X_bin, Y_bin = np.meshgrid(x_bin, y_bin)
+
+    nx = X_bin.shape
+    ncirc = min(nx[0], nx[1])
+    if ncirc % 2 == 0:
+        ncirc = ncirc//2      # full circular shells
+    else:
+        ncirc = ncirc//2+1      # full circular shells
+    r_bin = np.sqrt((X/dx_scale)**2 + (Y/dx_scale)**2).astype(int)
+    counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
+    bin_var = np.bincount(r_bin.flat, weights=var.flat)
+
+    # cut off the corners that aren't full circles.
+    bin_var = (1 / counts[:ncirc]) * bin_var[:ncirc]
+    if return_r:
+        r = np.arange(np.min(np.abs([X_bin, Y_bin]))/2, ncirc*dx_scale, dx_scale)
+        return r, bin_var
+    return bin_var
+
+def binning_oc(reader, center=(0.0, 0.0)):
+    nx = reader.nx
+    dx = reader.dx
+    lx = reader.lx
+    time, t_save = reader.load_time()
+    nt = len(t_save)
+
+    dx_scale = max(dx[:-1]) # not including dz, want to bin at the coarsest resolution
+    r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
+    x = reader.x - center[0]
+    y = reader.y - center[1]
+    X, Y = np.meshgrid(x, y)
+    dist = np.sqrt(X**2 + Y**2)
+    nr = np.min(nx[:-1])//2
+    S_rz = np.empty((nr, nx[2], nt))
+    T_rz = np.empty((nr, nx[2], nt)) 
+    ur_rz = np.empty((nr, nx[2], nt))
+    utheta_rz = np.empty((nr, nx[2], nt))
+    w_rz = np.empty((nr, nx[2], nt))
+
+    for it, t in enumerate(reader.t_save):
+        # Load data from files
+        T = reader.lazy_field('T', t).compute()
+        S = reader.lazy_field('S', t).compute()
+        u = reader.lazy_field('u', t).compute()
+        v = reader.lazy_field('v', t).compute()
+        w = reader.lazy_field('w', t).compute()
+
+        u = velocities_to_center(u, axis=-3)
+        v = velocities_to_center(v, axis=-2)
+        w = velocities_to_center(w, axis=-1)
+
+        # u and v 
+        ur = u*X/dist + v*Y/dist
+        utheta = -u*Y/dist + v*X/dist
+
+        for k in range(nx[2]):
+            S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X, Y)
+            T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X, Y)
+            utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X, Y)
+            ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X, Y)
+            w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X, Y)
+    return S_rz, T_rz, ur_rz, utheta_rz, w_rz
+
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
 def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
     x, y = reader.x, reader.y
@@ -189,22 +260,32 @@ def compute_fluct_averages(reader):
     beta  = reader.beta
 
     # Load all fields lazily — shape (nt, nx, ny, nz)
-    T = reader.load_binning_var('T')
-    S = reader.load_binning_var('S')
-    u = reader.load_binning_var('horizontal velocity')
-    v = reader.load_binning_var('rotation velocity')
-    w = reader.load_binning_var('w')
+    if reader.binning:
+        dims = 0
+        T = reader.load_binning_var('T')
+        if reader.salinity:
+            S = reader.load_binning_var('S')
+        u = reader.load_binning_var('horizontal velocity')
+        v = reader.load_binning_var('rotation velocity')
+        w = reader.load_binning_var('w')
+    else:
+        dims = (-3, -2)
+        T = reader.lazy_field('T')
+        S = reader.lazy_field('S')
+        u = reader.lazy_field('u')
+        v = reader.lazy_field('v')
+        w = reader.lazy_field('w')
 
     # Buoyancy (still lazy)
     b = g * alpha * (T - T0) - (g * beta * S)
 
     # Horizontal means over (nx, ny) → shape (nt, nz)
-    T_xy = da.mean(T, axis=0)
-    S_xy = da.mean(S, axis=0)
-    u_xy = da.mean(u, axis=0)
-    v_xy = da.mean(v, axis=0)
-    w_xy = da.mean(w, axis=0)
-    b_xy = da.mean(b, axis=0)
+    T_xy = da.mean(T, axis=dims)
+    S_xy = da.mean(S, axis=dims)
+    u_xy = da.mean(u, axis=dims)
+    v_xy = da.mean(v, axis=dims)
+    w_xy = da.mean(w, axis=dims)
+    b_xy = da.mean(b, axis=dims)
 
     # Fluctuation
     T_fluc = T - T_xy
@@ -215,20 +296,20 @@ def compute_fluct_averages(reader):
     b_fluc = b - b_xy
 
     #Flux fluctuations
-    bu_fluc = da.mean(b_fluc * w, axis=0)
-    bv_fluc = da.mean(b_fluc * w, axis=0)
-    bw_fluc = da.mean(b_fluc * w, axis=0)
+    bu_fluc = da.mean(b_fluc * w, axis=dims)
+    bv_fluc = da.mean(b_fluc * w, axis=dims)
+    bw_fluc = da.mean(b_fluc * w, axis=dims)
 
     # averages of fluctuations
-    T_fluc_avg = da.mean(T_fluc, axis=0)
-    S_fluc_avg = da.mean(S_fluc, axis=0)
-    u_fluc_avg = da.mean(u_fluc, axis=0)
-    v_fluc_avg = da.mean(v_fluc, axis=0)
-    w_fluc_avg = da.mean(w_fluc, axis=0)
-    b_fluc_avg = da.mean(b_fluc, axis=0)
-    bu_fluc_avg = da.mean(bu_fluc, axis=0)
-    bv_fluc_avg = da.mean(bv_fluc, axis=0)
-    bw_fluc_avg = da.mean(bw_fluc, axis=0)
+    T_fluc_avg = da.mean(T_fluc, axis=dims)
+    S_fluc_avg = da.mean(S_fluc, axis=dims)
+    u_fluc_avg = da.mean(u_fluc, axis=dims)
+    v_fluc_avg = da.mean(v_fluc, axis=dims)
+    w_fluc_avg = da.mean(w_fluc, axis=dims)
+    b_fluc_avg = da.mean(b_fluc, axis=dims)
+    bu_fluc_avg = da.mean(bu_fluc, axis=dims)
+    bv_fluc_avg = da.mean(bv_fluc, axis=dims)
+    bw_fluc_avg = da.mean(bw_fluc, axis=dims)
 
     return {'T_fluc': T_fluc_avg,
             'S_fluc': S_fluc_avg,

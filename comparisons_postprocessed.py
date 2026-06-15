@@ -190,9 +190,9 @@ for i, reader in enumerate(readers):
         b_bin.append(b_rz)
     if plot_turb_stats:
         # rms fluctuations
-        u_rms.append(reader.load_vel_rms('u'))
-        v_rms.append(reader.load_vel_rms('v'))
-        w_rms.append(reader.load_vel_rms('w'))
+        u_rms.append(reader.load_rms('u'))
+        v_rms.append(reader.load_rms('v'))
+        w_rms.append(reader.load_rms('w'))
         bu_avg = np.mean(b_rz * ur_rz, axis=0)
         bv_avg = np.mean(b_rz * utheta_rz, axis=0)
         bw_avg = np.mean(b_rz * w_rz, axis=0)

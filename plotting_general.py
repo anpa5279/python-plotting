@@ -44,6 +44,7 @@ def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, 
     ranges['b'] = [-1.5*10**(-3), 10**(-5)]
     ranges['T'] = [T0-(dTdz*(lz-mld))+0.1, T0 + 0.02]
     ranges['Tracer'] = [C_tol, C]
+    ranges['S'] = ranges['Tracer']
     ranges['vel'] = [-0.00035, 0.00035]
     ranges['vel_rms'] = [0, 0.004]
     ranges['vel_flux'] = [-1*10**(-2), 1*10**(-2)]

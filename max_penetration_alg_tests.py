@@ -1,23 +1,21 @@
 import os
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from reader import OceananigansData
-from plotting_general import plot_format, create_video, comparison_plot_opt
-from interpolation import velocities_to_center, vertical_line
-from physics import buoyancy
+from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
+from interpolation import vertical_line, point, velocities_to_center
 """
     what is the best way to find the maximum penetration depth of a plume via momentum?
     ways to consider w:
         1. w_avg = 1D array of shape (nt, nz) --> average w at each depth and time step
         2. w centerline = 1D array of shape (nt, nz) --> w at (0.0, 0.0) and time step
-        3. w_fluc_avg = 1D array of shape (nt, nz) --> average w' at each depth and time step
+        3. w_rms = 1D array of shape (nt, nz) --> average w' at each depth and time step
         4. w_fluc_centerline = 1D array of shape (nt, nz) --> w' at (0.0, 0.0) and time step
 
     ways to consider buoyancy, b:
-        1. b_fluc_avg = 1D array of shape (nt, nz) --> average b' at each depth and time step
+        1. b_rms = 1D array of shape (nt, nz) --> average b' at each depth and time step
         2. b_fluc_centerline = 1D array of shape (nt, nz) --> b' at (0.0, 0.0) and time step
 
     ways to percieve w and/or b:
@@ -26,9 +24,10 @@ from physics import buoyancy
         3. gradient changes
 """
 # plotting flags
-plot_variables = True
+plot_zt = True
+plot_variables = False
 plot_depth = False
-video = True
+video = False
 
 # flags for how to read data
 with_halos = False
@@ -41,8 +40,10 @@ outdir = os.path.join(folder, 'max penetration algorithm testing figures')
 reader = OceananigansData(folder, salinity = salinity)
 
 if plot_variables:
-    fig_var_folder = os.path.join(folder, 'max penetration variables')
+    fig_var_folder = os.path.join(outdir, 'max penetration variables')
     os.makedirs(fig_var_folder, exist_ok=True)
+# parameters
+hml = 60
 # collecting model information for all cases
 reader.load_time()
 reader.load_grid()
@@ -54,152 +55,219 @@ nx = reader.nx
 lx = reader.lx
 nt = reader.nt
 # video or not setup
-if video:
+if video or plot_zt:
     time = reader.time
 else:
     time = reader.time[-1]
 
-# create necessary 3D fields
-w = reader.lazy_field('w').compute()
-w = velocities_to_center(w, -1)
-b = buoyancy(reader, type = 'field').compute()
-
-# calculating statistics
-w_avg = np.mean(w, axis = (-3, -2))
-w_fluc = w - w_avg[:, None, None, :]
-w_fluc_avg = np.mean(w_fluc, axis = (-3, -2))
-
-b_avg = np.mean(b, axis = (-3, -2))
-b_fluc = b - b_avg[:, None, None, :]
-b_fluc_avg = np.mean(b_fluc, axis = (-3, -2))
+# load in information
+w = reader.lazy_field('w')
+w = velocities_to_center(w, axis = -1)
+b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
+if plot_zt:
+    S = reader.lazy_field('S')
+    S_centerline = vertical_line(S, x = x, y = y).compute()
+if plot_variables or plot_depth or plot_zt:
+    w_fluc = w - np.mean(w, axis = (-3, -2))[:, None, None, :]
+    w_rms = reader.load_rms('w')
 
 # finding centerlines
-w_centerline = vertical_line(w, x, y)
-w_fluc_centerline = vertical_line(w_fluc, x, y)
+w_centerline = vertical_line(w, x = x, y = y).compute()
+if plot_variables or plot_depth:
+    w_fluc_centerline = vertical_line(w_fluc, x = x, y = y).compute()
 
-b_fluc_centerline = vertical_line(b_fluc, x, y)
+if plot_variables or plot_depth:
+    # calculating gradients
+    dwdz_centerline = np.gradient(w_centerline, z, axis = -1)
+    dwflucdz_centerline = np.gradient(w_fluc_centerline, z, axis = -1)
+    dwrmsdz = np.gradient(w_rms, z, axis = -1)
 
-# calculating gradients
-dwdz = np.gradient(w_avg, z, axis = -1)
-dwdz_centerline = np.gradient(w_centerline, z, axis = -1)
-dwflucdz = np.gradient(w_fluc_avg, z, axis = -1)
-dwflucdz_centerline = np.gradient(w_fluc_centerline, z, axis = -1)
-
-dbflucdz = np.gradient(b_fluc_avg, z, axis = -1)
-dbflucdz_centerline = np.gradient(b_fluc_centerline, z, axis = -1)
+    dbrmsdz = np.gradient(b_rms, z, axis = -1)
+    dbflucdz = np.gradient(b_fluc_centerline, z, axis = -1)
 
 # calculating order of magnitude
-w_centerline_mag = math.floor(math.log10(np.abs(w_centerline)))
-w_avg_mag = math.floor(math.log10(np.abs(w_avg)))
+    w_centerline_mag = np.floor(np.log10(np.abs(w_centerline)))
 
-w_fluc_centerline_mag = math.floor(math.log10(np.abs(w_fluc_centerline)))
-w_fluc_avg_mag = math.floor(math.log10(np.abs(w_fluc_avg)))
+    w_fluc_centerline_mag = np.floor(np.log10(np.abs(w_fluc_centerline)))
+    w_rms_mag = np.floor(np.log10(np.abs(w_rms)))
 
-b_fluc_centerline_mag = math.floor(math.log10(np.abs(b_fluc_centerline)))
-b_fluc_avg_mag = math.floor(math.log10(np.abs(b_fluc_avg)))
+    b_fluc_centerline_mag = np.floor(np.log10(np.abs(b_fluc_centerline)))
+    b_rms_mag = np.floor(np.log10(np.abs(b_rms)))
 
-# finding sign change of w
-w_avg_sign_change = np.diff(np.sign(w_avg), axis = -1)
-w_centerline_sign_change = np.diff(np.sign(w_centerline), axis = -1)
-w_fluc_avg_sign_change = np.diff(np.sign(w_fluc_avg), axis = -1)
-w_fluc_centerline_sign_change = np.diff(np.sign(w_fluc_centerline), axis = -1)
+    # finding sign change of w
+    w_centerline_sign_change = np.diff(np.sign(w_centerline), axis = -1)
+    w_fluc_centerline_sign_change = np.diff(np.sign(w_fluc_centerline), axis = -1)
 
-b_fluc_avg_sign_change = np.diff(np.sign(b_fluc_avg), axis = -1)
-b_fluc_centerline_sign_change = np.diff(np.sign(b_fluc_centerline), axis = -1)
+    b_fluc_centerline_sign_change = np.diff(np.sign(b_fluc_centerline), axis = -1)
+if plot_depth:
+    # find where w = 0 across w variables
+    z_wfluc = point(w_fluc_centerline, z, f0 = 0.0)
+    z_w = point(w_centerline, z, f0 = 0.0)
+
+    # find where based on gradients
+    z_dbflucdz = z[np.where(np.abs(dbflucdz)==np.max(np.abs(dbflucdz)))]
+
+    # find based on max values
+    z_dbmax = z[np.where(dbflucdz == np.max(dbflucdz))]
+    z_bmax = z[np.where(b_fluc_centerline == np.max(b_fluc_centerline))]
+
+    for it in range(nt):
+        # from the surface, the second time b' changes sign
+        nz_opt = np.max(np.where(b_fluc_centerline_sign_change[it, :]>0))
+        z_bfluc_sign = point(b_fluc_centerline[it, nz_opt-2:nz_opt+2], z[nz_opt-2:nz_opt+2], f0 = 0.0)
 ############ PLOTTING ############
-"""
-    Plotting throughout time...
-    [0, 0]: w_avg, w centerline
-    [0, 1]: w_fluc_avg, w flucuation centerline
-    [0, 2]: dw/dz (w_avg, w centerline, w_fluc_avg, w_fluc_centerline)
-    [1, 0]: b_fluc_avg, b_fluc_centerline
-    [1, 1]: db/dz (b_fluc_avg, b_fluc_centerline)
-    [1, 2]: sign of variables (w_avg, w centerline, w_fluc_avg, w_fluc_centerline, b_fluc_avg, b_fluc_centerline)
-    [1, 3]: order of magnitude of variables (w_avg, w centerline, w_fluc_avg, w_fluc_centerline, b_fluc_avg, b_fluc_centerline)
-
-"""
-nvars = 6
+hml_var = np.arange(-10**2, 10**2)
+hml_array = -hml * np.ones(len(hml_var))
+ranges = plot_ranges()
+ranges['w'] = [-0.15, 0.15]
+ranges['b_fluc'] = [-8*10**(-4), 8*10**(-4)]
+ranges['gradw'] = [-0.05, 0.05]
+ranges['gradb'] = [-0.0008, 0.0008]
+ranges['b_rms'] = [0, 1*10**(-5)]
+ranges['vel_rms'] = [0, 0.002]
+factor = 10**(-2)
+nvars = 5
 color_opt, line_opt  = comparison_plot_opt(nvars)
 plot_format()
 os.makedirs(outdir, exist_ok=True)
+if plot_zt:
+    ranges['S'] = [-0.04, 0.04]
+    range_opt = [ranges['w'], ranges['S'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms']]
+    titles = [r"w(0, 0)", r"S(0, 0)", r"b'(0, 0)", r"w$_{rms}$", r"b$_{rms}$"]
+    colors = ['RdBu', 'RdBu', 'RdBu', 'Blues', 'Blues']
+    labels = ['[m/s]', '[g/kg]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]']
 
-gridspec_kw={'height_ratios': [1, 1, 0.15]}
-width = 0.8
-labels = [r'$\langle \text{w} \rangle_{xy}$', r'$\text{w}_{(0, 0)}$', r"$\langle \text{w'} \rangle_{xy}$", r"$\text{w'}_{0, 0}$", r"$\langle \text{b'} \rangle_{xy}$", r"$\text{b'}_{0, 0}$"]
-case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
+    ratio = (time.max()/(3600*24))/lx[2]
+    fig, axes = plt.subplots(1, 5, figsize=(25, 6))
+    axes = axes.ravel()
+    plt.subplots_adjust(bottom = 0.1, top = 0.95)
+    fig.suptitle(f"Variable at centerline vs time and depth")
+    for n, var in enumerate([w_centerline, S_centerline, b_fluc_centerline, w_rms, b_rms]):
+        im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+        axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 2, linestyle = line_opt[1])
+        axes[n].legend(loc='lower left')
+        axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
+        axes[n].set_ylim(z.min(), z.max())
+        axes[n].set_xlabel("time [days]")
+        axes[n].set_ylabel("z [m]")
+        axes[n].set_title(titles[n])
+        axes[n].set_aspect(ratio)
+        cbar = fig.colorbar(im, ax = axes[n], anchor = (0.5, 0.9), orientation='horizontal', label=labels[n], shrink=0.8, aspect=30)
+        cbar.formatter.set_useOffset(False)
+        cbar.formatter.set_powerlimits((-3, 5))
+        cbar.update_ticks() 
+    frame_path = os.path.join(outdir, f"wSb_rms_zt.svg")
+    plt.savefig(frame_path)
+    plt.close(fig)
 if plot_variables:
+    gridspec_kw={'height_ratios': [1, 1, 0.1]}
+    width = 0.8
+    labels = [r'$\text{w}_{(0, 0)}$', r"$\text{w}_{rms}$", r"$\text{w'}_{0, 0}$", r"$\text{b}_{rms}$", r"$\text{b'}_{0, 0}$"]
+    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
+
     for it in range(nt):
-        fig = plt.figure(figsize=(16, 9))#, gridspec_kw=gridspec_kw)
-        ax0 = plt.subplot2grid(shape = (2, 2), loc = (0, 0), rowspan = 2, colspan=2) # w
-        ax1 = plt.subplot2grid(shape = (2, 2), loc = (0, 2), rowspan = 2, colspan=2) # w'
-        ax2 = plt.subplot2grid(shape = (2, 2), loc = (0, 4), rowspan = 2, colspan=2) # dw/dz
-        ax3 = plt.subplot2grid(shape = (2, 2), loc = (2, 0), rowspan = 2, colspan=2) # b'
-        ax4 = plt.subplot2grid(shape = (2, 2), loc = (2, 2), rowspan = 2, colspan=2) # db'/dz
-        ax5 = plt.subplot2grid(shape = (1, 2), loc = (2, 3), colspan=2) # sign
-        ax6 = plt.subplot2grid(shape = (1, 2), loc = (2, 2), colspan=2) # magnitude
-
-        ax7 = plt.subplot2grid(shape = (1, 2), loc = (4, 0)) 
-        ax7.remove()
-
-        ax0.plot(w_avg[it, :], z, color = color_opt[0], linewidth = width)
-        ax0.plot(w_centerline[it, :], z, color = color_opt[1], linewidth = width)
-        ax0.set_title("w")
-        ax0.set_xlabel("w [m/s]")
-        ax0.set_ylabel("z [m]")
-
-        ax1.plot(w_fluc_avg[it, :], z, color = color_opt[2], linewidth = width)
-        ax1.plot(w_fluc_centerline[it, :], z, color = color_opt[3], linewidth = width)
-        ax1.set_title("w'")
-        ax1.set_xlabel("w' [m/s]")
-        ax1.set_ylabel("z [m]")
-
-        ax2.plot(dwdz[it, :], z, color = color_opt[0], linewidth = width)
-        ax2.plot(dwdz_centerline[it, :], z, color = color_opt[1], linewidth = width)
-        ax2.plot(dwflucdz[it, :], z, color = color_opt[2], linewidth = width)
-        ax2.plot(dwflucdz_centerline[it, :], z, color = color_opt[3], linewidth = width)
-        ax2.set_title("dw/dz")
-        ax2.set_xlabel("dw/dz [1/s]")
-        ax2.set_ylabel("z [m]")
-
-        ax3.plot(b_fluc_avg[it, :], z, color = color_opt[4], linewidth = width)
-        ax3.plot(b_fluc_centerline[it, :], z, color = color_opt[5], linewidth = width)
-        ax3.set_title("b'")
-        ax3.set_xlabel("b' [m/s^2]")
-        ax3.set_ylabel("z [m]")
-
-        ax4.plot(dbflucdz[it, :], z, color = color_opt[4], linewidth = width)
-        ax4.plot(dbflucdz_centerline[it, :], z, color = color_opt[5], linewidth = width)
-        ax4.set_title("db'/dz")
-        ax4.set_xlabel("db'/dz [1/s^2]")
-        ax4.set_ylabel("z [m]")
-
-        ax5.plot(np.sign(w_avg[it, :]), z, color = color_opt[0], linewidth = width)
-        ax5.plot(np.sign(w_centerline[it, :]), z, color = color_opt[1], linewidth = width)
-        ax5.plot(np.sign(w_fluc_avg[it, :]), z, color = color_opt[2], linewidth = width)
-        ax5.plot(np.sign(w_fluc_centerline[it, :]), z, color = color_opt[3], linewidth = width)
-        ax5.plot(np.sign(b_fluc_avg[it, :]), z, color = color_opt[4], linewidth = width)
-        ax5.plot(np.sign(b_fluc_centerline[it, :]), z, color = color_opt[5], linewidth = width)
-        ax5.set_title("Sign of variables")
-        ax5.set_xlabel("Sign")
-        ax5.set_ylabel("z [m]")
-
-        ax6.plot(w_avg_mag[it, :], z, color = color_opt[0], linewidth = width)
-        ax6.plot(w_centerline_mag[it, :], z, color = color_opt[1], linewidth = width)
-        ax6.plot(w_fluc_avg_mag[it, :], z, color = color_opt[2], linewidth = width)
-        ax6.plot(w_fluc_centerline_mag[it, :], z, color = color_opt[3], linewidth = width)
-        ax6.plot(b_fluc_avg_mag[it, :], z, color = color_opt[4], linewidth = width)
-        ax6.plot(b_fluc_centerline_mag[it, :], z, color = color_opt[5], linewidth = width)
-        ax6.set_title("Order of magnitude of variables")
-        ax6.set_xlabel("Order of magnitude")
-        ax6.set_ylabel("z [m]")
+        td = time[it]/(3600*24)
+        fig, axes = plt.subplots(3, 5, figsize=(20, 9), sharey = True, gridspec_kw=gridspec_kw)
+        fig.suptitle(f"t = {td:.2f} days")
+        for ax in axes[-1, :]:
+            ax.remove()
+        axes = axes.ravel()
+        ax0 = axes[0]  # w, w' 
+        ax1 = axes[1]  # dw/dz
+        ax2 = axes[2]  # w rms
+        ax3 = axes[3]  # dwrms/dz
+        ax4 = axes[4]  # sign
+        ax5 = axes[5]  # b'
+        ax6 = axes[6]  # db'/dz
+        ax7 = axes[7]  # b rms
+        ax8 = axes[8]  # dbrms/dz
+        ax9 = axes[9]  # magnitude
         fig.legend(handles=case_handles,
                 loc='lower center',
                 ncol=nvars,
-                bbox_to_anchor=(0.52, 0.005))
+                bbox_to_anchor=(0.52, 0.01))
+
+        ax0.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax0.plot(w_centerline[it, :], z, color = color_opt[0], linewidth = width)
+        ax0.plot(w_fluc_centerline[it, :], z, color = color_opt[2], linewidth = width)
+        ax0.set_xlim(ranges['w'])
+        ax0.legend(loc='lower left')
+        ax0.set_title("w")
+        ax0.set_xlabel("[m/s]")
+        ax0.set_ylabel("z [m]")
+
+        ax1.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax1.plot(dwdz_centerline[it, :], z, color = color_opt[0], linewidth = width)
+        ax1.plot(dwflucdz_centerline[it, :], z, color = color_opt[2], linewidth = width)
+        ax1.set_xlim(ranges['gradw'])
+        ax1.set_title("dw/dz")
+        ax1.set_xlabel("dw/dz [1/s]")
+        #ax1.set_ylabel("z [m]")
+
+        ax2.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax2.plot(w_rms[it, :], z, color = color_opt[1], linewidth = width)
+        ax2.set_xlim(ranges['vel_rms'])
+        ax2.set_title(r"w$_{rms}$")
+        ax2.set_xlabel(r"w$_{rms}$ [m/s]")
+
+        ax3.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax3.plot(dwrmsdz[it, :], z, color = color_opt[1], linewidth = width)
+        ax3.set_xlim(ranges['gradw'][0]*factor, ranges['gradw'][1]*factor)
+        ax3.set_title(r"dw$_{rms}$/dz")
+        ax3.set_xlabel("dw/dz [1/s]")
+        #ax3.set_ylabel("z [m]")
+
+        ax4.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax4.plot(np.sign(w_centerline[it, :]), z, color = color_opt[0], linewidth = width)
+        ax4.plot(np.sign(w_fluc_centerline[it, :]), z, color = color_opt[2], linewidth = width)
+        ax4.plot(np.sign(b_fluc_centerline[it, :]), z, color = color_opt[4], linewidth = width)
+        ax4.set_xlim([-1.5, 1.5])
+        ax4.set_title("Sign")
+        ax4.set_xlabel("Sign")
+
+        ax5.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax5.plot(b_fluc_centerline[it, :], z, color = color_opt[4], linewidth = width)
+        ax5.set_xlim(ranges['b_fluc'])
+        ax5.set_title("b'")
+        ax5.set_xlabel(r"b' [m/s$^2$]")
+        ax5.set_ylabel("z [m]")
+
+        ax6.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax6.plot(dbflucdz[it, :], z, color = color_opt[4], linewidth = width)
+        ax6.set_xlim(ranges['gradb'])
+        ax6.set_title("db'/dz")
+        ax6.set_xlabel(r"db'/dz [1/s$^2$]")
+
+        ax7.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax7.plot(b_rms[it, :], z, color = color_opt[3], linewidth = width)
+        ax7.set_xlim(ranges['b_rms'])
+        ax7.set_title(r"b$_{rms}$")
+        ax7.set_xlabel(r"b$_{rms}$ [m/s$^2$]")
+        #ax7.set_ylabel("z [m]")
+
+        ax8.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax8.plot(dbrmsdz[it, :], z, color = color_opt[3], linewidth = width)
+        ax8.set_xlim(ranges['gradb'][0]*factor, ranges['gradb'][1]*factor)
+        ax8.set_title(r"db$_{rms}$/dz")
+        ax8.set_xlabel(r"db$_{rms}$/dz [1/s$^2$]")
+
+        ax9.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax9.plot(w_centerline_mag[it, :], z, color = color_opt[0], linewidth = width)
+        ax9.plot(w_fluc_centerline_mag[it, :], z, color = color_opt[1], linewidth = width)
+        ax9.plot(w_rms_mag[it, :], z, color = color_opt[2], linewidth = width)
+        ax9.plot(b_rms_mag[it, :], z, color = color_opt[3], linewidth = width)
+        ax9.plot(b_fluc_centerline_mag[it, :], z, color = color_opt[4], linewidth = width)
+        ax9.set_xlim([-15, 1])
+        ax9.set_title("Order of magnitude")
+        ax9.set_xlabel(r"n in 10$^n$")
+
+        for ax in axes:
+            ax.ticklabel_format(axis='x', style='sci', scilimits=(-1,2), useMathText=True)
         # --- Save Frame ---
         frame_path = os.path.join(fig_var_folder, f"variables_of_interest_{it:04d}.png")
         plt.savefig(frame_path)
         plt.close(fig)
+
 # creating videos
 if video:
     create_video(fig_var_folder, outdir, '', 'max penetration variables')

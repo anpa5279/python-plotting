@@ -10,7 +10,7 @@ from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
 # flags for plotting
-area_scaling = True
+area_scaling = False
 neg_tracer = False
 tracer_integral = True
 

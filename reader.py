@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import re
 import dask.array as da
-from interpolation import plane_slice_calc, plane_slice_calc, plane_slice_calc, horizontal_line
+from interpolation import plane_slice_calc, velocities_to_center
 from physics import buoyancy
 class OceananigansData:
     def __init__(self, folder, name = 'fields', temperature=True, salinity = False, with_halos=False):
@@ -44,7 +44,7 @@ class OceananigansData:
         self.b = None
 
         # contour cache for statistics
-        self._contour_cache = {}
+        self._cache = {}
 
         # ensuring file order
         all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') and f.startswith(f'{name}'))]
@@ -53,6 +53,12 @@ class OceananigansData:
             self.files = [f'{name}_rank{n}.jld2' for n in range(self.Nranks)]
         else:
             self.files = all_files
+
+        self.bin_file = 'binning_rtz.h5'
+        self.binning= self.bin_file in os.listdir(self.folder)
+
+        self.load_time()
+        self.load_grid()
     
     # ------------------------- GRID ------------------------------------ #
     def load_grid(self, grid_specs = False):
@@ -114,6 +120,7 @@ class OceananigansData:
                     with h5py.File(os.path.join(self.folder, file), 'r') as f:
                         self.x[i*xrange:(i+1)*xrange] = \
                             f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
+    
     # ------------------------- TIME ------------------------------------ #
     def load_time(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -126,6 +133,7 @@ class OceananigansData:
             self.nt = len(self.time)
             self.dt = self.time[1] - self.time[0] if self.nt > 1 else None
             return self.time, self.t_save
+    
     # ------------------------ ADDITIONAL PARAMETERS -------------------- #
     def load_coriolis(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -142,7 +150,7 @@ class OceananigansData:
     def load_friction_velocity(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
             self.u_f = f['IC/friction_velocity'][()]
-
+    
     # ------------------------- BUOYANCY INFORMATION -------------------- #
     def load_equation_of_state(self, T0 = 25):
         """
@@ -155,6 +163,29 @@ class OceananigansData:
             self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
             if self.salinity:
                 self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
+    def load_buoyancy_small(self, file = 'buoyancy_profile.h5'):
+        buoyancy_file = os.path.join(self.folder, file)
+        if os.path.exists(buoyancy_file):
+            with h5py.File(buoyancy_file, 'r') as f:
+                z = f['z'][...]
+                b_avg = f['b_avg'][()]
+                b_rms = f['b_rms'][...]
+                b_centerline = f['centerline/b'][...]
+                b_fluc_centerline = f['centerline/b_fluc'][...]
+            return b_avg, b_rms, b_centerline, b_fluc_centerline
+        else:
+            T = self.lazy_field('T').compute()
+            if self.salinity:
+                S = self.lazy_field('S').compute()
+            g = 9.80665
+            if not self.salinity:
+                b_profile = g * self.alpha * (T - self.T0)
+            else:
+                b_profile = np.squeeze(g * self.alpha * (T - self.T0) - g * self.beta * S)
+            b_avg = np.mean(b_profile)
+            b_fluc = b_profile - b_avg
+            b_rms = np.mean(b_fluc**2)**0.5
+    
     # ------------------------- INTERNAL UTILS -------------------------- #
     def _slice(self, arr):
         if self.halos:
@@ -167,45 +198,53 @@ class OceananigansData:
     def _read_field(self, f, name, it):
         data = f[f'timeseries/{name}'][f'{int(it)}']
         return self._slice(data).transpose(2, 1, 0)
-
+    def _get_field(self, var):
+        key = f'_field_{var}'
+        if key not in self._cache:
+            self._cache[key] = self.lazy_field(var).compute()
+        return self._cache[key]
+    
     # ------------------------- FIELD COLLECTION ------------------------ #
     def lazy_field(self, field, steps=None):
         """
         Returns a truly lazy dask array of shape (Nt, Nx, Ny, Nz).
         Nothing is loaded until .compute() is called.
         """
-        if steps is None:
-            steps = self.t_save
-        steps = np.atleast_1d(steps)
+        key = f'_field_{field}'
+        if key not in self._cache:
+            if steps is None:
+                steps = self.t_save
+            steps = np.atleast_1d(steps)
 
-        time_slabs = []
-        for t in steps:
-            rank_slabs = []
-            for file in self.files:
-                fname = os.path.join(self.folder, file)
-                f = h5py.File(fname, 'r')               # left open intentionally for dask
-                dset = f[f'timeseries/{field}/{int(t)}'] # (z, y, x_local)
+            time_slabs = []
+            for t in steps:
+                rank_slabs = []
+                for file in self.files:
+                    fname = os.path.join(self.folder, file)
+                    f = h5py.File(fname, 'r')               # left open intentionally for dask
+                    dset = f[f'timeseries/{field}/{int(t)}'] # (z, y, x_local)
 
-                if self.halos:
-                    # can't slice an h5py dataset lazily with non-contiguous indexing,
-                    # so wrap first then slice as dask
-                    darr = da.from_array(dset, chunks=dset.shape)
-                    darr = darr[
-                        self.hx[2] : -self.hx[2] or None,
-                        self.hx[1] : -self.hx[1] or None,
-                        self.hx[0] : -self.hx[0] or None,
-                    ]
-                else:
-                    darr = da.from_array(dset, chunks=dset.shape)
+                    if self.halos:
+                        # can't slice an h5py dataset lazily with non-contiguous indexing,
+                        # so wrap first then slice as dask
+                        darr = da.from_array(dset, chunks=dset.shape)
+                        darr = darr[
+                            self.hx[2] : -self.hx[2] or None,
+                            self.hx[1] : -self.hx[1] or None,
+                            self.hx[0] : -self.hx[0] or None,
+                        ]
+                    else:
+                        darr = da.from_array(dset, chunks=dset.shape)
 
-                darr = darr.transpose(2, 1, 0)           # → (x_local, y, z)
-                rank_slabs.append(darr)
+                    darr = darr.transpose(2, 1, 0)           # (x_local, y, z)
+                    rank_slabs.append(darr)
 
-            # concatenate ranks along x — still lazy
-            time_slabs.append(da.concatenate(rank_slabs, axis=0))  # (Nx, Ny, Nz)
+                # concatenate ranks along x — still lazy
+                time_slabs.append(da.concatenate(rank_slabs, axis=0))  # (Nx, Ny, Nz)
 
-        out = da.stack(time_slabs, axis=0)               # (Nt, Nx, Ny, Nz)
-        return out.squeeze()                             # drop time axis if Nt == 1
+            out = da.stack(time_slabs, axis=0)               # (Nt, Nx, Ny, Nz)
+            self._cache[key] = out.squeeze()                 # drop time axis if Nt == 1
+        return self._cache[key]
     def field_slice(self, field, steps=None, slice='YZ', loc=0.0, N=None):
         """
         Returns a 2D slice of the field throughout time.
@@ -218,7 +257,7 @@ class OceananigansData:
         steps = np.atleast_1d(steps)
 
         # ------------------------------------------------------------------ #
-        # Fast path: N is a raw grid index — use lazy_field and index directly #
+        # Fast path: N is a grid index — use lazy_field and index directly #
         # ------------------------------------------------------------------ #
         if N is not None:
             lazy = self.lazy_field(field, steps)   # (nt, Nx, Ny, Nz) or (Nx, Ny, Nz) if nt==1
@@ -278,7 +317,7 @@ class OceananigansData:
                     self.hx[1] : -self.hx[1] or None,   # y
                     self.hx[0] : -self.hx[0] or None,   # x_local
                 ]
-            return data.transpose(2, 1, 0)               # → (x_local, y, z)
+            return data.transpose(2, 1, 0)              # (x_local, y, z)
 
         arrayst = []
         for t in steps:
@@ -312,90 +351,51 @@ class OceananigansData:
 
         out = np.stack(arrayst, axis=0)   # (nt, Ny, Nz) or (nt, Nx, Nz) or (nt, Nx, Ny)
         return out.squeeze()
-    def field_line(self, field, steps=None, axis='Y', x0=None, y0=None, z0=None):
+    def field_centerline(self, field, loc=(0.0, 0.0), steps=None):
         """
-        Returns a 1D horizontal line through the field, shape (N, nt).
-
-        axis='X' : line along x at fixed y=y0, z=z0  → shape (Nx, nt)
-        axis='Y' : line along y at fixed x=x0, z=z0  → shape (Ny, nt)
+        Returns a 1D slice of the field along the centerline throughout time.
+        Output shape is (nt,).
         """
         if steps is None:
             steps = self.t_save
         steps = np.atleast_1d(steps)
+        s_centerline = np.empty((len(steps), self.nx[2]))
 
-        if axis == 'X' and (y0 is None or z0 is None):
-            raise ValueError("axis='X' requires y0 and z0")
-        if axis == 'Y' and (x0 is None or z0 is None):
-            raise ValueError("axis='Y' requires x0 and z0")
+        centerline_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') and f.startswith(f'centerline'))] # halos are included in these files vertically
+        if any(centerline_files):
+            for it, t in enumerate(steps):
+                with h5py.File(os.path.join(self.folder, 'centerline'), 'r') as f:
+                    data = f[f'timeseries/{field}/{int(t)}']
+                s = data.transpose(2, 1, 0)[:, :, self.hx[2]:-self.hx[2]]           # (x_local, y, z)
+                # linear interpolation of x and y points is the same as averaging the 4 grid points in file
+                if field == 'u': # because raw data is fcc
+                    s = s[-1, :, :]
+                if field == 'v': # because raw data is cfc
+                    s = s[:, -1, :]
+                if field == 'w': # because raw data is ccf
+                    s = velocities_to_center(s, axis=-1)
+                s = np.mean(s, axis=(0, 1))
+                s_centerline[it, :] = s
+        else:
+            for it, t in enumerate(steps):
+                s = self.field_slice(field, steps = steps, loc = loc[0])
+                # linear interpolation of x and y points is the same as averaging the 4 grid points in file
+                if field == 'u': # because raw data is fcc
+                    s = s[-1, :, :]
+                if field == 'v': # because raw data is cfc
+                    s = s[:, -1, :]
+                if field == 'w': # because raw data is ccf
+                    s = velocities_to_center(s, axis=-1)
+                else:
+                    s = np.mean(s[0, self.nx[1]//2:self.nx[1]//2+2, :], axis=(0, 1)) # average over x and y dimensions
+                s_centerline[it, :] = s
 
-        nx_local = self.nx[0] // self.Nranks
-        chunk_shape = (self.nx[2], self.nx[1], nx_local)
-
-        lines = []
-        for t in steps:
-            slabs = []
-            for file in self.files:
-                fname = os.path.join(self.folder, file)
-                with h5py.File(fname, 'r') as f:
-                    dset = f[f'timeseries/{field}/{int(t)}']
-                    if self.halos:
-                        dset = dset[
-                            self.hx[2] : -self.hx[2] or None,
-                            self.hx[1] : -self.hx[1] or None,
-                            self.hx[0] : -self.hx[0] or None,
-                        ]
-                    darr = da.from_array(dset, chunks=chunk_shape)
-                    darr = darr.transpose(2, 1, 0)               # → (x_local, y, z)
-                    slabs.append(darr.compute())
-
-            block = np.concatenate(slabs, axis=0)                # (Nx, Ny, Nz)
-
-            if axis == 'X':
-                # fix y then z, return line along x
-                line = horizontal_line(block, self.y, self.z, y0, z0, axis='y')  # (Nx,)
-            elif axis == 'Y':
-                # fix x then z, return line along y
-                line = horizontal_line(block, self.x, self.z, x0, z0, axis='x')  # (Ny,)
-
-            lines.append(line)
-
-        return np.stack(lines, axis=-1).squeeze()                # (N, nt)
-
-    # ------------------------- AVERAGES -------------------------------- #
-    def xy_avg_1d(self, field, steps=None, with_halos=False):
-        """
-        Returns horizontal (xy) average vs depth, shape (Nz, nt).
-        Averages on the fly — never loads the full 3D field.
-        """
-        if steps is None:
-            steps = self.t_save
-        steps = np.atleast_1d(steps)
-
-        nx_local = self.nx[0] // self.Nranks
-        profiles = []
-
-        for t in steps:
-            # accumulate mean across ranks without stacking full field
-            total = np.zeros(self.nx[2])
-            for file in self.files:
-                fname = os.path.join(self.folder, file)
-                with h5py.File(fname, 'r') as f:
-                    dset = f[f'timeseries/{field}/{int(t)}']   # (z, y, x_local)
-                    if with_halos:
-                        dset = dset[
-                            self.hx[2] : -self.hx[2] or None,
-                            self.hx[1] : -self.hx[1] or None,
-                            self.hx[0] : -self.hx[0] or None,
-                        ]
-                    # mean over x and y while still on disk shape (z,)
-                    total += np.asarray(dset).mean(axis=(1, 2))
-            profiles.append(total / self.Nranks)    # average rank contributions
         if field == 'u' and self.u_s is not None:
-            # subtract stokes velocity if requested
-            profiles = [p - self.u_s for p in profiles]
-        return np.stack(profiles, axis=-1).squeeze()   # (Nz, nt)
+            s_centerline = s_centerline - self.u_s
+        return s_centerline.squeeze()
+    # ------------------------- AVERAGES -------------------------------- #
     def load_temporal_averages(self, file, contour_bound = 0.05):
-        fname = os.path.join(self.folder, file)
+        fname = os.path.join(self.folder, self.bin_file)
 
         with h5py.File(fname, 'r') as f:
             rms = {
@@ -429,59 +429,45 @@ class OceananigansData:
                 r_plume = None
 
         return rms, bw, T, S, r_plume
-    def load_S_temporal_avg(self, file = 'binning_rtz.h5'):
+    def load_S_temporal_avg(self):
         """
         Loads contour temporal averages (cached).
         """
 
-        fname = os.path.join(self.folder, file)
+        fname = os.path.join(self.folder, self.bin_file)
 
-        if 'S value' in self._contour_cache:
-            return self._contour_cache['S value']
+        if 'S value' in self._cache:
+            return self._cache['S value']
 
         with h5py.File(fname, 'r') as f:
             S = f['contour temporal averages/S'][()]
 
-        self._contour_cache['S value'] = S
+        self._cache['S value'] = S
 
         return S
-    def load_w_temporal_avg(self, file = 'binning_rtz.h5'):
-        """
-        Loads contour temporal averages (cached).
-        """
-
-        fname = os.path.join(self.folder, file)
-
-        if 'w value' in self._contour_cache:
-            return self._contour_cache['w value']
-
-        with h5py.File(fname, 'r') as f:
-            w = f['contour temporal averages/w'][()]
-
-        self._contour_cache['w value'] = w
-
-        return w
+    
     # ------------------------- BINNING --------------------------------- #
-    def load_binning_var(self, var, file = 'binning_rtz.h5'):
+    def load_binning_var(self, var):
         """
         Loads binning (cached). [nr, nz, nt]
         """
+        if self.binning:
 
-        fname = os.path.join(self.folder, file)
-        #if file in self._contour_cache:
-        #    return self._contour_cache[file]
-        opt = 'ccc/'+var+'_rz' if len(var) < 3 else 'ccc/'+var
+            fname = os.path.join(self.folder, self.bin_file)
+            #if self.bin_file in self._cache:
+            #    return self._cache[self.bin_file]
+            opt = 'ccc/'+var+'_rz' if len(var) < 3 else 'ccc/'+var
 
-        with h5py.File(fname, 'r') as f:
-            a = f[opt][()]
+            with h5py.File(fname, 'r') as f:
+                a = f[opt][()]
 
         return a
-    def loading_bin_contours(self, file = 'binning_rtz.h5', contour = 0.05):
+    def loading_bin_contours(self, contour = 0.05):
         """
         Loads binning radius (cached).
         """
 
-        fname = os.path.join(self.folder, file)
+        fname = os.path.join(self.folder, self.bin_file)
         if isinstance(contour, float):
             with h5py.File(fname, 'r') as f:
                 r = f[f'r given contour/contour = {contour}'][()]
@@ -491,55 +477,56 @@ class OceananigansData:
                 with h5py.File(fname, 'r') as f:
                     r[i, :] = f[f'r given contour/contour = {p}'][()]
         return r
-    def loading_bin_radius(self, file = 'binning_rtz.h5'):
+    def loading_bin_radius(self):
         """
         Loads binning radius (cached).
         """
 
-        fname = os.path.join(self.folder, file)
+        fname = os.path.join(self.folder, self.bin_file)
 
-        #if file in self._contour_cache:
-            #return self._contour_cache[file]
+        #if self.bin_file in self._cache:
+            #return self._cache[self.bin_file]
         
         with h5py.File(fname, 'r') as f:
             r = f[f'ccc/dimensions/r_bin'][()]
         return r
+    
     # ------------------------ FLUCTUATIONS ----------------------------- #
-    def load_fluc_var(self, var, file = 'fluctuations.h5'):
+    def load_fluc(self, var, file = 'fluctuations.h5'):
         """
         Loads fluctuation variables (cached).
         """
 
         fname = os.path.join(self.folder, file)
 
-        #if file in self._contour_cache:
-            #return self._contour_cache[file]
+        #if file in self._cache:
+            #return self._cache[file]
         opt = 'fluctuations/'+var+'_fluc'
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
 
         return a
 
-    # ------------------------ RMS ----------------------------- #
-    def load_vel_rms(self, var, file = 'fluctuations.h5'):
+    # ------------------------ RMS -------------------------------------- #
+    def load_rms(self, var, file = 'fluctuations.h5'):
         """
         Loads velocity RMS 
         """
 
-        if var + 'rms' in self._contour_cache:
-            return self._contour_cache[var + 'rms']
+        if var + 'rms' in self._cache:
+            return self._cache[var + 'rms']
 
         fname = os.path.join(self.folder, file)
 
-        #if file in self._contour_cache:
-            #return self._contour_cache[file]
+        #if file in self._cache:
+            #return self._cache[file]
         opt = 'rms/'+var
         with h5py.File(fname, 'r') as f:
             a = f[opt][()]
-        self._contour_cache[var + 'rms'] = a
+        self._cache[var + 'rms'] = a
         return a
 
-    # ------------------------ PLANE SLICE ----------------------------- #
+    # ------------------------ PLANE SLICE ------------------------------ #
     def load_plane_var(self, var, loc=0.0, file='plane_slice.h5'):
         """
         Loads plane slice variables (cached).
