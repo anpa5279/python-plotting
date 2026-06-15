@@ -462,7 +462,7 @@ class OceananigansData:
             fname = os.path.join(self.folder, self.bin_file)
             #if self.bin_file in self._cache:
             #    return self._cache[self.bin_file]
-            opt = 'ccc/'+var+'_rz' if len(var) < 3 else 'ccc/'+var
+            opt = 'ccc/'+var
 
             with h5py.File(fname, 'r') as f:
                 a = f[opt][()]

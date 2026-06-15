@@ -339,6 +339,8 @@ def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
 
     with h5py.File(file_path, "w") as f:
+        if folder_contour in f:
+            del f[folder_contour]
         f.create_group(f'{folder_contour}')
         f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
         f.create_dataset(f'{folder_contour}/w', data=data['w_value'])
