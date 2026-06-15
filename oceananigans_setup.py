@@ -74,6 +74,8 @@ if compute_temporal_averages_flag:
 
 if binning_flag:
     S_rz, T_rz, ur_rz, utheta_rz, w_rz = binning_oc(reader)
+    if os.path.exists(file_path):
+        os.remove(file_path) # resetting binning so previous file must be deleted before writing new one
     # write to file 
     with h5py.File(file_path, "a") as f:
         if "ccc/dimensions/r_bin" in f:
