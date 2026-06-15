@@ -367,7 +367,8 @@ class OceananigansData:
             for it, t in enumerate(steps):
                 with h5py.File(os.path.join(self.folder, centerline_files[0]), 'r') as f:
                     data = f[f'timeseries/{field}/{int(t)}']
-                s = data.transpose(2, 1, 0)[:, :, self.hx[2]:-self.hx[2]]           # (x_local, y, z)
+                s = data[:, :, self.hx[2]:-self.hx[2]]
+                s = s.transpose(2, 1, 0)           # (x_local, y, z)
                 # linear interpolation of x and y points is the same as averaging the 4 grid points in file
                 if field == 'u': # because raw data is fcc
                     s = s[-1, :, :]
