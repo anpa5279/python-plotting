@@ -1,6 +1,6 @@
 #!/bin/bash
 nodes=1
-cpus=16
+cpus=4
 jobn=postprocessing
 file=oceananigans_setup.py
 

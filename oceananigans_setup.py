@@ -21,8 +21,8 @@ buoyancy_flag = True
 salinity = True
 
 # Set up folder and simulation parameters
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
-#'/glade/derecho/scratch/apauls/outputs/version109/flux-res-match/default/horizontal-domain/coarse1'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/fine2'
+#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60'
 print(f"Reading data from {folder}")
 file_path = os.path.join(folder, 'binning_rtz.h5')
 
