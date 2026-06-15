@@ -185,11 +185,11 @@ def binning_oc(reader, center=(0.0, 0.0)):
         utheta = -u*Y/dist + v*X/dist
 
         for k in range(nx[2]):
-            S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X, Y)
-            T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X, Y)
-            utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X, Y)
-            ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X, Y)
-            w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X, Y)
+            S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X[:, :, k], Y[:, :, k])
+            T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X[:, :, k], Y[:, :, k])
+            utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X[:, :, k], Y[:, :, k])
+            ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X[:, :, k], Y[:, :, k])
+            w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X[:, :, k], Y[:, :, k])
     return S_rz, T_rz, ur_rz, utheta_rz, w_rz
 
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
