@@ -365,7 +365,7 @@ class OceananigansData:
         centerline_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') and f.startswith(f'centerline'))] # halos are included in these files vertically
         if any(centerline_files):
             for it, t in enumerate(steps):
-                with h5py.File(os.path.join(self.folder, 'centerline'), 'r') as f:
+                with h5py.File(os.path.join(self.folder, centerline_files[0]), 'r') as f:
                     data = f[f'timeseries/{field}/{int(t)}']
                 s = data.transpose(2, 1, 0)[:, :, self.hx[2]:-self.hx[2]]           # (x_local, y, z)
                 # linear interpolation of x and y points is the same as averaging the 4 grid points in file
