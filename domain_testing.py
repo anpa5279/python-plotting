@@ -16,7 +16,7 @@ tracer_integral = True
 
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/max-MLD/horizontal-domain/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
 variations = 'horizontal resolution'
 cases_info = comparison_info(variations, universal_folder = universal_folder)
@@ -46,7 +46,7 @@ lx = np.empty((3, num_cases), dtype=object)
 nt = np.empty(num_cases, dtype=int)
 time  = []
 grid_specs = False*np.ones(num_cases)
-grid_specs[2] = True # flag for whether to plot grid specs in title
+#grid_specs[2] = True # flag for whether to plot grid specs in title
 for i, reader in enumerate(readers):
     reader.load_time()
     reader.load_grid(grid_specs = grid_specs[i])
@@ -127,9 +127,10 @@ if tracer_integral:
     ax = ax.ravel()
     plt.subplots_adjust(top=0.9)
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
+    leg_col = num_cases//2 if num_cases > 4 else num_cases
     fig.legend(handles=case_handles,
             loc='lower center',
-            ncol=num_cases//2,
+            ncol=leg_col,
             bbox_to_anchor=(0.52, 0.005), fontsize = 12)
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")

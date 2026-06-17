@@ -43,7 +43,7 @@ def a_fluc_b(a, b, a_avg=None):
 
 # ------------------------- BUOYANCY ANALYSIS ------------------------- #
 # calculate buoyancy 
-def buoyancy(reader, type = 'plane'):
+def buoyancy(reader, type = 'field'):
     """
     calculates buoyancy relative to type
     type = 'plane' --> from reader.load_plane_var, all time steps

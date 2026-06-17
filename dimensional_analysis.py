@@ -308,8 +308,6 @@ else:
             w = velocities_to_center(w, axis=2)
             # convert temperature and salinity to buoyancy 
             b = buoyancy(reader)
-            b = b['b']
-            rho = b['rho']
             rho_fluc = rho - np.mean(rho, axis=(-3, -2))
 
             # calcualte buoyancy fluxes

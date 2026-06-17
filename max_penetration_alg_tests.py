@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import h5py
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
@@ -24,7 +25,8 @@ from interpolation import vertical_line, point, velocities_to_center
         3. gradient changes
 """
 # plotting flags
-plot_zt = True
+plot_zt = False
+plot_raw_output = True
 plot_variables = False
 plot_depth = False
 video = False
@@ -35,18 +37,16 @@ closure = False
 salinity = True
 stokes = False
 
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/coarse1/'
 outdir = os.path.join(folder, 'max penetration algorithm testing figures')
 reader = OceananigansData(folder, salinity = salinity)
-
 if plot_variables:
     fig_var_folder = os.path.join(outdir, 'max penetration variables')
     os.makedirs(fig_var_folder, exist_ok=True)
+
 # parameters
 hml = 60
 # collecting model information for all cases
-reader.load_time()
-reader.load_grid()
 x = reader.x
 y = reader.y
 z = reader.z
@@ -55,27 +55,50 @@ nx = reader.nx
 lx = reader.lx
 nt = reader.nt
 # video or not setup
-if video or plot_zt:
+if video or plot_zt or plot_raw_output:
     time = reader.time
+    if reader.centerline:
+        time1 = reader.time_center
 else:
     time = reader.time[-1]
 
 # load in information
-w = reader.lazy_field('w')
-w = velocities_to_center(w, axis = -1)
+w_centerline = reader.field_centerline('w')
+reader.load_equation_of_state()
 b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
-if plot_zt:
-    S = reader.lazy_field('S')
-    S_centerline = vertical_line(S, x = x, y = y).compute()
+if plot_zt and reader.salinity:
+    if reader.centerline:
+        S_centerline = reader.field_centerline('S')
+    else:
+        S = reader.lazy_field('S')
+        S_centerline = vertical_line(S, x = x, y = y).compute()
 if plot_variables or plot_depth or plot_zt:
-    w_fluc = w - np.mean(w, axis = (-3, -2))[:, None, None, :]
     w_rms = reader.load_rms('w')
+    u_r = reader.load_binning_var('horizontal velocity')
+    u_r_avg = np.mean(u_r, axis = -3)
+    u_r_rms = np.mean((u_r - u_r_avg[None, :, :])**2, axis = -3)**0.5
 
 # finding centerlines
-w_centerline = vertical_line(w, x = x, y = y).compute()
+if plot_raw_output:
+    steps = reader.t_save_center
+    w_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]+1))
+    T_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]))
+    S_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]))
+    with h5py.File(os.path.join(reader.folder, reader.centerline_output), 'r') as f:
+        for it, t in enumerate(steps):
+            w_data = f[f'timeseries/w/{int(t)}']
+            T_data = f[f'timeseries/T/{int(t)}']
+            S_data = f[f'timeseries/S/{int(t)}']
+            w_data = w_data[reader.hx[2]:-reader.hx[2], :, :] # (z, y, x_local)
+            T_data = T_data[reader.hx[2]:-reader.hx[2], :, :] 
+            S_data = S_data[reader.hx[2]:-reader.hx[2], :, :] 
+            w_output[it, :, :, :] = w_data.transpose(2, 1, 0) # (x_local, y, z)
+            T_output[it, :, :, :] = T_data.transpose(2, 1, 0) 
+            S_output[it, :, :, :] = S_data.transpose(2, 1, 0) 
 if plot_variables or plot_depth:
+    w_centerline = vertical_line(w, x = x, y = y).compute()
+    w_fluc = w - np.mean(w, axis = (-3, -2))[:, None, None, :]
     w_fluc_centerline = vertical_line(w_fluc, x = x, y = y).compute()
-
 if plot_variables or plot_depth:
     # calculating gradients
     dwdz_centerline = np.gradient(w_centerline, z, axis = -1)
@@ -119,32 +142,89 @@ if plot_depth:
 hml_var = np.arange(-10**2, 10**2)
 hml_array = -hml * np.ones(len(hml_var))
 ranges = plot_ranges()
-ranges['w'] = [-0.15, 0.15]
+ranges['w'] = [-2*10**-1, 2*10**-1]
 ranges['b_fluc'] = [-8*10**(-4), 8*10**(-4)]
 ranges['gradw'] = [-0.05, 0.05]
 ranges['gradb'] = [-0.0008, 0.0008]
-ranges['b_rms'] = [0, 1*10**(-5)]
-ranges['vel_rms'] = [0, 0.002]
+ranges['b_rms'] = [0, 4*10**(-5)]
+ranges['vel_rms'] = [0, 5*10**-3]
 factor = 10**(-2)
 nvars = 5
 color_opt, line_opt  = comparison_plot_opt(nvars)
 plot_format()
 os.makedirs(outdir, exist_ok=True)
-if plot_zt:
-    ranges['S'] = [-0.04, 0.04]
-    range_opt = [ranges['w'], ranges['S'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms']]
-    titles = [r"w(0, 0)", r"S(0, 0)", r"b'(0, 0)", r"w$_{rms}$", r"b$_{rms}$"]
-    colors = ['RdBu', 'RdBu', 'RdBu', 'Blues', 'Blues']
-    labels = ['[m/s]', '[g/kg]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]']
-
+if plot_raw_output:
+    ranges['T'] = [reader.T0 - 0.7, reader.T0 + 0.05]
+    gridspec_kw={'height_ratios': [0.8, 0.8, 0.8, 1.15]}
+    if reader.salinity:
+        ranges['S'] = [0.0, 0.05]
+        range_opt = [ranges['w'], ranges['S'], ranges['T']]
+        titles = [r"w", r"S", r"T"]
+        colors = ['RdBu', 'Blues', 'viridis']
+        labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]']
+        vars = [w_output, S_output, T_output]
+        fig, axes = plt.subplots(4, 3, figsize=(12, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
+        file = 'wST_outputs_zt.svg'
+    else:
+        range_opt = [ranges['w'], ranges['T']]
+        titles = [r"w", r"T"]
+        colors = ['RdBu', 'viridis']
+        labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]']
+        vars = [w_output, T_output]
+        fig, axes = plt.subplots(4, 2, figsize=(7, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
+        file = 'wT_outputs_zt.svg'
     ratio = (time.max()/(3600*24))/lx[2]
-    fig, axes = plt.subplots(1, 5, figsize=(25, 6))
     axes = axes.ravel()
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
-    fig.suptitle(f"Variable at centerline vs time and depth")
-    for n, var in enumerate([w_centerline, S_centerline, b_fluc_centerline, w_rms, b_rms]):
+    count = 0
+    for ix, i in enumerate([nx[0]//2, nx[0]//2+1]):
+        for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
+            for n, var in enumerate(vars):
+                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+                axes[count].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+                axes[count].legend(loc='lower left')
+                axes[count].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
+                axes[count].set_ylim(z.min(), z.max())
+                axes[count].set_aspect(ratio)
+                if count <= 3: # only include title in first row
+                    axes[count].set_title(titles[n])
+                if count == 0 or count % 3 == 0: # only include y label in first column
+                    axes[count].set_ylabel(f"[{i}, {j}, 1:N$_z$]\nz [m]")
+                if count >= 9: # only add colorbar to last row 
+                    axes[count].set_xlabel("time [days]")
+                    cbar = fig.colorbar(im, ax = axes[count], anchor = (0.5, 0.9), orientation='horizontal', label=labels[n], shrink=0.75, aspect=30)
+                    cbar.formatter.set_useOffset(False)
+                    cbar.formatter.set_powerlimits((-3, 5))
+                    cbar.update_ticks() 
+                count += 1
+    frame_path = os.path.join(outdir, file)
+    plt.savefig(frame_path)
+    plt.close(fig)
+if plot_zt:
+    if reader.salinity:
+        ranges['S'] = [-0.04, 0.04]
+        range_opt = [ranges['w'], ranges['S'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms'], ranges['vel_rms']]
+        titles = [r"w(0, 0)", r"S(0, 0)", r"b'(0, 0)", r"w$_{rms}$", r"b$_{rms}$", r"u$_{\text{r},rms}$"]
+        colors = ['RdBu', 'RdBu', 'RdBu', 'Blues', 'Blues', 'Blues']
+        labels = ['[m/s]', '[g/kg]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]', '[m/s]']
+        vars = [w_centerline, S_centerline, b_fluc_centerline, w_rms, b_rms, u_r_rms.T]
+        fig, axes = plt.subplots(1, 6, figsize=(30, 5.5))
+        file = 'wSbur_rms_zt.svg'
+    else:
+        range_opt = [ranges['w'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms']]
+        titles = [r"w(0, 0)", r"b'(0, 0)", r"w$_{rms}$", r"b$_{rms}$"]
+        colors = ['RdBu', 'RdBu', 'Blues', 'Blues']
+        labels = ['[m/s]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]']
+        vars = [w_centerline, b_fluc_centerline, w_rms, b_rms]
+        fig, axes = plt.subplots(1, 4, figsize=(20, 5.5))
+        file = 'wb_rms_zt.svg'
+
+    ratio = (time.max()/(3600*24))/lx[2]
+    axes = axes.ravel()
+    plt.subplots_adjust(bottom = 0.1, top = 0.95)
+    for n, var in enumerate(vars):
         im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-        axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 2, linestyle = line_opt[1])
+        axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
         axes[n].set_ylim(z.min(), z.max())
@@ -156,7 +236,7 @@ if plot_zt:
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-3, 5))
         cbar.update_ticks() 
-    frame_path = os.path.join(outdir, f"wSb_rms_zt.svg")
+    frame_path = os.path.join(outdir, file)
     plt.savefig(frame_path)
     plt.close(fig)
 if plot_variables:

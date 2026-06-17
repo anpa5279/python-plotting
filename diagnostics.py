@@ -44,14 +44,15 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         dTdz = np.array([0.01, 0.01, 0.01, 0.005, 0.05, 0.1, 0.01, 0.01, 0.01]) # background temperature gradient in K/m
         F_s = wp * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
     elif variations == 'Lz160m':
-        folder_names =['Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70', 'Lz = 160m/S0 = 0.2 dTdz = 0.01 MLD = 60']
-        case_names =[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', 
+        folder_names =['S0 = 0.0 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
+        case_names =[r'F$_{\text{C}} = 0.0, MLD = 60m, dTdz = 0.01', 
                      r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', 
                      r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = [60, 70, 60]
         F_s = wp * 0.1 * np.ones(num_cases) 
+        F_s[0] = 0.0
         F_s[2] = wp * 0.2
     elif variations == 'vertical length':
         folder_names =['nz = 77 z = 96.25 m', 'nz = 128 z = 160 m', 'nz = 192 z = 240 m']
@@ -70,12 +71,12 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
     elif variations == 'horizontal resolution':
         folder_names =['coarse2/', 
                        'coarse1/', 
-                       'mod-default/', 
-                       'fine1/', 
-                       'fine2/',
-                       'fine3/'
+                       'ground0/', 
+                       #'fine1/', 
+                       #'fine2/',
+                       #'fine3/'
                        ]
-        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.67$m', r'$\Delta x = 1.25$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
+        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m']#, r'$\Delta x = 0.25$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -197,55 +198,30 @@ def binning_oc(reader, center=(0.0, 0.0)):
     return S_rz, T_rz, ur_rz, utheta_rz, w_rz
 
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
-def compute_temporal_averages(reader, center=(0.0, 0.0), start=10):
-    x, y = reader.x, reader.y
-    t_save = reader.t_save[start:]
-    x0, y0 = center
-
+def compute_temporal_averages(reader, start=10):
     # Load constants once
     reader.load_equation_of_state()
-    g = 9.80665
-    T0 = 25
-    alpha = reader.alpha
-    beta  = reader.beta
-
-    # Pre-cache spatial indices
-    ix = np.argmin(np.abs(x - x0))
-    iy = np.argmin(np.abs(y - y0))
 
     # Load all fields lazily — shape (nt - start, nx, ny, nz)
-    T = reader.lazy_field('T')
-    T = T[start:, :, :, :]
-    S = reader.lazy_field('S')
-    S = S[start:, :, :, :]
-    w = reader.lazy_field('w')
-    w = w[start:, :, :, :]
+    S = reader.field_centerline('S')
+    S = S[start:, :]
+    w = reader.field_centerline('w')
+    w = w[start:, :]
 
-    # Center velocities (still lazy)
-    w = velocities_to_center(w, axis=-1)
-
-    # Buoyancy (still lazy)
-    b = g * alpha * (T - T0) - (g * beta * S)
-
-    # Horizontal means over (nx, ny) → shape (nt - start, nz)
-    b_xy = da.mean(b, axis=(1, 2))
-
+    #loading in vertical 1D info
+    b_xy, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
+    
     # Fluctuation and flux
-    b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
-    bw     = da.mean(b_fluc * w, axis=(1, 2))   # (nt - start, nz)
+    bw = b_fluc_centerline[start:, :] * w   # (nt - start, nz)
 
     # bw_idx per timestep — argmax not lazy, so compute bw now
-    bw_np  = bw.compute()                        # (nt - start, nz) — small, cheap
-    bw_idx = np.argmax(bw_np, axis=1)            # (nt,)
+    bw_idx = np.argmax(bw, axis = 1)            # (nt,)
 
-    # Point values at (ix, iy, bw_idx[it]) per timestep
-    nt     = len(t_save)
-    it_idx = np.arange(nt)
+    # Point values per timestep
+    it_idx = np.arange(bw.shape[0])
     # extract the (nt - start, nx, ny, nz) arrays only at needed points
-    S_pts  = S[:, ix, iy, :].compute()
-    w_pts  = w[:, ix, iy, :].compute() 
-    S_value = np.mean(S_pts[it_idx, bw_idx])
-    w_value = np.mean(w_pts[it_idx, bw_idx])
+    S_value = np.mean(S[it_idx, bw_idx])
+    w_value = np.mean(w[it_idx, bw_idx])
 
     return {
         "S_value":  S_value,
@@ -344,7 +320,7 @@ def compute_rms(reader):
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
 
-    with h5py.File(file_path, "w") as f:
+    with h5py.File(file_path, "a") as f:
         if folder_contour in f:
             del f[folder_contour]
         f.create_group(f'{folder_contour}')
