@@ -72,11 +72,11 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         folder_names =['coarse2/', 
                        'coarse1/', 
                        'ground0/', 
-                       #'fine1/', 
+                       'fine1/', 
                        #'fine2/',
                        #'fine3/'
                        ]
-        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m']#, r'$\Delta x = 0.25$m']
+        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)

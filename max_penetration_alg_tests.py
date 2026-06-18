@@ -25,7 +25,7 @@ from interpolation import vertical_line, point, velocities_to_center
         3. gradient changes
 """
 # plotting flags
-plot_zt = False
+plot_zt = True
 plot_raw_output = True
 plot_variables = False
 plot_depth = False
@@ -37,7 +37,7 @@ closure = False
 salinity = True
 stokes = False
 
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/coarse1/'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/fine1/'
 outdir = os.path.join(folder, 'max penetration algorithm testing figures')
 reader = OceananigansData(folder, salinity = salinity)
 if plot_variables:
