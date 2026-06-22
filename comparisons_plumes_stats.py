@@ -24,7 +24,7 @@ universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/d
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 # selecting cases to compare
-variations = 'Lz160m' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'else'
+variations = 'Lz160m' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']
@@ -71,7 +71,7 @@ for i, reader in enumerate(readers):
     x.append(reader.x)
     y.append(reader.y)
     z.append(reader.z)
-    time.append(reader.time)
+    time.append(reader.t)
     nx[:, i] = reader.nx
     lx[:, i] = reader.lx
     nt[i] = reader.nt

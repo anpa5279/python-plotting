@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import imageio.v2 as imageio
@@ -11,19 +10,79 @@ from matplotlib import cm
 from matplotlib import colors
 from fractions import Fraction
 ### -------------------------PLOTTING 1D LINES FUNCTIONS------------------------- ###
+## temporal average ###
+def temporal_avg(t_range,ranges, color_opt, fig_folder, case_names, lx, z, w_center, S_center, b_fluc_center, w_rms, b_rms, h_ml=None):
+    num_cases = len(case_names)
+    if num_cases==1:
+        fig, axes = plt.subplots(1, 5, figsize=(12, 3), sharey = True)
+        outdir = os.path.join(fig_folder)
+        os.makedirs(outdir, exist_ok=True)
+    else:
+        outdir = os.path.join(fig_folder, 'temporal analysis/')
+        os.makedirs(outdir, exist_ok=True)
+        gridspec_kw={'height_ratios': [1, 0.1]} # add space for universal legend
+        fig, axes = plt.subplots(2, 5, figsize=(12, 4), gridspec_kw=gridspec_kw, sharey = True)
+        for a in axes[-1, :]:
+            a.remove()
+        case_handles = [
+            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
+            for i in range(num_cases)
+        ]
+        if num_cases > 4:
+            ncols = 4
+        else:
+            ncols = num_cases
+        fig.legend(handles=case_handles,
+                loc='lower center',
+                ncol=ncols,
+                bbox_to_anchor=(0.52, 0.015))
+    axes = axes.ravel()
+    axes[0].set_title(rf"$\langle$w(0, 0, z)$\rangle_{{\text{{t={t_range[0]:.2f}-{t_range[1]:.2f} days}}}}$")
+    axes[0].set_ylabel("Depth [m]")
+    axes[0].set_xlabel("[m/s]")
+    axes[0].set_ylim(ymin = -max(lx[2]), ymax = 0)
+    axes[0].set_xlim(xmin = ranges['w'][0], xmax = ranges['w'][1])
+    axes[1].set_title(rf"$\langle$S(0, 0, z)$\rangle_{{\text{{t={t_range[0]:.2f}-{t_range[1]:.2f} days}}}}$")
+    axes[1].set_xlabel("[g/kg]")
+    axes[1].set_xlim(xmin = ranges['S'][0], xmax = ranges['S'][1])
+    axes[2].set_title(rf"$\langle$b'(0, 0, z)$\rangle_{{\text{{t={t_range[0]:.2f}-{t_range[1]:.2f} days}}}}$")
+    axes[2].set_xlabel(r"[m/s$^2$]")
+    axes[2].set_xlim(xmin = ranges['b_fluc'][0], xmax = ranges['b_fluc'][1])
+    axes[3].set_title(rf"$\langle$w$_{{rms}}\rangle_{{\text{{t={t_range[0]:.2f}-{t_range[1]:.2f} days}}}}$")
+    axes[3].set_xlabel("[m/s]")
+    axes[3].set_xlim(xmin = ranges['vel_rms'][0], xmax = ranges['vel_rms'][1])
+    axes[4].set_title(rf"$\langle$b$_{{rms}}\rangle_{{\text{{t={t_range[0]:.2f}-{t_range[1]:.2f} days}}}}$")
+    axes[4].set_xlabel(r"[m/s$^2$]")
+    axes[4].set_xlim(xmin = ranges['b_rms'][0], xmax = ranges['b_rms'][1])
+    if h_ml is not None:
+        h_ml = np.asarray(h_ml)
+        h_ml = np.unique(h_ml)
+        for opt, h in enumerate(h_ml):
+            for ax in axes:
+                ax.plot([-1*10**6, 1*10**6], [-h, -h], color_opt[opt], linewidth = 0.5, linestyle = 'dashed')
+    for n in range(num_cases):
+        axes[0].plot(w_center[n], z[n], color = color_opt[n], linewidth = 0.75)
+        axes[1].plot(S_center[n], z[n], color = color_opt[n], linewidth = 0.75)
+        axes[2].plot(b_fluc_center[n], z[n], color = color_opt[n], linewidth = 0.75)
+        axes[3].plot(w_rms[n], z[n], color = color_opt[n], linewidth = 0.75)
+        axes[4].plot(b_rms[n], z[n], color = color_opt[n], linewidth = 0.75)
+
+    frame_path = os.path.join(outdir, f"{t_range[0]:.2f}-{t_range[1]:.2f}-days-avg.svg")
+    plt.savefig(frame_path)
+    plt.close(fig)
 ## temporal analysis ###
 def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
     num_cases = len(case_names)
     if num_cases==1:
-        fig, ax = plt.subplots(2, 4, figsize=(12, 5))
+        fig, axes = plt.subplots(2, 4, figsize=(12, 5))
         outdir = os.path.join(fig_folder, 'plume analysis/')
         os.makedirs(outdir, exist_ok=True)
     else:
         outdir = os.path.join(fig_folder, 'comparison plume analysis/')
         os.makedirs(outdir, exist_ok=True)
         gridspec_kw={'height_ratios': [1, 1, 0.1]} # add space for universal legend
-        fig, ax = plt.subplots(3, 4, figsize=(12, 6.5), gridspec_kw=gridspec_kw)
-        for a in ax[2, :]:
+        fig, axes = plt.subplots(3, 4, figsize=(12, 6.5), gridspec_kw=gridspec_kw)
+        for a in axes[2, :]:
             a.remove()
         case_handles = [
             Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
@@ -34,14 +93,14 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
                 ncol=num_cases,
                 bbox_to_anchor=(0.52, 0.015))
     #fig.tight_layout()
-    ax1 = ax[0, 0] # depth of plume through time 
-    ax2 = ax[0, 1] # max and average radius of plume through time 
-    ax3 = ax[0, 2] # vertical velocity at depth through time
-    ax4 = ax[0, 3] # perturbed buoyancy at depth through time
-    ax5 = ax[1, 0] # perturbed Temperature at depth through time
-    ax6 = ax[1, 1] # perturbed tracer at depth through time
-    ax7 = ax[1, 2] # average tracer at MLD through time
-    ax8 = ax[1, 3] # w_avg at MLD through time 
+    ax1 = axes[0, 0] # depth of plume through time 
+    ax2 = axes[0, 1] # max and average radius of plume through time 
+    ax3 = axes[0, 2] # vertical velocity at depth through time
+    ax4 = axes[0, 3] # perturbed buoyancy at depth through time
+    ax5 = axes[1, 0] # perturbed Temperature at depth through time
+    ax6 = axes[1, 1] # perturbed tracer at depth through time
+    ax7 = axes[1, 2] # average tracer at MLD through time
+    ax8 = axes[1, 3] # w_avg at MLD through time 
     if ND:
         ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
         ax1.set_ylim(ymin = -lx[-1], ymax = 0)
@@ -186,15 +245,15 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
 def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     if num_cases==0:
-        fig, ax = plt.subplots(2, 4, figsize=(12, 8))
+        fig, axes = plt.subplots(2, 4, figsize=(12, 8))
         outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
     else:
         outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
         gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
-        fig, ax = plt.subplots(3, 4, figsize=(12, 10), gridspec_kw=gridspec_kw)
-        for a in ax[2, :]:
+        fig, axes = plt.subplots(3, 4, figsize=(12, 10), gridspec_kw=gridspec_kw)
+        for a in axes[2, :]:
             a.remove()
         case_handles = [
             Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
@@ -209,14 +268,14 @@ def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_na
     td = time / 3600 / 24
     fig.suptitle(f'{td:.2f} days', fontsize=12)
 
-    ax1 = ax[0, 0]
-    ax2 = ax[0, 1]
-    ax3 = ax[0, 2]
-    ax4 = ax[0, 3]
-    ax5 = ax[1, 0]
-    ax6 = ax[1, 1]
-    ax7 = ax[1, 2]
-    ax8 = ax[1, 3]
+    ax1 = axes[0, 0]
+    ax2 = axes[0, 1]
+    ax3 = axes[0, 2]
+    ax4 = axes[0, 3]
+    ax5 = axes[1, 0]
+    ax6 = axes[1, 1]
+    ax7 = axes[1, 2]
+    ax8 = axes[1, 3]
 
     if ND:
         ax1.set_ylabel(z_nd) 
@@ -337,15 +396,15 @@ def plot_plume_vertical_spatial(time, it, ranges, color_opt, fig_folder, case_na
 def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
     num_cases = len(case_names)
     if num_cases==0:
-        fig, ax = plt.subplots(2, 3, figsize=(12, 7))
+        fig, axes = plt.subplots(2, 3, figsize=(12, 7))
         outdir = os.path.join(fig_folder, 'horizontal centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
     else:
         outdir = os.path.join(fig_folder, 'horizontal centerline-' + name)
         os.makedirs(outdir, exist_ok=True)
         gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
-        fig, ax = plt.subplots(3, 3, figsize=(12, 9), gridspec_kw=gridspec_kw)
-        for a in ax[2, :]:
+        fig, axes = plt.subplots(3, 3, figsize=(12, 9), gridspec_kw=gridspec_kw)
+        for a in axes[2, :]:
             a.remove()
         case_handles = [
             Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
@@ -360,12 +419,12 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
     td = time[it] / 3600 / 24
     fig.suptitle(f'{td:.2f} days', fontsize=12)
 
-    ax1 = ax[0, 0] # u, v, w through horizontal centerline
-    ax2 = ax[0, 1] # horizontal buoyancy flux through horizontal centerline
-    ax3 = ax[0, 2] # tracer through horizontal centerline
-    ax4 = ax[1, 0] # perturbed buoyancy through horizontal centerline
-    ax5 = ax[1, 1] # vertical buoyancy flux through horizontal centerline
-    ax6 = ax[1, 2] # temperature through horizontal centerline
+    ax1 = axes[0, 0] # u, v, w through horizontal centerline
+    ax2 = axes[0, 1] # horizontal buoyancy flux through horizontal centerline
+    ax3 = axes[0, 2] # tracer through horizontal centerline
+    ax4 = axes[1, 0] # perturbed buoyancy through horizontal centerline
+    ax5 = axes[1, 1] # vertical buoyancy flux through horizontal centerline
+    ax6 = axes[1, 2] # temperature through horizontal centerline
 
     if ND:
         ax1.set_xlabel(r"y/l$_{j}$") 
@@ -471,8 +530,8 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     ar = np.ones(nrows + 1)
     ar[-1] = 0.02 # add space for universal legend
     gridspec_kw={'height_ratios': ar} # add space for universal legend
-    fig, ax = plt.subplots(nrows + 1, ncols, figsize=(12, 10), gridspec_kw=gridspec_kw, sharey = True)
-    for a in ax[2, :]:
+    fig, axes = plt.subplots(nrows + 1, ncols, figsize=(12, 10), gridspec_kw=gridspec_kw, sharey = True)
+    for a in axes[2, :]:
         a.remove()
     case_handles = [
         Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
@@ -482,7 +541,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
             loc='lower center',
             ncol=num_cases,
             bbox_to_anchor=(0.52, 0.015))
-    ax = ax.ravel()
+    axes = axes.ravel()
     td = time / 3600 / 24
     fig.suptitle(f'{td:.2f} days', fontsize=12)
     """
@@ -502,7 +561,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     ax[3].set_xlabel(r"[$^{\circ}$ C$\cdot$m/s]")
     ax[4].set_xlabel(r"[g/kg$\cdot$m/s]")
     ax[5].set_xlabel(r"[m/s$^2$]")
-    for a in ax:
+    for a in axes:
         a.set_ylim(ymin = np.min(z), ymax = np.max(z))
     # velocity rms
     for i in range(num_cases):
@@ -771,8 +830,8 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
     ar = np.ones(nrows)
     ar[-1] = 0.05 # add space for universal legend
     gridspec_kw={'height_ratios': ar} # add space for universal legend
-    fig, ax = plt.subplots(nrows, ncols, figsize=(15, 6), gridspec_kw=gridspec_kw, sharey = True)
-    for a in ax[-1, :]:
+    fig, axes = plt.subplots(nrows, ncols, figsize=(15, 6), gridspec_kw=gridspec_kw, sharey = True)
+    for a in axes[-1, :]:
         a.remove()
     case_handles = [
         Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
@@ -782,7 +841,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
             loc='lower center',
             ncol=num_cases,
             bbox_to_anchor=(0.52, 0.01))
-    ax = ax.ravel()
+    axes = axes.ravel()
     """
     ax[0] = zp, where w = 0
     ax[1] = zneutral, where buoyancy = 0
@@ -814,7 +873,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
             ax[0].plot(time[i]/3600, zp[i], color = color_opt[i], linewidth = 0.75)
             ax[1].plot(time[i]/3600, zneutral[i], color = color_opt[i], linewidth = 0.75)
             ax[2].plot(time[i]/3600, zc[i], color = color_opt[i], linewidth = 0.75)
-    for a in ax:
+    for a in axes:
         a.set_ylim(ymin = -lx[-1].max(), ymax = 0.0)
         a.set_xlim(0, tmax)
         a.legend(loc='upper right')

@@ -80,7 +80,7 @@ for i, reader in enumerate(readers):
     reader.load_grid()
     lz = np.max((lz, reader.lx[-1]))
     reader.load_time()
-    time.append(reader.time)
+    time.append(reader.t)
 
     S_value = reader.load_S_temporal_avg('interp_temporal_averages.h5')
     reader.load_equation_of_state()

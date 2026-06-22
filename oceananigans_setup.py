@@ -26,11 +26,10 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/ground0/aspect-ratio/dx1'
-#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/coarse1/'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/ground0/aspect-ratio/dx1=025/outputs'
 
 print(f"Reading data from {folder}")
-file_path = os.path.join(folder, 'binning_rtz.h5')
+bin_path = os.path.join(folder, 'binning_rtz.h5')
 
 g = 9.80665
 T0 = 25.0
@@ -39,23 +38,22 @@ reader = OceananigansData(folder, salinity = salinity)
 reader.load_grid(grid_specs = False)
 # grid info
 nx = reader.nx
+nt = reader.nt
 dx = reader.dx
 lx = reader.lx
-time, t_save = reader.load_time()
-nt = len(t_save)
+time = reader.load_time()[0]
 reader.load_equation_of_state()
 
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
 x, y, z = reader.x, reader.y, reader.z
 X, Y, Z = np.meshgrid(x, y, z)
-dist = np.sqrt(X**2 + Y**2)
 ncirc = min(nx[0], nx[1])//2      # full circular shells
 
 if binning_flag:
     S_rz, T_rz, ur_rz, utheta_rz, w_rz = binning_oc(reader)
     # write to file 
-    with h5py.File(file_path, "a") as f:
+    with h5py.File(bin_path, "a") as f:
         if "ccc/dimensions/r_bin" in f:
             del f["ccc/dimensions/r_bin"]
         if "ccc/dimensions/z" in f:
@@ -81,7 +79,8 @@ if binning_flag:
             if "ccc/S" in f:
                 del f["ccc/S"]
             f.create_dataset("ccc/S", data=S_rz)
-    print(f"Saved binning to {file_path}")
+    del utheta_rz, ur_rz
+    print(f"Saved binning to {bin_path}")
 
 if centerline_flag:
     file_path = os.path.join(folder, 'centerline.h5')
@@ -106,7 +105,7 @@ if centerline_flag:
         f.create_dataset("centerline/u", data=u)
         f.create_dataset("centerline/v", data=v)
         f.create_dataset("centerline/w", data=w)
-    
+    del S, T, u, v, w
     print(f"Saved centerlines to {file_path}")
     reader.centerline = True
 
@@ -135,6 +134,7 @@ if planelsice_flag:
         f.create_dataset("YZ/x = 0/u", data=u)
         f.create_dataset("YZ/x = 0/v", data=v)
         f.create_dataset("YZ/x = 0/w", data=w)
+    del S, T, u, v, w
     
     print(f"Saved plane slices to {file_path}")
 
@@ -147,6 +147,8 @@ if buoyancy_flag:
         beta = reader.beta
         S = reader.lazy_field('S').compute()
         b_profile += - g * beta * S
+        del S
+    del T
     b_avg = np.mean(b_profile, axis=(-3, -2))
     b_fluc = b_profile - b_avg[:, None, None, :]
     b_rms = np.mean(b_fluc**2, axis=(-3, -2))**0.5
@@ -157,6 +159,8 @@ if buoyancy_flag:
             S_avg = reader.load_averages('S')
             beta = reader.beta
             b_avg += - g * beta * S_avg
+            del S_avg
+        del T_avg
     if not reader.centerline:
         b_centerline = vertical_line(b_profile, x = reader.x, y = reader.y)
         b_fluc_centerline = vertical_line(b_fluc, x = reader.x, y = reader.y)
@@ -167,6 +171,7 @@ if buoyancy_flag:
         if not reader.centerline:
             f.create_dataset("centerline/b", data = b_centerline)
             f.create_dataset("centerline/b_fluc", data = b_fluc_centerline)
+    del b_profile
     print(f"Saved buoyancy information to {buoyancy_file}")
 
 if fluc_flag:
@@ -216,7 +221,7 @@ if rms_flag:
         f.create_dataset("rms/u", data=rms_values['u_rms'])
         f.create_dataset("rms/v", data=rms_values['v_rms'])
         f.create_dataset("rms/w", data=rms_values['w_rms'])
-    
+    del rms_values
     print(f"Saved RMS to {file_path}")
 
 if compute_temporal_averages_flag:
@@ -229,11 +234,13 @@ if compute_temporal_averages_flag:
         'S_value': data_temp['S_value'],
         'w_value': data_temp['w_value'], 
     }
-    write_temporal_averages(file_path, data)
+    write_temporal_averages(bin_path, data)
+    del data_temp
+    print(f"Saved temporal averages to {bin_path}")
 
 if contour_flag:
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
-    S_value = reader.load_S_temporal_avg(file_path)
+    S_value = reader.load_S_temporal_avg(bin_path)
     if not binning_flag:
         S_rz = reader.load_binning_var('S')
 
@@ -283,23 +290,23 @@ if contour_flag:
 
             r_contour[:, it] = radius_tracer
 
-        with h5py.File(file_path, "a") as f:
+        with h5py.File(bin_path, "a") as f:
             key = f"r given contour/contour = {contour}"
             if key in f:
                 del f[key]
             f.create_dataset(key, data=r_contour)
 
-    print(f"Saved contours to {file_path}")
+    print(f"Saved contours to {bin_path}")
 
 if mass_flag:
     rho0 = 1026 # kg/m^3
-    if not buoyancy_flag:
-        S = reader.lazy_field('S').compute()
+    S = reader.lazy_field('S').compute()
     domain = math.prod(reader.nx)
     vol = math.prod(reader.lx)
     dims = (1, 2, 3)
     # volume integral of S value in domain
     S_mass = np.mean(S, axis = dims)*vol*rho0
+    del S
     dmdt = np.gradient(S_mass, time)
     with h5py.File(file_path, "a") as f:
         if "mass/S" in f:

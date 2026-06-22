@@ -50,7 +50,7 @@ grid_specs = False*np.ones(num_cases)
 for i, reader in enumerate(readers):
     reader.load_time()
     reader.load_grid(grid_specs = grid_specs[i])
-    time.append(reader.time)
+    time.append(reader.t)
     nx[:, i] = reader.nx
     lx[:, i] = reader.lx
     nt[i] = reader.nt
@@ -69,7 +69,7 @@ if neg_tracer:
 
 # Load data from files
 for n, reader in enumerate(readers):
-    t.append(reader.time / 3600 / 24)
+    t.append(reader.t / 3600 / 24)
     # load tracer
     if "/glade" in universal_folder:
         domain = math.prod(reader.nx)
@@ -121,10 +121,10 @@ plot_format()
 if tracer_integral:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
-    fig, ax = plt.subplots(2, 2, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
-    for a in ax[-1, :]:
+    fig, axes = plt.subplots(2, 2, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
+    for a in axes[-1, :]:
             a.remove()
-    ax = ax.ravel()
+    axes = axes.ravel()
     plt.subplots_adjust(top=0.9)
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
     leg_col = num_cases//2 if num_cases > 4 else num_cases
@@ -140,22 +140,22 @@ if tracer_integral:
         mass_label = r'$\rho_{0}L_{x}L_{y}L_{z}\langle\text{C}\rangle_{\text{xyz}}$[g]'
         mass_rate_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}$[g/days]'
 
-    ax[0].set_title('Mass', fontsize = 12)
-    ax[0].set_xlabel('Time (days)', fontsize = 12)
-    ax[0].set_ylabel(mass_label, fontsize = 12)
+    axes[0].set_title('Mass', fontsize = 12)
+    axes[0].set_xlabel('Time (days)', fontsize = 12)
+    axes[0].set_ylabel(mass_label, fontsize = 12)
 
-    ax[1].set_title(r'Temporal rate of Mass', fontsize = 12)
-    ax[1].set_xlabel('Time (days)', fontsize = 12)
-    ax[1].set_ylabel(mass_rate_label, fontsize = 12)
+    axes[1].set_title(r'Temporal rate of Mass', fontsize = 12)
+    axes[1].set_xlabel('Time (days)', fontsize = 12)
+    axes[1].set_ylabel(mass_rate_label, fontsize = 12)
     dmdt_flat = list(itertools.chain.from_iterable(dmdt))
     mass_rate = [min(dmdt_flat), max(dmdt_flat)]
-    ax[1].set_ylim(mass_rate[0]*0.9, mass_rate[1]*1.1)
+    axes[1].set_ylim(mass_rate[0]*0.9, mass_rate[1]*1.1)
 
     for n in range(num_cases):
-        ax[0].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
-        ax[1].plot(t[n], dmdt[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
+        axes[1].plot(t[n], dmdt[n], color = color_opt[n], label=case_names[n])
 
-    for a in ax[:4]:
+    for a in axes[:4]:
         if a.get_yscale() != 'log':
             a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3), useOffset=False)
     fig.tight_layout(pad=1.5)
@@ -173,10 +173,10 @@ if tracer_integral:
 if neg_tracer:
     scale = [1, 1, 0.02]
     gridspec_kw={'height_ratios': scale}
-    fig, ax = plt.subplots(3, 4, figsize=(16, 8), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
-    for a in ax[-1, :]:
+    fig, axes = plt.subplots(3, 4, figsize=(16, 8), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
+    for a in axes[-1, :]:
             a.remove()
-    ax = ax.ravel()
+    axes = axes.ravel()
     plt.subplots_adjust(top=0.9)
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
     fig.legend(handles=case_handles,
@@ -186,46 +186,46 @@ if neg_tracer:
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
 
-    ax[0].set_title(r'-S$_{avg}$', fontsize = 12)
-    ax[0].set_ylabel('[g/kg]', fontsize = 12)
+    axes[0].set_title(r'-S$_{avg}$', fontsize = 12)
+    axes[0].set_ylabel('[g/kg]', fontsize = 12)
 
-    ax[1].set_title('Maximum magnitude of -S values', fontsize = 12)
-    ax[1].set_yscale('log')
-    ax[1].set_ylabel('[g/kg]', fontsize = 12)
+    axes[1].set_title('Maximum magnitude of -S values', fontsize = 12)
+    axes[1].set_yscale('log')
+    axes[1].set_ylabel('[g/kg]', fontsize = 12)
 
-    ax[2].set_title('Sum of -S in domain', fontsize = 12)
-    ax[2].set_ylabel('[g/kg]', fontsize = 12)
+    axes[2].set_title('Sum of -S in domain', fontsize = 12)
+    axes[2].set_ylabel('[g/kg]', fontsize = 12)
 
-    ax[3].set_title('Percent of -S values', fontsize = 12)
-    ax[3].set_ylabel('% of domain', fontsize = 12)
+    axes[3].set_title('Percent of -S values', fontsize = 12)
+    axes[3].set_ylabel('% of domain', fontsize = 12)
 
-    ax[0].set_title(r'S$_{avg}$', fontsize = 12)
-    ax[0].set_xlabel('Time (days)', fontsize = 12)
-    ax[0].set_ylabel('[g/kg]', fontsize = 12)
+    axes[0].set_title(r'S$_{avg}$', fontsize = 12)
+    axes[0].set_xlabel('Time (days)', fontsize = 12)
+    axes[0].set_ylabel('[g/kg]', fontsize = 12)
 
-    ax[1].set_title(r'dS$_{avg}$/dt', fontsize = 12)
-    ax[1].set_xlabel('Time (days)', fontsize = 12)
-    ax[1].set_ylabel('[g/kg/days]', fontsize = 12)
+    axes[1].set_title(r'dS$_{avg}$/dt', fontsize = 12)
+    axes[1].set_xlabel('Time (days)', fontsize = 12)
+    axes[1].set_ylabel('[g/kg/days]', fontsize = 12)
 
-    ax[2].set_title('Sum of S in domain', fontsize = 12)
-    ax[2].set_xlabel('Time (days)', fontsize = 12)
-    ax[2].set_ylabel('[g/kg]', fontsize = 12)
+    axes[2].set_title('Sum of S in domain', fontsize = 12)
+    axes[2].set_xlabel('Time (days)', fontsize = 12)
+    axes[2].set_ylabel('[g/kg]', fontsize = 12)
 
-    ax[3].set_title(r'dS$_{sum}$/dt', fontsize = 12)
-    ax[3].set_xlabel('Time (days)', fontsize = 12)
-    ax[3].set_ylabel('[g/kg/days]', fontsize = 12)
+    axes[3].set_title(r'dS$_{sum}$/dt', fontsize = 12)
+    axes[3].set_xlabel('Time (days)', fontsize = 12)
+    axes[3].set_ylabel('[g/kg/days]', fontsize = 12)
 
     for n in range(num_cases):
-        ax[0].plot(t[n], np.abs(neg_avg[n]), color = color_opt[n], label=case_names[n])
-        ax[1].plot(t[n], np.abs(S_min[n]), color = color_opt[n], label=case_names[n])
-        ax[3].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
-        ax[2].plot(t[n], S_neg_sum[n], color = color_opt[n], label=case_names[n])
-        ax[0].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
-        ax[1].plot(t[n], dS_intdt[n], color = color_opt[n], label=case_names[n])
-        ax[2].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
-        ax[3].plot(t[n], dSdt[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], np.abs(neg_avg[n]), color = color_opt[n], label=case_names[n])
+        axes[1].plot(t[n], np.abs(S_min[n]), color = color_opt[n], label=case_names[n])
+        axes[3].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
+        axes[2].plot(t[n], S_neg_sum[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
+        axes[1].plot(t[n], dS_intdt[n], color = color_opt[n], label=case_names[n])
+        axes[2].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
+        axes[3].plot(t[n], dSdt[n], color = color_opt[n], label=case_names[n])
 
-    for a in ax[:8]:
+    for a in axes[:8]:
         if a.get_yscale() != 'log':
             a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3))
     fig.tight_layout(pad=1.5)

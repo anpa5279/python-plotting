@@ -12,7 +12,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     #print(hor)
     #print(z)
     if plane == 'YZ': #yz plane
-        lhor = np.max(lx[1])
+        lhor = np.min(lx[1])
         lz = np.max(lx[2])
         ar = lhor/lz
         plane = 'YZ plane'
@@ -44,11 +44,11 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         ncols = num_cases
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
-    vert_len = hor_len * nrows / (ncols * ar) + 0.25 * nrows + 2.0
+    vert_len = hor_len * nrows / (ncols * ar) + 0.25 * nrows + 0.5
 
-    fig, ax = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 600)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 600)
     fig.suptitle(title, fontsize=12)
-    ax = ax.ravel()
+    axes = axes.ravel()
     # Force even pixel dimensions at 600 dpi
     w_px = int(fig.get_figwidth() * fig.dpi)
     h_px = int(fig.get_figheight() * fig.dpi)
@@ -58,21 +58,21 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         fig.set_figheight((h_px + 1) / fig.dpi)
     if num_cases != (nrows*ncols):
         for i in range(num_cases, nrows*ncols):
-            ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
+            axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
         if name == 'Tracer':
             var[n][var[n] <= 0] = 10**(-16)
-            im = ax[n].imshow(var[n], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+            im = axes[n].imshow(var[n], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
-            im = ax[n].imshow(var[n], vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
-        ax[n].set_title(case_name, fontsize=10)
-        ax[n].set_aspect('equal')
+            im = axes[n].imshow(var[n], vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
+        axes[n].set_title(case_name, fontsize=10)
+        axes[n].set_aspect('equal')
         if n == 0 or n%ncols == 0:
-            ax[n].set_ylabel("Depth [m]")
+            axes[n].set_ylabel("Depth [m]")
         if n >= (nrows - 1) * ncols:
-            ax[n].set_xlabel(xlabel)
+            axes[n].set_xlabel(xlabel)
 
-    active_axes = [ax[n] for n in range(num_cases)]
+    active_axes = [axes[n] for n in range(num_cases)]
     cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
     if not name == 'Tracer': 
         cbar.formatter.set_useOffset(False)
@@ -97,22 +97,22 @@ def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_nam
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols) + 0.5 * nrows + 1.1
 
-    fig, ax = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+    fig, axes = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
     fig.suptitle(name + ', ' + plane + ', ' + f'{td:.2f} days', fontsize=12)
-    ax = ax.ravel()
+    axes = axes.ravel()
     if num_cases != (nrows*ncols):
         for i in range(num_cases, nrows*ncols):
-            ax[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
+            axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
         if name == 'Tracer':
-            im = ax[n].imshow(var[n].T, extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+            im = axes[n].imshow(var[n].T, extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
-            im = ax[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap)
-        ax[n].set_title(case_name, fontsize=10)
-        ax[n].set_aspect('equal')
-        ax[n].set_xlabel("x [m]")
-        ax[n].set_ylabel("y [m]")
-    cbar = fig.colorbar(im, ax = ax.tolist(), anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
+            im = axes[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap)
+        axes[n].set_title(case_name, fontsize=10)
+        axes[n].set_aspect('equal')
+        axes[n].set_xlabel("x [m]")
+        axes[n].set_ylabel("y [m]")
+    cbar = fig.colorbar(im, ax = axes.tolist(), anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
     if not name == 'Tracer': 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
@@ -143,8 +143,8 @@ def plot_binning(S_rz, T_rz, hor_vel_rz, w_rz, r, z, time, output_folder, min_S 
 
     # plotting results
     for it, t in enumerate(time):
-        fig, ax = plt.subplots(2, 2, figsize=(10, 9.5), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
-        ax = ax.ravel()
+        fig, axes = plt.subplots(2, 2, figsize=(10, 9.5), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+        axes = axes.ravel()
         td = t / 3600 / 24
         fig.suptitle(f'{td:.2f} days', y = 0.99, fontsize=12)
         """
@@ -154,32 +154,32 @@ def plot_binning(S_rz, T_rz, hor_vel_rz, w_rz, r, z, time, output_folder, min_S 
         ax3  # horizontal velocity
         """
 
-        im = ax[0].imshow(T_rz[:, :, it].T, vmin=T_range[0], vmax=T_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
-        ax[0].set_ylabel("Depth [m]")
-        #ax[0].set_xlabel("radial distance [m]")
-        ax[0].set_title("Temperature")
-        ax[0].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[0], label=r"$^\circ$C", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        im = axes[0].imshow(T_rz[:, :, it].T, vmin=T_range[0], vmax=T_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower')
+        axes[0].set_ylabel("Depth [m]")
+        #axes[0].set_xlabel("radial distance [m]")
+        axes[0].set_title("Temperature")
+        axes[0].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = axes[0], label=r"$^\circ$C", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
 
-        im = ax[1].imshow(S_rz[:, :, it].T, extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', norm=colors.LogNorm(vmin=S_range[0], vmax=S_range[1]))
-        #ax[1].set_xlabel("radial distance [m]")
-        ax[1].set_title("Tracer")
-        ax[1].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[1], label=r"g/kg", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        im = axes[1].imshow(S_rz[:, :, it].T, extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', norm=colors.LogNorm(vmin=S_range[0], vmax=S_range[1]))
+        #axes[1].set_xlabel("radial distance [m]")
+        axes[1].set_title("Tracer")
+        axes[1].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = axes[1], label=r"g/kg", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
 
-        im = ax[2].imshow(w_rz[:, :, it].T, vmin=w_range[0], vmax=w_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
-        #ax[2].set_xlabel("radial distance [m]")
-        ax[2].set_title("w")
-        ax[2].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[2], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        im = axes[2].imshow(w_rz[:, :, it].T, vmin=w_range[0], vmax=w_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
+        #axes[2].set_xlabel("radial distance [m]")
+        axes[2].set_title("w")
+        axes[2].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = axes[2], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
         cbar.formatter.set_powerlimits((-2, 2))
         cbar.update_ticks()
 
-        im = ax[3].imshow(hor_vel_rz[:, :, it].T, vmin=u_range[0], vmax=u_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
-        ax[3].set_xlabel("radial distance [m]")
-        ax[3].set_title("Horizontal Velocity")
-        ax[3].set_aspect('equal')
-        cbar = fig.colorbar(im, ax = ax[3], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
+        im = axes[3].imshow(hor_vel_rz[:, :, it].T, vmin=u_range[0], vmax=u_range[1], extent =[r.min(), r.max(), z.min(), z.max()], interpolation ='none', origin ='lower', cmap='RdBu_r')
+        axes[3].set_xlabel("radial distance [m]")
+        axes[3].set_title("Horizontal Velocity")
+        axes[3].set_aspect('equal')
+        cbar = fig.colorbar(im, ax = axes[3], label=r"m/s", anchor = (0.5, -0.05), orientation='horizontal', shrink=0.75)
         cbar.formatter.set_powerlimits((-2, 2))
         cbar.update_ticks()
         

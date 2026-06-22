@@ -454,123 +454,123 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     outdir = [fig_folder + 'convergence tests buoyancy profiles/']
     os.makedirs(outdir, exist_ok=True)
 
-    fig, ax = plt.subplots(3, 5, figsize=(20, 8), height_ratios = [1, 0.2, 1])
+    fig, axes = plt.subplots(3, 5, figsize=(20, 8), height_ratios = [1, 0.2, 1])
 
     fig.text(0.5, 1.08, f'{td:.2f} days', ha="center", fontsize=12) 
     # Titles for each row
     fig.text(0.5, 1.05, "Vertical resolution convergence", ha="center", fontsize=14)
     fig.text(0.5, 0.52, "Horizontal resolution convergence", ha="center", fontsize=14)
     
-    ax1 = ax[0, 0]
-    ax6 = ax[2, 0]
-    for a in ax[1, :]:
+    ax1 = axes[0, 0]
+    ax6 = axes[2, 0]
+    for a in axes[1, :]:
         a.remove()
     for caseindex, case in enumerate(cases_sorted):
         if ver[caseindex] and hor[caseindex]:
             name_case = case.replace('flux b tracer ', "")
             # buoyancy profile
-            ax[0, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
+            axes[0, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
             # RMS buoyancy 
-            ax[0, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[0, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # RMS w
-            ax[0, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}rangle_{\text{xy}}$")
+            axes[0, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}rangle_{\text{xy}}$")
             # RMS buoyancy flux 
-            ax[0, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[0, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # buoyancy profile
-            ax[2, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
+            axes[2, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
             # RMS buoyancy 
-            ax[2, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[2, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # RMS w 
-            ax[2, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}\rangle_{\text{xy}}$")
+            axes[2, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--', label = r"$\langle$w$_{rms}\rangle_{\text{xy}}$")
             # RMS buoyancy flux 
-            ax[2, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[2, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
         elif ver[caseindex] and not hor[caseindex]:
             name_case = case.replace('flux b tracer ', "")
             # buoyancy profile
-            ax[0, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
+            axes[0, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
             # RMS buoyancy 
-            ax[0, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[0, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # RMS w 
-            ax[0, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--')
+            axes[0, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = '--')
             # RMS buoyancy flux 
-            ax[0, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[0, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
         elif hor[caseindex] and not ver[caseindex]:
             name_case = case.replace('flux b tracer ', "")
             # buoyancy profile
-            ax[2, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
+            axes[2, 0].plot(b_avg[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex], label = name_case)
             # RMS buoyancy 
-            ax[2, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[2, 1].plot(b_rms[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
             # RMS w 
-            ax[2, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = ':')
+            axes[2, 2].plot(w_rms[0:nx[2, caseindex]+1, caseindex], z[0:nx[2, caseindex]+1, caseindex], color = colors[caseindex])#, linestyle = ':')
             # RMS buoyancy flux 
-            ax[2, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
+            axes[2, 3].plot(bw_fluc[0:nx[2, caseindex], caseindex], z[0:nx[2, caseindex], caseindex], color = colors[caseindex])
 
     # Ozmidov length scale
-    ax[2, 4].plot(nx[0, hor], L_ozmidov_background[it, hor], marker = '+', label = r"b$_{\text{stratified}, 3}$ L$_{O}$", linestyle = 'none')
-    ax[2, 4].plot(nx[0, hor], L_ozmidov[it, hor], marker = 'o', label = r"b$_{\text{average}, 3}$ L$_{O}$", linestyle = 'none')
-    ax[0, 4].plot(nx[2, ver], L_ozmidov_background[it, ver], marker = '+', label = r"b$_{\text{stratified}, 3}$ L$_{O}$", linestyle = 'none')
-    ax[0, 4].plot(nx[2, ver], L_ozmidov[it, ver], marker = 'o', label = r"b$_{\text{average}, 3}$ L$_{O}$", linestyle = 'none')
+    axes[2, 4].plot(nx[0, hor], L_ozmidov_background[it, hor], marker = '+', label = r"b$_{\text{stratified}, 3}$ L$_{O}$", linestyle = 'none')
+    axes[2, 4].plot(nx[0, hor], L_ozmidov[it, hor], marker = 'o', label = r"b$_{\text{average}, 3}$ L$_{O}$", linestyle = 'none')
+    axes[0, 4].plot(nx[2, ver], L_ozmidov_background[it, ver], marker = '+', label = r"b$_{\text{stratified}, 3}$ L$_{O}$", linestyle = 'none')
+    axes[0, 4].plot(nx[2, ver], L_ozmidov[it, ver], marker = 'o', label = r"b$_{\text{average}, 3}$ L$_{O}$", linestyle = 'none')
 
-    ax[0, 0].set_xlabel("[m/s$^{2}$]")
-    ax[0, 0].set_ylim([-lx[2], 0])
-    ax[0, 0].set_title("Buoyancy")
-    ax[0, 0].set_ylim([-lx[2], 0])
-    ax[0, 0].set_ylabel("y [m]")
-    ax[0, 0].set_xlim(ranges['b_avg'])
-    ax[0, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[0, 0].set_xlabel("[m/s$^{2}$]")
+    axes[0, 0].set_ylim([-lx[2], 0])
+    axes[0, 0].set_title("Buoyancy")
+    axes[0, 0].set_ylim([-lx[2], 0])
+    axes[0, 0].set_ylabel("y [m]")
+    axes[0, 0].set_xlim(ranges['b_avg'])
+    axes[0, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
     
-    ax[0, 1].set_xlabel("[m/s$^{2}$]")
-    ax[0, 1].set_title("Buoyancy RMS")
-    ax[0, 1].set_xlim(ranges['b_rms'])
-    ax[0, 1].set_ylim([-lx[2], 0])
+    axes[0, 1].set_xlabel("[m/s$^{2}$]")
+    axes[0, 1].set_title("Buoyancy RMS")
+    axes[0, 1].set_xlim(ranges['b_rms'])
+    axes[0, 1].set_ylim([-lx[2], 0])
 
-    ax[0, 2].set_xlabel("[m/s]")
-    ax[0, 2].set_title("w RMS")
-    ax[0, 2].set_xlim(ranges['vel_rms'])
-    ax[0, 2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    ax[0, 2].set_ylim([-lx[2], 0])
+    axes[0, 2].set_xlabel("[m/s]")
+    axes[0, 2].set_title("w RMS")
+    axes[0, 2].set_xlim(ranges['vel_rms'])
+    axes[0, 2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[0, 2].set_ylim([-lx[2], 0])
 
-    ax[0, 3].set_xlabel("[m$^{2}$/s$^{3}$]")
-    ax[0, 3].set_title("Buoyancy Flux Flucts")
-    ax[0, 3].set_xlim(ranges['bflux_rms'])
-    ax[0, 3].set_ylim([-lx[2], 0])
+    axes[0, 3].set_xlabel("[m$^{2}$/s$^{3}$]")
+    axes[0, 3].set_title("Buoyancy Flux Flucts")
+    axes[0, 3].set_xlim(ranges['bflux_rms'])
+    axes[0, 3].set_ylim([-lx[2], 0])
 
-    ax[0, 4].legend(loc='upper right', handlelength=0.75)
-    ax[0, 4].set_ylabel("Length Scale [m]")
-    ax[0, 4].set_title("Ozmidov Length Scale")
-    ax[0, 4].set_ylim(ranges['b_avg'])
-    ax[0, 4].set_xlabel("Time [days]")
-    ax[0, 4].set_xlim([0, matrix_N +10])
+    axes[0, 4].legend(loc='upper right', handlelength=0.75)
+    axes[0, 4].set_ylabel("Length Scale [m]")
+    axes[0, 4].set_title("Ozmidov Length Scale")
+    axes[0, 4].set_ylim(ranges['b_avg'])
+    axes[0, 4].set_xlabel("Time [days]")
+    axes[0, 4].set_xlim([0, matrix_N +10])
     
-    ax[2, 0].set_xlabel("[m/s$^{2}$]")
-    ax[2, 0].set_xlim(ranges['b_avg'])
-    ax[2, 0].set_title("Buoyancy")
-    ax[2, 0].set_ylabel("Depth [m]")
-    ax[2, 0].set_ylim([-lx[2], 0])
-    ax[2, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[2, 0].set_xlabel("[m/s$^{2}$]")
+    axes[2, 0].set_xlim(ranges['b_avg'])
+    axes[2, 0].set_title("Buoyancy")
+    axes[2, 0].set_ylabel("Depth [m]")
+    axes[2, 0].set_ylim([-lx[2], 0])
+    axes[2, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
-    ax[2, 1].set_xlabel("[m/s$^{2}$]")
-    ax[2, 1].set_title("Buoyancy RMS")
-    ax[2, 1].set_xlim(ranges['b_rms'])
-    ax[2, 1].set_ylim([-lx[2], 0])
+    axes[2, 1].set_xlabel("[m/s$^{2}$]")
+    axes[2, 1].set_title("Buoyancy RMS")
+    axes[2, 1].set_xlim(ranges['b_rms'])
+    axes[2, 1].set_ylim([-lx[2], 0])
 
-    ax[2, 2].set_xlabel("[m/s]")
-    ax[2, 2].set_title("w RMS")
-    ax[2, 2].set_xlim(ranges['vel_rms'])
-    ax[2, 2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    ax[2, 2].set_ylim([-lx[2], 0]) 
+    axes[2, 2].set_xlabel("[m/s]")
+    axes[2, 2].set_title("w RMS")
+    axes[2, 2].set_xlim(ranges['vel_rms'])
+    axes[2, 2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
+    axes[2, 2].set_ylim([-lx[2], 0]) 
 
-    ax[2, 3].set_xlabel("[m$^{2}$/s$^{3}$]")
-    ax[2, 3].set_title("Buoyancy Flux Flucts")
-    ax[2, 3].set_xlim(ranges['bflux_rms'])
-    ax[2, 3].set_ylim([-lx[2], 0])
+    axes[2, 3].set_xlabel("[m$^{2}$/s$^{3}$]")
+    axes[2, 3].set_title("Buoyancy Flux Flucts")
+    axes[2, 3].set_xlim(ranges['bflux_rms'])
+    axes[2, 3].set_ylim([-lx[2], 0])
 
-    ax[2, 4].set_title("Ozmidov Length Scale")
-    ax[2, 4].set_ylabel("Length Scale [m]")
-    ax[2, 4].set_ylim(ranges['lengthscale'])
-    ax[2, 4].set_xlabel("Time [days]")
-    ax[2, 4].set_xlim([0, matrix_N +10])
-    ax[2, 4].legend(loc='upper right', handlelength=0.75)
+    axes[2, 4].set_title("Ozmidov Length Scale")
+    axes[2, 4].set_ylabel("Length Scale [m]")
+    axes[2, 4].set_ylim(ranges['lengthscale'])
+    axes[2, 4].set_xlabel("Time [days]")
+    axes[2, 4].set_xlim([0, matrix_N +10])
+    axes[2, 4].legend(loc='upper right', handlelength=0.75)
 
     # universal legend
     handles0, labels0 = ax1.get_legend_handles_labels()
@@ -588,7 +588,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     ## buoyancy plane slices ##
     outdir1 = fig_folder + 'buoyancy planeslices/'
     os.makedirs(outdir1, exist_ok=True)
-    fig, ax = plt.subplots(3, 3, figsize=(18, 10), constrained_layout=True)
+    fig, axes = plt.subplots(3, 3, figsize=(18, 10), constrained_layout=True)
     fig.suptitle(f'{td:.2f} days') 
     norm = mcolors.Normalize(vmin=ranges['b_avg'][0], vmax=ranges['b_avg'][-1])
     mappable = cm.ScalarMappable(norm=norm) 
@@ -597,18 +597,18 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     for caseindex, case in enumerate(cases_sorted):
         X, Y, Z = np.meshgrid(x[0:nx[0, caseindex], caseindex] , y[0:nx[1, caseindex], caseindex] , z[0:nx[2, caseindex], caseindex])
         name_case = case.replace('flux b tracer ', "")
-        ax[hor_plot, ver_plot].contourf(X[int(nx[0, caseindex]/2), :, :], Z[int(nx[0, caseindex]/2), :, :], b[caseindex, int(nx[0, caseindex]/2), 0:nx[1, caseindex], 0:nx[2, caseindex]], levels, norm=norm)
-        ax[hor_plot, ver_plot].set_title(name_case)
-        ax[hor_plot, ver_plot].set_xlabel("y [m]")
-        ax[hor_plot, ver_plot].set_ylabel("z [m]")
-        ax[hor_plot, ver_plot].set_aspect('equal')
+        axes[hor_plot, ver_plot].contourf(X[int(nx[0, caseindex]/2), :, :], Z[int(nx[0, caseindex]/2), :, :], b[caseindex, int(nx[0, caseindex]/2), 0:nx[1, caseindex], 0:nx[2, caseindex]], levels, norm=norm)
+        axes[hor_plot, ver_plot].set_title(name_case)
+        axes[hor_plot, ver_plot].set_xlabel("y [m]")
+        axes[hor_plot, ver_plot].set_ylabel("z [m]")
+        axes[hor_plot, ver_plot].set_aspect('equal')
         if ver_plot > 1:
             hor_plot += 1
             ver_plot = 0
         else:
             ver_plot += 1
 
-    cbar = fig.colorbar(mappable, ax=ax, label=r"m/s$^2$", location='bottom', shrink=0.5, orientation='horizontal')
+    cbar = fig.colorbar(mappable, ax=axes, label=r"m/s$^2$", location='bottom', shrink=0.5, orientation='horizontal')
     
     # --- Save Frame ---
     frame_path = os.path.join(outdir1, f"planeslices_{it:04d}.png")

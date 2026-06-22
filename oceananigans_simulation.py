@@ -6,7 +6,7 @@ from matplotlib.lines import Line2D
 
 from reader import OceananigansData
 from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
-from interpolation import vertical_line
+from interpolation import point, vertical_line, interp1d_axis
 """
     what is the best way to find the maximum penetration depth of a plume via momentum?
     ways to consider w:
@@ -26,21 +26,16 @@ from interpolation import vertical_line
 """
 # plotting flags
 plot_zt = False
-plot_yt = False
+plot_yt = True
 plot_raw_centerline = False
 plot_1dz_stats = False
-verify_outputs = True
+verify_outputs = False
 video = False
 
-# flags for how to read data
-with_halos = False
-closure = False
-salinity = True
-stokes = False
-
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/fine1/'
+# simulation information
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60'
 outdir = os.path.join(folder, 'figures')
-reader = OceananigansData(folder, salinity = salinity)
+reader = OceananigansData(folder, salinity = True)
 if plot_1dz_stats:
     fig_var_folder = os.path.join(outdir, 'max penetration variables')
     os.makedirs(fig_var_folder, exist_ok=True)
@@ -49,33 +44,55 @@ if plot_1dz_stats:
 hml = 60
 g = 9.80665
 # collecting model information for all cases
-x = reader.x
 y = reader.y
 z = reader.z
-zf = reader.zf
 nx = reader.nx
 lx = reader.lx
 nt = reader.nt
 # video or not setup
-if video or plot_zt or plot_raw_centerline:
-    time = reader.time
+if video or plot_zt or plot_raw_centerline or plot_yt:
+    time = reader.t
     if reader.centerline:
         time1 = reader.time_center
 else:
-    time = reader.time[-1]
-
+    time = reader.t[-1]
+if plot_yt:
+    z_loc = -1.0*np.array([hml, hml+1, hml+2, hml+5, hml+10, hml+20]) #-[hml, ]
 # load in information
-w_centerline = reader.field_centerline('w')
 reader.load_equation_of_state()
-b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
-if (plot_zt or verify_outputs) and reader.salinity:
-    S_centerline = reader.field_centerline('S')
+if plot_zt or verify_outputs:
+    w_centerline = reader.field_centerline('w')
+    b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
+    if reader.salinity:
+        S_centerline = reader.field_centerline('S')
 if plot_1dz_stats or (plot_zt or verify_outputs):
     w_rms = reader.load_rms('w')
     u_r = reader.load_binning_var('horizontal velocity')
     u_r_avg = np.mean(u_r, axis = -3)
     u_r_rms = np.mean((u_r - u_r_avg[None, :, :])**2, axis = -3)**0.5
-
+if plot_yt:
+    buoyancy_file = os.path.join(reader.folder, 'buoyancy_profile.h5')
+    with h5py.File(buoyancy_file, 'r') as f:
+        b_avg = f['b_avg'][()]
+    w_plane = reader.load_plane_var('w')
+    S_plane = reader.load_plane_var('S')
+    T_plane = reader.load_plane_var('T')
+    w_yt = np.empty((nt, len(y), len(z_loc)))
+    S_yt = np.empty((nt, len(y), len(z_loc)))
+    T_yt = np.empty((nt, len(y), len(z_loc)))
+    b_avg_yt = np.empty((nt, len(z_loc)))
+    for j, z_opt in enumerate(z_loc):
+        w_yt[:, :, j] = interp1d_axis(w_plane, z, coord_new = z_opt, axis = -1)
+        T_yt[:, :, j] = interp1d_axis(T_plane, z, coord_new = z_opt, axis = -1)
+        b_avg_yt[:, j] = point(b_avg, z, z0 = z_opt)
+        if reader.salinity:
+            S_yt[:, :, j] = interp1d_axis(S_plane, z, coord_new = z_opt, axis = -1)
+    b_yt = g * reader.alpha * (T_yt - reader.T0)
+    if reader.salinity:
+        b_yt += - g * reader.beta * S_yt
+    b_fluc_yt = b_yt - b_avg_yt[:, None, :]
+    del w_plane, S_plane, T_plane, b_yt
+print("finished loading data")
 # finding centerlines
 if plot_raw_centerline:
     steps = reader.t_save_center
@@ -94,7 +111,6 @@ if plot_raw_centerline:
             T_output[it, :, :, :] = T_data.transpose(2, 1, 0) 
             S_output[it, :, :, :] = S_data.transpose(2, 1, 0) 
 if plot_1dz_stats:
-    w_centerline = vertical_line(w, x = x, y = y).compute()
     # calculating gradients
     dwdz_centerline = np.gradient(w_centerline, z, axis = -1)
     dwrmsdz = np.gradient(w_rms, z, axis = -1)
@@ -115,13 +131,13 @@ if verify_outputs: # collecting coarser field output information to make sure it
 hml_var = np.arange(-10**2, 10**2)
 hml_array = -hml * np.ones(len(hml_var))
 ranges = plot_ranges()
-ranges['w'] = [-2.2*10**-1, 2.2*10**-1]
-ranges['b_fluc'] = [-8*10**(-4), 8*10**(-4)]
+ranges['w'] = [-1.2*10**-1, 1.2*10**-1]
+ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
 ranges['gradw'] = [-0.05, 0.05]
 ranges['gradb'] = [-0.0008, 0.0008]
-ranges['b_rms'] = [0, 2.1*10**(-5)]
-ranges['vel_rms'] = [0, 5*10**-3]
-ranges['S'] = [0.0, 0.09]
+ranges['b_rms'] = [0, 1.5*10**(-5)]
+ranges['vel_rms'] = [0, 4*10**-3]
+ranges['S'] = [0.0, 0.05]
 factor = 10**(-2)
 nvars = 5
 color_opt, line_opt  = comparison_plot_opt(nvars)
@@ -153,7 +169,7 @@ if plot_raw_centerline:
     for ix, i in enumerate([nx[0]//2, nx[0]//2+1]):
         for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
             for n, var in enumerate(vars):
-                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
                 axes[count].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
                 axes[count].legend(loc='lower left')
                 axes[count].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
@@ -195,7 +211,7 @@ if plot_zt:
     axes = axes.ravel()
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     for n, var in enumerate(vars):
-        im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+        im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
         axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
@@ -211,6 +227,51 @@ if plot_zt:
     frame_path = os.path.join(outdir, file)
     plt.savefig(frame_path)
     plt.close(fig)
+if plot_yt:
+    if reader.salinity:
+        titles = [r"w", r"S", r"T", r"b'", r"b"]
+        colors = ['RdBu', 'Blues', 'viridis', 'RdBu']
+        labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]', r'[m/s$^2$]']
+        vars = [w_yt, S_yt, T_yt, b_fluc_yt]
+        file = 'wSTb_yt.svg'
+    else:
+        w_max = np.max(np.abs(w_yt))
+        b_fluc_max = np.max(np.abs(b_fluc_yt))
+        range_opt = [(-w_max, w_max), (np.min(T_yt), np.max(T_yt)), (-b_fluc_max, b_fluc_max)]
+        titles = [r"w", r"T", r"b'", r"b"]
+        colors = ['RdBu', 'viridis', 'RdBu']
+        labels = ['[m/s]', r'[$^\circ$C]', r'[m/s$^2$]']
+        vars = [w_yt, T_yt, b_fluc_yt]
+        file = 'wTb_yt.svg'
+    ncols = len(vars)
+    for j, z_opt in enumerate(z_loc):
+        w_max = np.max(np.abs(w_yt[:, :, j]))
+        b_fluc_max = np.max(np.abs(b_fluc_yt[:, :, j]))
+        if reader.salinity:
+            range_opt = [(-w_max, w_max), (0.0, np.max(S_yt[:, :, j])), (np.min(T_yt[:, :, j]), np.max(T_yt[:, :, j])), (-b_fluc_max, b_fluc_max)]
+        else:
+            range_opt = [(-w_max, w_max), (np.min(T_yt[:, :, j]), np.max(T_yt[:, :, j])), (-b_fluc_max, b_fluc_max)]
+        fig, axes = plt.subplots(1, ncols, figsize=(4*ncols, 5.5), sharex = True, sharey = True)
+
+        ratio = ((time.max()/(3600*24))/lx[1])**-1
+        axes = axes.ravel()
+        fig.suptitle(f"z = {z_opt} m")
+        plt.subplots_adjust(bottom = 0.1, top = 0.9)
+        axes[0].set_ylabel("time [days]")
+        for n, var in enumerate(vars):
+            im = axes[n].imshow(var[:, :, j], extent=[y.min(), y.max(), time.min()/(3600*24), time.max()/(3600*24)], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+            axes[n].set_xlim(y.min(), y.max())
+            axes[n].set_ylim(time.min()/(3600*24), time.max()/(3600*24))
+            axes[n].set_xlabel("y [m]")
+            axes[n].set_title(titles[n]+rf'(0, y, {z_opt})')
+            axes[n].set_aspect(ratio)
+            cbar = fig.colorbar(im, ax = axes[n], anchor = (0.5, 0.9), orientation='horizontal', label=labels[n], shrink=0.8, aspect=30)
+            cbar.formatter.set_useOffset(False)
+            cbar.formatter.set_powerlimits((-3, 5))
+            cbar.update_ticks() 
+        frame_path = os.path.join(outdir, rf'z{z_loc[j]}_{file}')
+        plt.savefig(frame_path)
+        plt.close(fig)
 if plot_1dz_stats:
     gridspec_kw={'height_ratios': [1, 1, 0.1]}
     width = 0.8
@@ -239,7 +300,6 @@ if plot_1dz_stats:
 
         ax0.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax0.plot(w_centerline[it, :], z, color = color_opt[0], linewidth = width)
-        ax0.plot(w_fluc_centerline[it, :], z, color = color_opt[2], linewidth = width)
         ax0.set_xlim(ranges['w'])
         ax0.legend(loc='lower left')
         ax0.set_title("w")
@@ -248,7 +308,6 @@ if plot_1dz_stats:
 
         ax1.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax1.plot(dwdz_centerline[it, :], z, color = color_opt[0], linewidth = width)
-        ax1.plot(dwflucdz_centerline[it, :], z, color = color_opt[2], linewidth = width)
         ax1.set_xlim(ranges['gradw'])
         ax1.set_title("dw/dz")
         ax1.set_xlabel("dw/dz [1/s]")

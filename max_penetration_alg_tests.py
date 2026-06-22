@@ -56,11 +56,11 @@ lx = reader.lx
 nt = reader.nt
 # video or not setup
 if video or plot_zt or plot_raw_output:
-    time = reader.time
+    time = reader.t
     if reader.centerline:
         time1 = reader.time_center
 else:
-    time = reader.time[-1]
+    time = reader.t[-1]
 
 # load in information
 w_centerline = reader.field_centerline('w')
@@ -182,7 +182,7 @@ if plot_raw_output:
     for ix, i in enumerate([nx[0]//2, nx[0]//2+1]):
         for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
             for n, var in enumerate(vars):
-                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
                 axes[count].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
                 axes[count].legend(loc='lower left')
                 axes[count].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
@@ -224,7 +224,7 @@ if plot_zt:
     axes = axes.ravel()
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     for n, var in enumerate(vars):
-        im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', origin='lower', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+        im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
         axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))

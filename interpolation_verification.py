@@ -32,9 +32,9 @@ lx = reader.lx
 nt = reader.nt
 # video or not setup
 if video:
-    time = reader.time
+    time = reader.t
 else:
-    time = reader.time[-1]
+    time = reader.t[-1]
 
 nvars = 3
 if vertical_verification:

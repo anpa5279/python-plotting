@@ -11,7 +11,6 @@ from plotting_general import plot_format, comparison_plot_opt, create_video
 # flags for how to read data
 with_halos = False
 closure = False
-salinity = True
 stokes = False
 
 contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
@@ -45,7 +44,7 @@ color_opt, _ = comparison_plot_opt(len(contours))
 readers = []
 for folder in folder_names:
     folder = os.path.join(universal_folder, folder)
-    readers.append(OceananigansData(folder, salinity = salinity))
+    readers.append(OceananigansData(folder, salinity = True))
 
 # physical parameters
 x0 = 0.0
@@ -65,7 +64,7 @@ for i, reader in enumerate(readers):
     reader.load_grid()
     lz = np.max((lz, reader.lx[-1]))
     reader.load_time()
-    time.append(reader.time)
+    time.append(reader.t)
     nt = min((nt, len(time[i])))
 
     S_value = reader.load_S_temporal_avg('binning_rtz.h5')

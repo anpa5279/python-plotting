@@ -105,11 +105,8 @@ def vertical_line(f, x = None, y = None, x0 = 0.0, y0 = 0.0):
 
     return fxy  # shape: (Nz,)
 
-def horizontal_line(f, hor, z, hor0, z0, axis='y'):
-    if axis == 'y':
-        fh = interp1d_axis(f, hor, coord_new = hor0, axis=1)
-    else:
-        fh = interp1d_axis(f, hor, coord_new = hor0, axis=0)
+def horizontal_line(f, hor, z, hor0, z0, axis=-2):
+    fh = interp1d_axis(f, hor, coord_new = hor0, axis=axis)
 
     return interp1d_axis(fh, z, coord_new = z0, axis=-1)
 
@@ -126,16 +123,15 @@ def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
     if z0 is not None: # if field, inputs z, f
         fnew = interp1d_axis(f, z, coord_new = z0)
         new = fnew
-    #print("after z if statement")
     if x is not None and y is not None: # if field, inputs x, y, z
         fnewy = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
         #print('fnewy', fnewy.shape)
         new = interp1d_axis(fnewy, x, coord_new = x0, axis = -3)
         #print('new', new.shape)
-    elif y is None: # if field, inputs x, z, f
+    elif y is None and x is not None: # if field, inputs x, z, f
         new = interp1d_axis(fnew, x, coord_new = x0, axis = -3)
         #print('new', new.shape)
-    elif x is None: # if field, inputs y, z, f
+    elif x is None and y is not None: # if field, inputs y, z, f
         new = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
         #print('new', new.shape)
     #print('all if statements are done')

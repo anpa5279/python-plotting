@@ -45,7 +45,7 @@ if variations != 'else':
 else:
     folder_names = ['proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 70', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 70']
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'interpolated', 'MLD = 70m')
+    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'MLD = 70m')
     case_names =[r'L$_z = 96$m', r'L$_z = 160$m']#r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m'#[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
     cases_info = {
             "folder_names": folder_names,
@@ -112,10 +112,10 @@ S0 = 0
 # video or not setup
 if video:
     nt = np.arange(0, nt)
-    time = readers[0].time
+    time = readers[0].t
 else:
     nt = [nt,] # last time step
-    time = readers[0].time[-1]
+    time = readers[0].t[-1]
 
 # plotting prep
 plot_format()
