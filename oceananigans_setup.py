@@ -9,13 +9,13 @@ from interpolation import interp1d_axis, vertical_line
 
 # set flags
 compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 fluc_flag = True # calculates turbulent statistics from binning information
 rms_flag = True # calculates RMS from 3D fields
-buoyancy_flag = False
+buoyancy_flag = True
 mass_flag = True
 
 salinity = True
