@@ -26,7 +26,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/fine1/'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/ground0/aspect-ratio/dx1'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/coarse1/'
 
 print(f"Reading data from {folder}")

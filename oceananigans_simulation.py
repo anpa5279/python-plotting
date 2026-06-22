@@ -6,7 +6,7 @@ from matplotlib.lines import Line2D
 
 from reader import OceananigansData
 from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
-from interpolation import vertical_line, point, velocities_to_center
+from interpolation import vertical_line
 """
     what is the best way to find the maximum penetration depth of a plume via momentum?
     ways to consider w:
@@ -25,10 +25,11 @@ from interpolation import vertical_line, point, velocities_to_center
         3. gradient changes
 """
 # plotting flags
-plot_zt = True
-plot_raw_output = True
-plot_variables = False
-plot_depth = False
+plot_zt = False
+plot_yt = False
+plot_raw_centerline = False
+plot_1dz_stats = False
+verify_outputs = True
 video = False
 
 # flags for how to read data
@@ -37,15 +38,16 @@ closure = False
 salinity = True
 stokes = False
 
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/coarse2/'
-outdir = os.path.join(folder, 'max penetration algorithm testing figures')
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/fine1/'
+outdir = os.path.join(folder, 'figures')
 reader = OceananigansData(folder, salinity = salinity)
-if plot_variables:
+if plot_1dz_stats:
     fig_var_folder = os.path.join(outdir, 'max penetration variables')
     os.makedirs(fig_var_folder, exist_ok=True)
 
 # parameters
 hml = 60
+g = 9.80665
 # collecting model information for all cases
 x = reader.x
 y = reader.y
@@ -55,7 +57,7 @@ nx = reader.nx
 lx = reader.lx
 nt = reader.nt
 # video or not setup
-if video or plot_zt or plot_raw_output:
+if video or plot_zt or plot_raw_centerline:
     time = reader.time
     if reader.centerline:
         time1 = reader.time_center
@@ -66,22 +68,16 @@ else:
 w_centerline = reader.field_centerline('w')
 reader.load_equation_of_state()
 b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
-if plot_zt and reader.salinity:
-    if reader.centerline:
-        S_centerline = reader.field_centerline('S')
-    else:
-        S = reader.load_plane_var('S')
-        S_centerline = vertical_line(S, y = y)
-        w = reader.load_plane_var('w')
-        w_centerline = vertical_line(w, y = y)
-if plot_variables or plot_depth or plot_zt:
+if (plot_zt or verify_outputs) and reader.salinity:
+    S_centerline = reader.field_centerline('S')
+if plot_1dz_stats or (plot_zt or verify_outputs):
     w_rms = reader.load_rms('w')
     u_r = reader.load_binning_var('horizontal velocity')
     u_r_avg = np.mean(u_r, axis = -3)
     u_r_rms = np.mean((u_r - u_r_avg[None, :, :])**2, axis = -3)**0.5
 
 # finding centerlines
-if plot_raw_output:
+if plot_raw_centerline:
     steps = reader.t_save_center
     w_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]+1))
     T_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]))
@@ -97,49 +93,24 @@ if plot_raw_output:
             w_output[it, :, :, :] = w_data.transpose(2, 1, 0) # (x_local, y, z)
             T_output[it, :, :, :] = T_data.transpose(2, 1, 0) 
             S_output[it, :, :, :] = S_data.transpose(2, 1, 0) 
-if plot_variables or plot_depth:
+if plot_1dz_stats:
     w_centerline = vertical_line(w, x = x, y = y).compute()
-    w_fluc = w - np.mean(w, axis = (-3, -2))[:, None, None, :]
-    w_fluc_centerline = vertical_line(w_fluc, x = x, y = y).compute()
-if plot_variables or plot_depth:
     # calculating gradients
     dwdz_centerline = np.gradient(w_centerline, z, axis = -1)
-    dwflucdz_centerline = np.gradient(w_fluc_centerline, z, axis = -1)
     dwrmsdz = np.gradient(w_rms, z, axis = -1)
 
     dbrmsdz = np.gradient(b_rms, z, axis = -1)
     dbflucdz = np.gradient(b_fluc_centerline, z, axis = -1)
+if verify_outputs: # collecting coarser field output information to make sure it matches the higher frequency centerline and averaged outputs
+    reader.centerline_file = None
+    w_coarse_centerline = reader.field_centerline('w')
+    T_coarse_centerline = reader.field_centerline('T')
+    b_coarse_centerline =  g * reader.alpha * (T_coarse_centerline - reader.T0)
+    if reader.salinity:
+        S_coarse_centerline = reader.field_centerline('S')
+        b_coarse_centerline += - g * reader.beta * S_coarse_centerline
+    b_coarse_centerline = reader.field_centerline('b')
 
-# calculating order of magnitude
-    w_centerline_mag = np.floor(np.log10(np.abs(w_centerline)))
-
-    w_fluc_centerline_mag = np.floor(np.log10(np.abs(w_fluc_centerline)))
-    w_rms_mag = np.floor(np.log10(np.abs(w_rms)))
-
-    b_fluc_centerline_mag = np.floor(np.log10(np.abs(b_fluc_centerline)))
-    b_rms_mag = np.floor(np.log10(np.abs(b_rms)))
-
-    # finding sign change of w
-    w_centerline_sign_change = np.diff(np.sign(w_centerline), axis = -1)
-    w_fluc_centerline_sign_change = np.diff(np.sign(w_fluc_centerline), axis = -1)
-
-    b_fluc_centerline_sign_change = np.diff(np.sign(b_fluc_centerline), axis = -1)
-if plot_depth:
-    # find where w = 0 across w variables
-    z_wfluc = point(w_fluc_centerline, z, f0 = 0.0)
-    z_w = point(w_centerline, z, f0 = 0.0)
-
-    # find where based on gradients
-    z_dbflucdz = z[np.where(np.abs(dbflucdz)==np.max(np.abs(dbflucdz)))]
-
-    # find based on max values
-    z_dbmax = z[np.where(dbflucdz == np.max(dbflucdz))]
-    z_bmax = z[np.where(b_fluc_centerline == np.max(b_fluc_centerline))]
-
-    for it in range(nt):
-        # from the surface, the second time b' changes sign
-        nz_opt = np.max(np.where(b_fluc_centerline_sign_change[it, :]>0))
-        z_bfluc_sign = point(b_fluc_centerline[it, nz_opt-2:nz_opt+2], z[nz_opt-2:nz_opt+2], f0 = 0.0)
 ############ PLOTTING ############
 hml_var = np.arange(-10**2, 10**2)
 hml_array = -hml * np.ones(len(hml_var))
@@ -156,7 +127,7 @@ nvars = 5
 color_opt, line_opt  = comparison_plot_opt(nvars)
 plot_format()
 os.makedirs(outdir, exist_ok=True)
-if plot_raw_output:
+if plot_raw_centerline:
     ranges['T'] = [reader.T0 - 0.7, reader.T0 + 0.05]
     gridspec_kw={'height_ratios': [0.8, 0.8, 0.8, 1.15]}
     if reader.salinity:
@@ -240,7 +211,7 @@ if plot_zt:
     frame_path = os.path.join(outdir, file)
     plt.savefig(frame_path)
     plt.close(fig)
-if plot_variables:
+if plot_1dz_stats:
     gridspec_kw={'height_ratios': [1, 1, 0.1]}
     width = 0.8
     labels = [r'$\text{w}_{(0, 0)}$', r"$\text{w}_{rms}$", r"$\text{w'}_{0, 0}$", r"$\text{b}_{rms}$", r"$\text{b'}_{0, 0}$"]
@@ -257,12 +228,10 @@ if plot_variables:
         ax1 = axes[1]  # dw/dz
         ax2 = axes[2]  # w rms
         ax3 = axes[3]  # dwrms/dz
-        ax4 = axes[4]  # sign
         ax5 = axes[5]  # b'
         ax6 = axes[6]  # db'/dz
         ax7 = axes[7]  # b rms
         ax8 = axes[8]  # dbrms/dz
-        ax9 = axes[9]  # magnitude
         fig.legend(handles=case_handles,
                 loc='lower center',
                 ncol=nvars,
@@ -298,14 +267,6 @@ if plot_variables:
         ax3.set_xlabel("dw/dz [1/s]")
         #ax3.set_ylabel("z [m]")
 
-        ax4.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax4.plot(np.sign(w_centerline[it, :]), z, color = color_opt[0], linewidth = width)
-        ax4.plot(np.sign(w_fluc_centerline[it, :]), z, color = color_opt[2], linewidth = width)
-        ax4.plot(np.sign(b_fluc_centerline[it, :]), z, color = color_opt[4], linewidth = width)
-        ax4.set_xlim([-1.5, 1.5])
-        ax4.set_title("Sign")
-        ax4.set_xlabel("Sign")
-
         ax5.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax5.plot(b_fluc_centerline[it, :], z, color = color_opt[4], linewidth = width)
         ax5.set_xlim(ranges['b_fluc'])
@@ -331,16 +292,6 @@ if plot_variables:
         ax8.set_xlim(ranges['gradb'][0]*factor, ranges['gradb'][1]*factor)
         ax8.set_title(r"db$_{rms}$/dz")
         ax8.set_xlabel(r"db$_{rms}$/dz [1/s$^2$]")
-
-        ax9.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax9.plot(w_centerline_mag[it, :], z, color = color_opt[0], linewidth = width)
-        ax9.plot(w_fluc_centerline_mag[it, :], z, color = color_opt[1], linewidth = width)
-        ax9.plot(w_rms_mag[it, :], z, color = color_opt[2], linewidth = width)
-        ax9.plot(b_rms_mag[it, :], z, color = color_opt[3], linewidth = width)
-        ax9.plot(b_fluc_centerline_mag[it, :], z, color = color_opt[4], linewidth = width)
-        ax9.set_xlim([-15, 1])
-        ax9.set_title("Order of magnitude")
-        ax9.set_xlabel(r"n in 10$^n$")
 
         for ax in axes:
             ax.ticklabel_format(axis='x', style='sci', scilimits=(-1,2), useMathText=True)
