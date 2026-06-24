@@ -109,6 +109,7 @@ if centerline_flag:
     del S, T, u, v, w
     print(f"Saved centerlines to {file_path}")
     reader.centerline = True
+    reader.centerline_file = 'centerline.h5'
 ###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
     file_path = os.path.join(folder, 'plane_slice.h5')
