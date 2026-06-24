@@ -9,10 +9,10 @@ from interpolation import interp1d_axis, vertical_line
 
 # set flags
 compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 fluc_flag = True # calculates turbulent statistics from binning information
 rms_flag = True # calculates RMS from 3D fields
 buoyancy_flag = True
@@ -26,7 +26,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/vertical-res/dz1'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/vertical-res/dz025'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -167,6 +167,12 @@ if buoyancy_flag:
         b_centerline = vertical_line(b_profile, x = reader.x, y = reader.y)
         b_fluc_centerline = vertical_line(b_fluc, x = reader.x, y = reader.y)
     with h5py.File(buoyancy_file, "a") as f:
+        if "z" in f:
+            del f["z"]
+        if "b_rms" in f:
+            del f["b_rms"]
+        if "b_avg" in f:
+            del f["b_avg"]
         f.create_dataset("z", data = z)
         f.create_dataset("b_rms", data = b_rms)
         f.create_dataset("b_avg", data = b_avg)

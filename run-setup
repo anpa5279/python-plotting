@@ -21,8 +21,8 @@ cat > EXEC_STEP << EXEC
 #PBS -q develop 
 #PBS -j oe
 ###PBS -l job_priority=economy
-#PBS -l walltime=00:40:00
-#PBS -l select=1:ncpus=$cpus:mem=50GB
+#PBS -l walltime=00:20:00
+#PBS -l select=1:ncpus=$cpus:mem=200GB
 
 module --force purge
 module load ncarenv/25.10 uv
