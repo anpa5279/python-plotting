@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import h5py
 import math
 import matplotlib.pyplot as plt
 import itertools
@@ -16,9 +17,9 @@ tracer_integral = True
 
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/ground0'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
-variations = 'horizontal resolution'
+variations = 'AR=1'
 cases_info = comparison_info(variations, universal_folder = universal_folder)
 num_cases = cases_info['num_cases']
 case_names = cases_info['case_names']
@@ -77,18 +78,18 @@ for n, reader in enumerate(readers):
         dims = (1, 2, 3)
         S = reader.lazy_field('S').compute()
         # volume integral of S value in domain
-        S_int = np.mean(S, axis = dims)*vol
+        S_int = np.mean(S, axis = dims)*vol*rho0
     else:
-        domain = nx[0, n]//2*nx[2, n]
-        vol = np.pi*(lx[0, n]/2)**2*lx[2, n]
-        dims = (0, 1)
-        S = reader.load_binning_var('S')
-        r_bins = reader.loading_bin_radius()
-        # volume integral of S value in domain
-        S_int = np.mean(S*r_bins[:, None, None], axis = dims)*vol
+        file_path = os.path.join(reader.folder, 'binning_rtz.h5')
+        with h5py.File(file_path, 'r') as f:
+            S_int = f["mass/S"][:]
+            dmdt_reader = f["mass/dmdt"][:]
     if tracer_integral:
-        S_mass.append(S_int*rho0)
-        dmdt.append(np.gradient(S_mass[n], t[n]))
+        S_mass.append(S_int)
+        if "glade" in universal_folder:
+            dmdt.append(np.gradient(S_mass[n], t[n]))
+        else:
+            dmdt.append(dmdt_reader)
     if neg_tracer:
         S_neg = S
         S_neg[S>=0] = None
@@ -107,7 +108,7 @@ for n, reader in enumerate(readers):
         grid_area = Nr*reader.dx[0]*reader.dx[1]
         factor.append(area/grid_area)
         if tracer_integral:
-            S_mass[n] = S_int*rho0*factor[n]
+            S_mass[n] = S_int*factor[n]
             dmdt[n] = np.gradient(S_mass[n], t[n])
 
         if neg_tracer:
@@ -121,7 +122,7 @@ plot_format()
 if tracer_integral:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
-    fig, axes = plt.subplots(2, 2, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
+    fig, axes = plt.subplots(2, 2, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw)
     for a in axes[-1, :]:
             a.remove()
     axes = axes.ravel()

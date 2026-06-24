@@ -6,7 +6,7 @@ from matplotlib.lines import Line2D
 
 from reader import OceananigansData
 from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
-from interpolation import point, vertical_line, interp1d_axis
+from interpolation import point, vertical_line, interp1d_axis, velocities_to_center
 """
     what is the best way to find the maximum penetration depth of a plume via momentum?
     ways to consider w:
@@ -25,8 +25,9 @@ from interpolation import point, vertical_line, interp1d_axis
         3. gradient changes
 """
 # plotting flags
+plot_xt = True
+plot_yt = False
 plot_zt = False
-plot_yt = True
 plot_raw_centerline = False
 plot_1dz_stats = False
 verify_outputs = False
@@ -44,20 +45,21 @@ if plot_1dz_stats:
 hml = 60
 g = 9.80665
 # collecting model information for all cases
+x = reader.x
 y = reader.y
 z = reader.z
 nx = reader.nx
 lx = reader.lx
 nt = reader.nt
 # video or not setup
-if video or plot_zt or plot_raw_centerline or plot_yt:
+if video or plot_zt or plot_raw_centerline or plot_yt or plot_xt:
     time = reader.t
     if reader.centerline:
         time1 = reader.time_center
 else:
     time = reader.t[-1]
-if plot_yt:
-    z_loc = -1.0*np.array([hml, hml+1, hml+2, hml+5, hml+10, hml+20]) #-[hml, ]
+if plot_yt or plot_xt:
+    z_loc = -1.0*np.array([hml, hml+1, hml+2, hml+5, hml+10])#, hml+20]) #-[hml, ]
 # load in information
 reader.load_equation_of_state()
 if plot_zt or verify_outputs:
@@ -65,6 +67,22 @@ if plot_zt or verify_outputs:
     b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
     if reader.salinity:
         S_centerline = reader.field_centerline('S')
+    if verify_outputs:
+        w_centerline = w_centerline[::100, :]
+        b_centerline = b_centerline[::100, :]
+        reader.centerline = False
+        w_slice = reader.load_plane_var('w')
+        w_slice = velocities_to_center(w_slice, axis = -1)
+        w_coarse_centerline = vertical_line(w_slice, y = reader.y, y0 = 0.0)
+        T_slice = reader.load_plane_var('T')
+        T_coarse_centerline = vertical_line(T_slice, y = reader.y, y0 = 0.0)
+        b_coarse_centerline =  g * reader.alpha * (T_coarse_centerline - reader.T0)
+        del T_coarse_centerline
+        if reader.salinity:
+            S_centerline = S_centerline[::100, :]
+            S_slice = reader.load_plane_var('S')
+            S_coarse_centerline = vertical_line(S_slice, y = reader.y, y0 = 0.0)
+            b_coarse_centerline += - g * reader.beta * S_coarse_centerline
 if plot_1dz_stats or (plot_zt or verify_outputs):
     w_rms = reader.load_rms('w')
     u_r = reader.load_binning_var('horizontal velocity')
@@ -92,6 +110,29 @@ if plot_yt:
         b_yt += - g * reader.beta * S_yt
     b_fluc_yt = b_yt - b_avg_yt[:, None, :]
     del w_plane, S_plane, T_plane, b_yt
+
+if plot_xt:
+    buoyancy_file = os.path.join(reader.folder, 'buoyancy_profile.h5')
+    with h5py.File(buoyancy_file, 'r') as f:
+        b_avg = f['b_avg'][()]
+    w_plane = reader.field_slice('w', slice='XZ')
+    S_plane = reader.field_slice('S', slice='XZ')
+    T_plane = reader.field_slice('T', slice='XZ')
+    w_xt = np.empty((nt, len(x), len(z_loc)))
+    S_xt = np.empty((nt, len(x), len(z_loc)))
+    T_xt = np.empty((nt, len(x), len(z_loc)))
+    b_avg_xt = np.empty((nt, len(z_loc)))
+    for j, z_opt in enumerate(z_loc):
+        w_xt[:, :, j] = interp1d_axis(w_plane, z, coord_new = z_opt, axis = -1)
+        T_xt[:, :, j] = interp1d_axis(T_plane, z, coord_new = z_opt, axis = -1)
+        b_avg_xt[:, j] = point(b_avg, z, z0 = z_opt)
+        if reader.salinity:
+            S_xt[:, :, j] = interp1d_axis(S_plane, z, coord_new = z_opt, axis = -1)
+    b_xt = g * reader.alpha * (T_xt - reader.T0)
+    if reader.salinity:
+        b_xt += - g * reader.beta * S_xt
+    b_fluc_xt = b_xt - b_avg_xt[:, None, :]
+    del w_plane, S_plane, T_plane, b_xt
 print("finished loading data")
 # finding centerlines
 if plot_raw_centerline:
@@ -117,27 +158,18 @@ if plot_1dz_stats:
 
     dbrmsdz = np.gradient(b_rms, z, axis = -1)
     dbflucdz = np.gradient(b_fluc_centerline, z, axis = -1)
-if verify_outputs: # collecting coarser field output information to make sure it matches the higher frequency centerline and averaged outputs
-    reader.centerline_file = None
-    w_coarse_centerline = reader.field_centerline('w')
-    T_coarse_centerline = reader.field_centerline('T')
-    b_coarse_centerline =  g * reader.alpha * (T_coarse_centerline - reader.T0)
-    if reader.salinity:
-        S_coarse_centerline = reader.field_centerline('S')
-        b_coarse_centerline += - g * reader.beta * S_coarse_centerline
-    b_coarse_centerline = reader.field_centerline('b')
 
 ############ PLOTTING ############
 hml_var = np.arange(-10**2, 10**2)
 hml_array = -hml * np.ones(len(hml_var))
 ranges = plot_ranges()
-ranges['w'] = [-1.2*10**-1, 1.2*10**-1]
+ranges['w'] = [-1.8*10**-1, 1.8*10**-1]
 ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
 ranges['gradw'] = [-0.05, 0.05]
 ranges['gradb'] = [-0.0008, 0.0008]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['vel_rms'] = [0, 4*10**-3]
-ranges['S'] = [0.0, 0.05]
+ranges['S'] = [0.0, 0.1]
 factor = 10**(-2)
 nvars = 5
 color_opt, line_opt  = comparison_plot_opt(nvars)
@@ -211,7 +243,8 @@ if plot_zt:
     axes = axes.ravel()
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     for n, var in enumerate(vars):
-        im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+        #np.flipud(var.T), var.T
+        im = axes[n].imshow(np.flipud(var.T), extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
         axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
@@ -228,15 +261,16 @@ if plot_zt:
     plt.savefig(frame_path)
     plt.close(fig)
 if plot_yt:
+    w_max = np.max(np.abs(w_yt))
+    b_fluc_max = np.max(np.abs(b_fluc_yt))
     if reader.salinity:
+        range_opt = [(-w_max, w_max), (0.0, np.max(S_yt)), (np.min(T_yt), np.max(T_yt)), (-b_fluc_max, b_fluc_max)]
         titles = [r"w", r"S", r"T", r"b'", r"b"]
         colors = ['RdBu', 'Blues', 'viridis', 'RdBu']
         labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]', r'[m/s$^2$]']
         vars = [w_yt, S_yt, T_yt, b_fluc_yt]
         file = 'wSTb_yt.svg'
     else:
-        w_max = np.max(np.abs(w_yt))
-        b_fluc_max = np.max(np.abs(b_fluc_yt))
         range_opt = [(-w_max, w_max), (np.min(T_yt), np.max(T_yt)), (-b_fluc_max, b_fluc_max)]
         titles = [r"w", r"T", r"b'", r"b"]
         colors = ['RdBu', 'viridis', 'RdBu']
@@ -245,12 +279,6 @@ if plot_yt:
         file = 'wTb_yt.svg'
     ncols = len(vars)
     for j, z_opt in enumerate(z_loc):
-        w_max = np.max(np.abs(w_yt[:, :, j]))
-        b_fluc_max = np.max(np.abs(b_fluc_yt[:, :, j]))
-        if reader.salinity:
-            range_opt = [(-w_max, w_max), (0.0, np.max(S_yt[:, :, j])), (np.min(T_yt[:, :, j]), np.max(T_yt[:, :, j])), (-b_fluc_max, b_fluc_max)]
-        else:
-            range_opt = [(-w_max, w_max), (np.min(T_yt[:, :, j]), np.max(T_yt[:, :, j])), (-b_fluc_max, b_fluc_max)]
         fig, axes = plt.subplots(1, ncols, figsize=(4*ncols, 5.5), sharex = True, sharey = True)
 
         ratio = ((time.max()/(3600*24))/lx[1])**-1
@@ -264,6 +292,46 @@ if plot_yt:
             axes[n].set_ylim(time.min()/(3600*24), time.max()/(3600*24))
             axes[n].set_xlabel("y [m]")
             axes[n].set_title(titles[n]+rf'(0, y, {z_opt})')
+            axes[n].set_aspect(ratio)
+            cbar = fig.colorbar(im, ax = axes[n], anchor = (0.5, 0.9), orientation='horizontal', label=labels[n], shrink=0.8, aspect=30)
+            cbar.formatter.set_useOffset(False)
+            cbar.formatter.set_powerlimits((-3, 5))
+            cbar.update_ticks() 
+        frame_path = os.path.join(outdir, rf'z{z_loc[j]}_{file}')
+        plt.savefig(frame_path)
+        plt.close(fig)
+if plot_xt:
+    w_max = np.max(np.abs(w_xt))
+    b_fluc_max = np.max(np.abs(b_fluc_xt))
+    if reader.salinity:
+        range_opt = [(-w_max, w_max), (0.0, np.max(S_xt)), (np.min(T_xt), np.max(T_xt)), (-b_fluc_max, b_fluc_max)]
+        titles = [r"w", r"S", r"T", r"b'", r"b"]
+        colors = ['RdBu', 'Blues', 'viridis', 'RdBu']
+        labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]', r'[m/s$^2$]']
+        vars = [w_xt, S_xt, T_xt, b_fluc_xt]
+        file = 'wSTb_xt.svg'
+    else:
+        range_opt = [(-w_max, w_max), (np.min(T_xt), np.max(T_xt)), (-b_fluc_max, b_fluc_max)]
+        titles = [r"w", r"T", r"b'", r"b"]
+        colors = ['RdBu', 'viridis', 'RdBu']
+        labels = ['[m/s]', r'[$^\circ$C]', r'[m/s$^2$]']
+        vars = [w_xt, T_xt, b_fluc_xt]
+        file = 'wTb_xt.svg'
+    ncols = len(vars)
+    for j, z_opt in enumerate(z_loc):
+        fig, axes = plt.subplots(1, ncols, figsize=(4*ncols, 5.5), sharex = True, sharey = True)
+
+        ratio = ((time.max()/(3600*24))/lx[1])**-1
+        axes = axes.ravel()
+        fig.suptitle(f"z = {z_opt} m")
+        plt.subplots_adjust(bottom = 0.1, top = 0.9)
+        axes[0].set_ylabel("time [days]")
+        for n, var in enumerate(vars):
+            im = axes[n].imshow(var[:, :, j], extent=[x.min(), x.max(), time.min()/(3600*24), time.max()/(3600*24)], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+            axes[n].set_xlim(x.min(), x.max())
+            axes[n].set_ylim(time.min()/(3600*24), time.max()/(3600*24))
+            axes[n].set_xlabel("x [m]")
+            axes[n].set_title(titles[n]+rf'(x, 0, {z_opt})')
             axes[n].set_aspect(ratio)
             cbar = fig.colorbar(im, ax = axes[n], anchor = (0.5, 0.9), orientation='horizontal', label=labels[n], shrink=0.8, aspect=30)
             cbar.formatter.set_useOffset(False)
@@ -358,7 +426,45 @@ if plot_1dz_stats:
         frame_path = os.path.join(fig_var_folder, f"variables_of_interest_{it:04d}.png")
         plt.savefig(frame_path)
         plt.close(fig)
+if verify_outputs:
+    outdir_verify = os.path.join(outdir, 'verify_outputs')
+    os.makedirs(outdir_verify, exist_ok=True)
+    width = 0.8
+    for it in range(nt):
+        td = time[it]/(3600*24)
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey = True)
+        axes = axes.ravel()
+        plt.subplots_adjust(top = 0.9)
+        fig.suptitle(f"t = {td:.2f} days")
+        axes[0].plot(w_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
+        axes[0].plot(w_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = line_opt[1], label='coarse output')
+        axes[0].set_title("w")
+        axes[0].set_xlabel("[m/s]")
+        axes[0].set_xlim(ranges['w'])
+        axes[0].set_ylabel("z [m]")
+        axes[0].legend(loc='lower left')
 
+        axes[1].plot(b_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
+        axes[1].plot(b_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = line_opt[1], label='coarse output')
+        axes[1].set_title("b")
+        axes[1].set_xlabel(r"[m/s$^2$]")
+        axes[1].set_xlim(ranges['b'])
+        axes[1].legend(loc='upper left')
+
+        if reader.salinity:
+            axes[2].plot(S_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
+            axes[2].plot(S_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = line_opt[1], label='coarse output')
+            axes[2].set_title("S")
+            axes[2].set_xlabel(r"[g/kg]")
+            axes[2].set_xlim(ranges['S'])
+            axes[2].legend(loc='lower right')
+
+        frame_path = os.path.join(outdir_verify, f'verify_outputs_{it}.png')
+        plt.savefig(frame_path)
+        plt.close(fig)
 # creating videos
 if video:
-    create_video(fig_var_folder, outdir, '', 'max penetration variables')
+    if plot_1dz_stats:
+        create_video(fig_var_folder, outdir, '', 'max penetration variables')
+    if verify_outputs:
+        create_video(outdir_verify, outdir, '', 'verify_outputs')

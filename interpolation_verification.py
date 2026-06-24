@@ -36,9 +36,11 @@ if video:
 else:
     time = reader.t[-1]
 
-nvars = 3
+labels = ['raw output', 'class function', 'averaging', 'point interpolation function']
+nvars = len(labels)
 if vertical_verification:
     fig_folder_vert = os.path.join(fig_folder, 'vertical_line')
+    os.makedirs(fig_folder_vert, exist_ok=True)
     zf = reader.zf
     # create necessary 3D fields
     w = reader.lazy_field('w').compute()
@@ -56,6 +58,7 @@ if vertical_verification:
                 w_interpolation[:, i, j, k] = point(w[:, i, j, :], zf, z0 = z[k])
 if horizontal_verification:
     fig_folder_horiz = os.path.join(fig_folder, 'horizontal_line')
+    os.makedirs(fig_folder_horiz, exist_ok=True)
     hml = 60
     hml_opt = np.argmin(np.abs(z + hml)) # approximate since we what to compare interpolation to raw output
     hml_opt = [hml_opt, hml_opt + 1]
@@ -64,26 +67,24 @@ if horizontal_verification:
     xf = reader.xf
     yf = reader.yf
     u = reader.lazy_field('u').compute()
+    u = u[:, :, hor_idx, hml_idx]
     v = reader.lazy_field('v').compute()
+    v = v[:, hor_opt, :, :][:, :, :, hml_opt]
     u_center_function = velocities_to_center(u, -3)
     v_center_function = velocities_to_center(v, -2)
-    u = np.concatenate([u, np.take(u, [0], axis=-3)], axis=-3)
-    v = np.concatenate([v, np.take(v, [0], axis=-2)], axis=-2)
-    u = u[:, :, hor_idx, hml_idx]
-    v = v[:, hor_idx, :, hml_idx]
-    u_averaging = (u[:, :-1, :, :] + u[:, 1:, :, :])/2
-    v_averaging = (v[:, :, :-1, :] + v[:, :, 1:, :])/2
-    """
+    uf = np.concatenate([u, np.take(u, [0], axis=-3)], axis=-3)
+    vf = np.concatenate([v, np.take(v, [0], axis=-2)], axis=-2)
+    u_averaging = (uf[:, :-1, :, :] + uf[:, 1:, :, :])/2
+    v_averaging = (vf[:, :, :-1, :] + vf[:, :, 1:, :])/2
     u_interpolation = np.empty_like(u_center_function)
     v_interpolation = np.empty_like(v_center_function)
-    for k in range(len(hml_opt)):
+    for k, hml_k in enumerate(hml_opt):
         for i in range(nx[0]):
             for j in range(len(hor_opt)):
-                u_interpolation[:, i, j, k] = point(u[:, :, j, k], xf, x0 = x[i])
+                u_interpolation[:, i, j, k] = point(uf[:, :, j, k][:, :, None, None], z[hml_idx], x = xf, x0 = x[i])
         for i in range(len(hor_opt)):
             for j in range(nx[1]):
-                v_interpolation[:, i, j, k] = point(v[:, i, :, k], yf, y0 = y[j])
-    """
+                v_interpolation[:, i, j, k] = point(vf[:, i, :, k][:, None, :, None], z[hml_k], y = yf, y0 = y[j])
 ############ PLOTTING ############
 """
     Plotting throughout time...
@@ -95,7 +96,6 @@ plot_format()
 os.makedirs(fig_folder, exist_ok=True)
 gridspec_kw={'height_ratios': [1, 1, 0.15]}
 width = 0.8
-labels = ['raw output', 'class function', 'averaging']#, 'point interpolation function']
 case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
 if vertical_verification:
     ncols = idx.size
@@ -139,12 +139,13 @@ if horizontal_verification:
         for ax in axes[-1, :]:
             ax.remove()
         for ax in axes[0, :]:
-            ax.set_xlim(-reader.lx[-1], 0)
+            ax.set_xlim(reader.x[0], reader.x[-1])
             ax.set_ylim(-0.15, 0.15)
             ax.set_xlabel("x [m]")
             ax.set_ylabel("u [m/s]")
+        
         for ax in axes[1, :]:
-            ax.set_xlim(-reader.lx[-1], 0)
+            ax.set_xlim(reader.y[0], reader.y[-1])
             ax.set_ylim(-0.15/10, 0.15/10)
             ax.set_xlabel("y [m]")
             ax.set_ylabel("v [m/s]")
@@ -158,19 +159,19 @@ if horizontal_verification:
         for j, jy in enumerate(hor_opt):
             for k, kz in enumerate(hml_opt):
                 axes[j + k + count].set_title(f"u at (Ny = {jy}, Nz = {kz})")
-                axes[j + k + count].plot(xf, u[it, :, j, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
+                axes[j + k + count].plot(xf, uf[it, :, j, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
                 axes[j + k + count].plot(x, u_center_function[it, :, j, k], label = labels[1], color = color_opt[1], linestyle = line_opt[1])
                 axes[j + k + count].plot(x, u_averaging[it, :, j, k], label = labels[2], color = color_opt[2], linestyle = line_opt[1])
-                #axes[j + k + count].plot(x, u_interpolation[it, :, j, k], label = labels[3], color = color_opt[3], linestyle = line_opt[1])
+                axes[j + k + count].plot(x, u_interpolation[it, :, j, k], label = labels[3], color = color_opt[3], linestyle = line_opt[1])
             count += 1
-        count += ix.size + jy.size
+        count += kz.size + jy.size
         for i, ix in enumerate(hor_opt):
             for k, kz in enumerate(hml_opt):
                 axes[i + k + count].set_title(f"v at (Nx = {ix}, Nz = {kz})")
                 axes[i + k + count].plot(yf, v[it, i, :, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
                 axes[i + k + count].plot(y, v_center_function[it, i, :, k], label = labels[1], color = color_opt[1], linestyle = line_opt[1])
                 axes[i + k + count].plot(y, v_averaging[it, i, :, k], label = labels[2], color = color_opt[2], linestyle = line_opt[1])
-                #axes[i + k + count].plot(y, v_interpolation[it, i, :, k], label = labels[3], color = color_opt[3], linestyle = line_opt[1])
+                axes[i + k + count].plot(y, v_interpolation[it, i, :, k], label = labels[3], color = color_opt[3], linestyle = line_opt[1])
             count += 1
         # --- Save Frame ---
         frame_path = os.path.join(fig_folder_horiz, f"interpolation_testing_{it:04d}.png")

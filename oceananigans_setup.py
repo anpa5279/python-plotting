@@ -26,7 +26,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/ground0/aspect-ratio/dx1=025/outputs'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/vertical-res/dz1'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -50,6 +50,7 @@ x, y, z = reader.x, reader.y, reader.z
 X, Y, Z = np.meshgrid(x, y, z)
 ncirc = min(nx[0], nx[1])//2      # full circular shells
 
+###------------APPLYING AZIMUTHAL AVERAGING TO DATA-----------------###
 if binning_flag:
     S_rz, T_rz, ur_rz, utheta_rz, w_rz = binning_oc(reader)
     # write to file 
@@ -81,7 +82,7 @@ if binning_flag:
             f.create_dataset("ccc/S", data=S_rz)
     del utheta_rz, ur_rz
     print(f"Saved binning to {bin_path}")
-
+###------------INTERPOLATION TO CENTERLINE--------------------------###
 if centerline_flag:
     file_path = os.path.join(folder, 'centerline.h5')
     T = reader.field_centerline('T')
@@ -108,7 +109,7 @@ if centerline_flag:
     del S, T, u, v, w
     print(f"Saved centerlines to {file_path}")
     reader.centerline = True
-
+###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
     file_path = os.path.join(folder, 'plane_slice.h5')
     T = reader.field_slice('T')
@@ -137,7 +138,7 @@ if planelsice_flag:
     del S, T, u, v, w
     
     print(f"Saved plane slices to {file_path}")
-
+###------------BUOYANCY CALCULATIONS--------------------------------###
 if buoyancy_flag:
     buoyancy_file = os.path.join(folder, 'buoyancy_profile.h5')
     alpha = reader.alpha
@@ -173,7 +174,7 @@ if buoyancy_flag:
             f.create_dataset("centerline/b_fluc", data = b_fluc_centerline)
     del b_profile
     print(f"Saved buoyancy information to {buoyancy_file}")
-
+###------------FLUCTUATION AVERAGES---------------------------------###
 if fluc_flag:
     file_path = os.path.join(folder, 'fluctuations.h5')
     data = compute_fluct_averages(reader)
@@ -199,15 +200,15 @@ if fluc_flag:
         f.create_dataset("fluctuations/utheta_fluc", data=data['utheta_fluc'])
         f.create_dataset("fluctuations/w_fluc", data=data['w_fluc'])
         f.create_dataset("fluctuations/b_fluc", data=data['b_fluc'])
-        f.create_dataset("fluctuations/bur_fluc", data=data['bu_fluc'])
-        f.create_dataset("fluctuations/butheta_fluc", data=data['bv_fluc'])
+        f.create_dataset("fluctuations/bur_fluc", data=data['bur_fluc'])
+        f.create_dataset("fluctuations/butheta_fluc", data=data['butheta_fluc'])
         f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
         if salinity:
             if "fluctuations/S_fluc" in f:
                 del f["fluctuations/S_fluc"]
             f.create_dataset("fluctuations/S_fluc", data=data['S_fluc'])
     print(f"Saved fluctuations to {file_path}")
-
+###------------ROOT MEAN SQUARE-------------------------------------###
 if rms_flag:
     file_path = os.path.join(folder, 'fluctuations.h5')
     rms_values = compute_rms(reader)
@@ -223,7 +224,7 @@ if rms_flag:
         f.create_dataset("rms/w", data=rms_values['w_rms'])
     del rms_values
     print(f"Saved RMS to {file_path}")
-
+###------------TEMPORAL AVERAGES------------------------------------###
 if compute_temporal_averages_flag:
     start = 10
     if reader.averaging:
@@ -237,7 +238,7 @@ if compute_temporal_averages_flag:
     write_temporal_averages(bin_path, data)
     del data_temp
     print(f"Saved temporal averages to {bin_path}")
-
+###------------PLUME CONTOURS---------------------------------------###
 if contour_flag:
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
     S_value = reader.load_S_temporal_avg(bin_path)
@@ -297,7 +298,7 @@ if contour_flag:
             f.create_dataset(key, data=r_contour)
 
     print(f"Saved contours to {bin_path}")
-
+###------------MASS CALCULATIONS------------------------------------###
 if mass_flag:
     rho0 = 1026 # kg/m^3
     S = reader.lazy_field('S').compute()
@@ -308,7 +309,7 @@ if mass_flag:
     S_mass = np.mean(S, axis = dims)*vol*rho0
     del S
     dmdt = np.gradient(S_mass, time)
-    with h5py.File(file_path, "a") as f:
+    with h5py.File(bin_path, "a") as f:
         if "mass/S" in f:
             del f["mass/S"]
         if "mass/dmdt" in f:

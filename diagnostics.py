@@ -6,7 +6,7 @@ import h5py
 from interpolation import velocities_to_center
 from physics import rms
 
-### -------------------------COLLECTING COMPARISON CASE INFO------------------------- ###
+### -------------------------COLLECTING COMPARISON CASE INFO----------------- ###
 def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
     wp = -0.001
     if variations == 'strat':
@@ -66,19 +66,23 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'vertical resolution':
-        folder_names =['nz = 64', 'nz = 128', 'nz = 192', 'nz = 256']
-        case_names =[r'$\Delta z = 1.5$m', r'$\Delta z = 0.75$m' r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m']
+        folder_names =['vert res/dx2', 
+                       'vert res/dx1', 
+                       '', 
+                       'vert res/dx025'
+                       ]
+        case_names =[r'$\Delta z = 2.0$m', r'$\Delta z = 1.0$m', r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases) 
+        F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'AR=1':
         folder_names =['AR=1/dx2', 
                        'AR=1/dx1', 
                        '', 
-                       #'AR=1/dx025'
+                       'AR=1/dx025'
                        ]
-        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m']#, r'$\Delta x = 0.25$m']
+        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -141,7 +145,7 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
             "F_s": F_s
         }
     return case_info
-### -------------------------BINNING------------------------- ###
+### -------------------------BINNING----------------------------------------- ###
 def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
     if dx_scale is None:
         X_bin = X
@@ -177,7 +181,6 @@ def binning_oc(reader, center=(0.0, 0.0)):
     y = reader.y - center[1]
     z = reader.z
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-    dist = np.sqrt(X**2 + Y**2)
     nr = np.min(nx[:-1])//2
     S_rz = np.empty((nr, nx[2], nt))
     T_rz = np.empty((nr, nx[2], nt)) 
@@ -198,9 +201,8 @@ def binning_oc(reader, center=(0.0, 0.0)):
         v = velocities_to_center(v, axis=-2)
         w = velocities_to_center(w, axis=-1)
 
-        # u and v 
-        ur = u*X/dist + v*Y/dist
-        utheta = -u*Y/dist + v*X/dist
+        # u and v to cylindrical polar coordinates
+        ur, utheta = vel_to_cylindrical(u, v, X, Y)
 
         for k in range(nx[2]):
             if reader.salinity:
@@ -212,6 +214,12 @@ def binning_oc(reader, center=(0.0, 0.0)):
 
     return S_rz, T_rz, ur_rz, utheta_rz, w_rz
 
+### -------------------------CYLINDRICAL POLAR COORDINATES------------------- ###
+def vel_to_cylindrical(u, v, X, Y):
+    dist = np.sqrt(X**2 + Y**2)
+    ur = u*X/dist + v*Y/dist
+    utheta = -u*Y/dist + v*X/dist
+    return ur, utheta
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
 def compute_temporal_averages(reader, start=10):
     # Load constants once
@@ -268,28 +276,32 @@ def compute_fluct_averages(reader):
     v = velocities_to_center(v, axis=-2)
     w = velocities_to_center(w, axis=-1)
 
+    # convert u and v to cylindrical polar coordinates (still lazy)
+    X, Y, Z = np.meshgrid(reader.x, reader.y, reader.z, indexing='ij')
+    ur, utheta = vel_to_cylindrical(u, v, X, Y)
+
     # Horizontal means over (nx, ny) → shape (nt, nz)
     T_xy = da.mean(T, axis=dims)
-    u_xy = da.mean(u, axis=dims)
-    v_xy = da.mean(v, axis=dims)
+    ur_xy = da.mean(ur, axis=dims)
+    utheta_xy = da.mean(utheta, axis=dims)
     w_xy = da.mean(w, axis=dims)
     b_xy = da.mean(b, axis=dims)
 
     # Fluctuation
     T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
-    u_fluc = u - u_xy[:, np.newaxis, np.newaxis, :]
-    v_fluc = v - v_xy[:, np.newaxis, np.newaxis, :]
+    ur_fluc = ur - ur_xy[:, np.newaxis, np.newaxis, :]
+    utheta_fluc = utheta - utheta_xy[:, np.newaxis, np.newaxis, :]
     w_fluc = w - w_xy[:, np.newaxis, np.newaxis, :]
     b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
 
     # averages of fluctuations
     T_fluc_avg = da.mean(T_fluc, axis=dims)
-    u_fluc_avg = da.mean(u_fluc, axis=dims)
-    v_fluc_avg = da.mean(v_fluc, axis=dims)
+    ur_fluc_avg = da.mean(ur_fluc, axis=dims)
+    utheta_fluc_avg = da.mean(utheta_fluc, axis=dims)
     w_fluc_avg = da.mean(w_fluc, axis=dims)
     b_fluc_avg = da.mean(b_fluc, axis=dims)
-    bu_fluc_avg = da.mean(b_fluc * u, axis=dims)
-    bv_fluc_avg = da.mean(b_fluc * v, axis=dims)
+    bur_fluc_avg = da.mean(b_fluc * ur, axis=dims)
+    butheta_fluc_avg = da.mean(b_fluc * utheta, axis=dims)
     bw_fluc_avg = da.mean(b_fluc * w, axis=dims)
     if reader.salinity:
         S_xy = da.mean(S, axis=dims)
@@ -297,21 +309,21 @@ def compute_fluct_averages(reader):
         S_fluc_avg = da.mean(S_fluc, axis=dims)
         return {'T_fluc': T_fluc_avg,
                 'S_fluc': S_fluc_avg,
-                'ur_fluc': u_fluc_avg,
-                'utheta_fluc': v_fluc_avg,
+                'ur_fluc': ur_fluc_avg,
+                'utheta_fluc': utheta_fluc_avg,
                 'w_fluc': w_fluc_avg,
                 'b_fluc': b_fluc_avg,
-                'bu_fluc': bu_fluc_avg,
-                'bv_fluc': bv_fluc_avg,
+                'bur_fluc': bur_fluc_avg,
+                'butheta_fluc': butheta_fluc_avg,
                 'bw_fluc': bw_fluc_avg}
     else:
         return {'T_fluc': T_fluc_avg,
-                'ur_fluc': u_fluc_avg,
-                'utheta_fluc': v_fluc_avg,
+                'ur_fluc': ur_fluc_avg,
+                'utheta_fluc': utheta_fluc_avg,
                 'w_fluc': w_fluc_avg,
                 'b_fluc': b_fluc_avg,
-                'bu_fluc': bu_fluc_avg,
-                'bv_fluc': bv_fluc_avg,
+                'bur_fluc': bur_fluc_avg,
+                'butheta_fluc': butheta_fluc_avg,
                 'bw_fluc': bw_fluc_avg}
 
 def compute_rms(reader):
@@ -331,7 +343,7 @@ def compute_rms(reader):
     return {'u_rms': u_rms,
             'v_rms': v_rms,
             'w_rms': w_rms}
-### -------------------------WRITING TEMPORAL AVERAGES------------------------- ###
+### -------------------------WRITING TEMPORAL AVERAGES------------------------ ###
 def write_temporal_averages(file_path, data):
     folder_contour = f"contour temporal averages"
 

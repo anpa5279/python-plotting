@@ -95,7 +95,6 @@ for i, reader in enumerate(readers):
         nz = np.max([nz, reader.nx[2]])
     if salinity and plot_1d_z:
         S_value = reader.load_S_temporal_avg('interp_temporal_averages.h5')
-        dense_plume.append(PlumeAnalysis(S_value*contour_bound))
 
 x = readers[0].x
 y = readers[0].y
@@ -122,10 +121,10 @@ plot_format()
 if plot_variables:
     if salinity:
         var_names = ['Tracer', 'Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['Tracer', 'T', 'rho', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
+        range_names = ['Tracer', 'T', 'b', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
     else:
         var_names = ['Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['T', 'rho', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
+        range_names = ['T', 'b', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
     planeslice = 'vertical' # 'vertical' or 'horizontal'
     variable_dir = {}
     if planeslice == 'horizontal':
@@ -140,7 +139,7 @@ if plot_variables:
 
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
-ranges['rho'] = [rho0, rho0+0.15]
+ranges['b'] = [rho0, rho0+0.15]
 ranges['rho_fluc'] = [-0.025, 0.025]
 ranges['Tracer'] =[S_tol, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
@@ -289,7 +288,7 @@ else:
             u_plane = []
             v_plane = []
             w_plane = []
-            rho_plane = []
+            b_plane = []
             bw_plane = []
             rho_fluc_plane = []
         for i, reader in enumerate(readers):
@@ -308,7 +307,7 @@ else:
             w = velocities_to_center(w, axis=2)
             # convert temperature and salinity to buoyancy 
             b = buoyancy(reader)
-            rho_fluc = rho - np.mean(rho, axis=(-3, -2))
+            rho_fluc = b - np.mean(b, axis=(-3, -2))
 
             # calcualte buoyancy fluxes
             bu_fluc = a_fluc_b(b, u)
@@ -352,7 +351,7 @@ else:
                 u_plane.append(plane_slice_calc(u, x, x0))
                 v_plane.append(plane_slice_calc(v, x, x0))
                 w_plane.append(plane_slice_calc(w, x, x0))
-                rho_plane.append(plane_slice_calc(rho, x, x0))
+                b_plane.append(plane_slice_calc(b, x, x0))
                 if salinity:
                     S_plane.append(plane_slice_calc(S, x, x0))
             elif plot_variables and planeslice == 'horizontal':
@@ -361,7 +360,7 @@ else:
                     u_plane.append(plane_slice_calc(u, z, loc_z[i]))
                     v_plane.append(plane_slice_calc(v, z, loc_z[i]))
                     w_plane.append(plane_slice_calc(w, z, loc_z[i]))
-                    rho_plane.append(plane_slice_calc(rho, z, loc_z[i]))
+                    b_plane.append(plane_slice_calc(b, z, loc_z[i]))
                     if salinity:
                         S_plane.append(plane_slice_calc(S, z, loc_z[i]))
                 else:
@@ -369,7 +368,7 @@ else:
                     u_plane.append(u[:, :, n])
                     v_plane.append(v[:, :, n])
                     w_plane.append(w[:, :, n])
-                    rho_plane.append(rho[:, :, n])
+                    b_plane.append(b[:, :, n])
                     if salinity:
                         S_plane.append(S[:, :, n])
 
@@ -377,11 +376,11 @@ else:
     for it in nt:
         if plot_variables:
             if salinity: #'Tracer', 'T', 'Density', 'u', 'v', 'w'
-                variables = [S_plane, T_plane, rho_plane, u_plane, v_plane, w_plane]
+                variables = [S_plane, T_plane, b_plane, u_plane, v_plane, w_plane]
                 colorbar_labels = [r"g/kg", r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
                 cmaps = ['viridis', 'viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
             else: #'T', 'Density', 'u', 'v', 'w'
-                variables = [T_plane, rho_plane, u_plane, v_plane, w_plane]
+                variables = [T_plane, b_plane, u_plane, v_plane, w_plane]
                 colorbar_labels = [r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
                 cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
             if planeslice == 'vertical':

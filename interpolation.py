@@ -41,7 +41,7 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
         coord = np.asarray(coord)
 
         # find index below target
-        if f_new == 0:
+        if f_new.ndim==1 and f_new.all() == 0:
             idx = np.where(np.diff(np.sign(f))!=0)[0]#[0]
         else:
             idx = np.searchsorted(f, f_new) - 1
@@ -116,23 +116,20 @@ def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
     Interpolate to a single point in space.
     time: if time is included in the matrix f, it should output a 1d array
     """
-    fnew = f
     if f0 is not None: # if field, inputs z, f
         znew = interp1d_axis(f, z, f_new = f0) 
         new = znew
-    if z0 is not None: # if field, inputs z, f
+    elif z0 is not None: # if field, inputs z, f
         fnew = interp1d_axis(f, z, coord_new = z0)
         new = fnew
+    else:
+        fnew = f 
+    
     if x is not None and y is not None: # if field, inputs x, y, z
         fnewy = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
-        #print('fnewy', fnewy.shape)
         new = interp1d_axis(fnewy, x, coord_new = x0, axis = -3)
-        #print('new', new.shape)
     elif y is None and x is not None: # if field, inputs x, z, f
         new = interp1d_axis(fnew, x, coord_new = x0, axis = -3)
-        #print('new', new.shape)
     elif x is None and y is not None: # if field, inputs y, z, f
         new = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
-        #print('new', new.shape)
-    #print('all if statements are done')
-    return new
+    return new.squeeze()
