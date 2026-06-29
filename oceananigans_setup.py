@@ -26,7 +26,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/vertical-res/dz025'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/erf/dz025/develop-queue'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')

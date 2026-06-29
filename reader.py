@@ -47,7 +47,8 @@ class OceananigansData:
         self.all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') or f.endswith('.h5'))]
 
         # ensuring file order for field files
-        fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields'))]
+        fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup'))]
+
         self.Nranks = len(fields_files)
         if self.Nranks > 1:
             self.files = [f'fields_rank{n}.jld2' for n in range(self.Nranks)]
@@ -76,7 +77,7 @@ class OceananigansData:
             self.centerline_file = [f for f in self.all_files if (f.endswith('.h5') and f.startswith('centerline'))]
             if self.centerline_file == []:
                 self.centerline_file = None
-            else:
+            else: # pickup does not matter because this means that it is already post processed and interpolated to the centerline
                 self.centerline_file = self.centerline_file[0]
             self.centerline= True
             self.t_save_center = None
@@ -162,6 +163,7 @@ class OceananigansData:
 
             self.nt = len(self.t)
             self.dt = self.t[1] - self.t[0] if self.nt > 1 else None
+        
         if self.averaging:
             with h5py.File(os.path.join(self.folder, self.averaging_file), 'r') as f:
                 t_group = f['timeseries/t']
