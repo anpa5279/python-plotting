@@ -26,15 +26,15 @@ from interpolation import point, vertical_line, interp1d_axis, velocities_to_cen
 """
 # plotting flags
 plot_xt = True
-plot_yt = False
-plot_zt = False
+plot_yt = True
+plot_zt = True
 plot_raw_centerline = False
 plot_1dz_stats = False
 verify_outputs = False
 video = False
 
 # simulation information
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/domain testing/Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/ground0'
 outdir = os.path.join(folder, 'figures')
 reader = OceananigansData(folder, salinity = True)
 if plot_1dz_stats:

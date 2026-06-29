@@ -22,13 +22,13 @@ stokes = False
 
 contour_bound = 0.001
 name_uni = f'contour-{contour_bound:.4f}'
-universal_folder ='/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/ground0'
+universal_folder ='/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/'
 #'/glade/derecho/scratch/apauls/outputs/'
 #harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 # selecting cases to compare
-variations = 'AR=1' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
+variations = 'erf' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']
@@ -236,7 +236,7 @@ ranges['Tracer'] =[S_tol, 0.15]
 ranges['Tracer negative'] = [-0.15, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
 ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
-ranges['T'] = [T0-1.0, T0 + 0.01]
+ranges['T'] = [T0-0.7, T0 + 0.01]
 ranges['w'] = [-1.5*10**(-1), 1.5*10**(-1)]
 ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]

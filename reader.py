@@ -211,7 +211,7 @@ class OceananigansData:
     #              *load in or calculate if necessary*                   #
     #                                                                    #
     #--------------------------------------------------------------------#
-    def lazy_field(self, field, steps=None):
+    def lazy_field(self, field, steps=None, transpose=True):
         """
         Returns a truly lazy dask array of shape (Nt, Nx, Ny, Nz).
         Nothing is loaded until .compute() is called.
@@ -246,7 +246,8 @@ class OceananigansData:
             time_slabs.append(da.concatenate(rank_slabs, axis=0))  # if 3D, (Nx, Ny, Nz), if 1D (Nz,)
 
         out = da.stack(time_slabs, axis=0)               # if 3D, (Nt, Nx, Ny, Nz), if 1D (Nt, Nz,)
-
+        if not transpose:
+            out = out.transpose(0, 3, 2, 1) if out.ndim == 4 else out.transpose(0, 2, 1)  # (Nt, Nz, Ny, Nx) 
         return out.squeeze()                                 # drop time axis if Nt == 1
     def field_slice(self, field, steps=None, slice='YZ', loc=0.0, N=None):
         """
@@ -334,7 +335,7 @@ class OceananigansData:
                         coord[i * nx_local : (i + 1) * nx_local]
                         for i in np.atleast_1d(file_indices)
                     ])
-                    s = plane_slice_calc(block, x_slab_coords, loc)   # (y, z)
+                    s = plane_slice_calc(block, x_slab_coords, loc, axis = -3)   # (y, z)
                 else:
                     # loc sits exactly on a grid point — find its local index
                     global_idx = np.where(coord == loc)[0][0]
@@ -342,10 +343,10 @@ class OceananigansData:
                     s = block[local_idx]                       # (y, z)
 
             elif slice == 'XZ':
-                s = plane_slice_calc(block, self.y, loc)               # (x, z)
+                s = plane_slice_calc(block, self.y, loc, axis = -2)               # (x, z)
 
             elif slice == 'XY':
-                s = plane_slice_calc(block, self.z, loc)               # (x, y)
+                s = plane_slice_calc(block, self.z, loc, axis = -1)               # (x, y)
 
             if field == 'u' and self.u_s is not None:
                 s = s - self.u_s

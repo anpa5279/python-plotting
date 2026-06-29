@@ -66,10 +66,10 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'vertical resolution':
-        folder_names =['vert res/dx2', 
-                       'vert res/dx1', 
-                       '', 
-                       'vert res/dx025'
+        folder_names =['vertical/dz2', 
+                       'vertical/dz1', 
+                       'ground0', 
+                       'vertical/dz025'
                        ]
         case_names =[r'$\Delta z = 2.0$m', r'$\Delta z = 1.0$m', r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']
         num_cases = len(folder_names)
@@ -79,7 +79,7 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
     elif variations == 'AR=1':
         folder_names =['AR=1/dx2', 
                        'AR=1/dx1', 
-                       '', 
+                       'ground0', 
                        'AR=1/dx025'
                        ]
         case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
@@ -93,13 +93,21 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
                        'ground0/', 
                        #'fine1/', 
                        #'fine2/',
-                       #'fine3/'
                        ]
         case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
+    elif variations == 'erf':
+        folder_names =['ground0', 
+                       'ground0-erf'
+                       ]
+        case_names =[r'Without erf(), $\Delta x = 0.5$m', r'With erf(), $\Delta x = 0.5$m']
+        num_cases = len(folder_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'WENO':
         folder_names = ['S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback']
         case_names = [r'Default', r'WENO modified', r'WENO modified with callback 0 function']

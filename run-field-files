@@ -1,0 +1,32 @@
+#!/bin/bash
+nodes=1
+cpus=4
+jobn=fields
+file=oceananigans_condense_files.py
+
+cp $file scripts/
+cp reader.py scripts/
+cp interpolation.py scripts/
+
+###uv init scripts
+cd scripts
+
+cat > EXEC_FILES << EXEC
+#!/bin/sh
+
+#PBS -A UCUB0166
+#PBS -N $jobn
+#PBS -q develop 
+#PBS -j oe
+###PBS -l job_priority=economy
+#PBS -l walltime=00:40:00
+#PBS -l select=1:ncpus=$cpus:mem=200GB
+
+module --force purge
+module load ncarenv/25.10 uv
+
+uv run python $file
+
+EXEC
+
+qsub < EXEC_FILES
