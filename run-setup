@@ -22,7 +22,7 @@ cat > EXEC_STEP << EXEC
 #PBS -j oe
 ###PBS -l job_priority=economy
 #PBS -l walltime=00:20:00
-#PBS -l select=1:ncpus=$cpus:mem=200GB
+#PBS -l select=1:ncpus=$cpus:mem=100GB
 
 module --force purge
 module load ncarenv/25.10 uv
