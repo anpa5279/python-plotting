@@ -24,8 +24,7 @@ nx = reader.nx
 nt = reader.nt
 dx = reader.dx
 lx = reader.lx
-t_save = reader.load_time()[-1]
-t_last = t_save[-1]
+t_last = reader.t_save[-1]
 
 # prepping the file to use as IC in pickup run
 if run_prep:
@@ -77,6 +76,6 @@ if run_prep:
 
 # combining pickup files into one file for post-processing
 if post_process_prep:
-    fields_pickup_files = [f for f in os.listdir(folder) if (f.startswith('fields_pickup') and f.endswith('.jld2'))]
-    avg_pickup_files = [f for f in os.listdir(folder) if (f.startswith('xy_avg_pickup') and f.endswith('.jld2'))]
-    center_pickup_files = [f for f in os.listdir(folder) if (f.startswith('centerline_') and f.endswith('.jld2'))]
+    fields_pickup_files = [f for f in os.listdir(folder) if (f.startswith('fields_pikcup') and f.endswith('.jld2'))]
+    avg_pickup_files = [f for f in os.listdir(folder) if (f.startswith('xy_avg_pikcup') and f.endswith('.jld2'))]
+    center_pickup_files = [f for f in os.listdir(folder) if (f.startswith('centerline_pikcup') and f.endswith('.jld2'))]

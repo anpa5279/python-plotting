@@ -65,7 +65,7 @@ else:
 # load in information
 w_centerline = reader.field_centerline('w')
 reader.load_equation_of_state()
-b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
+b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
 if plot_zt and reader.salinity:
     if reader.centerline:
         S_centerline = reader.field_centerline('S')

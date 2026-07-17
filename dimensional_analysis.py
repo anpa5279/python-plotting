@@ -4,12 +4,14 @@ import numpy as np
 from reader import OceananigansData
 from diagnostics import comparison_info
 from physics import rms, a_fluc_b, buoyancy
-from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
-from plotting_lines import plot_plume_horizontal_spatial, plot_variable_vert_slice, plot_variable_xy_slice, plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
 from interpolation import velocities_to_center, vertical_line, horizontal_line, plane_slice_calc, plane_slice_calc
 
+from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
+from plotting_lines import plot_plume_horizontal_spatial, plot_plume_vertical_spatial
+from plotting_analysis import plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
+
 # flags for what to plot
-plot_variables = True
+plot_variables = False
 plot_1d_z = True
 plot_1d_y = False
 transient_mld = False
@@ -25,10 +27,9 @@ closure = False
 salinity = True
 stokes = False
 
-contour_bound = 0.05
-name_uni = f'contour-{contour_bound:.2f}'
+contour = 0.05
+name_uni = f'contour-{contour:.2f}'
 universal_folder = '/glade/derecho/scratch/apauls/outputs/'
-#harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 if ND:
     combo_flag = False
@@ -80,10 +81,7 @@ if salinity:
     dense_plume = []
 
 for i, reader in enumerate(readers):
-
-    reader.load_time()
     t_save.append(reader.t_save)
-    reader.load_grid()
     z.append(reader.z)
     nx.append(reader.nx)
     lx.append(reader.lx)
@@ -94,7 +92,7 @@ for i, reader in enumerate(readers):
         nt = np.min([nt, reader.nt])
         nz = np.max([nz, reader.nx[2]])
     if salinity and plot_1d_z:
-        S_value = reader.load_S_temporal_avg('interp_temporal_averages.h5')
+        S_value = reader.load_S_temporal_avg()
 
 x = readers[0].x
 y = readers[0].y

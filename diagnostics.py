@@ -66,16 +66,26 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'vertical resolution':
-        folder_names =['vertical/dz2', 
-                       'vertical/dz1', 
-                       'ground0', 
-                       'vertical/dz025'
+        folder_names =['dz05', 
+                       'dz025',
+                       'dz0125',
+                       'dz00625'
                        ]
-        case_names =[r'$\Delta z = 2.0$m', r'$\Delta z = 1.0$m', r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']
+        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m', r'$\Delta z = 0.125$m', r'$\Delta z = 0.0625$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases)
+        #folder_names =['vertical/dz2', 
+        #            'vertical/dz1', 
+        #            'ground0', 
+        #            'vertical/dz025'
+        #            ]
+        #case_names =[r'$\Delta z = 2.0$m', r'$\Delta z = 1.0$m', r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']
+        #num_cases = len(folder_names)
+        #dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        #mld = 60 * np.ones(num_cases)
+        #F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'AR=1':
         folder_names =['AR=1/dx2', 
                        'AR=1/dx1', 
@@ -88,22 +98,84 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'horizontal resolution':
-        folder_names =['coarse2/', 
-                       'coarse1/', 
-                       'ground0/', 
-                       #'fine1/', 
-                       #'fine2/',
+        folder_names =['dz05', 
+                       'dx025', 
+                       'dx0125', 
+                       'dx00625', 
                        ]
-        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
+        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m', r'$\Delta x = 0.0625$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases) 
-    elif variations == 'erf':
-        folder_names =['ground0', 
-                       'ground0-erf'
+    elif variations == 'vertical erf':
+        folder_names =[
+                       'ground0-erf',
+                       'vertical/dz-025', 
+                       #'vertical/dz-0125',
                        ]
-        case_names =[r'Without erf(), $\Delta x = 0.5$m', r'With erf(), $\Delta x = 0.5$m']
+        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']#, r'$\Delta z = 0.125$m']
+        num_cases = len(folder_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)
+    elif variations == 'visc':
+        folder_names =[
+                       'dz-05',
+                       'dz-025', 
+                       'dz-0125',
+                       ]
+        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m', r'$\Delta z = 0.125$m']
+        num_cases = len(folder_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)
+    elif variations == 'w BC':
+        folder_names = ['open w BC', 
+                        'open w top BC', 
+                        'open w BC without scheme', 
+                        'open w top BC without scheme', 
+                        'open w BC bottom adjusted',
+                        'testing gaussian top/open w gauss top BC 0 scheme'
+                        ]
+        case_names = ['Open BC with PA top and \nOpen BC with nothing bottom', 
+                      'Open BC with PA top', 
+                      'Open BC top and \nOpen BC with nothing bottom', 
+                      'Open BC top',
+                      'Open BC with PA top & \nOpen BC with PA bottom', 
+                      'Open gaussian BC with PA top & \nOpen BC with nothing bottom', 
+                      
+                      ]
+        num_cases = len(folder_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)
+    elif variations == 'w timescale BC':
+        folder_names = [#'open w BC', 
+                        'testing timescale/open w BC bottom adjusted default scheme', 
+                        'open w BC bottom adjusted', 
+                        ]
+        case_names = [ 
+                      'Open BC with default PA top \n& Open BC with default PA bottom scaled', 
+                      'Open BC with 0.0 PA top \n& Open BC with 0.0 PA bottom scaled', 
+                      ]
+        num_cases = len(folder_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)
+    elif variations == 'w gaus BC':
+        folder_names = [
+                        'open w gauss top BC default scheme',
+                        'open w gauss top BC 0 scheme',
+                        'open w 2rp gauss top BC default scheme',
+                        'open w 2rp gauss BC 0 scheme',
+                        ]
+        case_names = [
+                      r'Open BC $\sigma$ = 4m top w/ default PA' + os.linesep +'& Open BC w/ nothing bottom',
+                      r'Open BC $\sigma$ = 4m top w/ 0.0 PA' + os.linesep +'& Open BC w/ nothing bottom',
+                      r'Open BC $\sigma$ = 8m top w/ default PA' + os.linesep +'& Open BC w/ nothing bottom',
+                      r'Open BC $\sigma$ = 8m BC top w/ 0.0 PA' + os.linesep +'& Open BC w/ nothing bottom',
+                      ]
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -181,7 +253,8 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
     return bin_var
 def binning_oc(reader, center=(0.0, 0.0)):
     nx = reader.nx
-    time, t_save = reader.load_time()
+    time = reader.t
+    t_save = reader.t_save
     nt = len(t_save)
 
     dx_scale = np.max(reader.dx[:-1]) # not including dz
@@ -240,7 +313,7 @@ def compute_temporal_averages(reader, start=10):
     w = w[start:, :]
 
     #loading in vertical 1D info
-    b_xy, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
+    b_xy, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
     
     # Fluctuation and flux
     bw = b_fluc_centerline[start:, :] * w   # (nt - start, nz)

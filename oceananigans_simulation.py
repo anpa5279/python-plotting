@@ -25,8 +25,8 @@ from interpolation import point, vertical_line, interp1d_axis, velocities_to_cen
         3. gradient changes
 """
 # plotting flags
-plot_xt = True
-plot_yt = True
+plot_xt = False
+plot_yt = False
 plot_zt = True
 plot_raw_centerline = False
 plot_1dz_stats = False
@@ -34,7 +34,7 @@ verify_outputs = False
 video = False
 
 # simulation information
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/ground0'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC /dz05'
 outdir = os.path.join(folder, 'figures')
 reader = OceananigansData(folder, salinity = True)
 if plot_1dz_stats:
@@ -64,7 +64,7 @@ if plot_yt or plot_xt:
 reader.load_equation_of_state()
 if plot_zt or verify_outputs:
     w_centerline = reader.field_centerline('w')
-    b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy_small()
+    b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
     if reader.salinity:
         S_centerline = reader.field_centerline('S')
     if verify_outputs:
@@ -92,6 +92,7 @@ if plot_yt:
     buoyancy_file = os.path.join(reader.folder, 'buoyancy_profile.h5')
     with h5py.File(buoyancy_file, 'r') as f:
         b_avg = f['b_avg'][()]
+        b_avg = b_avg[::100, :]
     w_plane = reader.load_plane_var('w')
     S_plane = reader.load_plane_var('S')
     T_plane = reader.load_plane_var('T')
@@ -115,9 +116,9 @@ if plot_xt:
     buoyancy_file = os.path.join(reader.folder, 'buoyancy_profile.h5')
     with h5py.File(buoyancy_file, 'r') as f:
         b_avg = f['b_avg'][()]
-    w_plane = reader.field_slice('w', slice='XZ')
-    S_plane = reader.field_slice('S', slice='XZ')
-    T_plane = reader.field_slice('T', slice='XZ')
+    w_plane = reader.field_slice('w', plane='XZ')
+    S_plane = reader.field_slice('S', plane='XZ')
+    T_plane = reader.field_slice('T', plane='XZ')
     w_xt = np.empty((nt, len(x), len(z_loc)))
     S_xt = np.empty((nt, len(x), len(z_loc)))
     T_xt = np.empty((nt, len(x), len(z_loc)))
@@ -194,17 +195,18 @@ if plot_raw_centerline:
         vars = [w_output, T_output]
         fig, axes = plt.subplots(4, 2, figsize=(7, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
         file = 'wT_outputs_zt.svg'
-    ratio = (time.max()/(3600*24))/lx[2]
+    last_t = time.max()/(3600*24)
+    ratio = (last_t)/lx[2]
     axes = axes.ravel()
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     count = 0
     for ix, i in enumerate([nx[0]//2, nx[0]//2+1]):
         for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
             for n, var in enumerate(vars):
-                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), last_t, z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
                 axes[count].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
                 axes[count].legend(loc='lower left')
-                axes[count].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
+                axes[count].set_xlim(time.min()/(3600*24), last_t)
                 axes[count].set_ylim(z.min(), z.max())
                 axes[count].set_aspect(ratio)
                 if count <= 3: # only include title in first row
@@ -227,27 +229,30 @@ if plot_zt:
         titles = [r"w(0, 0)", r"S(0, 0)", r"b'(0, 0)", r"w$_{rms}$", r"b$_{rms}$", r"u$_{\text{r},rms}$"]
         colors = ['RdBu', 'Blues', 'RdBu', 'Blues', 'Blues', 'Blues']
         labels = ['[m/s]', '[g/kg]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]', '[m/s]']
-        vars = [w_centerline, S_centerline, b_fluc_centerline, w_rms, b_rms, u_r_rms.T]
+        stop = 5
+        vars = [w_centerline[:stop*100, :], S_centerline[:stop*100, :], b_fluc_centerline[:stop*100, :], w_rms[:stop, :], b_rms[:stop, :], u_r_rms.T[:stop, :]]
         fig, axes = plt.subplots(1, 6, figsize=(30, 5.5))
-        file = 'wSbur_rms_zt.svg'
+        file = 'wSbur_rms_zt-smallert.svg'
     else:
         range_opt = [ranges['w'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms']]
         titles = [r"w(0, 0)", r"b'(0, 0)", r"w$_{rms}$", r"b$_{rms}$"]
         colors = ['RdBu', 'RdBu', 'Blues', 'Blues']
         labels = ['[m/s]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]']
-        vars = [w_centerline, b_fluc_centerline, w_rms, b_rms]
+        stop = 5
+        vars = [w_centerline[:stop*100, :], b_fluc_centerline[:stop*100, :], w_rms[:stop, :], b_rms[:stop, :]]
         fig, axes = plt.subplots(1, 4, figsize=(20, 5.5))
         file = 'wb_rms_zt.svg'
 
-    ratio = (time.max()/(3600*24))/lx[2]
+    last_t = time[stop]/(3600*24)#time.max()/(3600*24)
+    ratio = (last_t)/lx[2]
     axes = axes.ravel()
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     for n, var in enumerate(vars):
         #np.flipud(var.T), var.T
-        im = axes[n].imshow(np.flipud(var.T), extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
+        im = axes[n].imshow(np.flipud(var.T), extent=[time.min()/(3600*24), last_t, z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
         axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
         axes[n].legend(loc='lower left')
-        axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
+        axes[n].set_xlim(time.min()/(3600*24), last_t)
         axes[n].set_ylim(z.min(), z.max())
         axes[n].set_xlabel("time [days]")
         axes[n].set_ylabel("z [m]")

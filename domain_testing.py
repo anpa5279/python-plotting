@@ -10,16 +10,18 @@ from matplotlib.lines import Line2D
 from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
+from interpolation import velocities_to_center
 # flags for plotting
 area_scaling = False
+tracer_integral = False
+mass_divergence = True
 neg_tracer = False
-tracer_integral = True
 
 salinity = True
 # Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/ground0'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/w BC testing/'
 #'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
-variations = 'AR=1'
+variations = 'w BC'
 cases_info = comparison_info(variations, universal_folder = universal_folder)
 num_cases = cases_info['num_cases']
 case_names = cases_info['case_names']
@@ -49,7 +51,6 @@ time  = []
 grid_specs = False*np.ones(num_cases)
 #grid_specs[2] = True # flag for whether to plot grid specs in title
 for i, reader in enumerate(readers):
-    reader.load_time()
     reader.load_grid(grid_specs = grid_specs[i])
     time.append(reader.t)
     nx[:, i] = reader.nx
@@ -57,9 +58,18 @@ for i, reader in enumerate(readers):
     nt[i] = reader.nt
 t = []
 
-if tracer_integral:
+if tracer_integral or mass_divergence:
     dmdt = []
     S_mass = []
+    if mass_divergence:
+        div_east = []
+        div_west = []
+        div_north = []
+        div_south = []
+        div_top = []
+        div_bottom = []
+        div_faces = []
+        div_vol = []
 if neg_tracer:
     S_sum = []
     neg_avg = []
@@ -82,14 +92,27 @@ for n, reader in enumerate(readers):
     else:
         file_path = os.path.join(reader.folder, 'binning_rtz.h5')
         with h5py.File(file_path, 'r') as f:
-            S_int = f["mass/S"][:]
-            dmdt_reader = f["mass/dmdt"][:]
-    if tracer_integral:
+            S_int = f["S mass"][:]
+            dmdt_reader = f["time gradient of S mass"][:]
+    if tracer_integral or mass_divergence:
         S_mass.append(S_int)
         if "glade" in universal_folder:
             dmdt.append(np.gradient(S_mass[n], t[n]))
         else:
             dmdt.append(dmdt_reader)
+        if mass_divergence:
+            w = reader.lazy_field('w').compute()
+            reader.load_equation_of_state()
+            dwdz = np.gradient(w, reader.zf, axis=-1)
+
+            dmw_top = np.sum(dwdz[:, :, :, 0].squeeze(), axis = (1, 2))
+            dmw_bottom = -1*np.sum(dwdz[:, :, :, -1].squeeze(), axis = (1, 2))
+    
+            div_top.append(dmw_top)
+            div_bottom.append(dmw_bottom)
+
+            div_faces.append(div_top[-1] + div_bottom[-1]) 
+
     if neg_tracer:
         S_neg = S
         S_neg[S>=0] = None
@@ -128,11 +151,11 @@ if tracer_integral:
     axes = axes.ravel()
     plt.subplots_adjust(top=0.9)
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
-    leg_col = num_cases//2 if num_cases > 4 else num_cases
+    leg_col = num_cases//2 if num_cases >= 4 else num_cases
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=leg_col,
-            bbox_to_anchor=(0.52, 0.005), fontsize = 12)
+            bbox_to_anchor=(0.5, 0.005), fontsize = 10)
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
         mass_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\langle\text{C}\rangle_{\text{xyz}}$[g]'
@@ -170,6 +193,50 @@ if tracer_integral:
     if area_scaling:
         variations += f' and area scaling'
     plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))
+if mass_divergence:
+    scale = [1, 0.1]
+    gridspec_kw={'height_ratios': scale}
+    fig, axes = plt.subplots(2, 1, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw)
+    axes = axes.ravel()
+    axes[-1].remove()
+    #plt.subplots_adjust(top=0.9, right=0.8)
+    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
+    leg_col = num_cases//2 if num_cases >= 4 else num_cases
+    fig.legend(handles=case_handles,
+            loc='lower center',
+            ncol=leg_col,
+            bbox_to_anchor=(0.5, 0.005), fontsize = 10)
+
+    axes[0].set_xlabel('Time (days)', fontsize = 12)
+    #axes[0].set_ylabel(r'$\frac{\partial\text{m}}{\partial t} + \nabla\cdot$ ($\text{m}$u$_i$)', fontsize = 12)
+    axes[0].set_ylabel(r'$\frac{\partial\text{w}}{\partial z}_{bottom} - \frac{\partial\text{w}}{\partial z}_{top}$', fontsize = 12)
+
+    for n in range(num_cases):
+        if n == 0: #, marker = 'o', markersize=3
+
+            axes[0].plot(t[n], div_faces[n], color = color_opt[n], linestyle = 'solid', label=r'$\frac{\partial\text{w}}{\partial z}$')
+            axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dashed', label=r'$\frac{\partial\text{w}}{\partial z}_{bottom}$')
+            axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dotted', label=r'$\frac{\partial\text{w}}{\partial z}_{top}$')
+        else:
+            #axes[0].plot(t[n], div_east[n], color = color_opt[n], linestyle = 'dashed')
+            #axes[0].plot(t[n], div_west[n], color = color_opt[n], linestyle = 'dotted')
+            #axes[0].plot(t[n], div_north[n], color = color_opt[n], linestyle = 'dashdot')
+            #axes[0].plot(t[n], div_south[n], color = color_opt[n], linestyle = 'dashdot')
+            #axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dashed')
+            #axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dotted')
+            axes[0].plot(t[n], div_faces[n], color = color_opt[n], linestyle = 'solid')
+            axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dashed')
+            axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dotted')
+
+    axes[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    for a in axes[:4]:
+        if a.get_yscale() != 'log':
+            a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3), useOffset=False)
+
+    outdir = os.path.join(universal_folder, 'callback comparisons')
+    os.makedirs(outdir, exist_ok=True)
+    plt.savefig(os.path.join(outdir, variations + ' divergence_edges_all.svg'))
 
 if neg_tracer:
     scale = [1, 1, 0.02]

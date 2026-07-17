@@ -60,14 +60,11 @@ dense_plume = []
 time = []
 
 for i, reader in enumerate(readers):
-
-    reader.load_grid()
     lz = np.max((lz, reader.lx[-1]))
-    reader.load_time()
     time.append(reader.t)
     nt = min((nt, len(time[i])))
 
-    S_value = reader.load_S_temporal_avg('binning_rtz.h5')
+    S_value = reader.load_S_temporal_avg()
     reader.load_equation_of_state()
 
 z = []

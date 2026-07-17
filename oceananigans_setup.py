@@ -9,24 +9,27 @@ from interpolation import interp1d_axis, vertical_line
 
 # set flags
 binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-buoyancy_flag = True
-fluc_flag = True # calculates turbulent statistics from binning information
-rms_flag = True # calculates RMS from 3D fields
-compute_temporal_averages_flag = True # computes temporal averages of S and w at the default contour value and writes to file
+centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+buoyancy_flag = False
+fluc_flag = False # calculates turbulent statistics from binning information
+rms_flag = False # calculates RMS from 3D fields
+compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-mass_flag = True
+mass_flag = False
 
+# model options
+with_halos = False
 salinity = True
 
+# update flags if salinity is False
 if not salinity:
     compute_temporal_averages_flag = False
     contour_flag = False
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/erf/dz025/develop-queue'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dx00625/shorter'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -34,14 +37,13 @@ bin_path = os.path.join(folder, 'binning_rtz.h5')
 g = 9.80665
 T0 = 25.0
 
-reader = OceananigansData(folder, salinity = salinity)
-reader.load_grid(grid_specs = False)
+reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
 # grid info
 nx = reader.nx
 nt = reader.nt
 dx = reader.dx
 lx = reader.lx
-time = reader.load_time()[0]
+time = reader.t
 reader.load_equation_of_state()
 
 dx_scale = max(dx[:-1]) # not including dz
@@ -112,31 +114,62 @@ if centerline_flag:
     reader.centerline_file = 'centerline.h5'
 ###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
+    xy = True
+    yz = True
+    xz = False
     file_path = os.path.join(folder, 'plane_slice.h5')
-    T = reader.field_slice('T')
-    u = reader.field_slice('u')
-    v = reader.field_slice('v')
-    w = reader.field_slice('w')
-    if reader.salinity:
-         S = reader.field_slice('S')
-    with h5py.File(file_path, "a") as f:
-        if "YZ/x = 0/T" in f:
-            del f["YZ/x = 0/T"]
-        if "YZ/x = 0/u" in f:
-            del f["YZ/x = 0/u"]
-        if "YZ/x = 0/v" in f:
-            del f["YZ/x = 0/v"]
-        if "YZ/x = 0/w" in f:
-            del f["YZ/x = 0/w"]
+    if xy:
+        z_locs = [-reader.lx[-1] + reader.dx[-1]/2, -reader.lx[-1]/2, 0.0]
+        for z_loc in z_locs:
+            T = reader.field_slice('T', plane = 'XY', loc = z_loc)
+            u = reader.field_slice('u', plane = 'XY', loc = z_loc)
+            v = reader.field_slice('v', plane = 'XY', loc = z_loc)
+            w = reader.field_slice('w', plane = 'XY', loc = z_loc)
+            if reader.salinity:
+                S = reader.field_slice('S', plane = 'XY', loc = z_loc)
+            with h5py.File(file_path, "a") as f:
+                if f"XY/z = {z_loc}/T" in f:
+                    del f[f"XY/z = {z_loc}/T"]
+                if f"XY/z = {z_loc}/u" in f:
+                    del f[f"XY/z = {z_loc}/u"]
+                if f"XY/z = {z_loc}/v" in f:
+                    del f[f"XY/z = {z_loc}/v"]
+                if f"XY/z = {z_loc}/w" in f:
+                    del f[f"XY/z = {z_loc}/w"]
+                if reader.salinity:
+                    if f"XY/z = {z_loc}/S" in f:
+                        del f[f"XY/z = {z_loc}/S"]
+                    f.create_dataset(f"XY/z = {z_loc}/S", data = S)
+                f.create_dataset(f"XY/z = {z_loc}/T", data=T)
+                f.create_dataset(f"XY/z = {z_loc}/u", data=u)
+                f.create_dataset(f"XY/z = {z_loc}/v", data=v)
+                f.create_dataset(f"XY/z = {z_loc}/w", data=w)
+                del S, T, u, v, w
+    if yz:
+        T = reader.field_slice('T')
+        u = reader.field_slice('u')
+        v = reader.field_slice('v')
+        w = reader.field_slice('w')
         if reader.salinity:
-            if "YZ/x = 0/S" in f:
-                del f["YZ/x = 0/S"]
-            f.create_dataset("YZ/x = 0/S", data = S)
-        f.create_dataset("YZ/x = 0/T", data=T)
-        f.create_dataset("YZ/x = 0/u", data=u)
-        f.create_dataset("YZ/x = 0/v", data=v)
-        f.create_dataset("YZ/x = 0/w", data=w)
-    del S, T, u, v, w
+            S = reader.field_slice('S')
+        with h5py.File(file_path, "a") as f:
+            if "YZ/x = 0/T" in f:
+                del f["YZ/x = 0/T"]
+            if "YZ/x = 0/u" in f:
+                del f["YZ/x = 0/u"]
+            if "YZ/x = 0/v" in f:
+                del f["YZ/x = 0/v"]
+            if "YZ/x = 0/w" in f:
+                del f["YZ/x = 0/w"]
+            if reader.salinity:
+                if "YZ/x = 0/S" in f:
+                    del f["YZ/x = 0/S"]
+                f.create_dataset("YZ/x = 0/S", data = S)
+            f.create_dataset("YZ/x = 0/T", data=T)
+            f.create_dataset("YZ/x = 0/u", data=u)
+            f.create_dataset("YZ/x = 0/v", data=v)
+            f.create_dataset("YZ/x = 0/w", data=w)
+        del S, T, u, v, w
     
     print(f"Saved plane slices to {file_path}")
 ###------------BUOYANCY CALCULATIONS--------------------------------###
@@ -247,8 +280,8 @@ if compute_temporal_averages_flag:
     print(f"Saved temporal averages to {bin_path}")
 ###------------PLUME CONTOURS---------------------------------------###
 if contour_flag:
-    contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
-    S_value = reader.load_S_temporal_avg(bin_path)
+    contours = np.array([0.001, 0.005, 0.01, 0.05])
+    S_value = reader.load_S_temporal_avg()
     if not binning_flag:
         S_rz = reader.load_binning_var('S')
 
@@ -323,3 +356,4 @@ if mass_flag:
             del f["mass/dmdt"]
         f.create_dataset("S mass", data=S_mass)
         f.create_dataset("time gradient of S mass", data=dmdt)
+    print(f"Saved mass calculations to {bin_path}")

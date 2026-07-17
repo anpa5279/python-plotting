@@ -22,8 +22,6 @@ fig_folder = os.path.join(folder, 'interpolation_verification_figures')
 reader = OceananigansData(folder, salinity = salinity)
 
 # collecting model information for all cases
-reader.load_time()
-reader.load_grid()
 x = reader.x
 y = reader.y
 z = reader.z

@@ -6,10 +6,11 @@ from diagnostics import comparison_info
 from physics import buoyancy
 from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
 from plotting_lines import plot_turb_stats_bin, temporal_avg
-from plotting_planes import plot_variable_vert_slice
+from plotting_planes import plot_variable_vert_slice, plot_variable_xy_slice
 
 # flags for what to plot
-plot_variables = True
+plot_variables_vert = True
+plot_variables_hor = False
 plot_var_bin = False
 plot_turb_stats = False
 plot_temporal_avg = False
@@ -20,15 +21,13 @@ with_halos = False
 closure = False
 stokes = False
 
-contour_bound = 0.001
-name_uni = f'contour-{contour_bound:.4f}'
-universal_folder ='/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/'
-#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/res testing/square inlet/'
+contour = 0.001
+name_uni = f'contour-{contour:.4f}'
+universal_folder ='/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/w BC testing/'
 #'/glade/derecho/scratch/apauls/outputs/'
-#harddrive: '/Volumes/Anna External/Oceananigans/dense plume with stratification/salinity and temperature /no noise circle inlet/resolution testing'#
 
 # selecting cases to compare
-variations = 'erf' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
+variations = 'w timescale BC' #'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']
@@ -59,6 +58,7 @@ for n, folder in enumerate(folder_names):
 # collecting model information for all cases
 if plot_var_bin:
     r_bin = []
+x = []
 y = []
 z = []
 nx = np.empty((3, num_cases), dtype=object)
@@ -66,6 +66,8 @@ lx = np.empty((3, num_cases), dtype=object)
 grid_specs = False*np.ones(num_cases)
 for i, reader in enumerate(readers):
     reader.load_equation_of_state()
+    if plot_variables_hor:
+        x.append(reader.x)
     y.append(reader.y)
     z.append(reader.z)
     nx[:, i] = reader.nx
@@ -75,9 +77,9 @@ for i, reader in enumerate(readers):
     else:
         nt = np.min([nt, reader.nt])
     if plot_var_bin:
-        r_bin.append(reader.loading_bin_radius())
+        r_bin.append(reader.loading_bin_contours(contour = contour))
     if salinity[n] and plot_turb_stats:
-        S_value = reader.load_S_temporal_avg('binning_rtz.h5')
+        S_value = reader.load_S_temporal_avg()
 
 # physical parameters
 x0 = 0.0
@@ -93,35 +95,36 @@ else:
     time = readers[0].t[-1]
 
 # collecting variables for plotting
-if any([plot_variables, plot_var_bin, plot_turb_stats]):
+if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats]):
     plot_format()
     if all(salinity):
-        S_avg = []
-        S_fluc_center = []
         S_hor = []
-        S_plane = []
+        S_vert_plane = []
     if plot_turb_stats:
-        T_avg = []
         b_avg = []
-        u_rms = []
-        v_rms = []
         w_rms = []
-        u_fluc_avg = []
-        v_fluc_avg = []
-        w_fluc_avg = []
-        bu_fluc_avg = []
-        bv_fluc_avg = []
+        ur_rms = []
+        urw_avg = []
+        bur_fluc_avg = []
         bw_fluc_avg = []
-        r_profile = []
-        b_center = []
-        T_fluc_center = []
+        Tur_avg = []
+        Tw_avg = []
+        if all(salinity):
+            Sur_avg = []
+            Sw_avg = []
 
-    if plot_variables:
-        T_plane = []
-        u_plane = []
-        v_plane = []
-        w_plane = []
+    if plot_variables_vert:
+        T_vert_plane = []
+        u_vert_plane = []
+        v_vert_plane = []
+        w_vert_plane = []
         bw_plane = []
+    if plot_variables_hor:
+        T_hor_plane = []
+        u_hor_plane = []
+        v_hor_plane = []
+        w_hor_plane = []
+        S_hor_plane = []
     if plot_var_bin:
         T_bin = []
         S_bin = []
@@ -132,14 +135,21 @@ if any([plot_variables, plot_var_bin, plot_turb_stats]):
 
     for i, reader in enumerate(readers):
         # Load data from files [nt, nx, ny, nz]
-        if plot_variables:
-            T_plane.append(reader.load_plane_var('T'))
-            u_plane.append(reader.load_plane_var('u'))
-            v_plane.append(reader.load_plane_var('v'))
-            w_plane.append(reader.load_plane_var('w'))
+        if plot_variables_vert:
+            T_vert_plane.append(reader.load_plane_var('T'))
+            u_vert_plane.append(reader.load_plane_var('u'))
+            v_vert_plane.append(reader.load_plane_var('v'))
+            w_vert_plane.append(reader.load_plane_var('w'))
             if all(salinity):
-                S_plane.append(reader.load_plane_var('S'))
-            b_plane = buoyancy(reader, type = 'plane')
+                S_vert_plane.append(reader.load_plane_var('S'))
+        if plot_variables_hor:
+            z_loc =-reader.lx[-1] + reader.dx[-1]/2#-reader.dx[-1]/2# -reader.dx[-1]/2#0.0#
+            T_hor_plane.append(reader.load_plane_var('T', loc=z_loc, plane = 'XY'))
+            u_hor_plane.append(reader.load_plane_var('u', loc=z_loc, plane = 'XY'))
+            v_hor_plane.append(reader.load_plane_var('v', loc=z_loc, plane = 'XY'))
+            w_hor_plane.append(reader.load_plane_var('w', loc=z_loc, plane = 'XY'))
+            if all(salinity):
+                S_hor_plane.append(reader.load_plane_var('S', loc=z_loc, plane = 'XY'))
         # Load binning from files
         if plot_var_bin or plot_turb_stats:
             ur_rz = reader.load_binning_var('horizontal velocity')
@@ -159,26 +169,26 @@ if any([plot_variables, plot_var_bin, plot_turb_stats]):
                 S_bin.append(S_rz)
             b_bin.append(b_rz)
         if plot_turb_stats:
+            urw_avg.append(np.mean(ur_rz * w_rz, axis=0))
             # rms fluctuations
-            u_rms.append(reader.load_rms('u'))
-            v_rms.append(reader.load_rms('v'))
-            w_rms.append(reader.load_rms('w'))
-            bu_avg = np.mean(b_rz * ur_rz, axis=0)
-            bv_avg = np.mean(b_rz * utheta_rz, axis=0)
+            ur_avg = np.mean(ur_rz, axis=0)
+            ur_rms.append(np.sqrt(np.mean((ur_rz - ur_avg)**2, axis=0)))
+            w_avg = np.mean(w_rz, axis=0)
+            w_rms.append(np.sqrt(np.mean((w_rz - w_avg)**2, axis=0)))
+            bur_avg = np.mean(b_rz * ur_rz, axis=0)
             bw_avg = np.mean(b_rz * w_rz, axis=0)
-            bu_fluc_avg.append(bu_avg)
-            bv_fluc_avg.append(bv_avg)
+            bur_fluc_avg.append(bur_avg)
             bw_fluc_avg.append(bw_avg)
             # calculate means
             b_avg.append(b_xy)
-            T_avg.append(np.mean(T_rz, axis=0))
-            # dense plume analysis
+            T_avg = np.mean(T_rz, axis=0)
+            Tur_avg.append(np.mean((T_rz-T_avg) * ur_rz, axis=0))
+            Tw_avg.append(np.mean((T_rz-T_avg) * w_rz, axis=0))
             if all(salinity):
-                S_avg.append(np.mean(S_rz, axis=0))
-                r_profile.append(reader.loading_bin_contours())
-                b_center.append(b_rz[0, :, :])
-                T_fluc_center.append(T_rz[0, :, :])
-                S_fluc_center.append(S_rz[0, :, :])
+                Sur_avg.append(np.mean(S_rz * ur_rz, axis=0))
+                Sw_avg.append(np.mean(S_rz * w_rz, axis=0))
+
+
 if plot_temporal_avg:
     t_range = np.array([0.4, 0.5])*24*3600 # seconds
     w_rms_t_avg = []
@@ -199,7 +209,7 @@ if plot_temporal_avg:
         # load in information
         w_center_temp = reader.field_centerline('w', steps = t_save)
         w_centerline_t_avg.append(np.mean(w_center_temp, axis=0))
-        _, b_rms_temp, _, b_fluc_centerline_temp = reader.load_buoyancy_small()
+        _, b_rms_temp, _, b_fluc_centerline_temp = reader.load_buoyancy()
         b_fluc_centerline_t_avg.append(np.mean(b_fluc_centerline_temp[t_idx1[0]:t_idx1[1], :], axis=0))
 
         b_rms_t_avg.append(np.mean(b_rms_temp[t_idx[0]:t_idx[1], :], axis=0))
@@ -212,14 +222,17 @@ if plot_temporal_avg:
     t_range = t_range/(24*3600) # days
 ############ PLOTTING ############
 # plotting prep
-if plot_variables:
+if plot_variables_vert or plot_variables_hor:
     if all(salinity):
-        var_names = ['Tracer', 'Temperature', 'u', 'v', 'w']
+        range_names = ['w']#['T',]#['log w']#['w']#
+        var_names = range_names#['Temperature',]#range_names
         range_names = ['Tracer', 'T', 'u', 'v', 'w']
+        var_names = ['Tracer', 'Temperature', 'u', 'v', 'w']
     else:
-        var_names = ['Temperature', 'u', 'v', 'w']
         range_names = ['T', 'u', 'v', 'w']
+        var_names = ['Temperature', 'u', 'v', 'w']
     variable_dir = {}
+    variable_dir_hor = {}
 if plot_var_bin:
     if all(salinity):
         bin_var_names = ['Tracer', 'Temperature', r'u$_r$', r'u$_{\theta}$', 'w']
@@ -236,36 +249,59 @@ ranges['Tracer'] =[S_tol, 0.15]
 ranges['Tracer negative'] = [-0.15, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
 ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
-ranges['T'] = [T0-0.7, T0 + 0.01]
-ranges['w'] = [-1.5*10**(-1), 1.5*10**(-1)]
-ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
+ranges['T'] = [T0-0.7, T0 + 0.05]
+ranges['w'] = [-1*10**(-1), 1*10**(-1)]
+ranges['u'] = [-1*10**(-2), 1*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
-ranges['vel_rms'] = [0, 4*10**-3]
+ranges['vel_rms'] = [0, 3*10**(-2)]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['S'] = [0.0, 0.05]
 ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
-ranges['bw_fluc'] = [-5*10**(-9), 5*10**(-9)]
+ranges['bw_fluc'] = [-8*10**(-7), 8*10**(-7)]
+if plot_turb_stats:
+    ranges['restress'] = [-2*10**(-5), 2*10**(-5)]
+    ranges['Tw_fluc'] = [-5*10**(-4), 5*10**(-4)]
+    ranges['Cw'] = [-5*10**(-5), 5*10**(-5)]
 
 # plotting with flags that have the possibility of being videos
-if any([plot_variables, plot_var_bin, plot_turb_stats]):
+if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats]):
     for it in range(nt):
-        if plot_variables:
+        if plot_variables_vert or plot_variables_hor:
             if all(salinity): #'Tracer', 'T', 'u', 'v', 'w'
-                variables = [[S_plane[i][it, :, :].T for i in range(num_cases)], [T_plane[i][it, :, :].T for i in range(num_cases)], [u_plane[i][it, :, :].T for i in range(num_cases)], [v_plane[i][it, :, :].T for i in range(num_cases)], [w_plane[i][it, :, :].T for i in range(num_cases)]]
                 colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
                 cmaps = ['Blues', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+                #colorbar_labels = [r"m/s"]#[r"$^\circ$C", ]#
+                #cmaps = ['RdBu_r',]#['viridis',]#['Blues']#
             else: #'T', 'u', 'v', 'w'
-                variables = [[T_plane[i][it, :, :].T for i in range(num_cases)], [u_plane[i][it, :, :].T for i in range(num_cases)], [v_plane[i][it, :, :].T for i in range(num_cases)], [w_plane[i][it, :, :].T for i in range(num_cases)]]
                 colorbar_labels = [r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
                 cmaps = ['viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+            if plot_variables_vert:
+                if all(salinity):
+                    variables = [[S_vert_plane[n][it, :, :].T for n in range(num_cases)], [T_vert_plane[n][it, :, :].T for n in range(num_cases)], [u_vert_plane[n][it, :, :].T for n in range(num_cases)], [v_vert_plane[n][it, :, :].T for n in range(num_cases)], [w_vert_plane[n][it, :, :].T for n in range(num_cases)]]
+                else:
+                    variables = [[T_vert_plane[n][it, :, :].T for n in range(num_cases)], [u_vert_plane[n][it, :, :].T for n in range(num_cases)], [v_vert_plane[n][it, :, :].T for n in range(num_cases)], [w_vert_plane[n][it, :, :].T for n in range(num_cases)]]
+                for dir, var in enumerate(variables):
+                    variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
+            if plot_variables_hor:
+                hor_ranges = ranges.copy()
+                hor_ranges['T'] = [T0-0.68, T0-0.62]
+                hor_ranges['u'] = [-2*10**(-5), 2*10**(-5)]
+                hor_ranges['v'] = hor_ranges['u']
+                hor_ranges['w'] = [-8*10**(-2), 8*10**(-2)]
+                hor_ranges['log w'] = [10**-7, hor_ranges['w'][-1]]
 
-            for dir, var in enumerate(variables):
-                variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
+                if all(salinity):
+                    #variables = [[w_hor_plane[n][it, :, :].T for n in range(num_cases)],]#[[T_hor_plane[n][it, :, :].T for n in range(num_cases)],]#[np.abs([w_hor_plane[n][it, :, :].T for n in range(num_cases)]),]#
+                    variables = [[S_hor_plane[n][it, :, :].T for n in range(num_cases)], [T_hor_plane[n][it, :, :].T for n in range(num_cases)], [u_hor_plane[n][it, :, :].T for n in range(num_cases)], [v_hor_plane[n][it, :, :].T for n in range(num_cases)], [w_hor_plane[n][it, :, :].T for n in range(num_cases)]]
+                else:
+                    variables = [[T_hor_plane[n][it, :, :].T for n in range(num_cases)], [u_hor_plane[n][it, :, :].T for n in range(num_cases)], [v_hor_plane[n][it, :, :].T for n in range(num_cases)], [w_hor_plane[n][it, :, :].T for n in range(num_cases)]]
+                for dir, var in enumerate(variables):
+                    variable_dir_hor[var_names[dir]] = plot_variable_xy_slice(time[it], it, hor_ranges, fig_folder, lx, x, y, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], loc = z_loc)
         if plot_var_bin:
             if all(salinity): #'Tracer', 'T', 'u', 'v', 'w'
                 variables = [[S_bin[i][:, :, it].T for i in range(num_cases)], [T_bin[i][:, :, it].T for i in range(num_cases)], [ur_bin[i][:, :, it].T for i in range(num_cases)], [utheta_bin[i][:, :, it].T for i in range(num_cases)], [w_bin[i][:, :, it].T for i in range(num_cases)]]
-                colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
-                cmaps = ['Blues', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
+                colorbar_labels = [r"m/s", ]#[r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
+                cmaps = ['RdBu_r',]#['Blues', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
             else: #'T', 'u', 'v', 'w'
                 variables = [[T_bin[i][:, :, it].T for i in range(num_cases)], [ur_bin[i][:, :, it].T for i in range(num_cases)], [utheta_bin[i][:, :, it].T for i in range(num_cases)], [w_bin[i][:, :, it].T for i in range(num_cases)]]
                 colorbar_labels = [r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
@@ -274,20 +310,17 @@ if any([plot_variables, plot_var_bin, plot_turb_stats]):
             for dir, var in enumerate(variables):
                 bin_dir[bin_var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx, r_bin, z, var, case_names, bin_var_names[dir], bin_range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='binning')
         if plot_turb_stats:
-            S_avg_it = [S_avg[i][:, it] for i in range(num_cases)]
-            u_rms_it = [u_rms[i][it, :] for i in range(num_cases)]
-            v_rms_it = [v_rms[i][it, :] for i in range(num_cases)]
-            w_rms_it = [w_rms[i][it, :] for i in range(num_cases)]
+            ur_rms_it = [ur_rms[i][:, it] for i in range(num_cases)]
+            w_rms_it = [w_rms[i][:, it] for i in range(num_cases)]
+            uw_avg_it = [urw_avg[i][:, it] for i in range(num_cases)]
             b_avg_it = [b_avg[i][:, it] for i in range(num_cases)]
-            b_center_it = [b_center[i][:, it] for i in range(num_cases)]
-            r_profile_it = [r_profile[i][:, it] for i in range(num_cases)]
-            bu_fluc_avg_it = [bu_fluc_avg[i][:, it] for i in range(num_cases)]
-            bv_fluc_avg_it = [bv_fluc_avg[i][:, it] for i in range(num_cases)]
+            bur_fluc_avg_it = [bur_fluc_avg[i][:, it] for i in range(num_cases)]
             bw_fluc_avg_it = [bw_fluc_avg[i][:, it] for i in range(num_cases)]
-            T_avg_it = [T_avg[i][:, it] for i in range(num_cases)]
-            T_fluc_center_it = [T_fluc_center[i][:, it] for i in range(num_cases)]
-            S_fluc_center_it = [S_fluc_center[i][:, it] for i in range(num_cases)]
-            buoyancy_dir_z = plot_turb_stats_bin(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg_it, u_rms_it, v_rms_it, w_rms_it, b_avg_it, b_center_it, r_profile_it, bu_fluc_avg_it, bv_fluc_avg_it, bw_fluc_avg_it, T_avg_it, T_fluc_center_it, S_fluc_center_it)
+            Tur_avg_it = [Tur_avg[i][:, it] for i in range(num_cases)]
+            Tw_avg_it = [Tw_avg[i][:, it] for i in range(num_cases)]
+            Sur_avg_it = [Sur_avg[i][:, it] for i in range(num_cases)]
+            Sw_avg_it = [Sw_avg[i][:, it] for i in range(num_cases)]
+            buoyancy_dir_z = plot_turb_stats_bin(time[it], it, ranges, color_opt, fig_folder, case_names, z, ur_rms_it, w_rms_it, uw_avg_it, b_avg_it, bur_fluc_avg_it, bw_fluc_avg_it, Tur_avg_it, Tw_avg_it, Sur_avg_it, Sw_avg_it)
 # plotting with flags that don't have the possibility of being videos
 if plot_temporal_avg:
     plot_format(fontsize = 10)
@@ -298,8 +331,11 @@ if video:
     if plot_var_bin:
         for n, name in enumerate(bin_var_names):
             create_video(bin_dir[bin_var_names[n]], fig_folder, 'binning', name)
-    if plot_variables:
+    if plot_variables_vert:
         for dir, name in enumerate(var_names):
-            create_video(variable_dir[var_names[dir]], fig_folder, '', name)
+            create_video(variable_dir[var_names[dir]], fig_folder, 'vertical', name)
+    if plot_variables_hor:
+        for dir, name in enumerate(var_names):
+            create_video(variable_dir_hor[var_names[dir]], fig_folder, f'z = {z_loc:.2f} m', name)
     if plot_turb_stats:
         create_video(buoyancy_dir_z, fig_folder, 'binning', 'turb_stats')

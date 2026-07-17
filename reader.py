@@ -5,7 +5,7 @@ import dask.array as da
 from interpolation import plane_slice_calc, velocities_to_center, vertical_line
 
 class OceananigansData:
-    def __init__(self, folder, temperature=True, salinity = False, with_halos=False):
+    def __init__(self, folder, temperature=True, salinity = False, with_halos=False, grid_specs = False, Sval=None):
         self.folder = folder
 
         # Grid-related (set by load_grid)
@@ -20,6 +20,7 @@ class OceananigansData:
         self.z = None
         self.zf = None
         self.halos = with_halos # does the output data include halos? if True, they will be stripped when loading fields
+        self.grid_specs = grid_specs # whether to include grid specs in title of plots
 
         # Time-related (set by load_time)
         self.nt = None
@@ -35,13 +36,15 @@ class OceananigansData:
         self.u_f = None         # friction velocity
 
         # equation of state information
-        if temperature or salinity:
+        self.b = None
+        if temperature:
             self.temperature = temperature
-            self.salinity = salinity
             self.T0 = None
             self.alpha = None
+        if salinity:
+            self.salinity = salinity
+            self.Sval = Sval
             self.beta = None
-            self.b = None
 
         # collecting all jld2 and h5 files names in folder
         self.all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') or f.endswith('.h5'))]
@@ -88,19 +91,27 @@ class OceananigansData:
         self.load_time()
         self.load_grid()
 
+        self.field_opt = {
+            'u': {'x':'f', 'y':'c', 'z':'c'},
+            'v': {'x':'c', 'y':'f', 'z':'c'},
+            'w': {'x':'c', 'y':'c', 'z':'f'},
+            'Tracer': {'x':'c', 'y':'c', 'z':'c'}
+        }
+
     # ------------------------- GRID ------------------------------------ #
-    def load_grid(self, grid_specs = False):
+    def load_grid(self):
         if 'grid_info.jld2' in os.listdir(self.folder):
             with h5py.File(os.path.join(self.folder, 'grid_info.jld2'), 'r') as f:
-                self.Nranks = f['grid/Nranks'][()]
+                if 'grid/Nranks' in f:
+                    self.Nranks = f['grid/Nranks'][()]
                 self.nx = [
-                    f['grid/Nx'][()]*self.Nranks if grid_specs else f['grid/Nx'][()],
+                    f['grid/Nx'][()]*self.Nranks if self.grid_specs else f['grid/Nx'][()],
                     f['grid/Ny'][()],
                     f['grid/Nz'][()]
                 ]
                 self.hx = [3, 3, 3]
                 self.lx = [
-                    f['grid/Lx'][()]*self.Nranks if grid_specs else f['grid/Lx'][()],
+                    f['grid/Lx'][()]*self.Nranks if self.grid_specs else f['grid/Lx'][()],
                     f['grid/Ly'][()],
                     f['grid/Lz'][()]
                 ]
@@ -114,7 +125,7 @@ class OceananigansData:
             self.y = np.linspace(-self.lx[1]/2 + self.dx[1]/2, self.lx[1]/2 - self.dx[1]/2, self.nx[1])
             self.yf = np.linspace(-self.lx[1]/2, self.lx[1]/2, self.nx[1]+1)
             self.z = np.linspace(-self.lx[2] + self.dx[2]/2, -self.dx[2]/2, self.nx[2])
-            self.zf = np.linspace(-self.lx[2], 0, self.nx[2])
+            self.zf = np.linspace(-self.lx[2], 0, self.nx[2]+1)
             self.hx = [3, 3, 3]
         else:
             with h5py.File(os.path.join(self.folder, self.files[-1]), 'r') as f:
@@ -195,17 +206,6 @@ class OceananigansData:
             self.u_f = f['IC/friction_velocity'][()]
 
     # ------------------------- INTERNAL UTILS -------------------------- #
-    def _slice(self, arr):
-        if self.halos:
-            return arr[
-                self.hx[0]:-self.hx[0],
-                self.hx[1]:-self.hx[1],
-                self.hx[2]:-self.hx[2]
-            ]
-        return arr[:, :, :]
-    def _read_field(self, f, name, it):
-        data = f[f'timeseries/{name}'][f'{int(it)}']
-        return self._slice(data).transpose(2, 1, 0)
 
     #--------------------------------------------------------------------#
     #                                                                    #
@@ -251,7 +251,7 @@ class OceananigansData:
         if not transpose:
             out = out.transpose(0, 3, 2, 1) if out.ndim == 4 else out.transpose(0, 2, 1)  # (Nt, Nz, Ny, Nx) 
         return out.squeeze()                                 # drop time axis if Nt == 1
-    def field_slice(self, field, steps=None, slice='YZ', loc=0.0, N=None):
+    def field_slice(self, field, steps=None, plane='YZ', loc=0.0, N=None):
         """
         Returns a 2D slice of the field throughout time.
         'YZ' -> shape (nt, Ny, Nz),  loc is x-position
@@ -270,11 +270,11 @@ class OceananigansData:
             if lazy.ndim == 3:
                 lazy = lazy[np.newaxis]            # (1, Nx, Ny, Nz)
 
-            if slice == 'YZ':
+            if plane == 'YZ':
                 out = lazy[:, int(N), :, :]        # (nt, Ny, Nz)
-            elif slice == 'XZ':
+            elif plane == 'XZ':
                 out = lazy[:, :, int(N), :]        # (nt, Nx, Nz)
-            elif slice == 'XY':
+            elif plane == 'XY':
                 out = lazy[:, :, :, int(N)]        # (nt, Nx, Ny)
 
             if field == 'u' and self.u_s is not None:
@@ -285,34 +285,39 @@ class OceananigansData:
         # ------------------------------------------------------------------ #
         # Slow path: loc is a physical coordinate — interpolate               #
         # ------------------------------------------------------------------ #
+        if field == 'u' or field == 'v' or field == 'w':
+            coord_opt = self.field_opt[field]
+        else:
+            coord_opt = self.field_opt['Tracer']
         slice_cfg = {
-            'YZ': (self.x, True),
-            'XZ': (self.y, False),
-            'XY': (self.z, False),
+            'YZ': (self.x if coord_opt['x'] == 'c' else self.xf, True, -3),
+            'XZ': (self.y if coord_opt['y'] == 'c' else self.yf, False, -2),
+            'XY': (self.z if coord_opt['z'] == 'c' else self.zf, False, -1),
         }
-        coord, rank_split = slice_cfg[slice]
-        nx_local = self.nx[0] // self.Nranks
+        coord, rank_split, axis = slice_cfg[plane]
+        exact = coord == loc
+        if any(exact):
+            needs_interp = False
+            halos_needed = False
+        else:
+            needs_interp = True
+            halos_needed = False
 
-        if rank_split:
-            exact = coord == loc
+        if rank_split and self.Nranks > 1:
+            nx_local = self.nx[0] // self.Nranks
             if any(exact):
                 file_indices = np.where(exact)[0]
-                needs_interp = False
-                halos_needed = False
             else:
                 nearest = np.argsort(np.abs(coord - loc))[:2]
                 file_indices = np.array([int(i) for i in np.floor(np.sort(nearest) / self.nx[0] * self.Nranks)])
                 # deduplicate in case both nearest points are in the same rank file
                 file_indices = np.unique(file_indices)
-                needs_interp = True
                 halos_needed = self.halos
                 if halos_needed:
                     file_indices = file_indices[:1]
             files = [self.files[i] for i in np.atleast_1d(file_indices)]
         else:
             files = self.files
-            needs_interp = True
-            halos_needed = False
 
         def _load_slab(fname, t):
             with h5py.File(fname, 'r') as f:
@@ -328,27 +333,32 @@ class OceananigansData:
         arrayst = []
         for t in steps:
             slabs = [_load_slab(os.path.join(self.folder, f), t) for f in files]
-            block = np.concatenate(slabs, axis=0)        # (x_local_or_total, y, z)
+            if self.Nranks > 1:
+                block = np.concatenate(slabs, axis=0)        # (x_local, y, z)
+            else:
+                block = slabs[0]                             # (x_total, y, z)
 
-            if slice == 'YZ':
-                if needs_interp:
+            if plane == 'YZ':
+                if needs_interp and self.Nranks > 1:
                     # build the actual x-coordinates corresponding to rows of block
                     x_slab_coords = np.concatenate([
                         coord[i * nx_local : (i + 1) * nx_local]
                         for i in np.atleast_1d(file_indices)
                     ])
                     s = plane_slice_calc(block, x_slab_coords, loc, axis = -3)   # (y, z)
+                elif needs_interp and self.Nranks == 1:
+                    s = plane_slice_calc(block, coord, loc, axis = -3)   # (y, z)
                 else:
                     # loc sits exactly on a grid point — find its local index
                     global_idx = np.where(coord == loc)[0][0]
-                    local_idx = global_idx % nx_local
+                    if self.Nranks > 1:
+                        local_idx = global_idx % nx_local
+                    else:
+                        local_idx = global_idx
                     s = block[local_idx]                       # (y, z)
 
-            elif slice == 'XZ':
-                s = plane_slice_calc(block, self.y, loc, axis = -2)               # (x, z)
-
-            elif slice == 'XY':
-                s = plane_slice_calc(block, self.z, loc, axis = -1)               # (x, y)
+            else:
+                s = plane_slice_calc(block, coord, loc, axis = axis)               # (x, y)
 
             if field == 'u' and self.u_s is not None:
                 s = s - self.u_s
@@ -431,7 +441,8 @@ class OceananigansData:
             self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
             if self.salinity:
                 self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
-    def load_buoyancy_small(self, file = 'buoyancy_profile.h5', steps=None):
+    def load_buoyancy(self, file = 'buoyancy_profile.h5', steps=None):
+        self.load_equation_of_state()
         g = 9.80665
         buoyancy_file = os.path.join(self.folder, file)
         if os.path.exists(buoyancy_file) and not self.centerline and not self.averaging: # the buoyancy file exists and no centerline or averaging files exist
@@ -482,7 +493,7 @@ class OceananigansData:
             return b_avg, b_rms, b_centerline, b_fluc_centerline
 
     # ------------------------- AVERAGES -------------------------------- #
-    def load_temporal_averages(self, file_path = None, contour_bound = 0.05):
+    def load_temporal_averages(self, file_path = None, contour = 0.05):
         if file_path is None:
             file_path = self.bin_file
 
@@ -514,24 +525,24 @@ class OceananigansData:
                     'S_avg': f['1D temporal averages/S'][()],
                     'S_fluc_avg': f['1D temporal averages/S\''][()],
                 }
-                r_plume = {'tracer radius': f[f'plume statistics/contour {contour_bound}/plume tracer radius with depth'][()]}
+                r_plume = {'tracer radius': f[f'plume statistics/contour {contour}/plume tracer radius with depth'][()]}
             else:
                 S = None
                 r_plume = None
 
         return rms, bw, T, S, r_plume
-    def load_S_temporal_avg(self, file_path = None):
+    def load_S_temporal_avg(self):
         """
         Loads contour temporal averages.
         """
-        if file_path is None:
-            file_path = self.bin_file
+        if self.Sval is None:
+            fname = os.path.join(self.folder, self.bin_file)
 
-        fname = os.path.join(self.folder, file_path)
-
-        with h5py.File(fname, 'r') as f:
-            S = f['contour temporal averages/S'][()]
-        return S
+            with h5py.File(fname, 'r') as f:
+                S = f['contour temporal averages/S'][()]
+            return S
+        else:
+            return self.Sval
     def load_averages(self, field, steps=None):
         if self.averaging:
             if steps is None:
@@ -586,16 +597,6 @@ class OceananigansData:
             return r
         else:
             raise ValueError("Salinity needs to be a tracer in oreder to have said contour.")
-    def loading_bin_radius(self):
-        """
-        Loads binning radius.
-        """
-
-        fname = os.path.join(self.folder, self.bin_file)
-
-        with h5py.File(fname, 'r') as f:
-            r = f[f'ccc/dimensions/r_bin'][()]
-        return r
     
     # ------------------------ FLUCTUATIONS ----------------------------- #
     def load_fluc(self, field, file = 'fluctuations.h5'):
@@ -622,26 +623,30 @@ class OceananigansData:
         return a
 
     # ------------------------ PLANE SLICE ------------------------------ #
-    def load_plane_var(self, field, loc=0.0, file='plane_slice.h5'):
+    def load_plane_var(self, field, loc=0, plane = 'YZ', file='plane_slice.h5', N = None):
         """
         Loads plane slice variables.
         """
         fname = os.path.join(self.folder, file)
         
         import re
-        pattern = r'x = ' + str(int(loc)) + r'(?:\.\d+)?'
+        if plane == 'YZ':
+            pattern = r'x = ' + str(loc) + r'(?:\.\d+)?'
+        elif plane == 'XZ':
+            pattern = r'y = ' + str(loc) + r'(?:\.\d+)?'
+        elif plane == 'XY':
+            pattern = r'z = ' + str(loc) + r'(?:\.\d+)?'
+        else:
+            raise ValueError(f"Invalid plane '{plane}'. Must be one of 'YZ', 'XZ', or 'XY'.")
         
         with h5py.File(fname, 'r') as f:
-            yz_group = f['YZ']
+            group = f[f'{plane}']
             # Find the matching key inside YZ group
             matching_key = None
-            for key in yz_group.keys():
+            for key in group.keys():
                 if re.fullmatch(pattern, key):
                     matching_key = key
-                    break
-            
-            if matching_key is None:
-                raise KeyError(f"No key matching '{pattern}' in YZ group. Available: {list(yz_group.keys())}")
-            
-            a = yz_group[matching_key][field][()]
+                    a = group[matching_key][field][()]
+        if matching_key is None: # not in file, must find from fields 
+            a = self.field_slice(field, plane = plane, loc = loc, N = N)
         return a

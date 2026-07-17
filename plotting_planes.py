@@ -7,7 +7,7 @@ from matplotlib import colors
 from plotting_general import create_video
 ### -------------------------PLOTTING PLANE SLICES FUNCTIONS------------------------- ###
 ## variable vertical plane slice across all cases
-def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r', plane='YZ'):
+def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, loc = 0.0, cmap='RdBu_r', plane='YZ'):
     td = time / 3600 / 24
     #print(hor)
     #print(z)
@@ -18,6 +18,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         plane = 'YZ plane'
         xlabel = "y [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
+        out_folder = f'x = {loc:.2f} m'
     elif plane == 'XZ': #xz plane
         lhor = np.max(lx[0])
         lz = np.max(lx[2])
@@ -25,18 +26,18 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         plane = 'XZ plane'
         xlabel = "x [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
+        out_folder = f'y = {loc:.2f} m'
     elif plane == 'binning':
         lhor = np.max(lx[0])/2
         lz = np.max(lx[2])
         ar = lhor/lz
         xlabel = "r [m]"
         title = name + ', ' + f'{td:.2f} days'
+        out_folder = f''
     else:
         raise ValueError("Invalid plane specified. Choose from 'YZ', 'XZ', or 'binning'.")
-    #if plane != 'binning':
-    #    for n, case_name in enumerate(case_names):
-    #        var[n] = var[n].T
-    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
+
+    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane, out_folder)
     os.makedirs(outdir, exist_ok=True)
     num_cases = len(case_names)
     ncols = 3
@@ -60,7 +61,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         for i in range(num_cases, nrows*ncols):
             axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
-        if name == 'Tracer':
+        if name == 'Tracer' or name == 'log w':
             var[n][var[n] <= 0] = 10**(-16)
             im = axes[n].imshow(var[n], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
@@ -74,7 +75,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
 
     active_axes = [axes[n] for n in range(num_cases)]
     cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
-    if not name == 'Tracer': 
+    if all([not name == 'Tracer', not name == 'log w']): 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
         cbar.update_ticks() 
@@ -86,34 +87,38 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     print(f"Time step {it} captured: {frame_path}")
     return outdir
 ## variable xy plane slice across all cases
-def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_names, name, range_name, colorbar_label=None, cmap='RdBu_r'):
+def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_names, name, range_name, colorbar_label=None, loc = 0.0, cmap='RdBu_r'):
     plane = 'XY plane'
-    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane)
+    outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane, f'z = {loc:.2f} m')
     os.makedirs(outdir, exist_ok=True)
     td = time / 3600 / 24
     num_cases = len(case_names)
     ncols = 3
+    if num_cases < ncols*2:
+        ncols = num_cases
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols) + 0.5 * nrows + 1.1
 
-    fig, axes = plt.subplots(nrows, 3, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
-    fig.suptitle(name + ', ' + plane + ', ' + f'{td:.2f} days', fontsize=12)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True, dpi = 300)
+    fig.suptitle(name + ', ' + f'z = {loc:.2f} m' + ', ' + f'{td:.2f} days', fontsize=12)
     axes = axes.ravel()
     if num_cases != (nrows*ncols):
         for i in range(num_cases, nrows*ncols):
             axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n, case_name in enumerate(case_names):
-        if name == 'Tracer':
-            im = axes[n].imshow(var[n].T, extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+        if name == 'Tracer' or name == 'log w':
+            im = axes[n].imshow(var[n].T, extent =[x[n].min(), x[n].max(), y[n].min(), y[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
-            im = axes[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[x.min(), x.max(), y.min(), y.max()], interpolation ='none', origin ='lower', cmap = cmap)
+            im = axes[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[x[n].min(), x[n].max(), y[n].min(), y[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
         axes[n].set_title(case_name, fontsize=10)
         axes[n].set_aspect('equal')
         axes[n].set_xlabel("x [m]")
         axes[n].set_ylabel("y [m]")
-    cbar = fig.colorbar(im, ax = axes.tolist(), anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
-    if not name == 'Tracer': 
+    
+    active_axes = [axes[n] for n in range(num_cases)]
+    cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
+    if all([not name == 'Tracer', not name == 'log w']): 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
         cbar.update_ticks() 
