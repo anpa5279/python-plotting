@@ -29,7 +29,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dx00625/shorter'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dz05/scheme'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -287,10 +287,10 @@ if contour_flag:
 
     for contour in contours:
         r_contour = np.zeros((nx[2], nt))
+        level = S_value * contour
 
         for it in range(nt):
             radius_tracer = np.zeros(nx[2])
-            level = S_value * contour
 
             for k in range(nx[2]):
                 S_radial = S_rz[:ncirc, k, it]
@@ -299,36 +299,55 @@ if contour_flag:
                 if np.max(S_radial) < level:
                     continue
 
-                # Guard 2: ensure monotonically decreasing outward
+                # Orient so r is ascending and S trends downward outward
                 if S_radial[0] < S_radial[-1]:
                     S_radial = S_radial[::-1]
                     r_search = r[::-1]
                 else:
                     r_search = r
 
-                # Guard 3: trim to only the region that brackets the level
-                # avoids flat tails (divide by zero) and irrelevant outer zeros
+                # Guard 2: trim to the bracketing region around the crossing
                 above = np.where(S_radial >= level)[0]
                 if len(above) == 0:
                     continue
-                # keep one point beyond the last above-threshold index
                 i_last = above[-1]
                 i_end = min(i_last + 2, len(S_radial))
                 S_trimmed = S_radial[:i_end]
                 r_trimmed = r_search[:i_end]
 
-                # Guard 4: need at least 2 points and a sign change
                 if len(S_trimmed) < 2:
-                    continue
-                if not np.any(np.diff(S_trimmed) != 0):
-                    # flat profile — take the outermost above-threshold r directly
-                    radius_tracer[k] = r_search[i_last]
+                    radius_tracer[k] = r_trimmed[-1] if len(S_trimmed) else 0.0
                     continue
 
-                r_interp = interp1d_axis(S_trimmed, r_trimmed, f_new=level)
-                r_val = np.max(r_interp) if np.ndim(r_interp) > 0 else float(r_interp)
-                radius_tracer[k] = r_val
+                # If we never drop below `level` in the trimmed window,
+                # take the last (outermost) sample as the best estimate
+                above_mask = S_trimmed >= level
+                if above_mask.all():
+                    radius_tracer[k] = r_trimmed[-1]
+                    continue
 
+                # Find the first index where S drops below level; the
+                # crossing is bracketed by (i1, i2) = (last above, first below)
+                idx_below = np.where(~above_mask)[0]
+                i2 = idx_below[0]
+                i1 = i2 - 1
+
+                if i1 < 0:
+                    # Level exceeded already at the first trimmed point
+                    radius_tracer[k] = r_trimmed[0]
+                    continue
+
+                S1, S2 = S_trimmed[i1], S_trimmed[i2]
+                r1, r2 = r_trimmed[i1], r_trimmed[i2]
+
+                if S1 == S2:
+                    radius_tracer[k] = r1
+                else:
+                    frac = (level - S1) / (S2 - S1)
+                    radius_tracer[k] = r1 + frac * (r2 - r1)
+
+            # Sanity clip: radius can never be negative or exceed grid extent
+            radius_tracer = np.clip(radius_tracer, 0.0, r.max())
             r_contour[:, it] = radius_tracer
 
         with h5py.File(bin_path, "a") as f:

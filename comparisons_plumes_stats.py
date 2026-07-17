@@ -17,12 +17,12 @@ video = True
 with_halos = False
 salinity = True
 
-contour = 0.001
+contour = 0.05
 name_uni = f'contour-{contour:.4f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC '
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/w BC testing/'#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC '
 
 # selecting cases to compare
-variations = 'vertical resolution' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
+variations = 'w BC' # 'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']
@@ -140,17 +140,17 @@ plot_format()
 color_opt, line_opt = comparison_plot_opt(num_cases)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = 1026, T0 = T0, dTdz = np.max(dTdz), C_tol = 0)
 ranges['Tracer'] =[0, 0.15]
-ranges['Tracer_fluc'] = [-0.2, 0.2]
-ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
+ranges['Tracer_fluc'] = [-2*10**(-3), 2*10**(-3)]
+ranges['Tracer_avg'] = [0, 5*10**(-3)]
 ranges['T'] = [T0-0.7, T0 + 0.05]
 ranges['w'] = [-1.5*10**(-1), 1.5*10**(-1)]
-ranges['vel_rms'] = [0, 7*10**-3]
-ranges['bw_fluc'] = [-5*10**(-8), 5*10**(-8)]
+ranges['vel_rms'] = [0, 5*10**-3]
+ranges['bw_fluc'] = [-2*10**(-8), 2*10**(-8)]
 
 if plot_depths:
     depth_dir = plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp, zneutral, zc, contour, trend = True)
 if plot_z_1d:
-    buoyancy_dir_z = plot_plume_vertical_spatial(min(time, key=len), ranges, color_opt, fig_folder, case_names, name_uni, -min(lx[-1, :]), z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_bin, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
+    buoyancy_dir_z = plot_plume_vertical_spatial(min(time, key=len), ranges, color_opt, fig_folder, case_names, name_uni, lx, z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_bin, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
 # creating videos
 if video:
     if plot_z_1d:

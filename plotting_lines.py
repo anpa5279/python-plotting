@@ -544,7 +544,7 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
 ## spatial vertical analysis ###
-def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names, name, lz, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
+def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
     os.makedirs(outdir, exist_ok=True)
@@ -555,16 +555,16 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         ]
     for it, t in enumerate(time):
         if num_cases==1:
-            fig, axes = plt.subplots(2, 4, figsize=(12, 8))
+            fig, axes = plt.subplots(2, 4, figsize=(1, 8))
         else:
-            gridspec_kw={'height_ratios': [1, 1, 0.02]} # add space for universal legend
-            fig, axes = plt.subplots(3, 4, figsize=(12, 10), gridspec_kw=gridspec_kw)
+            gridspec_kw={'height_ratios': [1, 1, 0.05]} # add space for universal legend
+            fig, axes = plt.subplots(3, 4, figsize=(13, 10), gridspec_kw=gridspec_kw)
             for a in axes[2, :]:
                 a.remove()
             fig.legend(handles=case_handles,
                     loc='lower center',
                     ncol=num_cases,
-                    bbox_to_anchor=(0.52, 0.015))
+                    bbox_to_anchor=(0.52, 0.0))
 
         td = t / 3600 / 24
         fig.suptitle(f'{td:.2f} days', fontsize=12)
@@ -611,7 +611,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
                 ax1.plot(v_rms[i][it], z[i], color = color_opt[i], linestyle='dashed', linewidth = 0.75)
                 ax1.plot(w_rms[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax1.set_title("Root Mean Square Velocities")
-        ax1.set_ylim(ymin = lz, ymax = 0.0)
+        ax1.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax1.set_xlim(ranges['vel_rms'])
         ax1.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
         ax1.legend(loc='lower right')
@@ -620,7 +620,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         for i in range(num_cases):
             ax2.plot(tracer_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax2.set_title('Tracer Profile')
-        ax2.set_ylim(ymin = lz, ymax = 0.0)
+        ax2.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax2.set_xlim(ranges['Tracer_avg'])
         ax2.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -633,7 +633,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
                 ax3.plot(b_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
                 ax3.plot(b_center[i][it], z[i], color = color_opt[i], linestyle='dashed', linewidth = 0.75)
         ax3.set_title("Buoyancy Profile")
-        ax3.set_ylim(ymin = lz, ymax = 0.0)
+        ax3.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax3.set_xlim(ranges['b_avg'])
         ax3.legend(loc='upper left')
         ax3.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
@@ -642,7 +642,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         for i in range(num_cases):
             ax4.plot(tracer_fluc[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax4.set_title("Perturbed Tracer")
-        ax4.set_ylim(ymin = lz, ymax = 0.0)
+        ax4.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax4.set_xlim(ranges['Tracer_fluc'])
         ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -650,8 +650,8 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         for i in range(num_cases):
             ax5.plot(r_profile[i][:, it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax5.set_title("Plume Radius with Depth")
-        ax5.set_ylim(ymin = lz, ymax = 0.0)
-        ax5.set_xlim(0, 50.0)
+        ax5.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
+        ax5.set_xlim(0, min(lx[0, :])/1.9)
 
         # perturbed buoyancy flux 
         for i in range(num_cases):
@@ -663,15 +663,15 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
                 ax6.plot(bw_fluc_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax6.legend(loc='lower right')
         ax6.set_title("Buoyancy Flux Fluctuations")
-        ax6.set_ylim(ymin = lz, ymax = 0.0)
+        ax6.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax6.set_xlim(ranges['bw_fluc'])
         ax6.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
 
-        # buoyancy brms 
+        # average temperature
         for i in range(num_cases):
             ax7.plot(T_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax7.set_title("Temperature")
-        ax7.set_ylim(ymin = lz, ymax = 0.0)
+        ax7.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax7.set_xlim(ranges['T'])
         ax7.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
@@ -679,7 +679,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         for i in range(num_cases):
             ax8.plot(T_fluc[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
         ax8.set_title("Perturbed Temperature")
-        ax8.set_ylim(ymin = lz, ymax = 0.0)
+        ax8.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax8.set_xlim(ranges['T_fluc'])
         ax8.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
