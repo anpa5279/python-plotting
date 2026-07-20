@@ -295,7 +295,7 @@ class OceananigansData:
             'XY': (self.z if coord_opt['z'] == 'c' else self.zf, False, -1),
         }
         coord, rank_split, axis = slice_cfg[plane]
-        print(f"coord: {coord}, rank_split: {rank_split}, axis: {axis}")
+        print(f"loc: {loc}, coord: {coord}, rank_split: {rank_split}, axis: {axis}")
         exact = coord == loc
         print(f"exact: {any(exact)}, where: {np.where(exact)}")
         if any(exact):
