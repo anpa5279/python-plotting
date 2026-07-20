@@ -297,7 +297,10 @@ class OceananigansData:
         coord, rank_split, axis = slice_cfg[plane]
         print(f"loc: {loc}, coord: {coord}, rank_split: {rank_split}, axis: {axis}")
         exact = coord == loc
-        print(f"exact: {any(exact)}, where: {np.where(exact)}")
+        print(f"exact: {exact}, where: {np.where(exact)}")
+        test = loc==coord
+        print(f"exact: {test}, where: {np.where(test)}")
+
         if any(exact):
             needs_interp = False
             halos_needed = False
@@ -317,7 +320,6 @@ class OceananigansData:
                 halos_needed = self.halos
                 if halos_needed:
                     file_indices = file_indices[:1]
-            print(self.files)
             files = [self.files[i] for i in np.atleast_1d(file_indices)]
         else:
             files = self.files
