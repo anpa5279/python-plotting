@@ -295,9 +295,9 @@ class OceananigansData:
             'XY': (self.z if coord_opt['z'] == 'c' else self.zf, False, -1),
         }
         coord, rank_split, axis = slice_cfg[plane]
-        print(f"loc: {loc}, coord: {coord}, rank_split: {rank_split}, axis: {axis}")
+        #print(f"loc: {loc}, coord: {coord}, rank_split: {rank_split}, axis: {axis}")
         exact = coord == loc
-        print(f"exact: {exact}, where: {np.where(exact//self.Nranks)}")
+        #print(f"exact: {exact}, where: {np.where(exact)//self.Nranks}")
 
         if any(exact):
             needs_interp = False
@@ -308,16 +308,13 @@ class OceananigansData:
 
         if rank_split and self.Nranks > 1:
             nx_local = self.nx[0] // self.Nranks
-            if any(exact):
-                file_indices = np.where(exact)[0]//self.Nranks
-            else:
-                nearest = np.argsort(np.abs(coord - loc))[:2]
-                file_indices = np.array([int(i) for i in np.floor(np.sort(nearest) / self.nx[0] * self.Nranks)])
-                # deduplicate in case both nearest points are in the same rank file
-                file_indices = np.unique(file_indices)
-                halos_needed = self.halos
-                if halos_needed:
-                    file_indices = file_indices[:1]
+            nearest = np.argsort(np.abs(coord - loc))[:2]
+            file_indices = np.array([int(i) for i in np.floor(np.sort(nearest) / self.nx[0] * self.Nranks)])
+            # deduplicate in case both nearest points are in the same rank file
+            file_indices = np.unique(file_indices)
+            halos_needed = self.halos
+            if halos_needed:
+                file_indices = file_indices[:1]
             files = [self.files[i] for i in np.atleast_1d(file_indices)]
         else:
             files = self.files
