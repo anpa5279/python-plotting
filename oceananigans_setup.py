@@ -29,7 +29,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dz05/scheme'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/AR1/dxi0.025'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -114,7 +114,7 @@ if centerline_flag:
     reader.centerline_file = 'centerline.h5'
 ###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
-    xy = True
+    xy = False
     yz = True
     xz = False
     file_path = os.path.join(folder, 'plane_slice.h5')
