@@ -8,7 +8,7 @@ from diagnostics import compute_temporal_averages, write_temporal_averages, comp
 from interpolation import interp1d_axis, vertical_line
 
 # set flags
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = True
@@ -29,7 +29,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/AR1/dxi0.025'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/AR1/dxi05-closure'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
