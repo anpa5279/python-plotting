@@ -297,6 +297,7 @@ class OceananigansData:
         coord, rank_split, axis = slice_cfg[plane]
         print(f"coord: {coord}, rank_split: {rank_split}, axis: {axis}")
         exact = coord == loc
+        print(f"exact: {exact}")
         if any(exact):
             needs_interp = False
             halos_needed = False
