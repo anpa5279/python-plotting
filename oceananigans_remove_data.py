@@ -26,7 +26,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dx025/shorter'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dx0125'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
