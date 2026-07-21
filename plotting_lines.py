@@ -544,7 +544,7 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
 ## spatial vertical analysis ###
-def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer_fluc, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
+def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
     os.makedirs(outdir, exist_ok=True)
@@ -593,7 +593,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
             ax1.set_xlabel("[m/s]")
             ax2.set_xlabel(r"$\langle$C$\rangle_{\text{xy}}$ [g/kg]")
             ax3.set_xlabel(r"[m/s$^2$]")
-            ax4.set_xlabel(r"C$'_{\text{centerline}}$ [g/kg]")
+            ax4.set_xlabel(r"C$_{\text{centerline}}$ [g/kg]")
             ax5.set_ylabel("Depth [m]")
             ax5.set_xlabel("[m]")
             ax6.set_xlabel(r"[m$^2$/s$^3$]")
@@ -640,10 +640,10 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
         # temperature fluctuations 
         for i in range(num_cases):
-            ax4.plot(tracer_fluc[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
-        ax4.set_title("Perturbed Tracer")
+            ax4.plot(tracer[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        ax4.set_title("Tracer")
         ax4.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
-        ax4.set_xlim(ranges['Tracer_fluc'])
+        ax4.set_xlim(ranges['Tracer'])
         ax4.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
 
         # plume radius
@@ -822,7 +822,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
     num_cases = len(case_names)
     ncols = 3
     nrows = 2
-    outdir = os.path.join(fig_folder, 'binning', 'plume_depths')
+    outdir = os.path.join(fig_folder, 'binning', 'plume_depths', name_uni)
     os.makedirs(outdir, exist_ok=True)
     ar = np.ones(nrows)
     ar[-1] = 0.05 # add space for universal legend
@@ -838,7 +838,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
             loc='lower center',
             ncol=num_cases,
             bbox_to_anchor=(0.52, 0.01))
-    axes = axes.ravel()
+    ax = axes.ravel()
     """
     ax[0] = zp, where w = 0
     ax[1] = zneutral, where buoyancy = 0
@@ -854,23 +854,25 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
     ax[2].set_title(rf"Depth of Tracer Contour = {contour:.4f}")
 
     for i in range(num_cases):
-        if trend:
-            start = 10
-            vars = np.polyfit(time[i][start:]/3600, zp[i][start:], 1)
-            z_trend = time[i]/3600 * vars[0] + vars[1]
         if i == 0:
             tmax = time[i].max() / 3600
             ax[0].plot(time[i]/3600, zp[i], label=r"z$_{w=0}$", color = color_opt[i], linewidth = 0.75)
-            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
             ax[1].plot(time[i]/3600, zneutral[i], label=r"z$_{b=0}$", color = color_opt[i], linewidth = 0.75)
             ax[2].plot(time[i]/3600, zc[i], label=rf"z$_{{contour = {contour:.3f}}}$", color = color_opt[i], linewidth = 0.75)
         else:
             tmax = max(tmax, time[i].max() / 3600)
-            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
             ax[0].plot(time[i]/3600, zp[i], color = color_opt[i], linewidth = 0.75)
             ax[1].plot(time[i]/3600, zneutral[i], color = color_opt[i], linewidth = 0.75)
             ax[2].plot(time[i]/3600, zc[i], color = color_opt[i], linewidth = 0.75)
-    for a in axes:
+        if trend:
+            start = 10
+            print(time[i][start:]/3600)
+            print(zp[i][start:])
+            vars = np.polyfit(time[i][start:]/3600, zp[i][start:], 1)
+            z_trend = time[i]/3600 * vars[0] + vars[1]
+            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
+            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
+    for a in ax:
         a.set_ylim(ymin = -lx[-1].max(), ymax = 0.0)
         a.set_xlim(0, tmax)
         a.legend(loc='upper right')

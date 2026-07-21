@@ -4,8 +4,8 @@ import h5py
 import math
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, write_temporal_averages, compute_fluct_averages, compute_rms, binning_oc
-from interpolation import interp1d_axis, vertical_line
+from diagnostics import compute_temporal_averages, compute_fluct_averages, compute_rms, binning_oc
+from interpolation import vertical_line
 
 # set flags
 binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
@@ -29,7 +29,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/AR1/dxi0.025/closure'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dx00625/shorter'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -275,7 +275,15 @@ if compute_temporal_averages_flag:
         'S_value': data_temp['S_value'],
         'w_value': data_temp['w_value'], 
     }
-    write_temporal_averages(bin_path, data)
+    folder_contour = f"contour temporal averages"
+
+    with h5py.File(bin_path, "a") as f:
+        if folder_contour in f:
+            del f[folder_contour]
+        f.create_group(f'{folder_contour}')
+        f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
+        f.create_dataset(f'{folder_contour}/w', data=data['w_value'])
+    f.close()
     del data_temp
     print(f"Saved temporal averages to {bin_path}")
 ###------------PLUME CONTOURS---------------------------------------###

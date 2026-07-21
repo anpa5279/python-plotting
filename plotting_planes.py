@@ -28,7 +28,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
         out_folder = f'y = {loc:.2f} m'
     elif plane == 'binning':
-        lhor = np.max(lx[0])/2
+        lhor = np.min(lx[0:1])/2
         lz = np.max(lx[2])
         ar = lhor/lz
         xlabel = "r [m]"

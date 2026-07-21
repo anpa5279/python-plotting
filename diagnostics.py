@@ -87,12 +87,25 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         #mld = 60 * np.ones(num_cases)
         #F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'AR=1':
-        folder_names =['AR=1/dx2', 
-                       'AR=1/dx1', 
-                       'ground0', 
-                       'AR=1/dx025'
+        folder_names =[
+                    'dz05',
+                    'AR=1/dx025', 
+                    'AR=1/dx0125', 
+                    #'AR=1/dx00625', 
                        ]
-        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m']
+        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m',]
+        num_cases = len(folder_names)
+        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
+        mld = 60 * np.ones(num_cases)
+        F_s = wp * 0.1 * np.ones(num_cases)    
+    elif variations == 'closure':
+        folder_names =[
+                    'dx05',
+                    'dx025', 
+                    'dx0125', 
+                    #'dx00625', 
+                       ]
+        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m',]
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -424,14 +437,3 @@ def compute_rms(reader):
     return {'u_rms': u_rms,
             'v_rms': v_rms,
             'w_rms': w_rms}
-### -------------------------WRITING TEMPORAL AVERAGES------------------------ ###
-def write_temporal_averages(file_path, data):
-    folder_contour = f"contour temporal averages"
-
-    with h5py.File(file_path, "a") as f:
-        if folder_contour in f:
-            del f[folder_contour]
-        f.create_group(f'{folder_contour}')
-        f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
-        f.create_dataset(f'{folder_contour}/w', data=data['w_value'])
-    f.close()
