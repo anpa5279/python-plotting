@@ -13,7 +13,7 @@ cp physics.py scripts/
 ###uv init scripts
 cd scripts
 
-cat > EXEC_STEP << EXEC
+cat > FILE_DELETE << EXEC
 #!/bin/sh
 
 #PBS -A UCUB0166
@@ -31,4 +31,4 @@ uv run python $file
 
 EXEC
 
-qsub < EXEC_STEP
+qsub < FILE_DELETE
