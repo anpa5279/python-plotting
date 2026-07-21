@@ -187,10 +187,6 @@ if compute_temporal_averages_flag:
 ###------------PLUME CONTOURS---------------------------------------###
 if contour_flag:
     contours = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05])
-    S_value = reader.load_S_temporal_avg()
-    if not binning_flag:
-        S_rz = reader.load_binning_var('S')
-
     for contour in contours:
 
         with h5py.File(bin_path, "a") as f:
@@ -206,4 +202,8 @@ if mass_flag:
             del f["mass/S"]
         if "mass/dmdt" in f:
             del f["mass/dmdt"]
+        if "S mass" in f:
+            del f["S mass"]
+        if "time gradient of S mass" in f:
+            del f["time gradient of S mass"]
     print(f"Deleted mass calculations from {bin_path}")
