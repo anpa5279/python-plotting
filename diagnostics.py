@@ -266,7 +266,6 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
     return bin_var
 def binning_oc(reader, center=(0.0, 0.0)):
     nx = reader.nx
-    time = reader.t
     t_save = reader.t_save
     nt = len(t_save)
 
@@ -305,7 +304,9 @@ def binning_oc(reader, center=(0.0, 0.0)):
             utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
             ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
             w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-
+        del T, u, v, w, ur, utheta # to be memory efficient
+        if reader.salinity:
+            del S # to be memory efficient
     return S_rz, T_rz, ur_rz, utheta_rz, w_rz
 
 ### -------------------------CYLINDRICAL POLAR COORDINATES------------------- ###

@@ -10,7 +10,7 @@ from plotting_lines import plot_turb_stats_bin, temporal_avg, plot_plume_depths,
 from plotting_planes import plot_variable_vert_slice, plot_variable_xy_slice
 
 # flags for what to plot
-plot_variables_vert = False
+plot_variables_vert = True
 plot_variables_hor = False
 plot_var_bin = False
 plot_turb_stats = False
@@ -24,13 +24,11 @@ with_halos = False
 closure = False
 stokes = False
 
-contour = 0.05
+contour = 0.01
 name_uni = f'contour-{contour:.4f}'
-universal_folder ='/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC /'
-#'/glade/derecho/scratch/apauls/outputs/'
-
+universal_folder ='/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/viscosity tests/viscosity and diff 1e-4'
 # selecting cases to compare
-variations = 'horizontal resolution' #'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
+variations = 'else' #'MLD', 'flux', 'strat', 'all', 'vertical length', 'Lz160m','WENO', 'vertical resolution', 'horizontal resolution', 'AR=1', 'else'
 if variations != 'else':
     cases_info = comparison_info(variations, universal_folder = universal_folder)
     dTdz = cases_info['dTdz']
@@ -41,12 +39,13 @@ if variations != 'else':
     mld = cases_info['mld']
     F_s = cases_info['F_s']
 else:
-    folder_names = ['proposed resolution/S0 = 0.1 dTdz = 0.01 MLD = 60', 'Lz = 160m/S0 = 0.1 dTdz = 0.01 MLD = 60']
+    folder_names = ['dx1', 'dx05', 'dx025']#['viscosity 1e-6/dx05', 'viscosity 1e-5/dx05', 'viscosity 1e-4/dx05', ]#
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'comparison figures', '96m vs 160m' + ' comparison figures', 'default case')
-    case_names =[r'L$_z = 96$m', r'L$_z = 160$m']
+    fig_folder = os.path.join(universal_folder, 'comparison figures')#, 'dz05 varying viscosity and diffusivity')
+    case_names =[r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$']#[r'D = $\nu = 1 \times 10^{-6}$', r'D = $\nu = 1 \times 10^{-5}$', r'D = $\nu = 1 \times 10^{-4}$']#[r'$\Delta x = 0.5$', r'$\Delta x = 0.25$']#
     dTdz = 0.01*np.ones(num_cases)
-    mld = np.array([60, 60])
+    mld = 60**np.ones(num_cases)
+    F_s = 0.1*np.ones(num_cases)
 
 readers = []
 salinity = []
@@ -92,6 +91,7 @@ y0 = 0.0
 rj = 5 # m, radius of salinity flux circle at the surface
 g = 9.80665  # gravity in m/s^2
 T0 = 25
+S_tol = 10**(-6)
 
 # collecting variables for plotting
 if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats, plot_depths, plot_plume_z]):
@@ -132,13 +132,13 @@ if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats, 
         w_bin = []
         b_bin = []
 
-
     if plot_depths:
         bS = []
         zp = []
         zneutral = []
         zc = []
         r_bin = []
+        time_output = []
     if plot_plume_z:
         b_avg = []
         u_rms = []
@@ -162,6 +162,7 @@ if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats, 
             w_vert_plane.append(reader.load_plane_var('w'))
             if all(salinity):
                 S_vert_plane.append(reader.load_plane_var('S'))
+                S_vert_plane[i][S_vert_plane[i]<S_tol] = S_tol # set values below threshold to threshold for log plotting
         if plot_variables_hor:
             z_loc =-reader.lx[-1] + reader.dx[-1]/2#-reader.dx[-1]/2# -reader.dx[-1]/2#0.0#
             T_hor_plane.append(reader.load_plane_var('T', loc=z_loc, plane = 'XY'))
@@ -208,28 +209,48 @@ if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats, 
                 Sur_avg.append(np.mean(S_rz * ur_rz, axis=0))
                 Sw_avg.append(np.mean(S_rz * w_rz, axis=0))
         if plot_depths or plot_plume_z:
+            S_reader_center = reader.field_centerline('S')
             r_bin.append(reader.loading_bin_contours(contour = contour))
             if salinity and plot_depths:
+                time_output.append(reader.time_avg)
                 S_value = reader.load_S_temporal_avg()
                 reader.load_equation_of_state()
                 bS.append(-g*reader.beta*S_value)
-                T_rz = reader.load_binning_var('T')
-                S_rz = reader.load_binning_var('S')
                 # calculate buoyancy differences
                 S_value = reader.load_S_temporal_avg()
                 reader.load_equation_of_state()
-                bT = g*reader.alpha*np.mean(T_rz, axis = 0) - g*reader.alpha*reader.T0
+                bT_avg = g*reader.alpha*(reader.load_averages('T') - reader.T0)
                 # calculate where w = 0 on the centerline
-                w_rz = reader.load_binning_var('w')
+                w_reader_center = reader.field_centerline('w')
 
-                b_it = np.empty(reader.nt)
-                w_centerline_it = np.empty(reader.nt)
-                S_it = np.empty(reader.nt)
-                for it in range(reader.nt):
-                    b_it[it] = point(bT[:, it] - bS[i], z[i], f0 = 0.0)
-                    w_centerline_it[it] = point(w_rz[0, :, it], z[i], f0 = 0.0)
-                    S_it[it] = point(S_rz[0, :, it], z[i], f0 = S_value*contour)
-                zneutral.append(b_it)
+                nt_output = len(reader.time_avg)
+                neutral_it = np.zeros(nt_output)
+                w_centerline_it = np.zeros(nt_output)
+                S_it = np.zeros(nt_output)
+                for it in range(0, nt_output):
+                    # based on buoyancy differences
+                    b_diff = bT_avg[it,:] - bS[i]
+                    z_it = point(b_diff, z[i], f0 = 0.0)
+                    neutral_it[it] = z_it
+                    # based on w = 0
+                    z_it = point(w_reader_center[it, :], z[i], f0 = 0.0)
+                    if np.size(z_it) == 1:
+                        w_centerline_it[it] = z_it
+                    elif np.size(z_it) == 0:
+                        w_centerline_it[it] = 0.0
+                    else: # there are multiple points where w = 0
+                        # check if w_reader_center[it, :] goes from + to -
+                        w_centerline_it[it] = z_it[-1] # take the shallowest point
+                    # based on contour 
+                    z_it = point(S_reader_center[it, :], z[i], f0 = S_value*contour)
+                    if np.size(z_it) == 1:
+                        S_it[it] = z_it
+                    elif np.size(z_it) == 0:
+                        S_it[it] = 0.0
+                    else: # there are multiple points where S = contour
+                        # get the deepest
+                        S_it[it] = z_it[0] # take the shallowest point
+                zneutral.append(neutral_it)
                 zp.append(w_centerline_it)
                 zc.append(S_it)
 
@@ -248,7 +269,7 @@ if any([plot_variables_vert, plot_variables_hor, plot_var_bin, plot_turb_stats, 
 
                 T_center = reader.field_centerline('T')[::100, :]
                 T_fluc_center.append(T_center-T_avg[i])
-                S_center.append(reader.field_centerline('S')[::100, :])
+                S_center.append(S_reader_center[::100, :])
                 del T_center
 
 
@@ -283,7 +304,11 @@ if plot_temporal_avg:
             S_centerline_t_avg.append(np.mean(S_center_temp, axis=0))
         print("Finished temporal averaging for case ", case_names[i])
     t_range = t_range/(24*3600) # days
-############ PLOTTING ############
+
+# ==========================================================
+# PLOTTING
+# ==========================================================
+
 # plotting prep
 if plot_variables_vert or plot_variables_hor:
     if all(salinity):
@@ -304,23 +329,23 @@ if plot_var_bin:
         bin_var_names = ['Temperature', 'u', 'v', 'w']
         bin_range_names = ['T', 'u', 'v', 'w']
     bin_dir = {}
-if plot_turb_stats or plot_temporal_avg or plot_plume_z:
+if plot_turb_stats or plot_temporal_avg or plot_plume_z or plot_depths:
     color_opt, line_opt = comparison_plot_opt(num_cases)
-S_tol = 10**(-6)
+
 ranges = plot_ranges(lz = 96, mld = np.max(mld), T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
 ranges['Tracer'] =[S_tol, 0.15]
 ranges['Tracer negative'] = [-0.15, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
-ranges['Tracer_avg'] = [0, 1.2*10**(-3)]
+ranges['Tracer_avg'] = [0, 8*10**(-4)]
 ranges['T'] = [T0-0.7, T0 + 0.05]
 ranges['w'] = [-1*10**(-1), 1*10**(-1)]
 ranges['u'] = [-1*10**(-2), 1*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
-ranges['vel_rms'] = [0, 3*10**(-2)]
+ranges['vel_rms'] = [0, 1*10**(-2)]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
-ranges['S'] = [0.0, 0.05]
+ranges['S'] = [S_tol, 0.05]
 ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
-ranges['bw_fluc'] = [-8*10**(-7), 8*10**(-7)]
+ranges['bw_fluc'] = [-1*10**(-7), 1*10**(-7)]
 if plot_turb_stats:
     ranges['restress'] = [-2*10**(-5), 2*10**(-5)]
     ranges['Tw_fluc'] = [-5*10**(-4), 5*10**(-4)]
@@ -391,12 +416,16 @@ if plot_plume_z:
 
 # plotting with flags that don't have the possibility of being videos
 if plot_depths:
-    depth_dir = plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp, zneutral, zc, contour, trend = False)
+    plot_format(fontsize = 10)
+    plot_plume_depths(time_output, color_opt, fig_folder, case_names, lx, zp, zneutral, zc, contour, trend = False)
 if plot_temporal_avg:
     plot_format(fontsize = 10)
     temporal_avg(t_range, ranges, color_opt, fig_folder, case_names, lx, z, w_centerline_t_avg, S_centerline_t_avg, b_fluc_centerline_t_avg, w_rms_t_avg, b_rms_t_avg, h_ml = mld)
     print("Finished plotting temporal average for all cases.")
-# creating videos
+
+# ==========================================================
+# VIDEOS
+# ==========================================================
 if video:
     if plot_var_bin:
         for n, name in enumerate(bin_var_names):
@@ -410,4 +439,4 @@ if video:
     if plot_turb_stats:
         create_video(buoyancy_dir_z, fig_folder, 'binning', 'turb_stats')
     if plot_plume_z:
-        create_video(buoyancy_dir_z, fig_folder, 'binning', 'plume')
+        create_video(buoyancy_dir_z, fig_folder, 'binning', f'plume-contour-{contour}')

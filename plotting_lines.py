@@ -818,11 +818,11 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
 
     return outdir # return the directory where frames are saved for video creation
 ## plume depths
-def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp, zneutral, zc, contour, trend = True):
+def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral, zc, contour, trend = True):
     num_cases = len(case_names)
     ncols = 3
     nrows = 2
-    outdir = os.path.join(fig_folder, 'binning', 'plume_depths', name_uni)
+    outdir = os.path.join(fig_folder, 'binning', 'plume_depths')
     os.makedirs(outdir, exist_ok=True)
     ar = np.ones(nrows)
     ar[-1] = 0.05 # add space for universal legend
@@ -847,7 +847,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
     ax[0].set_ylabel("Depth [m]")
     ax[0].set_xlabel("Time [hrs]")
     ax[1].set_xlabel("Time [hrs]")
-    ax[2].set_xlabel("Time [s]")
+    ax[2].set_xlabel("Time [hrs]")
 
     ax[0].set_title("Depth of w = 0")
     ax[1].set_title("Depth of Neutral Buoyancy")
@@ -878,7 +878,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, name_uni, lx, zp,
         a.legend(loc='upper right')
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"comparison_depths.svg")
+    frame_path = os.path.join(outdir, f"comparison_depths_{contour}.svg")
     plt.savefig(frame_path)
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation 

@@ -8,15 +8,15 @@ from diagnostics import compute_temporal_averages, compute_fluct_averages, compu
 from interpolation import vertical_line
 
 # set flags
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-buoyancy_flag = False
-fluc_flag = False # calculates turbulent statistics from binning information
-rms_flag = False # calculates RMS from 3D fields
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+buoyancy_flag = True
+fluc_flag = True # calculates turbulent statistics from binning information
+rms_flag = True # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-mass_flag = False
+mass_flag = True
 
 # model options
 with_halos = False
@@ -29,7 +29,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/dx025/shorter'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/AR1/dxi0.00625/test'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -82,7 +82,7 @@ if binning_flag:
             if "ccc/S" in f:
                 del f["ccc/S"]
             f.create_dataset("ccc/S", data=S_rz)
-    del utheta_rz, ur_rz
+    del utheta_rz, ur_rz, T_rz, w_rz
     print(f"Saved binning to {bin_path}")
 ###------------INTERPOLATION TO CENTERLINE--------------------------###
 if centerline_flag:
