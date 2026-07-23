@@ -264,7 +264,7 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
         r = np.arange(np.min(np.abs([X_bin, Y_bin]))/2, ncirc*dx_scale, dx_scale)
         return r, bin_var
     return bin_var
-def binning_oc(reader, center=(0.0, 0.0)):
+def binning_oc(var, reader, center=(0.0, 0.0)):
     nx = reader.nx
     t_save = reader.t_save
     nt = len(t_save)
@@ -275,39 +275,34 @@ def binning_oc(reader, center=(0.0, 0.0)):
     z = reader.z
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     nr = np.min(nx[:-1])//2
-    S_rz = np.empty((nr, nx[2], nt))
-    T_rz = np.empty((nr, nx[2], nt)) 
-    ur_rz = np.empty((nr, nx[2], nt))
-    utheta_rz = np.empty((nr, nx[2], nt))
-    w_rz = np.empty((nr, nx[2], nt))
+    var_rz = np.empty((nr, nx[2], nt))
 
     for it, t in enumerate(t_save):
+        if var=='ur' or var=='utheta':
+            u = reader.lazy_field('u', t).compute()
+            u = velocities_to_center(var_field, axis=-3)
+            v = reader.lazy_field('v', t).compute()
+            v = velocities_to_center(var_field, axis=-2)
+            # u and v to cylindrical polar coordinates
+            ur, utheta = vel_to_cylindrical(u, v, X, Y)
+            if var=='ur':
+                var_field = ur
+            else:
+                var_field = utheta
+            del u, v
         # Load data from files
-        T = reader.lazy_field('T', t).compute()
-        u = reader.lazy_field('u', t).compute()
-        v = reader.lazy_field('v', t).compute()
-        w = reader.lazy_field('w', t).compute()
-        if reader.salinity:
-            S = reader.lazy_field('S', t).compute()
-
-        u = velocities_to_center(u, axis=-3)
-        v = velocities_to_center(v, axis=-2)
-        w = velocities_to_center(w, axis=-1)
-
-        # u and v to cylindrical polar coordinates
-        ur, utheta = vel_to_cylindrical(u, v, X, Y)
+        var_field = reader.lazy_field(var, t).compute()
+        if var =='u':
+            var_field = velocities_to_center(var_field, axis=-3)
+        elif var == 'v':
+            var_field = velocities_to_center(var_field, axis=-2)
+        elif var == 'w':
+            var_field = velocities_to_center(var_field, axis=-1)
 
         for k in range(nx[2]):
-            if reader.salinity:
-                S_rz[:, k, it] = azimuthal_avg(S[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-            T_rz[:, k, it] = azimuthal_avg(T[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-            utheta_rz[:, k, it] = azimuthal_avg(utheta[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-            ur_rz[:, k, it] = azimuthal_avg(ur[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-            w_rz[:, k, it] = azimuthal_avg(w[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-        del T, u, v, w, ur, utheta # to be memory efficient
-        if reader.salinity:
-            del S # to be memory efficient
-    return S_rz, T_rz, ur_rz, utheta_rz, w_rz
+            var_rz[:, k, it] = azimuthal_avg(var_field[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
+        del var_field # to be memory efficient
+    return var_rz
 
 ### -------------------------CYLINDRICAL POLAR COORDINATES------------------- ###
 def vel_to_cylindrical(u, v, X, Y):

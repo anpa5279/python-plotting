@@ -49,12 +49,10 @@ reader.load_equation_of_state()
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
 x, y, z = reader.x, reader.y, reader.z
-X, Y, Z = np.meshgrid(x, y, z)
 ncirc = min(nx[0], nx[1])//2      # full circular shells
 
 ###------------APPLYING AZIMUTHAL AVERAGING TO DATA-----------------###
 if binning_flag:
-    S_rz, T_rz, ur_rz, utheta_rz, w_rz = binning_oc(reader)
     # write to file 
     with h5py.File(bin_path, "a") as f:
         if "ccc/dimensions/r_bin" in f:
@@ -74,15 +72,29 @@ if binning_flag:
         f.create_dataset("ccc/dimensions/r_bin", data = r)
         f.create_dataset("ccc/dimensions/z", data=z)
         f.create_dataset("ccc/dimensions/time", data=time)
-        f.create_dataset("ccc/T", data=T_rz)
-        f.create_dataset("ccc/horizontal velocity", data=ur_rz)
-        f.create_dataset("ccc/rotation velocity", data=utheta_rz)
-        f.create_dataset("ccc/w", data=w_rz)
-        if reader.salinity:
+    if reader.salinity:
+        S_rz = binning_oc('S', reader)
+        with h5py.File(bin_path, "a") as f:
             if "ccc/S" in f:
                 del f["ccc/S"]
             f.create_dataset("ccc/S", data=S_rz)
-    del utheta_rz, ur_rz, T_rz, w_rz
+        del S_rz
+    T_rz= binning_oc('T', reader)
+    with h5py.File(bin_path, "a") as f:
+        f.create_dataset("ccc/T", data=T_rz)
+    del T_rz
+    ur_rz = binning_oc('ur', reader)
+    with h5py.File(bin_path, "a") as f:
+        f.create_dataset("ccc/horizontal velocity", data=ur_rz)
+    del ur_rz
+    utheta_rz = binning_oc('utheta', reader)
+    with h5py.File(bin_path, "a") as f:
+        f.create_dataset("ccc/rotation velocity", data=utheta_rz)
+    del utheta_rz
+    w_rz = binning_oc('w', reader)
+    with h5py.File(bin_path, "a") as f:
+        f.create_dataset("ccc/w", data=w_rz)
+    del w_rz
     print(f"Saved binning to {bin_path}")
 ###------------INTERPOLATION TO CENTERLINE--------------------------###
 if centerline_flag:
