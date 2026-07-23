@@ -406,12 +406,6 @@ class OceananigansData:
             for it, t in enumerate(steps):
                 s = self.field_slice(field, steps = t)
                 # linear interpolation of x and y points is the same as averaging the 4 grid points in file
-                if field == 'u': # because raw data is fcc
-                    s = s[:-1, :, :]
-                    s = np.mean(s[self.nx[1]//2:self.nx[1]//2+2, :], axis=0) 
-                if field == 'v': # because raw data is cfc
-                    s = s[:, :-1, :]
-                    s = np.mean(s[self.nx[1]//2:self.nx[1]//2+2, :], axis=0) 
                 if field == 'w': # because raw data is ccf
                     s = velocities_to_center(s, axis=-1)
                     s = np.mean(s[self.nx[1]//2:self.nx[1]//2+2, :], axis=0) 

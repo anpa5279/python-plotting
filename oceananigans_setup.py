@@ -78,7 +78,6 @@ if binning_flag:
             if "ccc/S" in f:
                 del f["ccc/S"]
             f.create_dataset("ccc/S", data=S_rz)
-        del S_rz
     T_rz= binning_oc('T', reader)
     with h5py.File(bin_path, "a") as f:
         f.create_dataset("ccc/T", data=T_rz)
@@ -96,6 +95,7 @@ if binning_flag:
         f.create_dataset("ccc/w", data=w_rz)
     del w_rz
     print(f"Saved binning to {bin_path}")
+    reader.binning = True
 ###------------INTERPOLATION TO CENTERLINE--------------------------###
 if centerline_flag:
     file_path = os.path.join(folder, 'centerline.h5')
@@ -302,8 +302,7 @@ if compute_temporal_averages_flag:
 if contour_flag:
     contours = np.array([0.001, 0.005, 0.01, 0.05])
     S_value = reader.load_S_temporal_avg()
-    if not binning_flag:
-        S_rz = reader.load_binning_var('S')
+    S_rz = reader.load_binning_var('S')
 
     for contour in contours:
         r_contour = np.zeros((nx[2], nt))

@@ -280,9 +280,9 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
     for it, t in enumerate(t_save):
         if var=='ur' or var=='utheta':
             u = reader.lazy_field('u', t).compute()
-            u = velocities_to_center(var_field, axis=-3)
+            u = velocities_to_center(u, axis=-3)
             v = reader.lazy_field('v', t).compute()
-            v = velocities_to_center(var_field, axis=-2)
+            v = velocities_to_center(u, axis=-2)
             # u and v to cylindrical polar coordinates
             ur, utheta = vel_to_cylindrical(u, v, X, Y)
             if var=='ur':
@@ -290,8 +290,9 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
             else:
                 var_field = utheta
             del u, v
-        # Load data from files
-        var_field = reader.lazy_field(var, t).compute()
+        else:
+            # Load data from files
+            var_field = reader.lazy_field(var, t).compute()
         if var =='u':
             var_field = velocities_to_center(var_field, axis=-3)
         elif var == 'v':
