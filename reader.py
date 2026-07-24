@@ -315,6 +315,8 @@ class OceananigansData:
             halos_needed = self.halos
             if halos_needed:
                 file_indices = file_indices[:1]
+            print(f"coord = {coord}")
+            print(f'Nranks: {self.Nranks}, nx_local: {nx_local}, nearest: {nearest}, file_indices: {file_indices}')
             print(f"Nearest points to {loc}: {coord[nearest]}, in files: {file_indices}")
             print(self.files)
             files = [self.files[i] for i in np.atleast_1d(file_indices)]
