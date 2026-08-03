@@ -24,8 +24,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=num_cases,
-            bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    fig.suptitle(title, fontsize = 20, y = 0.99)
+            bbox_to_anchor=(0.52, 0.005), )
+    fig.suptitle(title,  y = 0.99)
     """
     axes[0, :] = ND rms velocity vs z_nd varied exponent of Ri_g
     axes[1, :] = ND centerline buoyancy vs z_nd varied exponent of Ri_g
@@ -35,15 +35,15 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
     axes[5, :] = ND average salinity vs z_nd varied exponent of Ri_g
     """
     for ax in axes[:, 0]:
-        ax.set_ylabel(z_str, fontsize = 16)
+        ax.set_ylabel(z_str, )
     for ax, exp in zip(axes[0, :], exponents):
         for i in range(num_cases):
             correction = Ri_g[i]**exp
             ax.plot(w_rms[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Ri_g^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
@@ -51,8 +51,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(b_center[:, i] *(correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Ri_g^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
@@ -60,8 +60,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Ri_g^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
@@ -69,8 +69,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Ri_g^{{{exp:.2f}}}$", )
     
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
@@ -78,8 +78,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Ri_g^{{{exp:.2f}}}$", )
     
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
@@ -87,8 +87,8 @@ def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Ri_g^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Ri$_g^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Ri_g^{{{exp:.2f}}}$", )
     #axes[5, 0].legend()
 
     plt.tight_layout()
@@ -113,8 +113,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=num_cases,
-            bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    fig.suptitle(title, fontsize = 20, y = 0.99)
+            bbox_to_anchor=(0.52, 0.005), )
+    fig.suptitle(title,  y = 0.99)
     """
     axes[0, :] = ND rms velocity vs z_nd varied exponent of Fr
     axes[1, :] = ND centerline buoyancy vs z_nd varied exponent of Fr
@@ -124,15 +124,15 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
     axes[5, :] = ND average salinity vs z_nd varied exponent of Fr
     """
     for ax in axes[:, 0]:
-        ax.set_ylabel(z_str, fontsize = 16)
+        ax.set_ylabel(z_str, )
     for ax, exp in zip(axes[0, :], exponents):
         for i in range(num_cases):
             correction = Fr[i]**exp
             ax.plot(w_rms[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}} \cdot Fr^{{{exp:.2f}}}$", )
     
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
@@ -140,8 +140,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(b_center[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot Fr^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
@@ -149,8 +149,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot Fr^{{{exp:.2f}}}$", )
     #axes[2, 0].legend()
 
     for ax, exp in zip(axes[3, :], exponents):
@@ -159,8 +159,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"(r/r$_{{j}})\cdot Fr^{{{exp:.2f}}}$", )
     #axes[3, 0].legend()
 
     for ax, exp in zip(axes[4, :], exponents):
@@ -169,8 +169,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot Fr^{{{exp:.2f}}}$", )
     #axes[4, 0].legend()
 
     for ax, exp in zip(axes[5, :], exponents):
@@ -179,8 +179,8 @@ def plot_Fr_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, 
             ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Fr^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'Fr$^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot Fr^{{{exp:.2f}}}$", )
 
     plt.tight_layout()
 
@@ -203,8 +203,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=num_cases,
-            bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    fig.suptitle(title, fontsize = 20, y = 0.99)
+            bbox_to_anchor=(0.52, 0.005), )
+    fig.suptitle(title,  y = 0.99)
     """
     axes[0, :] = ND rms velocity vs z_nd varied exponent of MLD
     axes[1, :] = ND centerline buoyancy vs z_nd varied exponent of MLD
@@ -215,7 +215,7 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
     """
 
     for ax in axes[:, 0]:
-        ax.set_ylabel(z_str, fontsize = 16)
+        ax.set_ylabel(z_str, )
 
     for ax, exp in zip(axes[0, :], exponents):
         for i in range(num_cases):
@@ -223,8 +223,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(w_rms[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g}} \text{{r}}_{{j}}}} \cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g}} \text{{r}}_{{j}}}} \cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[1, :], exponents):
         for i in range(num_cases):
@@ -232,8 +232,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(b_center[:, i] *(correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[2, :], exponents):
         for i in range(num_cases):
@@ -241,8 +241,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(bw[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{\text{{xy}}}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$(\langle b'w'\rangle_{{\text{{xy}}}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[3, :], exponents):
         for i in range(num_cases):
@@ -250,8 +250,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(rp[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"(r/r$_{{j}})\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"(r/r$_{{j}})\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[4, :], exponents):
         for i in range(num_cases):
@@ -259,8 +259,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(T[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", )
 
     for ax, exp in zip(axes[5, :], exponents):
         for i in range(num_cases):
@@ -268,8 +268,8 @@ def plot_mld_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center,
             ax.plot(S[:, i] * (correction), 
                     z_nd[:, i], color=color_opt[i])
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', fontsize = 16)
-        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", fontsize = 16)
+        ax.set_title(rf'$\hat{{h}}_{{ML}}^{{{exp:.2f}}}$', )
+        ax.set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot \hat{{h}}_{{ML}}^{{{exp:.2f}}}$", )
 
     plt.tight_layout()
 
@@ -293,7 +293,7 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
         gridspec_kw={'height_ratios': [1, 0.1]}
         n_col = num_cases
 
-    fig, axes = plt.subplots(2, len(NDs_filtered), figsize=(25, 7), sharey=True, gridspec_kw = gridspec_kw)
+    fig, axes = plt.subplots(2, len(NDs_filtered), figsize=(12, 4), sharey=True, gridspec_kw = gridspec_kw)
     plt.subplots_adjust(top=0.9)
     for a in axes[-1, :]:
         a.remove()
@@ -301,8 +301,8 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=n_col,
-            bbox_to_anchor=(0.52, 0.005), fontsize = 16)
-    fig.suptitle(title, fontsize = 20, y = 0.99)
+            bbox_to_anchor=(0.52, 0.005), )
+    fig.suptitle(title,  y = 0.99)
     """
     axes[0] = ND rms velocity vs z_nd varied exponent of all
     axes[1] = ND centerline buoyancy vs z_nd varied exponent of all
@@ -313,43 +313,43 @@ def plot_combo_exponents(color_opt, title, file_name, fig_folder, w_rms, b_cente
     """
 
     for ax in axes[:, 0]:
-        ax.set_ylabel(z_str, fontsize = 16)
+        ax.set_ylabel(z_str, )
 
     for i in range(num_cases):
         axes[0, 0].plot(w_rms[:, i] * mld[i]**vars_exps[0, 2] * Ri_g[i]**vars_exps[0, 0] * Fr[i]**vars_exps[0, 1], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 0].set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}}\cdot$ {vars_str[0]}", fontsize = 16)
+    axes[0, 0].set_xlabel(rf"$w_{{rms}}/\sqrt{{\text{{g r}}_{{j}}}}\cdot$ {vars_str[0]}", )
 
     for i in range(num_cases):
         axes[0, 1].plot(b_center[:, i] * mld[i]**vars_exps[1, 2] * Ri_g[i]**vars_exps[1, 0] * Fr[i]**vars_exps[1, 1], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 1].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 1].set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot$ {vars_str[1]}", fontsize = 16)
+    axes[0, 1].set_xlabel(rf"$b_{{\text{{centerline}}}}/g \cdot$ {vars_str[1]}", )
 
     for i in range(num_cases):
         axes[0, 2].plot(bw[:, i] * mld[i]**vars_exps[2, 2] * Ri_g[i]**vars_exps[2, 0] * Fr[i]**vars_exps[2, 1], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 2].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 2].set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot$ {vars_str[2]}", fontsize = 16)
+    axes[0, 2].set_xlabel(rf"$(\langle b'w'\rangle_{{xy}}/\sqrt{{\text{{g}}^3 \text{{r}}_{{j}}}})\cdot$ {vars_str[2]}", )
 
     for i in range(num_cases):
         axes[0, 3].plot(rp[:, i] * mld[i]**vars_exps[3, 2] * Ri_g[i]**vars_exps[3, 0] * Fr[i]**vars_exps[3, 1], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 3].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 3].set_xlabel(rf"(r/r$_{{j}})\cdot$ {vars_str[3]}", fontsize = 16)
+    axes[0, 3].set_xlabel(rf"(r/r$_{{j}})\cdot$ {vars_str[3]}", )
 
     for i in range(num_cases):
         axes[0, 4].plot(T[:, i] * mld[i]**vars_exps[4, 2] * Ri_g[i]**vars_exps[4, 0] * Fr[i]**vars_exps[4, 1],
                 z_nd[:, i], color=color_opt[i])
     axes[0, 4].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 4].set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot$ {vars_str[4]}", fontsize = 16)
+    axes[0, 4].set_xlabel(rf"$(\text{{T'}}_{{\text{{centerline}}}}\alpha)\cdot$ {vars_str[4]}", )
 
     for i in range(num_cases):
         axes[0, 5].plot(S[:, i] * mld[i]**vars_exps[5, 2] * Ri_g[i]**vars_exps[5, 0] * Fr[i]**vars_exps[5, 1], 
                 z_nd[:, i], color=color_opt[i])
     axes[0, 5].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
-    axes[0, 5].set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot$ {vars_str[5]}", fontsize = 16)
+    axes[0, 5].set_xlabel(rf"($\langle$C$\rangle_{{\text{{xy}}}} \beta)\cdot$ {vars_str[5]}", )
 
     plt.tight_layout()
 
@@ -372,8 +372,8 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
     os.makedirs(outdir, exist_ok=True)
     ncols = 1 + len(tol)
     nrows = num_cases
-    hor_len = ncols * 3
-    vert_len = nrows * 4
+    hor_len = 12.0
+    vert_len = nrows * hor_len/ncols
     fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharex = True)
     rmin = np.min(np.concatenate(r))
     rmax = np.max(np.concatenate(r_max))
@@ -426,8 +426,7 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
                 ax.set_title(f"Contour = {tol[i-1]:.2e} ")
         x_center = 0.5
         y_pos = (nrows - row - 0.01*(nrows - row)) / nrows  # approximate vertical center of row
-        fig.text(x_center, y_pos, case_names[row], ha='center', va='center',
-                fontsize=12, fontweight='bold', transform=fig.transFigure)
+        fig.text(x_center, y_pos, case_names[row], ha='center', va='center', fontweight='bold', transform=fig.transFigure)
     # --- Save Frame ---
     file_name = 'ND_log_tracer_radius.svg' if ND else 'log_tracer_radius.svg'
     frame_path = os.path.join(outdir, file_name)
@@ -451,9 +450,9 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     outdir = [fig_folder + 'convergence tests buoyancy profiles/']
     os.makedirs(outdir, exist_ok=True)
 
-    fig, axes = plt.subplots(3, 5, figsize=(20, 8), height_ratios = [1, 0.2, 1])
+    fig, axes = plt.subplots(3, 5, figsize=(12, 5), height_ratios = [1, 0.2, 1])
 
-    fig.text(0.5, 1.08, f'{td:.2f} days', ha="center", fontsize=12) 
+    fig.text(0.5, 1.08, f'{td:.2f} days', ha="center", ) 
     # Titles for each row
     fig.text(0.5, 1.05, "Vertical resolution convergence", ha="center", fontsize=14)
     fig.text(0.5, 0.52, "Horizontal resolution convergence", ha="center", fontsize=14)
@@ -585,7 +584,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     ## buoyancy plane slices ##
     outdir1 = fig_folder + 'buoyancy planeslices/'
     os.makedirs(outdir1, exist_ok=True)
-    fig, axes = plt.subplots(3, 3, figsize=(18, 10), constrained_layout=True)
+    fig, axes = plt.subplots(3, 3, figsize=(12, 5), constrained_layout=True)
     fig.suptitle(f'{td:.2f} days') 
     norm = mcolors.Normalize(vmin=ranges['b_avg'][0], vmax=ranges['b_avg'][-1])
     mappable = cm.ScalarMappable(norm=norm) 
@@ -621,9 +620,9 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
         outdir2 = fig_folder + 'convergence testing/'
         os.makedirs(outdir2, exist_ok=True)
         td = time[it] / 3600 / 24
-        fig = plt.figure(figsize=(20, 8))
+        fig = plt.figure(figsize=(12, 4))
         fig.tight_layout()
-        fig.suptitle(f'{td:.2f} days', fontsize=12) 
+        fig.suptitle(f'{td:.2f} days', ) 
         # Titles for each row
         fig.text(0.5, 0.94, "Vertical resolution convergence", 
                 ha="center", va="center", fontsize=14)
@@ -713,7 +712,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
         ax10.set_ylabel("[m]")
         ax10.set_ylim(ranges['lengthscale'])
 
-        fig.supxlabel("Number of Grid Cells", fontsize=12)
+        fig.supxlabel("Number of Grid Cells", )
         # --- Save Frame ---
         frame_path = os.path.join(outdir, f"convergence_test_{it:04d}.png")
         plt.tight_layout()

@@ -75,12 +75,12 @@ bS = []
 dense_plume = []
 time = []
 
-for i, reader in enumerate(readers):
+for n, reader in enumerate(readers):
     lz = np.max((lz, reader.lx[-1]))
     time.append(reader.t)
 
     S_value = reader.load_S_temporal_avg()
-    reader.load_equation_of_state()
+    
     bS.append(-g*reader.beta*S_value)
 lz = []
 r_scale = []
@@ -91,7 +91,7 @@ where_max = []
 best_fit = []
 best_fit_max = []
 fit_exp = []
-for i, reader in enumerate(readers):
+for n, reader in enumerate(readers):
     r_max = np.zeros([len(time[i]) - start, len(contours)])
     z_max = np.zeros([len(time[i]) - start, len(contours)])
     neutral = np.zeros([len(time[i]) - start, len(contours)])
@@ -162,5 +162,5 @@ for i, reader in enumerate(readers):
 
         lz = [np.min(lz), np.max(lz)]
 ############ PLOTTING ############
-plot_format(fontsize = 10)
+plot_format()
 plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, [best_fit, best_fit_max], fit_exp, ND, auto_log)

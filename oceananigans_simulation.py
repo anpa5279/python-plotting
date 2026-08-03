@@ -6,6 +6,7 @@ from matplotlib.lines import Line2D
 
 from reader import OceananigansData
 from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
+from plotting_planes import plot_variable_xy_slice
 from interpolation import point, vertical_line, interp1d_axis, velocities_to_center
 """
     what is the best way to find the maximum penetration depth of a plume via momentum?
@@ -24,26 +25,29 @@ from interpolation import point, vertical_line, interp1d_axis, velocities_to_cen
         2. order of magnitude changes
         3. gradient changes
 """
-# plotting flags
+# ==========================================================
+# FLAGS
+# ==========================================================
 plot_xt = False
 plot_yt = False
-plot_zt = True
+plot_zt = False
+plot_xy_slice = True
 plot_raw_centerline = False
 plot_1dz_stats = False
 verify_outputs = False
-video = False
+video = True
 
-# simulation information
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC /dz05'
+# ==========================================================
+# MODEL INFORMATION
+# ==========================================================
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/viscosity tests/default PA timescales/dx05'
+
 outdir = os.path.join(folder, 'figures')
-reader = OceananigansData(folder, salinity = True)
+reader = OceananigansData(folder, salinity = True, with_halos=True)
 if plot_1dz_stats:
     fig_var_folder = os.path.join(outdir, 'max penetration variables')
     os.makedirs(fig_var_folder, exist_ok=True)
 
-# parameters
-hml = 60
-g = 9.80665
 # collecting model information for all cases
 x = reader.x
 y = reader.y
@@ -58,10 +62,18 @@ if video or plot_zt or plot_raw_centerline or plot_yt or plot_xt:
         time1 = reader.time_center
 else:
     time = reader.t[-1]
+
+# ==========================================================
+# PARAMETERS
+# ==========================================================
+S_tol = 10**(-6)
+hml = 60
+g = 9.80665
+
 if plot_yt or plot_xt:
     z_loc = -1.0*np.array([hml, hml+1, hml+2, hml+5, hml+10])#, hml+20]) #-[hml, ]
 # load in information
-reader.load_equation_of_state()
+
 if plot_zt or verify_outputs:
     w_centerline = reader.field_centerline('w')
     b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
@@ -111,7 +123,6 @@ if plot_yt:
         b_yt += - g * reader.beta * S_yt
     b_fluc_yt = b_yt - b_avg_yt[:, None, :]
     del w_plane, S_plane, T_plane, b_yt
-
 if plot_xt:
     buoyancy_file = os.path.join(reader.folder, 'buoyancy_profile.h5')
     with h5py.File(buoyancy_file, 'r') as f:
@@ -134,6 +145,15 @@ if plot_xt:
         b_xt += - g * reader.beta * S_xt
     b_fluc_xt = b_xt - b_avg_xt[:, None, :]
     del w_plane, S_plane, T_plane, b_xt
+if plot_xy_slice:
+
+    # choose depth of horizontal slice
+    z_plot = 0.0
+
+    w_hor = reader.field_slice('w', plane='XY')
+
+    if reader.salinity:
+        S_hor = reader.field_slice('S', plane='XY')
 print("finished loading data")
 # finding centerlines
 if plot_raw_centerline:
@@ -160,7 +180,10 @@ if plot_1dz_stats:
     dbrmsdz = np.gradient(b_rms, z, axis = -1)
     dbflucdz = np.gradient(b_fluc_centerline, z, axis = -1)
 
-############ PLOTTING ############
+# ==========================================================
+# PLOTTING
+# ==========================================================
+
 hml_var = np.arange(-10**2, 10**2)
 hml_array = -hml * np.ones(len(hml_var))
 ranges = plot_ranges()
@@ -231,7 +254,7 @@ if plot_zt:
         labels = ['[m/s]', '[g/kg]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]', '[m/s]']
         stop = 5
         vars = [w_centerline[:stop*100, :], S_centerline[:stop*100, :], b_fluc_centerline[:stop*100, :], w_rms[:stop, :], b_rms[:stop, :], u_r_rms.T[:stop, :]]
-        fig, axes = plt.subplots(1, 6, figsize=(30, 5.5))
+        fig, axes = plt.subplots(1, 6, figsize=(12, 4))
         file = 'wSbur_rms_zt-smallert.svg'
     else:
         range_opt = [ranges['w'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms']]
@@ -240,7 +263,7 @@ if plot_zt:
         labels = ['[m/s]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]']
         stop = 5
         vars = [w_centerline[:stop*100, :], b_fluc_centerline[:stop*100, :], w_rms[:stop, :], b_rms[:stop, :]]
-        fig, axes = plt.subplots(1, 4, figsize=(20, 5.5))
+        fig, axes = plt.subplots(1, 4, figsize=(12, 4))
         file = 'wb_rms_zt.svg'
 
     last_t = time[stop]/(3600*24)#time.max()/(3600*24)
@@ -282,9 +305,15 @@ if plot_yt:
         labels = ['[m/s]', r'[$^\circ$C]', r'[m/s$^2$]']
         vars = [w_yt, T_yt, b_fluc_yt]
         file = 'wTb_yt.svg'
-    ncols = len(vars)
+    if len(vars) <= 4:
+        ncols = len(vars)
+        nrows = 1
+    else:
+        ncols = 4
+        nrows = int(np.ceil(len(vars)/ncols))
     for j, z_opt in enumerate(z_loc):
-        fig, axes = plt.subplots(1, ncols, figsize=(4*ncols, 5.5), sharex = True, sharey = True)
+    
+        fig, axes = plt.subplots(nrows, ncols, figsize=(12, 4*nrows+1), sharex = True, sharey = True)
 
         ratio = ((time.max()/(3600*24))/lx[1])**-1
         axes = axes.ravel()
@@ -322,9 +351,14 @@ if plot_xt:
         labels = ['[m/s]', r'[$^\circ$C]', r'[m/s$^2$]']
         vars = [w_xt, T_xt, b_fluc_xt]
         file = 'wTb_xt.svg'
-    ncols = len(vars)
+    if len(vars) <= 4:
+        ncols = len(vars)
+        nrows = 1
+    else:
+        ncols = 4
+        nrows = int(np.ceil(len(vars)/ncols))
     for j, z_opt in enumerate(z_loc):
-        fig, axes = plt.subplots(1, ncols, figsize=(4*ncols, 5.5), sharex = True, sharey = True)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(12, 4*nrows+1), sharex = True, sharey = True)
 
         ratio = ((time.max()/(3600*24))/lx[1])**-1
         axes = axes.ravel()
@@ -345,6 +379,23 @@ if plot_xt:
         frame_path = os.path.join(outdir, rf'z{z_loc[j]}_{file}')
         plt.savefig(frame_path)
         plt.close(fig)
+if plot_xy_slice:
+    hor_ranges = ranges.copy()
+    hor_ranges['S'] = [S_tol, 0.2]
+    hor_ranges['w'] = [-2*10**(-3), 2*10**(-3)]
+    hor_ranges['Sw'] = [-2*10**(-4), 2*10**(-4)]
+    vars =['S', 'w', 'Sw']
+
+    xy_outdir = np.empty(len(vars), dtype=object)
+
+    for it in range(nt):
+
+        t = reader.t[it]
+        Sw_hor = S_hor[it, :, :] * w_hor[it, :, :]
+
+        xy_outdir[0] = plot_variable_xy_slice(t, it, hor_ranges, outdir, lx, x, y, S_hor[it, :, :], [''], vars[0], vars[0], colorbar_label='g/kg', cmap='Blues')
+        xy_outdir[1] = plot_variable_xy_slice(t, it, hor_ranges, outdir, lx, x, y, w_hor[it, :, :], [''], vars[1], vars[1], colorbar_label='m/s', cmap='RdBu_r')
+        xy_outdir[2] = plot_variable_xy_slice(t, it, hor_ranges, outdir, lx, x, y, Sw_hor, [''], vars[2], vars[2], colorbar_label='m/s', cmap='RdBu_r')
 if plot_1dz_stats:
     gridspec_kw={'height_ratios': [1, 1, 0.1]}
     width = 0.8
@@ -353,7 +404,7 @@ if plot_1dz_stats:
 
     for it in range(nt):
         td = time[it]/(3600*24)
-        fig, axes = plt.subplots(3, 5, figsize=(20, 9), sharey = True, gridspec_kw=gridspec_kw)
+        fig, axes = plt.subplots(3, 5, figsize=(12, 5), sharey = True, gridspec_kw=gridspec_kw)
         fig.suptitle(f"t = {td:.2f} days")
         for ax in axes[-1, :]:
             ax.remove()
@@ -437,7 +488,7 @@ if verify_outputs:
     width = 0.8
     for it in range(nt):
         td = time[it]/(3600*24)
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey = True)
+        fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharey = True)
         axes = axes.ravel()
         plt.subplots_adjust(top = 0.9)
         fig.suptitle(f"t = {td:.2f} days")
@@ -473,3 +524,6 @@ if video:
         create_video(fig_var_folder, outdir, '', 'max penetration variables')
     if verify_outputs:
         create_video(outdir_verify, outdir, '', 'verify_outputs')
+    if plot_xy_slice:
+        for n, folder in enumerate(xy_outdir):
+            create_video(folder, outdir, '', vars[n])

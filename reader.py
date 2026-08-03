@@ -37,14 +37,14 @@ class OceananigansData:
 
         # equation of state information
         self.b = None
-        if temperature:
-            self.temperature = temperature
-            self.T0 = None
-            self.alpha = None
         if salinity:
             self.salinity = salinity
             self.Sval = Sval
             self.beta = None
+        if temperature:
+            self.temperature = temperature
+            self.T0 = None
+            self.alpha = None
 
         # collecting all jld2 and h5 files names in folder
         self.all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') or f.endswith('.h5'))]
@@ -53,15 +53,17 @@ class OceananigansData:
         fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup'))]
 
         self.Nranks = len(fields_files)
-        if self.Nranks > 1:
+        if self.Nranks > 1: # ensuring that the files are in proper order
             self.files = [f'fields_rank{n}.jld2' for n in range(self.Nranks)]
-        else:
+        else: # does not matter if there is only one file
             self.files = fields_files
 
         # checking for binning file
         if 'binning_rtz.h5' in os.listdir(self.folder):
             self.bin_file = 'binning_rtz.h5'
             self.binning = True
+            with h5py.File(os.path.join(self.folder, self.bin_file), 'r') as f:
+                self.r =  f['/ccc/dimensions/r_bin'][()] 
         else:
             self.binning = False
 
@@ -76,7 +78,8 @@ class OceananigansData:
 
         # checking for centerline file
         if any([f for f in self.all_files if ((f.endswith('.jld2') or f.endswith('.h5')) and f.startswith('centerline'))]):
-            self.centerline_output = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('centerline'))][0]
+            centerline_output = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('centerline'))]
+            self.centerline_output = centerline_output[0] if len(centerline_output) > 0 else None
             self.centerline_file = [f for f in self.all_files if (f.endswith('.h5') and f.startswith('centerline'))]
             if self.centerline_file == []:
                 self.centerline_file = None
@@ -90,6 +93,9 @@ class OceananigansData:
 
         self.load_time()
         self.load_grid()
+
+        if temperature or salinity:
+            self.load_equation_of_state()
 
         self.field_opt = {
             'u': {'x':'f', 'y':'c', 'z':'c'},
@@ -124,8 +130,8 @@ class OceananigansData:
             self.xf = np.linspace(-self.lx[0]/2, self.lx[0]/2, self.nx[0]+1)
             self.y = np.linspace(-self.lx[1]/2 + self.dx[1]/2, self.lx[1]/2 - self.dx[1]/2, self.nx[1])
             self.yf = np.linspace(-self.lx[1]/2, self.lx[1]/2, self.nx[1]+1)
-            self.z = np.linspace(-self.lx[2] + self.dx[2]/2, -self.dx[2]/2, self.nx[2])
-            self.zf = np.linspace(-self.lx[2], 0, self.nx[2]+1)
+            self.z = np.linspace(-self.lx[2] + self.dx[2]/2, -self.dx[2]/2, self.nx[2])#np.linspace(-self.lx[2] + self.dx[2], 0.0, self.nx[2]) # this puts the center at dx[2]/2 at the surface
+            self.zf = np.linspace(-self.lx[2], 0, self.nx[2]+1)#np.linspace(-self.lx[2] + 3/2*self.dx[2], self.dx[2]/2, self.nx[2]+1) # this puts the center at 0.0 the surface
             self.hx = [3, 3, 3]
         else:
             with h5py.File(os.path.join(self.folder, self.files[-1]), 'r') as f:
@@ -164,6 +170,8 @@ class OceananigansData:
                         self.x[i*xrange:(i+1)*xrange] = \
                             f['grid/xᶜᵃᵃ'][self.hx[0]:-self.hx[0]]
             self.xf = np.linspace(-self.lx[0]/2, self.lx[0]/2, self.nx[0]+1)
+        if self.binning:
+            self.r = self.r - self.dx[0]/2
     # ------------------------- TIME ------------------------------------ #
     def load_time(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -254,123 +262,234 @@ class OceananigansData:
     def field_slice(self, field, steps=None, plane='YZ', loc=0.0, N=None):
         """
         Returns a 2D slice of the field throughout time.
-        'YZ' -> shape (nt, Ny, Nz),  loc is x-position
-        'XZ' -> shape (nt, Nx, Nz),  loc is y-position
-        'XY' -> shape (nt, Nx, Ny),  loc is z-position
+
+        'YZ' -> shape (nt, Ny, Nz), loc is x-position
+        'XZ' -> shape (nt, Nx, Nz), loc is y-position
+        'XY' -> shape (nt, Nx, Ny), loc is z-position
         """
+
         if steps is None:
             steps = self.t_save
         steps = np.atleast_1d(steps)
 
-        # ------------------------------------------------------------------ #
-        # Fast path: N is a grid index — use lazy_field and index directly #
-        # ------------------------------------------------------------------ #
+        # ---------------------------------------------------------------
+        # Coordinate information
+        # ---------------------------------------------------------------
+        if field in ("u", "v", "w"):
+            coord_opt = self.field_opt[field]
+        else:
+            coord_opt = self.field_opt["Tracer"]
+
+        slice_cfg = {
+            "YZ": (self.x if coord_opt["x"] == "c" else self.xf, 0, True, -3,),
+            "XZ": (self.y if coord_opt["y"] == "c" else self.yf, 1, False, -2,),
+            "XY": (self.z if coord_opt["z"] == "c" else self.zf, 2, False, -1,),
+        }
+
+        coord, dim, rank_split, axis = slice_cfg[plane]
+
+        exact = np.any(np.isclose(coord, loc))
+        needs_interp = not exact
+        halos_needed = False
+
+        d = self.dx[dim]
+        h = self.hx[dim]
+
+        if needs_interp:
+
+            coord_min = coord[0]
+            coord_max = coord[-1]
+
+            halo_min = coord_min - h * d
+            halo_max = coord_max + h * d
+
+            if coord_min <= loc <= coord_max:
+                halos_needed = False
+
+            elif self.halos and halo_min <= loc <= halo_max:
+                halos_needed = True
+
+            else:
+                raise ValueError(
+                    f"Requested {plane} slice at {loc} lies outside the available "
+                    "grid (including halos)."
+                )
+
+
+
+        # Coordinates corresponding to loaded data
+        if halos_needed:
+            coord_interp = np.concatenate([
+                coord[0] - d * np.arange(h, 0, -1), coord, coord[-1] + d * np.arange(1, h + 1),
+            ])
+        else:
+            coord_interp = coord
+
+        # ---------------------------------------------------------------
+        # Fast path: integer grid index
+        # ---------------------------------------------------------------
         if N is not None:
-            lazy = self.lazy_field(field, steps)   # (nt, Nx, Ny, Nz) or (Nx, Ny, Nz) if nt==1
+            lazy = self.lazy_field(field, steps)
+
             if lazy.ndim == 3:
-                lazy = lazy[np.newaxis]            # (1, Nx, Ny, Nz)
+                lazy = lazy[np.newaxis]
 
-            if plane == 'YZ':
-                out = lazy[:, int(N), :, :]        # (nt, Ny, Nz)
-            elif plane == 'XZ':
-                out = lazy[:, :, int(N), :]        # (nt, Nx, Nz)
-            elif plane == 'XY':
-                out = lazy[:, :, :, int(N)]        # (nt, Nx, Ny)
+            if plane == "YZ":
+                out = lazy[:, int(N), :, :]
+            elif plane == "XZ":
+                out = lazy[:, :, int(N), :]
+            elif plane == "XY":
+                out = lazy[:, :, :, int(N)]
+            else:
+                raise ValueError("plane must be one of 'YZ', 'XZ', 'XY'")
 
-            if field == 'u' and self.u_s is not None:
+            if field == "u" and self.u_s is not None:
+                out = out - self.u_s
+
+            return out.compute().squeeze()
+        elif exact:
+            N = np.where(np.isclose(coord, loc))[0][0]
+
+            lazy = self.lazy_field(field, steps)
+
+            if lazy.ndim == 3:
+                lazy = lazy[np.newaxis]
+
+            if plane == "YZ":
+                out = lazy[:, int(N), :, :]
+            elif plane == "XZ":
+                out = lazy[:, :, int(N), :]
+            elif plane == "XY":
+                out = lazy[:, :, :, int(N)]
+            else:
+                raise ValueError("plane must be one of 'YZ', 'XZ', 'XY'")
+
+            if field == "u" and self.u_s is not None:
                 out = out - self.u_s
 
             return out.compute().squeeze()
 
-        # ------------------------------------------------------------------ #
-        # Slow path: loc is a physical coordinate — interpolate               #
-        # ------------------------------------------------------------------ #
-        if field == 'u' or field == 'v' or field == 'w':
-            coord_opt = self.field_opt[field]
-        else:
-            coord_opt = self.field_opt['Tracer']
-        slice_cfg = {
-            'YZ': (self.x if coord_opt['x'] == 'c' else self.xf, True, -3),
-            'XZ': (self.y if coord_opt['y'] == 'c' else self.yf, False, -2),
-            'XY': (self.z if coord_opt['z'] == 'c' else self.zf, False, -1),
-        }
-        coord, rank_split, axis = slice_cfg[plane]
-        #print(f"loc: {loc}, coord: {coord}, rank_split: {rank_split}, axis: {axis}")
-        exact = coord == loc
-        #print(f"exact: {exact}, where: {np.where(exact)//self.Nranks}")
-
-        if any(exact):
-            needs_interp = False
-            halos_needed = False
-        else:
-            needs_interp = True
-            halos_needed = False
-
+        # ---------------------------------------------------------------
+        # Determine files
+        # ---------------------------------------------------------------
         if rank_split and self.Nranks > 1:
+
             nx_local = self.nx[0] // self.Nranks
+
             nearest = np.argsort(np.abs(coord - loc))[:2]
-            file_indices = np.array([int(i) for i in np.floor(np.sort(nearest) / self.nx[0] * self.Nranks)])
-            # deduplicate in case both nearest points are in the same rank file
-            file_indices = np.unique(file_indices)
-            halos_needed = self.halos
+
+            file_indices = np.unique(
+                np.floor(np.sort(nearest) / self.nx[0] * self.Nranks).astype(int)
+            )
+
             if halos_needed:
                 file_indices = file_indices[:1]
-            print(f"coord = {coord}")
-            print(f'Nranks: {self.Nranks}, nx_local: {nx_local}, nearest: {nearest}, file_indices: {file_indices}')
-            print(f"Nearest points to {loc}: {coord[nearest]}, in files: {file_indices}")
-            print(self.files)
-            files = [self.files[i] for i in np.atleast_1d(file_indices)]
+
+            files = [self.files[i] for i in file_indices]
+
         else:
             files = self.files
+        if needs_interp:
+            # ---------------------------------------------------------------
+            # Helper
+            # ---------------------------------------------------------------
+            def _load_slab(fname, t):
 
-        def _load_slab(fname, t):
-            with h5py.File(fname, 'r') as f:
-                data = f[f'timeseries/{field}/{int(t)}'][...]   # (z, y, x_local)
-            if self.halos and not halos_needed:
-                data = data[
-                    self.hx[2] : -self.hx[2] or None,   # z
-                    self.hx[1] : -self.hx[1] or None,   # y
-                    self.hx[0] : -self.hx[0] or None,   # x_local
-                ]
-            return data.transpose(2, 1, 0)              # (x_local, y, z)
+                with h5py.File(fname, "r") as f:
+                    data = f[f"timeseries/{field}/{int(t)}"][...]
 
-        arrayst = []
-        for t in steps:
-            slabs = [_load_slab(os.path.join(self.folder, f), t) for f in files]
-            if self.Nranks > 1:
-                block = np.concatenate(slabs, axis=0)        # (x_local, y, z)
-            else:
-                block = slabs[0]                             # (x_total, y, z)
+                if self.halos:
+                    if not halos_needed:
+                        data = data[
+                            self.hx[2]:-self.hx[2] or None,
+                            self.hx[1]:-self.hx[1] or None,
+                            self.hx[0]:-self.hx[0] or None,
+                        ]
 
-            if plane == 'YZ':
-                if needs_interp and self.Nranks > 1:
-                    # build the actual x-coordinates corresponding to rows of block
-                    x_slab_coords = np.concatenate([
-                        coord[i * nx_local : (i + 1) * nx_local]
-                        for i in np.atleast_1d(file_indices)
-                    ])
-                    s = plane_slice_calc(block, x_slab_coords, loc, axis = -3)   # (y, z)
-                elif needs_interp and self.Nranks == 1:
-                    s = plane_slice_calc(block, coord, loc, axis = -3)   # (y, z)
+                return data.transpose(2, 1, 0)
+
+            # ---------------------------------------------------------------
+            # Load slices
+            # ---------------------------------------------------------------
+            arrayst = []
+
+            for t in steps:
+
+                slabs = [_load_slab(os.path.join(self.folder, f), t) for f in files]
+
+                if self.Nranks > 1:
+                    block = np.concatenate(slabs, axis=0)
                 else:
-                    # loc sits exactly on a grid point — find its local index
-                    global_idx = np.where(coord == loc)[0][0]
-                    if self.Nranks > 1:
-                        local_idx = global_idx % nx_local
+                    block = slabs[0]
+
+                if plane == "YZ":
+
+                    if needs_interp:
+
+                        if self.Nranks > 1:
+
+                            nx_local = block.shape[0]
+
+                            start = file_indices[0] * (self.nx[0] // self.Nranks)
+
+                            if halos_needed:
+                                start -= self.hx[0]
+
+                            xcoords = coord_interp[start:start + nx_local]
+
+                            s = plane_slice_calc(block, xcoords, loc, axis=-3)
+
+                        else:
+
+                            s = plane_slice_calc(block, coord_interp, loc, axis=-3)
+
                     else:
-                        local_idx = global_idx
-                    s = block[local_idx]                       # (y, z)
 
+                        idx = np.where(np.isclose(coord, loc))[0][0]
+
+                        if self.Nranks > 1:
+                            idx %= (self.nx[0] // self.Nranks)
+
+                        s = block[idx]
+
+                else:
+                    if needs_interp:
+                        s = plane_slice_calc(block, coord_interp, loc, axis=axis)
+
+                if field == "u" and self.u_s is not None:
+                    s = s - self.u_s
+
+                arrayst.append(s)
+
+                out = np.stack(arrayst, axis=0)
+            if self.halos and halos_needed:
+                out = out[
+                    :,
+                    self.hx[2]:-self.hx[2] or None,
+                    self.hx[1]:-self.hx[1] or None,
+                ]
+            return out.squeeze()
+        else: 
+            N = np.where(np.isclose(coord, loc))[0]
+            lazy = self.lazy_field(field, steps)
+
+            if lazy.ndim == 3:
+                lazy = lazy[np.newaxis]
+
+            if plane == "YZ":
+                out = lazy[:, int(N), :, :]
+            elif plane == "XZ":
+                out = lazy[:, :, int(N), :]
+            elif plane == "XY":
+                out = lazy[:, :, :, int(N)]
             else:
-                s = plane_slice_calc(block, coord, loc, axis = axis)               # (x, y)
+                raise ValueError("plane must be one of 'YZ', 'XZ', 'XY'")
 
-            if field == 'u' and self.u_s is not None:
-                s = s - self.u_s
+            if field == "u" and self.u_s is not None:
+                out = out - self.u_s
 
-            arrayst.append(s)
+            return out.compute().squeeze()
 
-        out = np.stack(arrayst, axis=0)   # (nt, Ny, Nz) or (nt, Nx, Nz) or (nt, Nx, Ny)
-        return out.squeeze()
     def field_centerline(self, field, steps=None):
         """
         Returns a 1D slice of the field along the centerline throughout time.
@@ -551,7 +670,7 @@ class OceananigansData:
             f = h5py.File(fname, 'r') 
             for it, t in enumerate(steps):
                 dset = f[f'timeseries/{field}_avg/{int(t)}']
-                if self.halos:
+                if len(dset)!=self.nx[2]:
                     dset = dset[self.hx[2] : -self.hx[2]]
                 field_avg[it, :] = np.squeeze(dset)/self.Nranks
             f.close()
@@ -628,23 +747,26 @@ class OceananigansData:
         fname = os.path.join(self.folder, file)
         
         import re
-        if plane == 'YZ':
-            pattern = r'x = ' + str(loc) + r'(?:\.\d+)?'
-        elif plane == 'XZ':
-            pattern = r'y = ' + str(loc) + r'(?:\.\d+)?'
-        elif plane == 'XY':
-            pattern = r'z = ' + str(loc) + r'(?:\.\d+)?'
-        else:
-            raise ValueError(f"Invalid plane '{plane}'. Must be one of 'YZ', 'XZ', or 'XY'.")
-        
-        with h5py.File(fname, 'r') as f:
-            group = f[f'{plane}']
-            # Find the matching key inside YZ group
-            matching_key = None
-            for key in group.keys():
-                if re.fullmatch(pattern, key):
-                    matching_key = key
-                    a = group[matching_key][field][()]
-        if matching_key is None: # not in file, must find from fields 
+        if os.path.exists(fname):
+            if plane == 'YZ':
+                pattern = r'x = ' + str(loc) + r'(?:\.\d+)?'
+            elif plane == 'XZ':
+                pattern = r'y = ' + str(loc) + r'(?:\.\d+)?'
+            elif plane == 'XY':
+                pattern = r'z = ' + str(loc) + r'(?:\.\d+)?'
+            else:
+                raise ValueError(f"Invalid plane '{plane}'. Must be one of 'YZ', 'XZ', or 'XY'.")
+            
+            with h5py.File(fname, 'r') as f:
+                group = f[f'{plane}']
+                # Find the matching key inside YZ group
+                matching_key = None
+                for key in group.keys():
+                    if re.fullmatch(pattern, key):
+                        matching_key = key
+                        a = group[matching_key][field][()]
+            if matching_key is None: # not in file, must find from fields 
+                a = self.field_slice(field, plane = plane, loc = loc, N = N)
+        else: # file does not exist, must find from fields
             a = self.field_slice(field, plane = plane, loc = loc, N = N)
         return a

@@ -41,7 +41,7 @@ nt = reader.nt
 dx = reader.dx
 lx = reader.lx
 time = reader.t
-reader.load_equation_of_state()
+
 
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)

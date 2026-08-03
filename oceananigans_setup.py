@@ -8,18 +8,18 @@ from diagnostics import compute_temporal_averages, compute_fluct_averages, compu
 from interpolation import vertical_line
 
 # set flags
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = True
 fluc_flag = True # calculates turbulent statistics from binning information
 rms_flag = True # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
 contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-mass_flag = False
+mass_flag = True
 
 # model options
-with_halos = False
+with_halos = True
 salinity = True
 
 # update flags if salinity is False
@@ -29,7 +29,7 @@ if not salinity:
     mass_flag = False
 
 # Set up folder and simulation parameters
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/openBC/AR1/dxi0.00625/test'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -44,7 +44,7 @@ nt = reader.nt
 dx = reader.dx
 lx = reader.lx
 time = reader.t
-reader.load_equation_of_state()
+
 
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
@@ -96,6 +96,7 @@ if binning_flag:
     del w_rz
     print(f"Saved binning to {bin_path}")
     reader.binning = True
+    reader.bin_file = 'binning_rtz.h5'
 ###------------INTERPOLATION TO CENTERLINE--------------------------###
 if centerline_flag:
     file_path = os.path.join(folder, 'centerline.h5')
@@ -126,12 +127,12 @@ if centerline_flag:
     reader.centerline_file = 'centerline.h5'
 ###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
-    xy = False
+    xy = True
     yz = True
     xz = False
     file_path = os.path.join(folder, 'plane_slice.h5')
     if xy:
-        z_locs = [-reader.lx[-1] + reader.dx[-1]/2, -reader.lx[-1]/2, 0.0]
+        z_locs = [-reader.dx[-1]/2, 0.0]#[0.0, ]#
         for z_loc in z_locs:
             T = reader.field_slice('T', plane = 'XY', loc = z_loc)
             u = reader.field_slice('u', plane = 'XY', loc = z_loc)
@@ -380,18 +381,25 @@ if contour_flag:
 if mass_flag:
     rho0 = 1026 # kg/m^3
     S = reader.lazy_field('S').compute()
-    domain = math.prod(reader.nx)
     vol = math.prod(reader.lx)
     dims = (1, 2, 3)
+    Smin = np.min(S, axis = dims)
+    Smax = np.max(S, axis = dims)
     # volume integral of S value in domain
     S_mass = np.mean(S, axis = dims)*vol*rho0
     del S
     dmdt = np.gradient(S_mass, time)
     with h5py.File(bin_path, "a") as f:
-        if "mass/S" in f:
-            del f["mass/S"]
-        if "mass/dmdt" in f:
-            del f["mass/dmdt"]
+        if "S mass" in f:
+            del f["S mass"]
+        if "time gradient of S mass" in f:
+            del f["time gradient of S mass"]
+        if "max of S" in f:
+            del f["max of S"]
+        if "min of S" in f:
+            del f["min of S"]
         f.create_dataset("S mass", data=S_mass)
         f.create_dataset("time gradient of S mass", data=dmdt)
+        f.create_dataset("max of S", data=Smax)
+        f.create_dataset("min of S", data=Smin)
     print(f"Saved mass calculations to {bin_path}")

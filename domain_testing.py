@@ -10,25 +10,49 @@ from matplotlib.lines import Line2D
 from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
-from interpolation import velocities_to_center
 # flags for plotting
 area_scaling = False
-tracer_integral = False
+tracer_integral = True
 mass_divergence = True
-neg_tracer = False
+neg_tracer = True
+w_surface = True
 
 salinity = True
-# Set up folder and simulation parameters
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/w BC testing/'
-#'/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet/version109/default/horizontal domain/'
-variations = 'w BC'
-cases_info = comparison_info(variations, universal_folder = universal_folder)
-num_cases = cases_info['num_cases']
-case_names = cases_info['case_names']
+# ==========================================================
+# COMPARISON CASES
+# ==========================================================
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/no SGS/default WENO/bottom PA/'
+variations = "else"
+if variations != "else":
+    cases_info = comparison_info(variations, universal_folder=universal_folder)
+
+    case_names = cases_info["case_names"]
+    folder_names = cases_info["folder_names"]
+    num_cases = cases_info["num_cases"]
+    fig_folder = os.path.join(cases_info["fig_folder"], "convergence")
+    F_s = cases_info["F_s"]
+    mld = cases_info["mld"]
+    dTdz = cases_info["dTdz"]
+else:
+    folder_names = ['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#['dz2', 'dz1']#, 'dz05']#['dx2', 'dx1']#, 'dx05']#, 'dx025']#
+
+    case_names =[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$']#, r'$\Delta x = 0.25$']#
+
+    num_cases = len(folder_names)
+    fig_folder = os.path.join(universal_folder, 'horizontal resolution', 'callback comparisons')
+    F_s = 0.1 * np.ones(num_cases)
+    mld = 60 * np.ones(num_cases)
+    dTdz = 0.01 * np.ones(num_cases)
+
+os.makedirs(fig_folder, exist_ok=True)
+# ==========================================================
+# READERS
+# ==========================================================
 readers = []
-for name in cases_info["folder_names"]:
+#with_halos = [True, False, False, False]
+for i, name in enumerate(folder_names):
     folder = os.path.join(universal_folder, name)
-    readers.append(OceananigansData(folder, salinity = salinity))
+    readers.append(OceananigansData(folder, salinity = salinity, with_halos = True))#with_halos[i]))
 
 if area_scaling:
     def area_scale(r, dx):
@@ -48,61 +72,55 @@ nx = np.empty((3, num_cases), dtype=object)
 lx = np.empty((3, num_cases), dtype=object)
 nt = np.empty(num_cases, dtype=int)
 time  = []
-grid_specs = False*np.ones(num_cases)
-#grid_specs[2] = True # flag for whether to plot grid specs in title
-for i, reader in enumerate(readers):
-    reader.load_grid(grid_specs = grid_specs[i])
+for n, reader in enumerate(readers):
     time.append(reader.t)
-    nx[:, i] = reader.nx
-    lx[:, i] = reader.lx
-    nt[i] = reader.nt
+    nx[:, n] = reader.nx
+    lx[:, n] = reader.lx
+    nt[n] = reader.nt
+
+# ==========================================================
+# DATA STORAGE
+# ==========================================================
 t = []
 
-if tracer_integral or mass_divergence:
-    dmdt = []
-    S_mass = []
-    if mass_divergence:
-        div_east = []
-        div_west = []
-        div_north = []
-        div_south = []
-        div_top = []
-        div_bottom = []
-        div_faces = []
-        div_vol = []
-if neg_tracer:
-    S_sum = []
-    neg_avg = []
-    S_neg_sum = []
-    S_min = []
-    percents = []
-    dSdt = []
+dmdt = []
+S_mass = []
+div_top = []
+div_bottom = []
+div_faces = []
+S_sum = []
+neg_avg = []
+S_max = []
+S_min = []
+dSdt = []
+w_min = []
+w_max = []
+w_sum = []
 
-# Load data from files
+# ==========================================================
+# LOAD DATA
+# ==========================================================
 for n, reader in enumerate(readers):
     t.append(reader.t / 3600 / 24)
+    domain = math.prod(reader.nx)
+    vol = math.prod(reader.lx)
+    dims = (1, 2, 3)
     # load tracer
-    if "/glade" in universal_folder:
-        domain = math.prod(reader.nx)
-        vol = math.prod(reader.lx)
-        dims = (1, 2, 3)
-        S = reader.lazy_field('S').compute()
-        # volume integral of S value in domain
-        S_int = np.mean(S, axis = dims)*vol*rho0
-    else:
-        file_path = os.path.join(reader.folder, 'binning_rtz.h5')
-        with h5py.File(file_path, 'r') as f:
-            S_int = f["S mass"][:]
-            dmdt_reader = f["time gradient of S mass"][:]
+    file_path = os.path.join(reader.folder, 'binning_rtz.h5')
+    with h5py.File(file_path, 'r') as f:
+        S_int = f["S mass"][:]
+        dmdt_reader = f["time gradient of S mass"][:]
+        S_min_loc = f["min of S"][:]
+        S_max_loc = f["max of S"][:]
+    S_mass.append(S_int)
     if tracer_integral or mass_divergence:
-        S_mass.append(S_int)
         if "glade" in universal_folder:
             dmdt.append(np.gradient(S_mass[n], t[n]))
         else:
             dmdt.append(dmdt_reader)
         if mass_divergence:
             w = reader.lazy_field('w').compute()
-            reader.load_equation_of_state()
+            
             dwdz = np.gradient(w, reader.zf, axis=-1)
 
             dmw_top = np.sum(dwdz[:, :, :, 0].squeeze(), axis = (1, 2))
@@ -112,20 +130,25 @@ for n, reader in enumerate(readers):
             div_bottom.append(dmw_bottom)
 
             div_faces.append(div_top[-1] + div_bottom[-1]) 
+    if w_surface:
+        w_loc = reader.load_plane_var('w', plane = 'XY')
+        w_min.append(np.min(w_loc, axis = (1, 2)))
+        w_max.append(np.max(w_loc, axis = (1, 2)))
+        w_sum.append(np.sum(w_loc, axis = (1, 2)))
 
     if neg_tracer:
-        S_neg = S
+        S = reader.lazy_field('S').compute()
+        S_neg = S.copy()
         S_neg[S>=0] = None
         # sum of S values in domain
         S_sum.append(np.sum(S, axis = dims))
         dSdt.append(np.gradient(S_sum[n], t[n]))
         # minimum S value in domain
-        S_min.append(np.min(S, axis = dims))
+        S_min.append(S_min_loc)
+        S_max.append(S_max_loc)
         # negative number of negative values appearing in domain 
         neg_avg.append(np.nanmean(S_neg, axis = dims))
         S_neg_count = np.sum(S<0, axis = dims)
-        S_neg_sum.append(np.nansum(S_neg, axis = dims))
-        percents.append(np.nansum(S_neg, axis = dims)/domain*100)
     if area_scaling:
         Nr = area_scale(rp, reader.dx[0])
         grid_area = Nr*reader.dx[0]*reader.dx[1]
@@ -136,16 +159,19 @@ for n, reader in enumerate(readers):
 
         if neg_tracer:
             neg_avg[n] = neg_avg[n]*factor[n]
-            S_neg_sum[n] = S_neg_sum[n]*factor[n]
             S_sum[n] = S_sum[n]*factor[n]
+            S_mass[n] = S_mass[n]*factor[n]
             dSdt[n] = dSdt[n]*factor[n]
 
+# ==========================================================
+# PLOTTING
+# ==========================================================
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
 if tracer_integral:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
-    fig, axes = plt.subplots(2, 2, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw)
+    fig, axes = plt.subplots(2, 3, figsize=(12, 6), gridspec_kw = gridspec_kw)
     for a in axes[-1, :]:
             a.remove()
     axes = axes.ravel()
@@ -155,7 +181,7 @@ if tracer_integral:
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=leg_col,
-            bbox_to_anchor=(0.5, 0.005), fontsize = 10)
+            bbox_to_anchor=(0.5, 0.005))
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
         mass_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\pi r_{p}^2}{N_{r}d_{x}d_{y}}\langle\text{C}\rangle_{\text{xyz}}$[g]'
@@ -164,39 +190,45 @@ if tracer_integral:
         mass_label = r'$\rho_{0}L_{x}L_{y}L_{z}\langle\text{C}\rangle_{\text{xyz}}$[g]'
         mass_rate_label = r'$\rho_{0}L_{x}L_{y}L_{z}\frac{\text{d}\langle\text{C}\rangle_{\text{xyz}}}{\text{dt}}$[g/days]'
 
-    axes[0].set_title('Mass', fontsize = 12)
-    axes[0].set_xlabel('Time (days)', fontsize = 12)
-    axes[0].set_ylabel(mass_label, fontsize = 12)
+    axes[0].set_title('Mass')
+    axes[0].set_xlabel('Time (days)')
+    axes[0].set_ylabel(mass_label)
 
-    axes[1].set_title(r'Temporal rate of Mass', fontsize = 12)
-    axes[1].set_xlabel('Time (days)', fontsize = 12)
-    axes[1].set_ylabel(mass_rate_label, fontsize = 12)
+    axes[1].set_title(r'Temporal rate of Mass')
+    axes[1].set_xlabel('Time (days)')
+    axes[1].set_ylabel(mass_rate_label)
     dmdt_flat = list(itertools.chain.from_iterable(dmdt))
     mass_rate = [min(dmdt_flat), max(dmdt_flat)]
     axes[1].set_ylim(mass_rate[0]*0.9, mass_rate[1]*1.1)
 
+    axes[2].set_title('Percent difference in mass\nfrom control case')
+    axes[2].set_xlabel('Time (days)')
+    axes[2].set_ylabel(r'$\frac{(\text{S} - \text{S}_{\text{control}})}{\text{S}_{\text{control}}} $[%]')
+
     for n in range(num_cases):
         axes[0].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
         axes[1].plot(t[n], dmdt[n], color = color_opt[n], label=case_names[n])
+        if n>0:
+            if len(S_mass[n]) == len(S_mass[0]):
+                axes[2].plot(t[n], (S_mass[n] - S_mass[0])/S_mass[0]*100, color = color_opt[n], label=case_names[n])
+            else:
+                min_len = min(len(S_mass[n]), len(S_mass[0]))
+                axes[2].plot(t[n][:min_len], (S_mass[n][:min_len] - S_mass[0][:min_len])/S_mass[0][:min_len]*100, color = color_opt[n], label=case_names[n])
 
     for a in axes[:4]:
         if a.get_yscale() != 'log':
             a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3), useOffset=False)
     fig.tight_layout(pad=1.5)
 
-    outdir = os.path.join(universal_folder, 'callback comparisons')
-    os.makedirs(outdir, exist_ok=True)
     if "/glade" in universal_folder:
         variations += ' with fields'
-    else:
-        variations += ' with binned data'
     if area_scaling:
         variations += f' and area scaling'
-    plt.savefig(os.path.join(outdir, variations + ' comparisons.svg'))
+    plt.savefig(os.path.join(fig_folder, variations + ' comparisons mass.svg'))
 if mass_divergence:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
-    fig, axes = plt.subplots(2, 1, figsize=(8, 6), dpi = 300, gridspec_kw = gridspec_kw)
+    fig, axes = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw = gridspec_kw)
     axes = axes.ravel()
     axes[-1].remove()
     #plt.subplots_adjust(top=0.9, right=0.8)
@@ -205,11 +237,11 @@ if mass_divergence:
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=leg_col,
-            bbox_to_anchor=(0.5, 0.005), fontsize = 10)
+            bbox_to_anchor=(0.5, 0.005))
 
-    axes[0].set_xlabel('Time (days)', fontsize = 12)
-    #axes[0].set_ylabel(r'$\frac{\partial\text{m}}{\partial t} + \nabla\cdot$ ($\text{m}$u$_i$)', fontsize = 12)
-    axes[0].set_ylabel(r'$\frac{\partial\text{w}}{\partial z}_{bottom} - \frac{\partial\text{w}}{\partial z}_{top}$', fontsize = 12)
+    axes[0].set_xlabel('Time (days)')
+    #axes[0].set_ylabel(r'$\frac{\partial\text{m}}{\partial t} + \nabla\cdot$ ($\text{m}$u$_i$)')
+    axes[0].set_ylabel(r'$\frac{\partial\text{w}}{\partial z}_{bottom} - \frac{\partial\text{w}}{\partial z}_{top}$')
 
     for n in range(num_cases):
         if n == 0: #, marker = 'o', markersize=3
@@ -218,12 +250,6 @@ if mass_divergence:
             axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dashed', label=r'$\frac{\partial\text{w}}{\partial z}_{bottom}$')
             axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dotted', label=r'$\frac{\partial\text{w}}{\partial z}_{top}$')
         else:
-            #axes[0].plot(t[n], div_east[n], color = color_opt[n], linestyle = 'dashed')
-            #axes[0].plot(t[n], div_west[n], color = color_opt[n], linestyle = 'dotted')
-            #axes[0].plot(t[n], div_north[n], color = color_opt[n], linestyle = 'dashdot')
-            #axes[0].plot(t[n], div_south[n], color = color_opt[n], linestyle = 'dashdot')
-            #axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dashed')
-            #axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dotted')
             axes[0].plot(t[n], div_faces[n], color = color_opt[n], linestyle = 'solid')
             axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dashed')
             axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dotted')
@@ -234,76 +260,73 @@ if mass_divergence:
         if a.get_yscale() != 'log':
             a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3), useOffset=False)
 
-    outdir = os.path.join(universal_folder, 'callback comparisons')
-    os.makedirs(outdir, exist_ok=True)
-    plt.savefig(os.path.join(outdir, variations + ' divergence_edges_all.svg'))
+    plt.savefig(os.path.join(fig_folder, variations + ' divergence_edges_all.svg'))
 
 if neg_tracer:
-    scale = [1, 1, 0.02]
-    gridspec_kw={'height_ratios': scale}
-    fig, axes = plt.subplots(3, 4, figsize=(16, 8), dpi = 300, gridspec_kw = gridspec_kw, sharex = True)
-    for a in axes[-1, :]:
-            a.remove()
+    fig, axes = plt.subplots(2, 2, figsize=(12, 12), sharex = True)
     axes = axes.ravel()
-    plt.subplots_adjust(top=0.9)
-    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
-    fig.legend(handles=case_handles,
-            loc='lower center',
-            ncol=num_cases,
-            bbox_to_anchor=(0.52, 0.005), fontsize = 12)
     if area_scaling:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
 
-    axes[0].set_title(r'-S$_{avg}$', fontsize = 12)
-    axes[0].set_ylabel('[g/kg]', fontsize = 12)
-
-    axes[1].set_title('Maximum magnitude of -S values', fontsize = 12)
-    axes[1].set_yscale('log')
-    axes[1].set_ylabel('[g/kg]', fontsize = 12)
-
-    axes[2].set_title('Sum of -S in domain', fontsize = 12)
-    axes[2].set_ylabel('[g/kg]', fontsize = 12)
-
-    axes[3].set_title('Percent of -S values', fontsize = 12)
-    axes[3].set_ylabel('% of domain', fontsize = 12)
-
-    axes[0].set_title(r'S$_{avg}$', fontsize = 12)
-    axes[0].set_xlabel('Time (days)', fontsize = 12)
-    axes[0].set_ylabel('[g/kg]', fontsize = 12)
-
-    axes[1].set_title(r'dS$_{avg}$/dt', fontsize = 12)
-    axes[1].set_xlabel('Time (days)', fontsize = 12)
-    axes[1].set_ylabel('[g/kg/days]', fontsize = 12)
-
-    axes[2].set_title('Sum of S in domain', fontsize = 12)
-    axes[2].set_xlabel('Time (days)', fontsize = 12)
-    axes[2].set_ylabel('[g/kg]', fontsize = 12)
-
-    axes[3].set_title(r'dS$_{sum}$/dt', fontsize = 12)
-    axes[3].set_xlabel('Time (days)', fontsize = 12)
-    axes[3].set_ylabel('[g/kg/days]', fontsize = 12)
-
     for n in range(num_cases):
-        axes[0].plot(t[n], np.abs(neg_avg[n]), color = color_opt[n], label=case_names[n])
-        axes[1].plot(t[n], np.abs(S_min[n]), color = color_opt[n], label=case_names[n])
-        axes[3].plot(t[n], percents[n], color = color_opt[n], label=case_names[n])
-        axes[2].plot(t[n], S_neg_sum[n], color = color_opt[n], label=case_names[n])
-        axes[0].plot(t[n], S_avg[n], color = color_opt[n], label=case_names[n])
-        axes[1].plot(t[n], dS_intdt[n], color = color_opt[n], label=case_names[n])
-        axes[2].plot(t[n], S_sum[n], color = color_opt[n], label=case_names[n])
-        axes[3].plot(t[n], dSdt[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
+        axes[1].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
+        axes[2].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
+        axes[3].plot(t[n], S_max[n], color = color_opt[n], label=case_names[n])
 
-    for a in axes[:8]:
-        if a.get_yscale() != 'log':
+    axes[0].set_title(r'S$_{mass}$')
+    axes[0].set_ylabel(r'$\rho_{0}L_{x}L_{y}L_{z}\langle\text{C}\rangle_{\text{xyz}}$[g]')
+    axes[0].legend(loc='upper left', handlelength = 0.55)
+
+    axes[1].set_title(r'-S$_{avg}$')
+    axes[1].set_ylabel('[g/kg]')
+
+    axes[2].set_title('Minimum of S')
+    axes[2].set_xlabel('Time (days)')
+    axes[2].set_yscale('symlog', linthresh=1e-12)
+    axes[2].set_ylim(-10**-2, -10**-8)
+    axes[2].set_ylabel('[g/kg]')
+
+    axes[3].set_title('Maximum of S')
+    axes[3].set_xlabel('Time (days)')
+    axes[3].set_ylabel('[g/kg]')
+
+    for a in axes:
+        if a.get_yscale() != 'symlog':
             a.ticklabel_format(axis='y', style='sci', scilimits=(0, 3))
     fig.tight_layout(pad=1.5)
 
-    outdir = os.path.join(universal_folder, 'callback comparisons')
-    os.makedirs(outdir, exist_ok=True)
     if "/glade" in universal_folder:
-        variations += ' with fields'
-    else:
-        variations += ' with binned data'
+        variations += ' with fields on Derecho'
     if area_scaling:
         variations += f' and area scaling'
-    plt.savefig(os.path.join(outdir, variations + ' neg_tracer.svg'))
+    plt.savefig(os.path.join(fig_folder, variations + ' neg_tracer.svg'))
+
+if w_surface:
+    scale = [1, 0.05]
+    gridspec_kw={'height_ratios': scale}
+    fig, axes = plt.subplots(2, 3, figsize=(12, 6), gridspec_kw = gridspec_kw)
+    for a in axes[-1, :]:
+        a.remove()
+    axes = axes.ravel()
+    #plt.subplots_adjust(top=0.9, right=0.8)
+    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
+    leg_col = num_cases//2 if num_cases > 4 else num_cases
+    fig.legend(handles=case_handles,
+            loc='lower center',
+            ncol=leg_col,
+            bbox_to_anchor=(0.5, 0.005))
+
+    axes[0].set_xlabel('Time (days)')
+    axes[0].set_ylabel(r'$\text{w}_{min}$')
+    axes[1].set_xlabel('Time (days)')
+    axes[1].set_ylabel(r'$\text{w}_{max}$')
+    axes[2].set_xlabel('Time (days)')
+    axes[2].set_ylabel(r'$\text{w}_{sum}$')
+
+    for n in range(num_cases):
+        axes[0].plot(t[n], w_min[n], color = color_opt[n])
+        axes[1].plot(t[n], w_max[n], color = color_opt[n])
+        axes[2].plot(t[n], w_sum[n], color = color_opt[n])
+
+    plt.savefig(os.path.join(fig_folder, variations + ' w_surface.svg'))

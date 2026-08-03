@@ -99,7 +99,7 @@ if vertical_verification:
     ncols = idx.size
     os.makedirs(fig_folder_vert, exist_ok=True)
     for it in range(nt):
-        fig, axes = plt.subplots(2, ncols, figsize=(16, 5), sharey = True, gridspec_kw=gridspec_kw)
+        fig, axes = plt.subplots(2, ncols, figsize=(12, 4), sharey = True, gridspec_kw=gridspec_kw)
         for ax in axes[-1, :]:
             ax.remove()
         for ax in axes[0, :]:
@@ -108,7 +108,7 @@ if vertical_verification:
             ax.set_ylabel("z [m]")
             ax.set_xlabel("w [m/s]")
         axes = axes.ravel()
-        fig.suptitle(f"Time = {time[it]/3600/24:.2f} days", fontsize=12)
+        fig.suptitle(f"Time = {time[it]/3600/24:.2f} days", )
         fig.legend(handles=case_handles,
                 loc='lower center',
                 ncol=nvars,
@@ -133,7 +133,7 @@ if vertical_verification:
 if horizontal_verification:
     ncols = hor_idx.size 
     for it in range(nt):
-        fig, axes = plt.subplots(3, ncols, figsize=(16, 8.5), sharey = True, gridspec_kw=gridspec_kw)
+        fig, axes = plt.subplots(3, ncols, figsize=(12, 6.5), sharey = True, gridspec_kw=gridspec_kw)
         for ax in axes[-1, :]:
             ax.remove()
         for ax in axes[0, :]:
@@ -148,7 +148,7 @@ if horizontal_verification:
             ax.set_xlabel("y [m]")
             ax.set_ylabel("v [m/s]")
         axes = axes.ravel()
-        fig.suptitle(f"Time = {time[it]/3600/24:.2f} days", fontsize=12)
+        fig.suptitle(f"Time = {time[it]/3600/24:.2f} days", )
         fig.legend(handles=case_handles,
                 loc='lower center',
                 ncol=nvars,

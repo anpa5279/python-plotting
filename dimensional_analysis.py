@@ -80,7 +80,7 @@ lx = []
 if salinity:
     dense_plume = []
 
-for i, reader in enumerate(readers):
+for n, reader in enumerate(readers):
     t_save.append(reader.t_save)
     z.append(reader.z)
     nx.append(reader.nx)
@@ -203,7 +203,7 @@ if ND:
         T_fluc_center = np.zeros((nx[2], num_cases))
         S_fluc_center = np.zeros((nx[2], num_cases))
         S_avg = np.zeros((nx[2], num_cases))
-        for i, reader in enumerate(readers):
+        for n, reader in enumerate(readers):
             vel_rms_avgt, bw_avgt, T_avgt, S_avgt, r_plume_avgt = reader.load_temporal_averages('interp_temporal_averages.h5', temperature=True, salinity=salinity)
             w_rms[:, i] = vel_rms_avgt['w_rms']
             b_avg[:, i] = bw_avgt['b_avg']
@@ -289,7 +289,7 @@ else:
             b_plane = []
             bw_plane = []
             rho_fluc_plane = []
-        for i, reader in enumerate(readers):
+        for n, reader in enumerate(readers):
             # Load data from files
             u = reader.lazy_field('u', steps = reader.t_save[it])
             v = reader.lazy_field('v', steps = reader.t_save[it])

@@ -248,7 +248,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     ar = np.ones(nrows + 1)
     ar[-1] = 0.02 # add space for universal legend
     gridspec_kw={'height_ratios': ar} # add space for universal legend
-    fig, axes = plt.subplots(nrows + 1, ncols, figsize=(15, 14), gridspec_kw=gridspec_kw, sharey = True)
+    fig, axes = plt.subplots(nrows + 1, ncols, figsize=(12, 10), gridspec_kw=gridspec_kw, sharey = True)
     plt.subplots_adjust(bottom=0.05)
     for a in axes[2, :]:
         a.remove()
@@ -262,7 +262,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
             bbox_to_anchor=(0.52, 0.001))
     axes = axes.ravel()
     td = time / 3600 / 24
-    fig.suptitle(f'{td:.2f} days', fontsize=12)
+    fig.suptitle(f'{td:.2f} days', )
     """
     ax[0] = velocity rms
     ax[1] = Reynolds stresses
@@ -371,7 +371,7 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     fig = plt.figure()
     fig.set_figheight(7)
     fig.set_figwidth(22)
-    fig.suptitle(f'{td:.2f} days', fontsize=12) 
+    fig.suptitle(f'{td:.2f} days', ) 
 
     ax1 = plt.subplot2grid(shape=(4, 10), loc=(0, 0), rowspan=2, colspan=2)
     ax2 = plt.subplot2grid(shape=(4, 10), loc=(0, 2), rowspan=2, colspan=2)
@@ -555,10 +555,10 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         ]
     for it, t in enumerate(time):
         if num_cases==1:
-            fig, axes = plt.subplots(2, 4, figsize=(1, 8))
+            fig, axes = plt.subplots(2, 4, figsize=(12, 8))
         else:
             gridspec_kw={'height_ratios': [1, 1, 0.05]} # add space for universal legend
-            fig, axes = plt.subplots(3, 4, figsize=(13, 10), gridspec_kw=gridspec_kw)
+            fig, axes = plt.subplots(3, 4, figsize=(12, 10), gridspec_kw=gridspec_kw)
             for a in axes[2, :]:
                 a.remove()
             fig.legend(handles=case_handles,
@@ -567,7 +567,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
                     bbox_to_anchor=(0.52, 0.0))
 
         td = t / 3600 / 24
-        fig.suptitle(f'{td:.2f} days', fontsize=12)
+        fig.suptitle(f'{td:.2f} days', )
 
         ax1 = axes[0, 0]
         ax2 = axes[0, 1]
@@ -715,7 +715,7 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
                 bbox_to_anchor=(0.52, 0.015))
 
     td = time[it] / 3600 / 24
-    fig.suptitle(f'{td:.2f} days', fontsize=12)
+    fig.suptitle(f'{td:.2f} days', )
 
     ax1 = axes[0, 0] # u, v, w through horizontal centerline
     ax2 = axes[0, 1] # horizontal buoyancy flux through horizontal centerline
@@ -827,7 +827,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral,
     ar = np.ones(nrows)
     ar[-1] = 0.05 # add space for universal legend
     gridspec_kw={'height_ratios': ar} # add space for universal legend
-    fig, axes = plt.subplots(nrows, ncols, figsize=(15, 6), gridspec_kw=gridspec_kw, sharey = True)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(12, 8), gridspec_kw=gridspec_kw, sharey = True)
     for a in axes[-1, :]:
         a.remove()
     case_handles = [

@@ -76,11 +76,14 @@ def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, 
         ranges[key] = np.array(ranges[key])
     return ranges
 ## for multiple case comparison plotting
-def comparison_plot_opt(ncases):
-    colors = ['black', 'red', 'blue', 'green', 'orange', 'purple', 'pink', 'gray', 'olive', 'cyan', 'magenta']
+def comparison_plot_opt(ncases, markers = False):
+    colors = ['black', 'red', 'orange', 'blue', 'green', 'purple', 'pink', 'gray', 'olive', 'cyan', 'magenta']
     line_styles = ['solid', 'dashed', 'dotted', 'dashdot', 'dashdotted']
-
-    return colors[:ncases], line_styles[:ncases]
+    if markers:
+        markers = ['o', 's', '^', 'D', 'v', '*', 'x', '+', 'p', 'h']
+        return colors[:ncases], line_styles[:ncases], markers[:ncases]
+    else:
+        return colors[:ncases], line_styles[:ncases]
 ### -------------------------SAVING FRAMES AND MAKING VIDEOS------------------------- ###
 def create_video(outdir, fig_folder, name, plot_type):
     print("Creating video...")

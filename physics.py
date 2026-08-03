@@ -63,7 +63,7 @@ def buoyancy(reader, type = 'field'):
         if reader.salinity:
             S = reader.load_binning_var('S')
     g = 9.80665
-    reader.load_equation_of_state()
+    
     alpha = reader.alpha
     if not reader.salinity:
         b = g * alpha * (T - reader.T0)

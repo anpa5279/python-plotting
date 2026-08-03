@@ -43,49 +43,17 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         mld = np.array([60, 50, 70, 60, 60, 60, 60, 60, 60]) # mld in m
         dTdz = np.array([0.01, 0.01, 0.01, 0.005, 0.05, 0.1, 0.01, 0.01, 0.01]) # background temperature gradient in K/m
         F_s = wp * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
-    elif variations == 'Lz160m':
-        folder_names =[#'S0 = 0.0 dTdz = 0.01 MLD = 60', 
-                       'S0 = 0.1 dTdz = 0.01 MLD = 60', 
-                       'S0 = 0.1 dTdz = 0.01 MLD = 70', 
-                       'S0 = 0.2 dTdz = 0.01 MLD = 60']
-        case_names =[#r'F$_{\text{C}} = 0.0, MLD = 60m, dTdz = 0.01', 
-                     r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', 
-                     r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', 
-                     r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = [60, 70, 60]
-        F_s = wp * 0.1 * np.ones(num_cases) 
-        #F_s[0] = 0.0
-        F_s[2] = wp * 0.2
-    elif variations == 'vertical length':
-        folder_names =['nz = 77 z = 96.25 m', 'nz = 128 z = 160 m', 'nz = 192 z = 240 m']
-        case_names =[r'L$_{\text{z}}$ = 96.25 m', r'L$_{\text{z}}$ = 160 m', r'L$_{\text{z}}$ = 240 m']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases) 
     elif variations == 'vertical resolution':
         folder_names =['dz05', 
                        'dz025',
                        'dz0125',
-                       'dz00625'
+                       #'dz00625'
                        ]
-        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m', r'$\Delta z = 0.125$m', r'$\Delta z = 0.0625$m']
+        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m', r'$\Delta z = 0.125$m']#, r'$\Delta z = 0.0625$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
         F_s = wp * 0.1 * np.ones(num_cases)
-        #folder_names =['vertical/dz2', 
-        #            'vertical/dz1', 
-        #            'ground0', 
-        #            'vertical/dz025'
-        #            ]
-        #case_names =[r'$\Delta z = 2.0$m', r'$\Delta z = 1.0$m', r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']
-        #num_cases = len(folder_names)
-        #dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        #mld = 60 * np.ones(num_cases)
-        #F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'AR=1':
         folder_names =[
                     'dz05',
@@ -100,12 +68,16 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         F_s = wp * 0.1 * np.ones(num_cases)    
     elif variations == 'closure':
         folder_names =[
+                    'dx1',
                     'dx05',
                     'dx025', 
-                    'dx0125', 
-                    #'dx00625', 
+                    #'dx0125', 
                        ]
-        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m',]
+        case_names =[r'$\Delta x = 1.0$m', 
+                     r'$\Delta x = 0.5$m', 
+                     r'$\Delta x = 0.25$m', 
+                     #r'$\Delta x = 0.125$m'
+                     ]
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -114,9 +86,9 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         folder_names =['dz05', 
                        'dx025', 
                        'dx0125', 
-                       'dx00625', 
+                       #'dx00625', 
                        ]
-        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m', r'$\Delta x = 0.0625$m']
+        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m']
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -314,7 +286,7 @@ def vel_to_cylindrical(u, v, X, Y):
 ### -------------------------CALCULATING 1D AVERAGES------------------------- ###
 def compute_temporal_averages(reader, start=10):
     # Load constants once
-    reader.load_equation_of_state()
+    
 
     # Load all fields lazily — shape (nt - start, nx, ny, nz)
     S = reader.field_centerline('S')
@@ -343,7 +315,7 @@ def compute_temporal_averages(reader, start=10):
     }
 def compute_fluct_averages(reader):
     # Load constants once
-    reader.load_equation_of_state()
+    
     g = 9.80665
     T0 = 25
     alpha = reader.alpha

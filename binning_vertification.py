@@ -49,7 +49,7 @@ else:
     ncols = 3
     field = ''
     width_opt = np.ones(ncols)
-fig, axes = plt.subplots(1, 3, figsize=(5*ncols+1, 5), gridspec_kw={'width_ratios': width_opt})
+fig, axes = plt.subplots(1, ncols, figsize=(12, 5), gridspec_kw={'width_ratios': width_opt})
 axes = axes.ravel()
 for i, bin in enumerate(binned):
     axes[0].scatter(r[i], bin, color=color_opt[i + 1], label=rf'dr/$\sigma$ = {dr_bins[i]/s}', marker='x')

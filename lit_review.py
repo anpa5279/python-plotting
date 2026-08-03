@@ -195,14 +195,14 @@ if with_mld:
     # ── Axis formatting ────────────────────────────────────────────────────────────
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xlabel(r'$L_n / r_0$', fontsize=12)
-    ax.set_ylabel(r'$h_{ml} / r_0$', fontsize=12)
+    ax.set_xlabel(r'$L_n / r_0$', )
+    ax.set_ylabel(r'$h_{ml} / r_0$', )
     ax.tick_params(labelsize=10)
     ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    fig.suptitle('Literature Review', fontsize=12)
+    fig.suptitle('Literature Review', )
 
     # ── Legend ─────────────────────────────────────────────────────────────────────
     fig.legend(
@@ -210,7 +210,6 @@ if with_mld:
         loc='lower center',
         bbox_to_anchor=(0.5, 0.0),
         ncol=2,
-        fontsize=9,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
         title='Studies', title_fontsize=12,
@@ -252,14 +251,14 @@ if with_mld:
     # ── Axis formatting ────────────────────────────────────────────────────────────
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xlabel(r'$L_n / r_0$', fontsize=12)
-    ax.set_ylabel(r'$h_{ml} / L_n$', fontsize=12)
+    ax.set_xlabel(r'$L_n / r_0$', )
+    ax.set_ylabel(r'$h_{ml} / L_n$', )
     ax.tick_params(labelsize=10)
     ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    fig.suptitle('Literature Review', fontsize=12)
+    fig.suptitle('Literature Review', )
 
     # ── Legend ─────────────────────────────────────────────────────────────────────
     fig.legend(
@@ -267,7 +266,6 @@ if with_mld:
         loc='lower center',
         bbox_to_anchor=(0.5, 0.0),
         ncol=2,
-        fontsize=9,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
         title='Studies', title_fontsize=12,
@@ -405,7 +403,7 @@ else:
     # ── Figure ─────────────────────────────────────────────────────────────────────
     scale = [0.15, 0.9, 0.05]
     gridspec_kw = {'height_ratios': scale}
-    fig, axes_grid = plt.subplots(3, 1, figsize=(16, 9), sharex = True,  gridspec_kw=gridspec_kw)
+    fig, axes_grid = plt.subplots(3, 1, figsize=(12, 7), sharex = True,  gridspec_kw=gridspec_kw)
 
     # Remove the dummy bottom row axes used for legend space
     axes_grid[0].remove()
@@ -446,7 +444,7 @@ else:
 
     # ── Axis formatting ────────────────────────────────────────────────────────────
     ax0.set_yscale('log')
-    ax0.set_ylabel(r'$h_{ml} / r_0$', fontsize=12)
+    ax0.set_ylabel(r'$h_{ml} / r_0$', )
     ax0.tick_params(labelsize=10)
     ax0.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
     ax0.spines['top'].set_visible(False)
@@ -482,8 +480,8 @@ else:
     ax1.xaxis.set_major_locator(ticker.LogLocator())
     ax1.set_ylim(-0.01, 0.01)
     ax1.set_xscale('log')
-    ax1.set_xlabel(r'$L_n / r_0$', fontsize=12)
-    ax1.set_yticks([-0.01], labels=[r'$h_{ml} / r_0$=0'], fontsize=12)
+    ax1.set_xlabel(r'$L_n / r_0$', )
+    ax1.set_yticks([-0.01], labels=[r'$h_{ml} / r_0$=0'], )
     ax1.tick_params(labelsize=10)
     ax1.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
     ax1.spines['top'].set_visible(False)
@@ -496,7 +494,6 @@ else:
         loc='upper center',
         bbox_to_anchor=(0.525, 0.95),
         ncol=4,
-        fontsize=9,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
         title='Studies', title_fontsize=12,

@@ -50,7 +50,7 @@ color_opt, line_opt = comparison_plot_opt(len(dzs))
 ncols = 3
 nrows = 1
 width_opt = np.ones(ncols)
-fig, axes = plt.subplots(nrows, ncols, figsize=(4*ncols, 4*nrows), sharey = True)
+fig, axes = plt.subplots(nrows, ncols, figsize=(12, 4), sharey = True)
 axes = axes.ravel()
 axes[0].plot(T_erf, z_true, color='k')
 axes[0].plot([-100, 100], -hml* np.ones(2), linestyle='dashed', linewidth=0.5, color='k')

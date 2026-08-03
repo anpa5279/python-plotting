@@ -59,18 +59,18 @@ nx = []
 dense_plume = []
 time = []
 
-for i, reader in enumerate(readers):
+for n, reader in enumerate(readers):
     lz = np.max((lz, reader.lx[-1]))
     time.append(reader.t)
     nt = min((nt, len(time[i])))
 
     S_value = reader.load_S_temporal_avg()
-    reader.load_equation_of_state()
+    
 
 z = []
 r_scale = []
 r_contour = [] 
-for i, reader in enumerate(readers):
+for n, reader in enumerate(readers):
     start = 7
     r_profile = np.zeros([len(contours), reader.nx[2], len(time[i])])
     z_max = np.zeros([len(time[i]) - start, len(contours)])
@@ -89,7 +89,7 @@ for i, reader in enumerate(readers):
     r_contour.append(r_profile)
 
 ############ PLOTTING ############
-plot_format(fontsize = 10)
+plot_format()
 num_cases = len(case_names)
 outdir = os.path.join(fig_folder, 'tracer radius with depth in time')
 os.makedirs(outdir, exist_ok=True)
@@ -100,7 +100,7 @@ for it in range(nt):
     fig, axes = plt.subplots(2, ncols, figsize=(3.5*ncols, 5), sharey = True, gridspec_kw=gridspec_kw)
     for a in axes[-1, :]:
         a.remove()
-    fig.suptitle(f"Time = {time[0][it]/3600/24:.2f} days", fontsize=12)
+    fig.suptitle(f"Time = {time[0][it]/3600/24:.2f} days", )
     case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=f"Contour = {contours[i]:.2e} ")for i in range(len(contours))]
     fig.legend(handles=case_handles,
             loc='lower center',
@@ -113,7 +113,7 @@ for it in range(nt):
         ax.set_ylim(-lz, 0)
         ax.set_xlim(0, max(r_bin)*1.1)
         ax.set_xlabel("Radius [m]")
-        ax.set_title(case_names[i], fontsize = 12)
+        ax.set_title(case_names[i])
         ax.set_aspect('equal')
         if i == 0:
             ax.set_ylabel('Depth [m]')

@@ -64,7 +64,7 @@ else:
 
 # load in information
 w_centerline = reader.field_centerline('w')
-reader.load_equation_of_state()
+
 b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
 if plot_zt and reader.salinity:
     if reader.centerline:
@@ -173,7 +173,7 @@ if plot_raw_output:
         colors = ['RdBu', 'viridis']
         labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]']
         vars = [w_output, T_output]
-        fig, axes = plt.subplots(4, 2, figsize=(7, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
+        fig, axes = plt.subplots(4, 2, figsize=(12, 27), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
         file = 'wT_outputs_zt.svg'
     ratio = (time.max()/(3600*24))/lx[2]
     axes = axes.ravel()
@@ -209,7 +209,7 @@ if plot_zt:
         colors = ['RdBu', 'Blues', 'RdBu', 'Blues', 'Blues', 'Blues']
         labels = ['[m/s]', '[g/kg]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]', '[m/s]']
         vars = [w_centerline, S_centerline, b_fluc_centerline, w_rms, b_rms, u_r_rms.T]
-        fig, axes = plt.subplots(1, 6, figsize=(30, 5.5))
+        fig, axes = plt.subplots(1, 6, figsize=(12, 4))
         file = 'wSbur_rms_zt.svg'
     else:
         range_opt = [ranges['w'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms']]
@@ -217,7 +217,7 @@ if plot_zt:
         colors = ['RdBu', 'RdBu', 'Blues', 'Blues']
         labels = ['[m/s]', r'[m/s$^2$]', '[m/s]', r'[m/s$^2$]']
         vars = [w_centerline, b_fluc_centerline, w_rms, b_rms]
-        fig, axes = plt.subplots(1, 4, figsize=(20, 5.5))
+        fig, axes = plt.subplots(1, 4, figsize=(12, 4))
         file = 'wb_rms_zt.svg'
 
     ratio = (time.max()/(3600*24))/lx[2]
@@ -248,7 +248,7 @@ if plot_variables:
 
     for it in range(nt):
         td = time[it]/(3600*24)
-        fig, axes = plt.subplots(3, 5, figsize=(20, 9), sharey = True, gridspec_kw=gridspec_kw)
+        fig, axes = plt.subplots(3, 5, figsize=(12, 5), sharey = True, gridspec_kw=gridspec_kw)
         fig.suptitle(f"t = {td:.2f} days")
         for ax in axes[-1, :]:
             ax.remove()
