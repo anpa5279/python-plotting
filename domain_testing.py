@@ -10,14 +10,18 @@ from matplotlib.lines import Line2D
 from plotting_general import plot_format, comparison_plot_opt
 from diagnostics import comparison_info
 from reader import OceananigansData
-# flags for plotting
+
+# ==========================================================
+# FLAGS
+# ==========================================================
 area_scaling = False
-tracer_integral = False
+tracer_mass = False
 mass_divergence = False
-neg_tracer = False
-w_surface = True
+neg_tracer = True
+w_surface = False
 
 salinity = True
+
 # ==========================================================
 # COMPARISON CASES
 # ==========================================================
@@ -90,7 +94,7 @@ S_mass = []
 div_top = []
 div_bottom = []
 div_faces = []
-S_sum = []
+S_neg_percent = []
 neg_avg = []
 S_max = []
 S_min = []
@@ -114,8 +118,11 @@ for n, reader in enumerate(readers):
         dmdt_reader = f["time gradient of S mass"][:]
         S_min_loc = f["min of S"][:]
         S_max_loc = f["max of S"][:]
+        S_neg_count_loc = f["negative S count"][:]
+        S_neg_avg_loc = f["negative S average"][:]
+
     S_mass.append(S_int)
-    if tracer_integral or mass_divergence:
+    if tracer_mass or mass_divergence:
         if "glade" in universal_folder:
             dmdt.append(np.gradient(S_mass[n], t[n]))
         else:
@@ -139,29 +146,22 @@ for n, reader in enumerate(readers):
         w_sum.append(np.sum(w_loc, axis = (1, 2)))
 
     if neg_tracer:
-        S = reader.lazy_field('S').compute()
-        S_neg = S.copy()
-        S_neg[S>=0] = None
-        # sum of S values in domain
-        S_sum.append(np.sum(S, axis = dims))
-        dSdt.append(np.gradient(S_sum[n], t[n]))
         # minimum S value in domain
         S_min.append(S_min_loc)
         S_max.append(S_max_loc)
         # negative number of negative values appearing in domain 
-        neg_avg.append(np.nanmean(S_neg, axis = dims))
-        S_neg_count = np.sum(S<0, axis = dims)
+        neg_avg.append(np.nanmean(S_neg_avg_loc/S_neg_count_loc[:, None, None, None], axis = dims))
+        S_neg_percent.append(S_neg_count_loc/np.prod(reader.nx)*100)
     if area_scaling:
         Nr = area_scale(rp, reader.dx[0])
         grid_area = Nr*reader.dx[0]*reader.dx[1]
         factor.append(area/grid_area)
-        if tracer_integral:
+        if tracer_mass:
             S_mass[n] = S_int*factor[n]
             dmdt[n] = np.gradient(S_mass[n], t[n])
 
         if neg_tracer:
             neg_avg[n] = neg_avg[n]*factor[n]
-            S_sum[n] = S_sum[n]*factor[n]
             S_mass[n] = S_mass[n]*factor[n]
             dSdt[n] = dSdt[n]*factor[n]
 
@@ -170,7 +170,7 @@ for n, reader in enumerate(readers):
 # ==========================================================
 color_opt, line_opt = comparison_plot_opt(num_cases)
 plot_format()
-if tracer_integral:
+if tracer_mass:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
     fig, axes = plt.subplots(2, 3, figsize=(12, 6), gridspec_kw = gridspec_kw)
@@ -272,17 +272,17 @@ if neg_tracer:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
 
     for n in range(num_cases):
-        axes[0].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
-        axes[1].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
+        axes[1].plot(t[n], S_neg_percent[n], color = color_opt[n], label=case_names[n])
         axes[2].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
         axes[3].plot(t[n], S_max[n], color = color_opt[n], label=case_names[n])
 
-    axes[0].set_title(r'S$_{mass}$')
-    axes[0].set_ylabel(r'$\rho_{0}L_{x}L_{y}L_{z}\langle\text{C}\rangle_{\text{xyz}}$[g]')
-    axes[0].legend(loc='upper left', handlelength = 0.55)
+    axes[0].set_title(r'-S$_{avg}$/N$_{cells}$')
+    axes[0].set_ylabel('[g/kg]')
+    axes[0].legend(loc='lower left', handlelength = 0.55)
 
-    axes[1].set_title(r'-S$_{avg}$')
-    axes[1].set_ylabel('[g/kg]')
+    axes[1].set_title('Percent of cells with negative S')
+    axes[1].set_ylabel(r'N$_{\text{negative}}$/N$_{\text{total}}$ [%]')
 
     axes[2].set_title('Minimum of S')
     axes[2].set_xlabel('Time (days)')

@@ -7,16 +7,19 @@ from reader import OceananigansData
 from diagnostics import compute_temporal_averages, compute_fluct_averages, compute_rms, binning_oc
 from interpolation import vertical_line
 
-# set flags
+# ==========================================================
+# FLAGS
+# ==========================================================
 binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = False
 fluc_flag = False # calculates turbulent statistics from binning information
 rms_flag = False # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
 contour_flag = False # calculates radius of contour at each depth and time that is not in the default
 mass_flag = False
+negative_tracer_flag = True # calculates the number of negative tracer values in the domain and the average of those values
 
 # model options
 with_halos = False
@@ -28,16 +31,25 @@ if not salinity:
     contour_flag = False
     mass_flag = False
 
-# Set up folder and simulation parameters
+# ==========================================================
+# READER
+# ==========================================================
 folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
+reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
+
+# ==========================================================
+# PARAMETERS
+# ==========================================================
 g = 9.80665
 T0 = 25.0
 
-reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
+# ==========================================================
+# MODEL INFORMATION
+# ==========================================================
 # grid info
 nx = reader.nx
 nt = reader.nt
@@ -391,8 +403,6 @@ if mass_flag:
     S = reader.lazy_field('S').compute()
     vol = math.prod(reader.lx)
     dims = (1, 2, 3)
-    Smin = np.min(S, axis = dims)
-    Smax = np.max(S, axis = dims)
     # volume integral of S value in domain
     S_mass = np.mean(S, axis = dims)*vol*rho0
     del S
@@ -402,12 +412,32 @@ if mass_flag:
             del f["S mass"]
         if "time gradient of S mass" in f:
             del f["time gradient of S mass"]
+        f.create_dataset("S mass", data=S_mass)
+        f.create_dataset("time gradient of S mass", data=dmdt)
+    print(f"Saved mass calculations to {bin_path}")
+###------------NEGATIVE MASS CALCULATIONS------------------------------------###
+if negative_tracer_flag:
+    rho0 = 1026 # kg/m^3
+    S = reader.lazy_field('S').compute()
+    vol = math.prod(reader.lx)
+    dims = (1, 2, 3)
+    Smin = np.min(S, axis = dims)
+    Smax = np.max(S, axis = dims)
+    S_neg_count = np.sum(S<0, axis = dims)
+    S_neg_avg = np.nanmean(S[S<0], axis = dims)
+    # volume integral of S value in domain
+    S_mass = np.mean(S, axis = dims)*vol*rho0
+    del S
+    dmdt = np.gradient(S_mass, time)
+    with h5py.File(bin_path, "a") as f:
         if "max of S" in f:
             del f["max of S"]
         if "min of S" in f:
             del f["min of S"]
-        f.create_dataset("S mass", data=S_mass)
-        f.create_dataset("time gradient of S mass", data=dmdt)
+        if "negative S count" in f:
+            del f["negative S count"]
         f.create_dataset("max of S", data=Smax)
         f.create_dataset("min of S", data=Smin)
-    print(f"Saved mass calculations to {bin_path}")
+        f.create_dataset("negative S count", data=S_neg_count)
+        f.create_dataset("negative S average", data=S_neg_avg)
+    print(f"Saved negative tracer calculations to {bin_path}")
