@@ -17,7 +17,7 @@ from reader import OceananigansData
 area_scaling = False
 tracer_mass = False
 mass_divergence = False
-neg_tracer = False
+neg_tracer = True
 w_surface = True
 
 salinity = True
@@ -110,7 +110,6 @@ for n, reader in enumerate(readers):
     t.append(reader.t / 3600 / 24)
     domain = math.prod(reader.nx)
     vol = math.prod(reader.lx)
-    dims = (1, 2, 3)
 
     file_path = os.path.join(reader.folder, 'binning_rtz.h5')
     with h5py.File(file_path, 'r') as f:
@@ -140,7 +139,6 @@ for n, reader in enumerate(readers):
         w_min.append(np.min(w_loc, axis = (1, 2)))
         w_max.append(np.max(w_loc, axis = (1, 2)))
         w_sum.append(np.sum(w_loc, axis = (1, 2)))
-
     if neg_tracer:
         with h5py.File(file_path, 'r') as f:
             S_min_loc = f["min of S"][:]
@@ -151,7 +149,7 @@ for n, reader in enumerate(readers):
         S_min.append(S_min_loc)
         S_max.append(S_max_loc)
         # negative number of negative values appearing in domain 
-        neg_avg.append(np.nanmean(S_neg_avg_loc/S_neg_count_loc[:, None, None, None], axis = dims))
+        neg_avg.append(S_neg_avg_loc/S_neg_count_loc)
         S_neg_percent.append(S_neg_count_loc/np.prod(reader.nx)*100)
     if area_scaling:
         Nr = area_scale(rp, reader.dx[0])
@@ -278,12 +276,12 @@ if neg_tracer:
         axes[2].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
         axes[3].plot(t[n], S_max[n], color = color_opt[n], label=case_names[n])
 
-    axes[0].set_title(r'-S$_{avg}$/N$_{cells}$')
+    axes[0].set_title(r'-S$_{avg}$/N$_{\text{negative}}$')
     axes[0].set_ylabel('[g/kg]')
     axes[0].legend(loc='lower left', handlelength = 0.55)
 
     axes[1].set_title('Percent of cells with negative S')
-    axes[1].set_ylabel(r'N$_{\text{negative}}$/N$_{\text{total}}$ [%]')
+    axes[1].set_ylabel(r'N$_{\text{negative}}$/(N$_{x}\cdot$N$_{y}\cdot$N$_{z}$) [%]')
 
     axes[2].set_title('Minimum of S')
     axes[2].set_xlabel('Time (days)')

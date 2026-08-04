@@ -1,0 +1,34 @@
+#!/bin/bash
+nodes=1
+cpus=8
+jobn=postprocessing
+file=oceananigans_derecho_tracer_test.py
+
+cp $file scripts/
+cp diagnostics.py scripts/
+cp interpolation.py scripts/
+cp reader.py scripts/
+cp physics.py scripts/
+
+###uv init scripts
+cd scripts
+
+cat > EXEC_TRACER << EXEC
+#!/bin/sh
+
+#PBS -A UCUB0166
+#PBS -N $jobn
+#PBS -q develop 
+#PBS -j oe
+###PBS -l job_priority=economy
+#PBS -l walltime=00:20:00
+#PBS -l select=1:ncpus=$cpus:mem=235GB
+
+module --force purge
+module load ncarenv/25.10 uv
+
+uv run python $file
+
+EXEC
+
+qsub < EXEC_TRACER

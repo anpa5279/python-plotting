@@ -34,7 +34,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA/dx05'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA/dx2'
 #'/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
 
 print(f"Reading data from {folder}")
@@ -437,6 +437,8 @@ if negative_tracer_flag:
             del f["min of S"]
         if "negative S count" in f:
             del f["negative S count"]
+        if "negative S average" in f:
+            del f["negative S average"]
         f.create_dataset("max of S", data=Smax)
         f.create_dataset("min of S", data=Smin)
         f.create_dataset("negative S count", data=S_neg_count)
