@@ -45,7 +45,7 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols * ar) - 1.5 #+ 0.25 * nrows + 0.5
 
-    fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(3 * num_cases, 6), sharey = True, sharex = True, constrained_layout=True)
     fig.suptitle(title)
     axes = axes.ravel()
     # Force even pixel dimensions at 600 dpi

@@ -21,10 +21,10 @@ from plotting_tracer_convergence import (
 # FLAGS
 # ==========================================================
 
-plot_tracer_slice = True
-plot_tracer_zoom = True
+plot_tracer_slice = False
+plot_tracer_zoom = False
 plot_bintracer_zoom = False
-plot_turbulence = True
+plot_turbulence = False
 plot_salinity = True
 plot_temperature = False
 
@@ -34,32 +34,29 @@ video = True
 # PARAMETERS
 # ==========================================================
 T0 = 25
-contour = 0.005
+contour = 0.01
 S_tol = 1e-6
 
 # ==========================================================
 # COMPARISON CASES
 # ==========================================================
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/no SGS/default WENO/bottom PA/'
-variations = "else"
-if variations != "else":
-    cases_info = comparison_info(variations, universal_folder=universal_folder)
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA'
 
-    case_names = cases_info["case_names"]
-    folder_names = cases_info["folder_names"]
-    num_cases = cases_info["num_cases"]
-    fig_folder = os.path.join(cases_info["fig_folder"], "convergence")
-    F_s = cases_info["F_s"]
-    mld = cases_info["mld"]
-    dTdz = cases_info["dTdz"]
+variations = 'else'
+if variations != 'else':
+    cases_info = comparison_info(variations, universal_folder = universal_folder)
+    case_names = cases_info['case_names']
+    num_cases = cases_info['num_cases']
+    folder_names = cases_info['folder_names']
+    fig_folder = cases_info['fig_folder']
 else:
-    folder_names = ['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#['dz2', 'dz1']#, 'dz05']#['dx2', 'dx1']#, 'dx05']#, 'dx025']#
 
-    case_names =[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$']#, r'$\Delta x = 0.25$']#
-
+    folder_names = ['dx2', 'dx1', 'dx05', 'dx025', 'dx0125']#['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#
+   
+    case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
 
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'horizontal resolution', 'comparison figures', 'convergence')
+    fig_folder = os.path.join(universal_folder, 'comparison figures', 'convergence')
     F_s = 0.1 * np.ones(num_cases)
     mld = 60 * np.ones(num_cases)
     dTdz = 0.01 * np.ones(num_cases)

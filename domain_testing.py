@@ -12,16 +12,17 @@ from diagnostics import comparison_info
 from reader import OceananigansData
 # flags for plotting
 area_scaling = False
-tracer_integral = True
-mass_divergence = True
-neg_tracer = True
+tracer_integral = False
+mass_divergence = False
+neg_tracer = False
 w_surface = True
 
 salinity = True
 # ==========================================================
 # COMPARISON CASES
 # ==========================================================
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/no SGS/default WENO/bottom PA/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA'
+
 variations = "else"
 if variations != "else":
     cases_info = comparison_info(variations, universal_folder=universal_folder)
@@ -34,12 +35,13 @@ if variations != "else":
     mld = cases_info["mld"]
     dTdz = cases_info["dTdz"]
 else:
-    folder_names = ['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#['dz2', 'dz1']#, 'dz05']#['dx2', 'dx1']#, 'dx05']#, 'dx025']#
 
-    case_names =[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$']#, r'$\Delta x = 0.25$']#
+    folder_names = ['dx2', 'dx1', 'dx05', 'dx025', 'dx0125']#['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#
 
+    case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
+    
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'horizontal resolution', 'callback comparisons')
+    fig_folder = os.path.join(universal_folder, 'callback comparisons')
     F_s = 0.1 * np.ones(num_cases)
     mld = 60 * np.ones(num_cases)
     dTdz = 0.01 * np.ones(num_cases)
@@ -49,10 +51,10 @@ os.makedirs(fig_folder, exist_ok=True)
 # READERS
 # ==========================================================
 readers = []
-#with_halos = [True, False, False, False]
+with_halos = [True, True, True, False, False]
 for i, name in enumerate(folder_names):
     folder = os.path.join(universal_folder, name)
-    readers.append(OceananigansData(folder, salinity = salinity, with_halos = True))#with_halos[i]))
+    readers.append(OceananigansData(folder, salinity = salinity, with_halos = with_halos[i]))
 
 if area_scaling:
     def area_scale(r, dx):
@@ -225,6 +227,7 @@ if tracer_integral:
     if area_scaling:
         variations += f' and area scaling'
     plt.savefig(os.path.join(fig_folder, variations + ' comparisons mass.svg'))
+
 if mass_divergence:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
@@ -284,7 +287,7 @@ if neg_tracer:
     axes[2].set_title('Minimum of S')
     axes[2].set_xlabel('Time (days)')
     axes[2].set_yscale('symlog', linthresh=1e-12)
-    axes[2].set_ylim(-10**-2, -10**-8)
+    axes[2].set_ylim(-10**-1, -10**-8)
     axes[2].set_ylabel('[g/kg]')
 
     axes[3].set_title('Maximum of S')
@@ -303,19 +306,9 @@ if neg_tracer:
     plt.savefig(os.path.join(fig_folder, variations + ' neg_tracer.svg'))
 
 if w_surface:
-    scale = [1, 0.05]
-    gridspec_kw={'height_ratios': scale}
-    fig, axes = plt.subplots(2, 3, figsize=(12, 6), gridspec_kw = gridspec_kw)
-    for a in axes[-1, :]:
-        a.remove()
+    fig, axes = plt.subplots(1, 3, figsize=(12, 6))
     axes = axes.ravel()
-    #plt.subplots_adjust(top=0.9, right=0.8)
-    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
-    leg_col = num_cases//2 if num_cases > 4 else num_cases
-    fig.legend(handles=case_handles,
-            loc='lower center',
-            ncol=leg_col,
-            bbox_to_anchor=(0.5, 0.005))
+
 
     axes[0].set_xlabel('Time (days)')
     axes[0].set_ylabel(r'$\text{w}_{min}$')
@@ -325,8 +318,10 @@ if w_surface:
     axes[2].set_ylabel(r'$\text{w}_{sum}$')
 
     for n in range(num_cases):
-        axes[0].plot(t[n], w_min[n], color = color_opt[n])
-        axes[1].plot(t[n], w_max[n], color = color_opt[n])
-        axes[2].plot(t[n], w_sum[n], color = color_opt[n])
+        axes[0].plot(t[n], w_min[n], color = color_opt[n], label=case_names[n])
+        axes[1].plot(t[n], w_max[n], color = color_opt[n], label=case_names[n])
+        axes[2].plot(t[n], w_sum[n], color = color_opt[n], label=case_names[n])
+
+    axes[0].legend(loc='upper left', handlelength = 0.55)
 
     plt.savefig(os.path.join(fig_folder, variations + ' w_surface.svg'))

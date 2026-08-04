@@ -110,6 +110,8 @@ class OceananigansData:
             with h5py.File(os.path.join(self.folder, 'grid_info.jld2'), 'r') as f:
                 if 'grid/Nranks' in f:
                     self.Nranks = f['grid/Nranks'][()]
+                    #if 'GPU' in f['grid/arch'][()].decode('UTF-8'):
+                    #    self.Nranks = 1
                 self.nx = [
                     f['grid/Nx'][()]*self.Nranks if self.grid_specs else f['grid/Nx'][()],
                     f['grid/Ny'][()],

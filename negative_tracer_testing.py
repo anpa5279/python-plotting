@@ -20,7 +20,7 @@ plot_buoyancy_profile = True
 video = True
 
 salinity = True
-with_halos = True
+with_halos = False
 
 # ==========================================================
 # PARAMETERS
@@ -33,7 +33,7 @@ contours = np.array([0.001, 0.005, 0.01, 0.05])
 # ==========================================================
 # MODEL INFORMATION
 # ==========================================================
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/viscosity tests/viscosity and diff 1e-4/default WENO/no closure/dx1'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA/dx0125'
 
 outdir = os.path.join(folder, 'figures')
 reader = OceananigansData(folder, salinity = salinity, with_halos = with_halos, Sval = Sval)

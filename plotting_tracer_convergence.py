@@ -16,6 +16,11 @@ def percent_difference_interp(profile, z_profile, ref_profile, z_ref):
 
     return (100 * (profile - ref_interp) / (np.abs(ref_interp) + 1e-12))
 
+def _save_fixed_size(fig, fname, size_in, dpi=200):
+    size_px = (size_in[0] * dpi, size_in[1] * dpi)
+    fig.set_size_inches(size_px[0] / dpi, size_px[1] / dpi)
+    fig.savefig(fname, dpi=dpi)   # no bbox_inches='tight'
+
 ### ------------------------- TRACER CONVERGENCE PLOTTING FUNCTIONS ------------------------- ###
 ## tracer slice comparison across all cases
 def plot_tracer_slice_comparison(time_sec, it, case_names, ranges, y, z, tracer_fields, Sval, fig_folder):
@@ -48,7 +53,8 @@ def plot_tracer_slice_comparison(time_sec, it, case_names, ranges, y, z, tracer_
     plt.colorbar(im, ax = axes, label = "Tracer", shrink=0.75)
     fig.suptitle(f"t = {time_sec/3600:.2f} hr")
     fname = os.path.join(frame_dir, f"{it:06d}.png")
-    fig.savefig(fname, dpi = 200)
+    _save_fixed_size(fig, fname, (3 * num_cases, 6))
+    #fig.savefig(fname)#, dpi = 200)
     plt.close(fig)
     return frame_dir
 
@@ -91,8 +97,10 @@ def plot_tracer_zoom_comparison(time_sec, it, case_names, ranges, y, z, tracer_f
 
     plt.colorbar(im, ax = axes)
     fig.suptitle(f"t = {time_sec/3600:.2f} hr")
+    fig.set_size_inches(5 * num_cases, 6)
     fname = os.path.join(frame_dir, f"{it:06d}.png")
-    fig.savefig(fname, dpi = 200)
+    _save_fixed_size(fig, fname, (5 * num_cases, 6))
+    #fig.savefig(fname, dpi = 200)
     plt.close(fig)
     return frame_dir
 

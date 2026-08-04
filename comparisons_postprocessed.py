@@ -12,9 +12,9 @@ from plotting_planes import plot_variable_vert_slice, plot_variable_xy_slice
 # ==========================================================
 # FLAGS
 # ==========================================================
-plot_variables_vert = False
+plot_variables_vert = True
 plot_variables_hor = False
-plot_difference_vert = True
+plot_difference_vert = False
 plot_var_bin = False
 plot_turb_stats = False
 plot_temporal_avg = False
@@ -32,7 +32,7 @@ stokes = False
 # ==========================================================
 contour = 0.01
 name_uni = f'contour-{contour:.4f}'
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/res testing/square inlet/open BC/no SGS/default WENO/'
+universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA'
 
 variations = 'else'
 if variations != 'else':
@@ -42,17 +42,18 @@ if variations != 'else':
     folder_names = cases_info['folder_names']
     fig_folder = cases_info['fig_folder']
 else:
-    fig_folder = os.path.join(universal_folder, 'bottom PA', 'horizontal resolution', 'comparison figures')
 
-    folder_names = ['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05', 'bottom PA/dx2', 'bottom PA/horizontal resolution/dx1', 'bottom PA/horizontal resolution/dx05']#
+    folder_names = ['dx2', 'dx1', 'dx05', 'dx025', 'dx0125']#['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#
+    #['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05', 'bottom PA/dx2', 'bottom PA/horizontal resolution/dx1', 'bottom PA/horizontal resolution/dx05']#
     #['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#['dx2', 'dx1']#, 'dx05']#, 'dx025']#
     #['bottom PA/vertical resolution/dz2', 'bottom PA/vertical resolution/dz1', 'bottom PA BC/bottom PA/vertical resolution/dz2', 'bottom PA BC/bottom PA/vertical resolution/dz1']
     
-    case_names = [r'No flux BC $\Delta x = 2.0$', r'No flux BC $ \Delta x = 1.0$', r'No flux BC $ \Delta x = 0.5$', r'PA BC $\Delta x = 2.0$', r'PA BC$\Delta x = 1.0$', r'PA BC$\Delta x = 0.5$']#[r'No flux BC $\Delta z = 2.0$', r'No flux BC $ \Delta z = 1.0$', r'PA BC $\Delta z = 2.0$', r'PA BC$\Delta z = 1.0$']
-    #[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#[r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$']#, r'$\Delta x = 0.25$']#
+    case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
+    #[r'No flux BC $\Delta x = 2.0$', r'No flux BC $ \Delta x = 1.0$', r'No flux BC $ \Delta x = 0.5$', r'PA BC $\Delta x = 2.0$', r'PA BC$\Delta x = 1.0$', r'PA BC$\Delta x = 0.5$']#[r'No flux BC $\Delta z = 2.0$', r'No flux BC $ \Delta z = 1.0$', r'PA BC $\Delta z = 2.0$', r'PA BC$\Delta z = 1.0$']
 
 
     num_cases = len(folder_names)
+    fig_folder = os.path.join(universal_folder, 'comparison figures')
     dTdz = 0.01*np.ones(num_cases)
     mld = 60**np.ones(num_cases)
     F_s = 0.1*np.ones(num_cases)
