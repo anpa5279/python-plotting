@@ -17,8 +17,8 @@ from reader import OceananigansData
 area_scaling = False
 tracer_mass = False
 mass_divergence = False
-neg_tracer = True
-w_surface = False
+neg_tracer = False
+w_surface = True
 
 salinity = True
 
@@ -111,22 +111,18 @@ for n, reader in enumerate(readers):
     domain = math.prod(reader.nx)
     vol = math.prod(reader.lx)
     dims = (1, 2, 3)
-    # load tracer
+
     file_path = os.path.join(reader.folder, 'binning_rtz.h5')
     with h5py.File(file_path, 'r') as f:
         S_int = f["S mass"][:]
-        dmdt_reader = f["time gradient of S mass"][:]
-        S_min_loc = f["min of S"][:]
-        S_max_loc = f["max of S"][:]
-        S_neg_count_loc = f["negative S count"][:]
-        S_neg_avg_loc = f["negative S average"][:]
+        dmdt_loc = f["time gradient of S mass"][:]
 
     S_mass.append(S_int)
     if tracer_mass or mass_divergence:
         if "glade" in universal_folder:
             dmdt.append(np.gradient(S_mass[n], t[n]))
         else:
-            dmdt.append(dmdt_reader)
+            dmdt.append(dmdt_loc)
         if mass_divergence:
             w = reader.lazy_field('w').compute()
             
@@ -146,6 +142,11 @@ for n, reader in enumerate(readers):
         w_sum.append(np.sum(w_loc, axis = (1, 2)))
 
     if neg_tracer:
+        with h5py.File(file_path, 'r') as f:
+            S_min_loc = f["min of S"][:]
+            S_max_loc = f["max of S"][:]
+            S_neg_count_loc = f["negative S count"][:]
+            S_neg_avg_loc = f["negative S average"][:]
         # minimum S value in domain
         S_min.append(S_min_loc)
         S_max.append(S_max_loc)

@@ -22,7 +22,7 @@ mass_flag = False
 negative_tracer_flag = True # calculates the number of negative tracer values in the domain and the average of those values
 
 # model options
-with_halos = False
+with_halos = True
 salinity = True
 
 # update flags if salinity is False
@@ -34,7 +34,8 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA/dx05'
+#'/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -424,11 +425,11 @@ if negative_tracer_flag:
     Smin = np.min(S, axis = dims)
     Smax = np.max(S, axis = dims)
     S_neg_count = np.sum(S<0, axis = dims)
-    S_neg_avg = np.nanmean(S[S<0], axis = dims)
-    # volume integral of S value in domain
-    S_mass = np.mean(S, axis = dims)*vol*rho0
+
+    S[S>=0] = None
+    S_neg_avg = np.nanmean(S, axis = dims)
+
     del S
-    dmdt = np.gradient(S_mass, time)
     with h5py.File(bin_path, "a") as f:
         if "max of S" in f:
             del f["max of S"]
