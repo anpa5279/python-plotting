@@ -12,17 +12,17 @@ from interpolation import vertical_line
 # ==========================================================
 binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = False
 fluc_flag = False # calculates turbulent statistics from binning information
 rms_flag = False # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
 contour_flag = False # calculates radius of contour at each depth and time that is not in the default
 mass_flag = False
-negative_tracer_flag = True # calculates the number of negative tracer values in the domain and the average of those values
+negative_tracer_flag = False # calculates the number of negative tracer values in the domain and the average of those values
 
 # model options
-with_halos = True
+with_halos = False
 salinity = True
 
 # update flags if salinity is False
@@ -34,8 +34,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA/dx2'
-#'/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -145,7 +144,7 @@ if planelsice_flag:
     xz = False
     file_path = os.path.join(folder, 'plane_slice.h5')
     if xy:
-        z_locs = [-reader.dx[-1]/2, 0.0]#
+        z_locs = [-0.75, -1.0, -1.5, -60.0]#[-reader.dx[-1]/2, 0.0]#
         for z_loc in z_locs:
             if any([z_loc < 0, with_halos]):
                 T = reader.field_slice('T', plane = 'XY', loc = z_loc)

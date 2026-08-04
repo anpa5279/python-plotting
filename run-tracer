@@ -1,7 +1,7 @@
 #!/bin/bash
 nodes=1
 cpus=8
-jobn=postprocessing
+jobn=tracer-test
 file=oceananigans_derecho_tracer_test.py
 
 cp $file scripts/

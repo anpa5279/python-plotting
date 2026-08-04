@@ -14,7 +14,8 @@ salinity = True
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
+folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA/dx05'
+#'/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
 
 reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
 file_path = os.path.join(reader.folder, 'tracer_test.h5')
