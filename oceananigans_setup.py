@@ -22,7 +22,7 @@ mass_flag = True
 negative_tracer_flag = True # calculates the number of negative tracer values in the domain and the average of those values
 
 # model options
-with_halos = True
+with_halos = False
 salinity = True
 
 # update flags if salinity is False
@@ -34,7 +34,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx1.0/testing'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025/weno9/condensed_files'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')

@@ -86,7 +86,7 @@ class OceananigansData:
             else:
                 centerline_output = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('centerline'))]
                 self.centerline_output = centerline_output[0] if len(centerline_output) > 0 else None
-            self.centerline_file = [f for f in self.all_files if (f.endswith('.h5') and f.startswith('centerline')and not f.startswith('centerline_output'))]
+            self.centerline_file = [f for f in self.all_files if (f.endswith('.h5') and f.startswith('centerline') and not f.startswith('centerline_output'))]
             if self.centerline_file == []:
                 self.centerline_file = None
             else: # pickup does not matter because this means that it is already post processed and interpolated to the centerline
