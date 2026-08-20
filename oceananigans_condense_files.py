@@ -47,27 +47,27 @@ else:
 
 
 # ==========================================================
-# COMBINING FILES
+# COMBINING FILES  697 to main files as time iteration 4508
 # ==========================================================
 if field_files_flag:
     print(f'Copying field files to {outdir}')
-    new_file_field = os.path.join(outdir, "fields.jld2")
     for file in reader.files:
+        new_file_field = os.path.join(outdir, file)
         shutil.copy2(os.path.join(folder, file), new_file_field)
 
     for t_save in reader_pickup.t_save:
         if t_save != 0: # skip the first saved time step since it is already included in the main files
             print(f'Adding pickup time iteration {int(t_save)} to main files as time iteration {int(t_save + t_last)}')
-            for rank, file in enumerate(reader.files):
-                with h5py.File(os.path.join(pickup_folder, reader_pickup.files[rank]), 'r') as f:
+            for file in reader_pickup.files:
+                with h5py.File(os.path.join(pickup_folder, file), 'r') as f:
                     t = f[f'timeseries/t/{int(t_save)}'] + t_add
-                with h5py.File(new_file_field, "a") as f:
+                with h5py.File(os.path.join(outdir, file), "a") as f:
                     f.create_dataset(f'timeseries/t/{int(t_save + t_last)}', data = t)
                 for var in vars:
-                    with h5py.File(os.path.join(pickup_folder, reader_pickup.files[rank]), 'r') as f:
+                    with h5py.File(os.path.join(pickup_folder, file), 'r') as f:
                         field = f[f'timeseries/{var}/{int(t_save)}'][:]
 
-                    with h5py.File(new_file_field, "a") as f:
+                    with h5py.File(os.path.join(outdir, file), "a") as f:
                         f.create_dataset(f'timeseries/{var}/{int(t_save + t_last)}', data = field)
 
 if high_freq_files_flag: # assuming centerline files and averaging files have the same time steps
