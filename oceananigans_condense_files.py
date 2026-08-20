@@ -16,7 +16,7 @@ with_halos = False
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx1.0/testing'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025/weno9/testing'
 
 reader = OceananigansData(folder, salinity = salinity, with_halos = with_halos)
 
