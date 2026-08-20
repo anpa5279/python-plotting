@@ -17,7 +17,7 @@ with_halos = True
 # ==========================================================
 # READERS
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025/weno9'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025'
 
 reader = OceananigansData(folder, salinity = salinity, with_halos = with_halos)
 pickup_folder = os.path.join(folder, 'pickup')
