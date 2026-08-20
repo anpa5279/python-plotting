@@ -2,6 +2,7 @@ import os
 import numpy as np
 import h5py
 import math
+import scipy
 import matplotlib.pyplot as plt
 import itertools
 
@@ -17,33 +18,30 @@ from reader import OceananigansData
 area_scaling = False
 tracer_mass = False
 mass_divergence = False
-neg_tracer = True
-w_surface = True
+neg_tracer = False
+w_surface = False
+internal_gravity_waves = True
 
 salinity = True
 
 # ==========================================================
 # COMPARISON CASES
 # ==========================================================
-universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/version109/square inlet/open BC/no SGS/default WENO/bottom PA'
+universal_folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scaled S double to match both gauss/WENO5/'
 
-variations = "else"
-if variations != "else":
-    cases_info = comparison_info(variations, universal_folder=universal_folder)
-
-    case_names = cases_info["case_names"]
-    folder_names = cases_info["folder_names"]
-    num_cases = cases_info["num_cases"]
-    fig_folder = os.path.join(cases_info["fig_folder"], "convergence")
-    F_s = cases_info["F_s"]
-    mld = cases_info["mld"]
-    dTdz = cases_info["dTdz"]
+variations = 'else'
+if variations != 'else':
+    cases_info = comparison_info(variations, universal_folder = universal_folder)
+    case_names = cases_info['case_names']
+    num_cases = cases_info['num_cases']
+    folder_names = cases_info['folder_names']
+    fig_folder = cases_info['fig_folder']
 else:
 
-    folder_names = ['dx2', 'dx1', 'dx05', 'dx025', 'dx0125']#['dx2', 'horizontal resolution/dx1', 'horizontal resolution/dx05']#
+    folder_names = ['dx2.0']#, 'dx1.0', 'dx0.5']#, 'dx0.25']#['dx2', 'dx1', 'dx05']#, 'dx025', 'dx0125']#, 'dx00625']
+   
+    case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$', r'$\Delta x = 0.0625$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
 
-    case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
-    
     num_cases = len(folder_names)
     fig_folder = os.path.join(universal_folder, 'callback comparisons')
     F_s = 0.1 * np.ones(num_cases)
@@ -52,13 +50,19 @@ else:
 
 os.makedirs(fig_folder, exist_ok=True)
 # ==========================================================
+# PARAMETERS
+# ==========================================================
+g = 9.80665
+T0 = 25
+rho0 = 1026 # kg/m^3
+# ==========================================================
 # READERS
 # ==========================================================
 readers = []
-with_halos = [True, True, True, False, False]
-for i, name in enumerate(folder_names):
+with_halos = [True, True, True, False, False, False]
+for n, name in enumerate(folder_names):
     folder = os.path.join(universal_folder, name)
-    readers.append(OceananigansData(folder, salinity = salinity, with_halos = with_halos[i]))
+    readers.append(OceananigansData(folder, salinity = salinity, with_halos = with_halos[n]))
 
 if area_scaling:
     def area_scale(r, dx):
@@ -72,7 +76,6 @@ if area_scaling:
     rp = 5.0 #m
     area = np.pi*rp**2
     factor = []
-rho0 = 1026 # kg/m^3
 # collecting model information for all cases
 nx = np.empty((3, num_cases), dtype=object)
 lx = np.empty((3, num_cases), dtype=object)
@@ -102,6 +105,24 @@ dSdt = []
 w_min = []
 w_max = []
 w_sum = []
+
+u_fluc_yz = []
+v_fluc_yz = []
+w_fluc_yz = []
+T_fluc_yz = []
+S_fluc_yz = []
+b_fluc_yz = []
+
+w_fluc_xy = []
+
+y_edge = []
+x_edge = []
+
+brunt_freq = []
+omega = []
+power = []
+
+omega_len = np.inf
 
 # ==========================================================
 # LOAD DATA
@@ -163,6 +184,25 @@ for n, reader in enumerate(readers):
             neg_avg[n] = neg_avg[n]*factor[n]
             S_mass[n] = S_mass[n]*factor[n]
             dSdt[n] = dSdt[n]*factor[n]
+    if internal_gravity_waves:
+        w = reader.load_plane_var("w'", plane="XY", loc=-mld)
+        window = np.hanning(w.shape[0])
+        w_windowed = w * window[:, None, None]
+
+        # FFT
+        w_hat = np.fft.rfft(w_windowed, axis=0)
+        freq = np.fft.rfftfreq(w.shape[0], d=reader.dt)
+        omega = 2 * np.pi * freq
+        power = np.abs(w_hat)**2
+
+        # Spatially averaged spectrum
+        P_omega = np.mean(power, axis=(1, 2))
+
+        # Find dominant frequencies
+        P_search = P_omega.copy()
+        P_search[0] = 0
+
+        peaks = np.argsort(P_search)[-5:]
 
 # ==========================================================
 # PLOTTING
@@ -324,3 +364,27 @@ if w_surface:
     axes[0].legend(loc='upper left', handlelength = 0.55)
 
     plt.savefig(os.path.join(fig_folder, variations + ' w_surface.svg'))
+
+if internal_gravity_waves:
+    outdir =  os.path.join(fig_folder, "testing/")
+    os.makedirs(outdir, exist_ok=True)
+    for i in range(omega_len):
+        ncols = 3
+        if num_cases < ncols*2:
+            ncols = num_cases
+        nrows = int(math.ceil(num_cases/ncols))
+        hor_len = 12.0
+        vert_len = hor_len * nrows / (ncols) + 0.5 * nrows + 1.1
+
+        fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
+        axes = [axes,]#axes.ravel()
+        for n, reader in enumerate(readers):
+            im =  axes[n].imshow(power[n][i, :, :].T, origin = "lower", interpolation = "none", cmap = 'RdBu_r', extent = [reader.y[0], reader.y[-1], reader.z[0], reader.z[-1]], aspect = 'auto')
+
+            axes[n].set_xlabel(r"$\omega$ [rad s$^{-1}$]")
+            axes[n].set_ylabel(r"$|\hat{w}|^2$")
+            axes[n].set_title(f"{omega[n][i]}")
+        plt.colorbar(im, ax = axes, anchor = (0.5, 0.0), orientation='horizontal', shrink=0.75, aspect=80)
+        frame_path = os.path.join(outdir, f"oc_plane_slices_{i:04d}.png")
+        plt.savefig(frame_path)
+        plt.close()

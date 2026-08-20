@@ -72,7 +72,6 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
         # find index below target
         idx = np.searchsorted(coord, coord_new) - 1
         idx = np.clip(idx, 0, len(coord) - 2)
-
         c0 = coord[idx]
         c1 = coord[idx + 1]
 
@@ -87,7 +86,7 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
         f1 = f[tuple(sl1)]
         
         w = (coord_new - c0) / (c1 - c0)
-        
+
         return (1 - w) * f0 + w * f1
 # ------------------------- PLANE SLICES ------------------------- #
 def plane_slice_calc(f, coord, coord0, axis = -3):
@@ -126,12 +125,12 @@ def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):
         new = fnew
     else:
         fnew = f 
-    
-    if x is not None and y is not None: # if field, inputs x, y, z
-        fnewy = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
-        new = interp1d_axis(fnewy, x, coord_new = x0, axis = -3)
-    elif y is None and x is not None: # if field, inputs x, z, f
-        new = interp1d_axis(fnew, x, coord_new = x0, axis = -3)
-    elif x is None and y is not None: # if field, inputs y, z, f
-        new = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
+    if f.ndim >= 3: # if field, inputs t, x, y, z
+        if x is not None and y is not None: # if field, inputs x, y, z
+            fnewy = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
+            new = interp1d_axis(fnewy, x, coord_new = x0, axis = -3)
+        elif y is None and x is not None: # if field, inputs x, z, f
+            new = interp1d_axis(fnew, x, coord_new = x0, axis = -3)
+        elif x is None and y is not None: # if field, inputs y, z, f
+            new = interp1d_axis(fnew, y, coord_new = y0, axis= -2)
     return new.squeeze()

@@ -5,24 +5,24 @@ import math
 
 from reader import OceananigansData
 from diagnostics import compute_temporal_averages, compute_fluct_averages, compute_rms, binning_oc
-from interpolation import vertical_line
+from interpolation import vertical_line, velocities_to_center, point
 
 # ==========================================================
 # FLAGS
 # ==========================================================
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
+centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-buoyancy_flag = False
-fluc_flag = False # calculates turbulent statistics from binning information
-rms_flag = False # calculates RMS from 3D fields
+buoyancy_flag = True
+fluc_flag = True # calculates turbulent statistics from binning information
+rms_flag = True # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
-contour_flag = False # calculates radius of contour at each depth and time that is not in the default
-mass_flag = False
-negative_tracer_flag = False # calculates the number of negative tracer values in the domain and the average of those values
+contour_flag = True # calculates radius of contour at each depth and time that is not in the default
+mass_flag = True
+negative_tracer_flag = True # calculates the number of negative tracer values in the domain and the average of those values
 
 # model options
-with_halos = False
+with_halos = True
 salinity = True
 
 # update flags if salinity is False
@@ -34,7 +34,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/gpu/outputs/dxi0125/'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx1.0/testing'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -46,6 +46,8 @@ reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sv
 # ==========================================================
 g = 9.80665
 T0 = 25.0
+rho0 = 1026 # kg/m^3
+mld = -60
 
 # ==========================================================
 # MODEL INFORMATION
@@ -63,6 +65,9 @@ r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
 x, y, z = reader.x, reader.y, reader.z
 ncirc = min(nx[0], nx[1])//2      # full circular shells
 
+# ==========================================================
+# ANALYSIS
+# ==========================================================
 ###------------APPLYING AZIMUTHAL AVERAGING TO DATA-----------------###
 if binning_flag:
     # write to file 
@@ -139,12 +144,13 @@ if centerline_flag:
     reader.centerline_file = 'centerline.h5'
 ###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
-    xy = True
+    xy = False
     yz = False
     xz = False
+    internal_gravity_waves = True
     file_path = os.path.join(folder, 'plane_slice.h5')
     if xy:
-        z_locs = [-0.75, -1.0, -1.5, -60.0]#[-reader.dx[-1]/2, 0.0]#
+        z_locs = [0.0, -60.0]#[-reader.dx[-1]/2, 0.0]#
         for z_loc in z_locs:
             if any([z_loc < 0, with_halos]):
                 T = reader.field_slice('T', plane = 'XY', loc = z_loc)
@@ -203,22 +209,130 @@ if planelsice_flag:
             f.create_dataset("YZ/x = 0/v", data=v)
             f.create_dataset("YZ/x = 0/w", data=w)
         del S, T, u, v, w
-    
+
     print(f"Saved plane slices to {file_path}")
+
+    if internal_gravity_waves:
+        N = reader.nx[0] - 1
+        bound = reader.x[N] # center of last grid cell in x direction
+        with h5py.File(file_path, "a") as f:
+            if f"YZ/x = {bound}/T'" in f:
+                del f[f"YZ/x = {bound}/T'"]
+            T = reader.field_slice('T', plane = 'YZ', N = N)
+            T_avg = reader.load_averages('T')[::100, :]
+            T_fluc = T - T_avg[:, None, :]
+            f.create_dataset(f"YZ/x = {bound}/T'", data=T_fluc)
+            del T, T_fluc
+            if f"YZ/x = {bound}/u'" in f:
+                del f[f"YZ/x = {bound}/u'"]
+            u = reader.field_slice('u', plane = 'YZ', N = N)
+            u_avg = reader.load_averages('u')[::100, :]
+            u_fluc = u - u_avg[:, None, :]
+            f.create_dataset(f"YZ/x = {bound}/u'", data=u_fluc)
+            del u, u_fluc
+            if f"YZ/x = {bound}/v'" in f:
+                del f[f"YZ/x = {bound}/v'"]
+            v = reader.field_slice('v', plane = 'YZ', loc = bound)
+            v_avg = reader.load_averages('v')[::100, :]
+            v_fluc = v - v_avg[:, None, :]
+            f.create_dataset(f"YZ/x = {bound}/v'", data=v_fluc)
+            del v, v_fluc
+            if f"YZ/x = {bound}/w'" in f:
+                del f[f"YZ/x = {bound}/w'"]
+            w = velocities_to_center(reader.field_slice('w', plane = 'YZ', N = N), -1)
+            w_avg = reader.load_averages('w')[::100, :]
+            w_fluc = w - w_avg[:, None, :]
+            f.create_dataset(f"YZ/x = {bound}/w'", data=w_fluc)
+            del w, w_fluc
+            if reader.salinity:
+                S = reader.field_slice('S', plane = 'YZ', N = N)
+                S_avg = reader.load_averages('S')[::100, :]
+                S_fluc = S - S_avg[:, None, :]
+                if f"YZ/x = {bound}/S'" in f:
+                    del f[f"YZ/x = {bound}/S'"]
+                f.create_dataset(f"YZ/x = {bound}/S'", data = S_fluc)
+                del S, S_fluc
+
+        N = reader.nx[1] -1
+        bound = reader.y[N] # center of last grid cell in y direction
+        with h5py.File(file_path, "a") as f:
+            if f"XZ/y = {bound}/T'" in f:
+                del f[f"XZ/y = {bound}/T'"]
+            T = reader.field_slice('T', plane = 'XZ', N = N)
+            T_avg = reader.load_averages('T')[::100, :]
+            T_fluc = T - T_avg[:, None, :]
+            f.create_dataset(f"XZ/y = {bound}/T'", data=T_fluc)
+            del T, T_fluc
+            if f"XZ/y = {bound}/u'" in f:
+                del f[f"XZ/y = {bound}/u'"]
+            u = reader.field_slice('u', plane = 'XZ', loc = bound)
+            u_avg = reader.load_averages('u')[::100, :]
+            u_fluc = u - u_avg[:, None, :]
+            f.create_dataset(f"XZ/y = {bound}/u'", data=u_fluc)
+            del u, u_fluc
+            if f"XZ/y = {bound}/v'" in f:
+                del f[f"XZ/y = {bound}/v'"]
+            v = reader.field_slice('v', plane = 'XZ', N = N)
+            v_avg = reader.load_averages('v')[::100, :]
+            v_fluc = v - v_avg[:, None, :]
+            f.create_dataset(f"XZ/y = {bound}/v'", data=v_fluc)
+            del v, v_fluc
+            if f"XZ/y = {bound}/w'" in f:
+                del f[f"XZ/y = {bound}/w'"]
+            w = velocities_to_center(reader.field_slice('w', plane = 'XZ', N = N), -1)
+            w_avg = reader.load_averages('w')[::100, :]
+            w_fluc = w - w_avg[:, None, :]
+            f.create_dataset(f"XZ/y = {bound}/w'", data=w_fluc)
+            del w, w_fluc
+            if reader.salinity:
+                S = reader.field_slice('S', plane = 'XZ', N = N)
+                S_avg = reader.load_averages('S')[::100, :]
+                S_fluc = S - S_avg[:, None, :]
+                if f"XZ/y = {bound}/S'" in f:
+                    del f[f"XZ/y = {bound}/S'"]
+                f.create_dataset(f"XZ/y = {bound}/S'", data = S_fluc)
+                del S, S_fluc
+
+        bound = float(mld) # center of last grid cell in x direction
+        with h5py.File(file_path, "a") as f:
+            if f"XY/z = {bound}/T'" in f:
+                del f[f"XY/z = {bound}/T'"]
+            T = reader.field_slice('T', plane = 'XY', loc = bound)
+            T_avg = point(reader.load_averages('T')[::100, :], reader.z, z0 = bound)
+            T_fluc = T - T_avg[:, None, None]
+            f.create_dataset(f"XY/z = {bound}/T'", data=T_fluc)
+            del T, T_fluc
+            if f"XY/z = {bound}/w'" in f:
+                del f[f"XY/z = {bound}/w'"]
+            w = reader.field_slice('w', plane = 'XY', loc = bound)
+            w_avg = point(reader.load_averages('w')[::100, :], reader.z, z0 = bound)
+            w_fluc = w - w_avg[:, None, None]
+            f.create_dataset(f"XY/z = {bound}/w'", data=w_fluc)
+            del w, w_fluc
+            if reader.salinity:
+                S = reader.field_slice('S', plane = 'XY', loc = bound)
+                S_avg = point(reader.load_averages('S')[::100, :], reader.z, z0 = bound)
+                S_fluc = S - S_avg[:, None, None]
+                if f"XY/z = {bound}/S'" in f:
+                    del f[f"XY/z = {bound}/S'"]
+                f.create_dataset(f"XY/z = {bound}/S'", data = S_fluc)
+                del S, S_fluc
+        print(f"Saved plane slices for checking internal gravity waves to {file_path}")
+
 ###------------BUOYANCY CALCULATIONS--------------------------------###
 if buoyancy_flag:
     buoyancy_file = os.path.join(folder, 'buoyancy_profile.h5')
     alpha = reader.alpha
     T = reader.lazy_field('T').compute()
-    b_profile = g * alpha * (T - T0)
+    b = g * alpha * (T - T0)
     if reader.salinity:
         beta = reader.beta
         S = reader.lazy_field('S').compute()
-        b_profile += - g * beta * S
+        b += - g * beta * S
         del S
     del T
-    b_avg = np.mean(b_profile, axis=(-3, -2))
-    b_fluc = b_profile - b_avg[:, None, None, :]
+    b_avg = np.mean(b, axis=(-3, -2))
+    b_fluc = b - b_avg[:, None, None, :]
     b_rms = np.mean(b_fluc**2, axis=(-3, -2))**0.5
     if reader.averaging:
         T_avg = reader.load_averages('T')
@@ -230,7 +344,7 @@ if buoyancy_flag:
             del S_avg
         del T_avg
     if not reader.centerline:
-        b_centerline = vertical_line(b_profile, x = reader.x, y = reader.y)
+        b_centerline = vertical_line(b, x = reader.x, y = reader.y)
         b_fluc_centerline = vertical_line(b_fluc, x = reader.x, y = reader.y)
     with h5py.File(buoyancy_file, "a") as f:
         if "z" in f:
@@ -239,13 +353,17 @@ if buoyancy_flag:
             del f["b_rms"]
         if "b_avg" in f:
             del f["b_avg"]
+        if "field data" in f:
+            del f["field data"]
         f.create_dataset("z", data = z)
         f.create_dataset("b_rms", data = b_rms)
         f.create_dataset("b_avg", data = b_avg)
+        f.create_dataset("field data/b", data = b)
+        f.create_dataset("field data/b_fluc", data = b_fluc)
         if not reader.centerline:
             f.create_dataset("centerline/b", data = b_centerline)
             f.create_dataset("centerline/b_fluc", data = b_fluc_centerline)
-    del b_profile
+    del b
     print(f"Saved buoyancy information to {buoyancy_file}")
 ###------------FLUCTUATION AVERAGES---------------------------------###
 if fluc_flag:
@@ -399,7 +517,6 @@ if contour_flag:
     print(f"Saved contours to {bin_path}")
 ###------------MASS CALCULATIONS------------------------------------###
 if mass_flag:
-    rho0 = 1026 # kg/m^3
     S = reader.lazy_field('S').compute()
     vol = math.prod(reader.lx)
     dims = (1, 2, 3)
@@ -417,7 +534,6 @@ if mass_flag:
     print(f"Saved mass calculations to {bin_path}")
 ###------------NEGATIVE MASS CALCULATIONS------------------------------------###
 if negative_tracer_flag:
-    rho0 = 1026 # kg/m^3
     S = reader.lazy_field('S').compute()
     vol = math.prod(reader.lx)
     dims = (1, 2, 3)

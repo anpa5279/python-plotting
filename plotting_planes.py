@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
-from plotting_general import create_video
+from plotting_general import create_video, save_frame
 ### -------------------------PLOTTING PLANE SLICES FUNCTIONS------------------------- ###
 ## variable vertical plane slice across all cases
 def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case_names, name, range_name, colorbar_label=None, loc = 0.0, cmap='RdBu_r', plane='YZ'):
@@ -38,14 +38,14 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', name, plane, out_folder)
     os.makedirs(outdir, exist_ok=True)
     num_cases = len(var)
-    ncols = 3
+    ncols = 4
     if num_cases < ncols*2:
         ncols = num_cases
     nrows = int(math.ceil(num_cases/ncols))
-    hor_len = 12.0
-    vert_len = hor_len * nrows / (ncols * ar) - 1.5 #+ 0.25 * nrows + 0.5
-
-    fig, axes = plt.subplots(nrows, ncols, figsize=(3 * num_cases, 6), sharey = True, sharex = True, constrained_layout=True)
+    #hor_len = 12.0
+    #vert_len = hor_len * nrows / (ncols * ar) - 1.5 + 0.25 * nrows + 0.5
+    size_in = (3 * num_cases, 6)
+    fig, axes = plt.subplots(nrows, ncols, figsize=size_in, sharey = True, sharex = True, constrained_layout=True)
     fig.suptitle(title)
     axes = axes.ravel()
     # Force even pixel dimensions at 600 dpi
@@ -59,12 +59,14 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
         for i in range(num_cases, nrows*ncols):
             axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
     for n in range(num_cases):
-        if all([name == 'Tracer', range_name != 'Tracer diff']) or name == 'log w':
+        if 'log' in range_name:
             var[n][var[n] <= 0] = 10**(-16)
             im = axes[n].imshow(var[n], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
         else:
             im = axes[n].imshow(var[n], vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[hor[n].min(), hor[n].max(), z[n].min(), z[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
         axes[n].set_title(case_names[n])
+        axes[n].set_xlim(-min(lx[:-1, :]/2), min(lx[:-1, :]/2))
+        axes[n].set_ylim(min(lx[2, :]), 0)
         axes[n].set_aspect('equal')
         if n == 0 or n%ncols == 0:
             axes[n].set_ylabel("Depth [m]")
@@ -73,16 +75,13 @@ def plot_variable_vert_slice(time, it, ranges, fig_folder, lx, hor, z, var, case
 
     active_axes = [axes[n] for n in range(num_cases)]
     cbar = fig.colorbar(im, ax = active_axes, shrink=0.9, aspect=50, label = colorbar_label)#, anchor = (0.5, 0.05), orientation='horizontal')
-    if all([not name == 'Tracer', not name == 'log w']): 
+    if 'log' not in range_name: 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
         cbar.update_ticks() 
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
-    plt.savefig(frame_path)
-    plt.close(fig)
-    print(f"Time step {it} captured: {frame_path}")
+    save_frame(fig, outdir, it, size_in, file_name = "oc_plane_slices_")
     return outdir
 ## variable xy plane slice across all cases
 def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_names, name, range_name, colorbar_label=None, loc = 0.0, cmap='RdBu_r'):
@@ -95,8 +94,8 @@ def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_nam
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
     vert_len = hor_len * nrows / (ncols) + 0.5 * nrows + 1.1
-
-    fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
+    size_in = (hor_len, vert_len)
+    fig, axes = plt.subplots(nrows, ncols, figsize = size_in, sharey = True, sharex = True, constrained_layout=True)
     fig.suptitle(rf'{name}, z = {loc:.2f} m, {td:.2f} days')
     if num_cases > 1:
         outdir = os.path.join(fig_folder, 'comparison plume analysis/', range_name, plane, f'z = {loc:.2f} m')
@@ -105,10 +104,12 @@ def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_nam
             for i in range(num_cases, nrows*ncols):
                 axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
         for n in range(num_cases):
-            if name == 'Tracers' or name == 'log w' or name == 'S':
+            if 'log' in range_name and 'w' not in range_name and 'neg S' not in range_name:
                 im = axes[n].imshow(var[n].T, extent =[x[n].min(), x[n].max(), y[n].min(), y[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
-            elif name == 'w':
+            elif 'log' in range_name and 'w' in range_name:
                 im = axes[n].imshow(var[n].T, extent =[x[n].min(), x[n].max(), y[n].min(), y[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.SymLogNorm(linthresh=1e-5, vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
+            elif 'log' in range_name and 'neg S' in range_name:
+                im = axes[n].imshow(var[n].T, extent =[x[n].min(), x[n].max(), y[n].min(), y[n].max()], interpolation ='none', origin ='lower', cmap = cmap, norm=colors.SymLogNorm(linthresh=1e-8, vmin=ranges[range_name][0], vmax=ranges[range_name][-1]))
             else:
                 im = axes[n].imshow(var[n].T, vmin=ranges[range_name][0], vmax=ranges[range_name][-1], extent =[x[n].min(), x[n].max(), y[n].min(), y[n].max()], interpolation ='none', origin ='lower', cmap = cmap)
             axes[n].set_title(case_names[n])
@@ -129,15 +130,12 @@ def plot_variable_xy_slice(time, it, ranges, fig_folder, lx, x, y, var, case_nam
         active_axes = [axes]
     os.makedirs(outdir, exist_ok=True)
     cbar = fig.colorbar(im, ax = active_axes, anchor = (0.5, -0.3), orientation='horizontal', label = colorbar_label, shrink=0.75, aspect=50)
-    if all([not name == 'Tracers', not name == 'log w', not name == 'S', not name == 'w']): 
+    if 'log' not in range_name: 
         cbar.formatter.set_useOffset(False)
         cbar.formatter.set_powerlimits((-2, 5))
         cbar.update_ticks() 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
-    plt.savefig(frame_path)
-    plt.close(fig)
-    print(f"Time step {it} captured: {frame_path}")
+    save_frame(fig, outdir, it, size_in, file_name = "oc_plane_slices_")
     return outdir
 
 ### -------------------------BINNING PLOTTING FUNCTIONS------------------------- ###
@@ -153,13 +151,14 @@ def plot_binning(S_rz, T_rz, hor_vel_rz, w_rz, r, z, time, output_folder, min_S 
     u_range = (-umax, umax)
     wmax = np.max(np.abs(w_rz)) * frac
     w_range = (-wmax, wmax)
+    size_in = (12, 11)
 
     outdir = os.path.join(output_folder, 'plotting')
     os.makedirs(outdir, exist_ok=True)
 
     # plotting results
     for it, t in enumerate(time):
-        fig, axes = plt.subplots(2, 2, figsize=(12, 11), sharey = True, sharex = True, constrained_layout=True)
+        fig, axes = plt.subplots(2, 2, figsize=size_in, sharey = True, sharex = True, constrained_layout=True)
         axes = axes.ravel()
         td = t / 3600 / 24
         fig.suptitle(f'{td:.2f} days', y = 0.99)
@@ -201,11 +200,6 @@ def plot_binning(S_rz, T_rz, hor_vel_rz, w_rz, r, z, time, output_folder, min_S 
         
         
         # --- Save Frame ---
-        frame_path = os.path.join(outdir, f"oc_plane_slices_{it:04d}.png")
-        plt.savefig(frame_path)
-        plt.close(fig)
-        print(f"Time step {it + 1} captured: {frame_path}")
-
-        plt.close()
+        save_frame(fig, outdir, it, size_in, file_name = "oc_plane_slices_")
 
     create_video(outdir, output_folder, '', 'binning_rtz')

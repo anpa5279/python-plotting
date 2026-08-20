@@ -3,10 +3,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib.colors import LogNorm
+from matplotlib import colors
 from matplotlib.lines import Line2D
 
-from plotting_general import comparison_plot_opt
+from plotting_general import save_frame
 
 def interp_reference(z_case, z_ref, ref_profile):
     return np.interp(z_case, z_ref, ref_profile)
@@ -16,58 +16,17 @@ def percent_difference_interp(profile, z_profile, ref_profile, z_ref):
 
     return (100 * (profile - ref_interp) / (np.abs(ref_interp) + 1e-12))
 
-def _save_fixed_size(fig, fname, size_in, dpi=200):
-    size_px = (size_in[0] * dpi, size_in[1] * dpi)
-    fig.set_size_inches(size_px[0] / dpi, size_px[1] / dpi)
-    fig.savefig(fname, dpi=dpi)   # no bbox_inches='tight'
-
 ### ------------------------- TRACER CONVERGENCE PLOTTING FUNCTIONS ------------------------- ###
 ## tracer slice comparison across all cases
-def plot_tracer_slice_comparison(time_sec, it, case_names, ranges, y, z, tracer_fields, Sval, fig_folder):
-    frame_dir = os.path.join(fig_folder, "tracer_slice_frames")
+def plot_tracer_slice_comparison(time_sec, it, case_names, ranges, y, z, tracer_fields, Sval, fig_folder, ylim = (-5, 5), zlim = (-10, 0), binning = False, folder_name = "tracer_zoom_frames", negative = False):
+    if negative:
+        folder_name += "_log_neg"
+    frame_dir = os.path.join(fig_folder, folder_name)
     os.makedirs(frame_dir, exist_ok = True)
     num_cases = len(z)
-
-    fig, axes = plt.subplots(1, num_cases, figsize = (3 * num_cases, 6), constrained_layout = True, sharey = True)
-
-    if num_cases == 1:
-        axes = [axes]
-
-    levels = [0.005 * Sval, 0.01 * Sval, 0.05 * Sval]
-    legend_lines = [Line2D([0], [0], color='orange', lw=2, label=r'0.5% S$_0$'),
-                    Line2D([0], [0], color='red', lw=2, label=r'1% S$_0$'),
-                    Line2D([0], [0], color='black', lw=2, label=r'5% S$_0$')]
-
-    for n in range(num_cases):
-        S = tracer_fields[n]
-        im = axes[n].imshow(S.T, origin = "lower", interpolation = "none", norm = LogNorm(vmin = ranges['Tracer'][0], vmax = ranges['Tracer'][1]), extent = [y[n].min(), y[n].max(), z[n].min(), z[n].max()], aspect = "auto", cmap = "Blues")
-
-        axes[n].contour(y[n], z[n], S.T, levels = levels, colors = ["orange", "red", "black"])
-        axes[n].set_title(case_names[n])
-        axes[n].set_xlabel("y [m]")
-        if n == 0:
-            axes[n].set_ylabel("z [m]")
-        axes[n].set_aspect('equal')
-    axes[0].legend(handles=legend_lines,loc='lower right')
-
-    plt.colorbar(im, ax = axes, label = "Tracer", shrink=0.75)
-    fig.suptitle(f"t = {time_sec/3600:.2f} hr")
-    fname = os.path.join(frame_dir, f"{it:06d}.png")
-    _save_fixed_size(fig, fname, (3 * num_cases, 6))
-    #fig.savefig(fname)#, dpi = 200)
-    plt.close(fig)
-    return frame_dir
-
-## tracer zoom slice comparison across all cases
-def plot_tracer_zoom_comparison(time_sec, it, case_names, ranges, y, z, tracer_fields, Sval, fig_folder, ylim = (-5, 5), zlim = (-10, 0), binning = False):
-    if binning:
-        frame_dir = os.path.join(fig_folder, "tracer_bin_zoom_frames")
-    else:
-        frame_dir = os.path.join(fig_folder, "tracer_zoom_frames")
-    os.makedirs(frame_dir, exist_ok = True)
-    num_cases = len(z)
-
-    fig, axes = plt.subplots(1, num_cases, figsize = (5 * num_cases, 6), constrained_layout = True, sharey = True)
+    hor_len = 4 * num_cases
+    vert_len = 5 * (zlim[1] - zlim[0]) / (ylim[1] - ylim[0])
+    fig, axes = plt.subplots(1, num_cases, figsize = (hor_len, vert_len), constrained_layout = True, sharey = True)
 
     if num_cases == 1:
         axes = [axes]
@@ -82,9 +41,11 @@ def plot_tracer_zoom_comparison(time_sec, it, case_names, ranges, y, z, tracer_f
                     Line2D([0], [0], color='black', lw=2, label=r'5% S$_0$')]
     for n in range(num_cases):
         S = tracer_fields[n]
-        im = axes[n].imshow(S.T, origin = "lower", interpolation = "none", norm = LogNorm(vmin = ranges['Tracer'][0], vmax = ranges['Tracer'][1]), extent = [y[n].min(), y[n].max(), z[n].min(), z[n].max()], aspect = "auto", cmap = "Blues")
-
-        axes[n].contour(y[n], z[n], S.T, levels = levels, colors = ["orange", "red", "black"])
+        if negative:
+            im = axes[n].imshow(S.T, origin = "lower", interpolation = "none", norm=colors.SymLogNorm(linthresh=1e-8, vmin=ranges['log neg S'][0], vmax=ranges['log neg S'][-1]), extent = [y[n].min(), y[n].max(), z[n].min(), z[n].max()], aspect = "auto", cmap = "RdBu")
+        else:
+            im = axes[n].imshow(S.T, origin = "lower", interpolation = "none", norm = colors.LogNorm(vmin = ranges['Tracer'][0], vmax = ranges['Tracer'][1]), extent = [y[n].min(), y[n].max(), z[n].min(), z[n].max()], aspect = "auto", cmap = "Blues")
+            axes[n].contour(y[n], z[n], S.T, levels = levels, colors = ["orange", "red", "black"])
 
         axes[n].set_xlim(ylim)
         axes[n].set_ylim(zlim)
@@ -93,15 +54,13 @@ def plot_tracer_zoom_comparison(time_sec, it, case_names, ranges, y, z, tracer_f
         if n == 0:
             axes[n].set_ylabel("z [m]")
         axes[n].set_aspect('equal')
-    axes[0].legend(handles=legend_lines,loc='lower right')
+    if not negative:
+        axes[0].legend(handles=legend_lines,loc='lower right')
 
-    plt.colorbar(im, ax = axes)
+    plt.colorbar(im, ax = axes, anchor = (0.5, 0.0), orientation='horizontal', shrink=0.75, aspect=80)
     fig.suptitle(f"t = {time_sec/3600:.2f} hr")
-    fig.set_size_inches(5 * num_cases, 6)
-    fname = os.path.join(frame_dir, f"{it:06d}.png")
-    _save_fixed_size(fig, fname, (5 * num_cases, 6))
-    #fig.savefig(fname, dpi = 200)
-    plt.close(fig)
+    fig.set_size_inches(hor_len, vert_len)
+    save_frame(fig, frame_dir, it, (hor_len, vert_len))
     return frame_dir
 
 ## turbulent statistics convergence plotting across all cases
@@ -117,7 +76,8 @@ def plot_turbulence_convergence(time_sec, it, case_names, ranges, plot_line_opt,
     frame_dir = os.path.join(fig_folder, "turbulence_frames")
     os.makedirs(frame_dir, exist_ok = True)
 
-    fig, axes = plt.subplots(2, 4, figsize = (12, 5), sharey = True)
+    size_in = (12, 5)
+    fig, axes = plt.subplots(2, 4, figsize = size_in, sharey = True)
 
     for i in range(num_cases):
         axes[0,0].plot(u_rms[i], z[i], label = case_names[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
@@ -168,10 +128,7 @@ def plot_turbulence_convergence(time_sec, it, case_names, ranges, plot_line_opt,
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3), useMathText=True)
 
     fig.suptitle(f"t = {time_sec/3600:.2f} hr")
-    fname = os.path.join(frame_dir, f"{it:06d}.png")
-
-    plt.savefig(fname, dpi = 200)
-    plt.close()
+    save_frame(fig, frame_dir, it, size_in)
     return frame_dir
 
 ## tracer convergence plotting across all cases
@@ -182,7 +139,8 @@ def plot_salinity_convergence(time_sec, it, case_names, ranges, plot_line_opt, z
     frame_dir = os.path.join(fig_folder, "salinity_frames", f"contour_{contour}S0")
     os.makedirs(frame_dir, exist_ok = True)
 
-    fig, axes = plt.subplots(2, 3, figsize = (12, 8), sharey = True)
+    size_in = (12, 8)
+    fig, axes = plt.subplots(2, 3, figsize = size_in, sharey = True)
 
     ref_avg = S_avg[-1]
     ref_center = S_center[-1]
@@ -225,10 +183,8 @@ def plot_salinity_convergence(time_sec, it, case_names, ranges, plot_line_opt, z
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3), useMathText=True)
 
     fig.suptitle(f"t = {time_sec/3600:.2f} hr")
-    fname = os.path.join(frame_dir, f"{it:06d}.png")
-
-    plt.savefig(fname, dpi = 200)
-    plt.close()
+    
+    save_frame(fig, frame_dir, it, size_in)
 
     return frame_dir
 
@@ -240,7 +196,8 @@ def plot_temperature_convergence(time_sec, it, case_names, ranges, plot_line_opt
     frame_dir = os.path.join(fig_folder, "temperature_frames")
     os.makedirs(frame_dir, exist_ok = True)
 
-    fig, axes = plt.subplots(2, 2, figsize = (12,10), sharey = True)
+    size_in = (12, 10)
+    fig, axes = plt.subplots(2, 2, figsize = size_in, sharey = True)
 
     ref_avg = T_avg[-1]
     ref_prime = T_fluc_center[-1]
@@ -273,7 +230,5 @@ def plot_temperature_convergence(time_sec, it, case_names, ranges, plot_line_opt
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3), useMathText=True)
 
     fig.suptitle(f"t = {time_sec/3600:.2f} hr")
-    fname = os.path.join(frame_dir, f"{it:06d}.png")
-    plt.savefig(fname, dpi = 200)
-    plt.close()
+    save_frame(fig, frame_dir, it, size_in)
     return frame_dir

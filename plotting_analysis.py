@@ -8,7 +8,7 @@ from matplotlib.lines import Line2D
 from matplotlib import cm
 from fractions import Fraction
 
-from plotting_general import create_video
+from plotting_general import save_frame
 ### -------------------------PLOTTING ND FUNCTIONS------------------------- ###
 ## ND Richardson 
 def plot_rig_exponents(color_opt, title, file_name, fig_folder, w_rms, b_center, bw, rp, T, S, z_nd, Ri_g, case_names, exponents = [-0.5, -1/3, -0.25, 0.0, 0.25, 1/3, 0.5], z_str = rf"(z-h$_{{ML}}$)h$_{{ML}}^{{1/3}}$/L$_N^{{4/3}}$"):
@@ -576,10 +576,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     fig.legend(handles1, labels1, loc='lower center', ncol=5, bbox_to_anchor=(0.5, 0.46))
 
     # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"convergence_test_{it:04d}.png")
-    plt.savefig(frame_path, bbox_inches="tight")
-    print(f"Time step {it + 1} captured")
-    plt.close(fig)
+    save_frame(fig, outdir, it, size_in, file_name = "convergence_test_")
 
     ## buoyancy plane slices ##
     outdir1 = fig_folder + 'buoyancy planeslices/'
@@ -607,8 +604,7 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
     cbar = fig.colorbar(mappable, ax=axes, label=r"m/s$^2$", location='bottom', shrink=0.5, orientation='horizontal')
     
     # --- Save Frame ---
-    frame_path = os.path.join(outdir1, f"planeslices_{it:04d}.png")
-    plt.savefig(frame_path, bbox_inches="tight")
+    save_frame(fig, outdir1, it, size_in, file_name = "planeslices_")
     print(f"Time step {it + 1} captured")
     plt.close(fig)
 
@@ -620,7 +616,8 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
         outdir2 = fig_folder + 'convergence testing/'
         os.makedirs(outdir2, exist_ok=True)
         td = time[it] / 3600 / 24
-        fig = plt.figure(figsize=(12, 4))
+        size_in = (12, 4)
+        fig = plt.figure(figsize=size_in)
         fig.tight_layout()
         fig.suptitle(f'{td:.2f} days', ) 
         # Titles for each row
@@ -714,10 +711,8 @@ def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorte
 
         fig.supxlabel("Number of Grid Cells", )
         # --- Save Frame ---
-        frame_path = os.path.join(outdir, f"convergence_test_{it:04d}.png")
         plt.tight_layout()
-        plt.savefig(frame_path)
-        print(f"Time step {it + 1} captured")
+        save_frame(fig, outdir, it, size_in, file_name = "convergence_test_")
         plt.close(fig)
         return outdir, outdir1, outdir2
     return outdir, outdir1 # return the directory where frames are saved for video

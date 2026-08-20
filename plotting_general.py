@@ -38,6 +38,9 @@ def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, 
     ranges['u'] = [-0.002, 0.002]
     ranges['v'] = [-0.002, 0.002]
     ranges['w'] = [-0.002, 0.002]
+    ranges['u_avg'] = [-0.002, 0.002]
+    ranges['v_avg'] = [-0.002, 0.002]
+    ranges['w_avg'] = [-0.002, 0.002]
     ranges['u_fluc'] = [-0.002, 0.002]
     ranges['v_fluc'] = [-0.002, 0.002]
     ranges['w_fluc'] = [-0.002, 0.002]
@@ -85,6 +88,12 @@ def comparison_plot_opt(ncases, markers = False):
     else:
         return colors[:ncases], line_styles[:ncases]
 ### -------------------------SAVING FRAMES AND MAKING VIDEOS------------------------- ###
+def save_frame(fig, outdir, it, size_in, file_name = '', dpi = 200):
+    size_px = (size_in[0] * dpi, size_in[1] * dpi)
+    frame_path = os.path.join(outdir, file_name + f'{it:04d}.png')
+    fig.set_size_inches(size_px[0] / dpi, size_px[1] / dpi)
+    plt.savefig(frame_path, dpi = dpi)
+    plt.close(fig)
 def create_video(outdir, fig_folder, name, plot_type):
     print("Creating video...")
     filenames = sorted([f for f in os.listdir(outdir) if f.endswith(".png")])

@@ -7,7 +7,7 @@ from interpolation import velocities_to_center
 from physics import rms
 
 ### -------------------------COLLECTING COMPARISON CASE INFO----------------- ###
-def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/no noise circle inlet', ND=False, name_uni = ''):
+def comparison_info(variations, universal_folder, ND=False, name_uni = ''):
     wp = -0.001
     if variations == 'strat':
         folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
@@ -56,12 +56,14 @@ def comparison_info(variations, universal_folder = '/Users/annapauls/Documents/T
         F_s = wp * 0.1 * np.ones(num_cases)
     elif variations == 'AR=1':
         folder_names =[
+                    'AR=1/dx2', 
+                    'AR=1/dx1', 
                     'dz05',
                     'AR=1/dx025', 
-                    'AR=1/dx0125', 
+                    #'AR=1/dx0125', 
                     #'AR=1/dx00625', 
                        ]
-        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m',]
+        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m',]
         num_cases = len(folder_names)
         dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
         mld = 60 * np.ones(num_cases)
@@ -228,6 +230,7 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
         ncirc = ncirc//2+1      # full circular shells
     r_bin = np.sqrt((X/dx_scale)**2 + (Y/dx_scale)**2).astype(int)
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
+    #print(f'r_bin shape: {r_bin.shape}, var shape: {var.shape}')
     bin_var = np.bincount(r_bin.flat, weights=var.flat)
 
     # cut off the corners that aren't full circles.
@@ -271,7 +274,6 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
             var_field = velocities_to_center(var_field, axis=-2)
         elif var == 'w':
             var_field = velocities_to_center(var_field, axis=-1)
-
         for k in range(nx[2]):
             var_rz[:, k, it] = azimuthal_avg(var_field[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
         del var_field # to be memory efficient
