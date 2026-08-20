@@ -32,7 +32,7 @@ S_tol = 1e-6
 # ==========================================================
 # COMPARISON CASES
 # ==========================================================
-universal_folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scaled S double to match both gauss/WENO5/'
+universal_folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9'
 
 variations = 'else'
 if variations != 'else':
@@ -46,7 +46,7 @@ if variations != 'else':
     dTdz = cases_info['dTdz']
 else:
 
-    folder_names = ['dx2.0', 'dx1.0', 'dx0.5']#, 'dx0.25']#['dx2', 'dx1', 'dx05']#, 'dx025', 'dx0125']#, 'dx00625']#
+    folder_names = ['dx2.0', 'dx1.0', 'dx0.5', 'dx0.25']#['dx2', 'dx1', 'dx05']#, 'dx025', 'dx0125']#, 'dx00625']#
    
     case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$', r'$\Delta x = 0.0625$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
 

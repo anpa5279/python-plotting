@@ -130,4 +130,11 @@ if high_freq_files_flag: # assuming centerline files and averaging files have th
                 with h5py.File(new_file_center, "a") as f:
                     f.create_dataset(f'timeseries/{var}/{int(t_save + t_last)}', data = field)
 
-
+    # write buoyancy information to file
+    with h5py.File(os.path.join(folder, reader.averaging_file), 'r') as f:
+        alpha = f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
+        beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
+    with h5py.File(new_file_avg, "a") as f:
+        f.create_dataset('buoyancy/formulation/equation_of_state/thermal_expansion', data = alpha)
+        f.create_dataset('buoyancy/formulation/equation_of_state/haline_contraction', data = beta)
+print(f'Condensed files saved to {outdir}')

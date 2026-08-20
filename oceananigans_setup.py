@@ -11,7 +11,7 @@ from interpolation import vertical_line, velocities_to_center, point
 # FLAGS
 # ==========================================================
 binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = True
 fluc_flag = True # calculates turbulent statistics from binning information
@@ -34,7 +34,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025/weno9/condensed_files'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi025/weno3'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -145,9 +145,9 @@ if centerline_flag:
 ###------------INTERPOLATION TO PLANESLICE--------------------------###
 if planelsice_flag:
     xy = False
-    yz = False
+    yz = True
     xz = False
-    internal_gravity_waves = True
+    internal_gravity_waves = False
     file_path = os.path.join(folder, 'plane_slice.h5')
     if xy:
         z_locs = [0.0, -60.0]#[-reader.dx[-1]/2, 0.0]#
