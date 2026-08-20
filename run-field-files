@@ -16,7 +16,7 @@ cat > EXEC_FILES << EXEC
 
 #PBS -A UCUB0166
 #PBS -N $jobn
-#PBS -q develop 
+#PBS -q main 
 #PBS -j oe
 #PBS -l job_priority=economy
 #PBS -l walltime=00:20:00
