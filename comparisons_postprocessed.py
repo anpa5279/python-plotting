@@ -32,7 +32,7 @@ stokes = False
 # ==========================================================
 contour = 0.01
 name_uni = f'contour-{contour:.4f}'
-universal_folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scaled S double to match both gauss/WENO5/'
+universal_folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO3/'
 
 variations = 'else'
 if variations != 'else':
@@ -43,7 +43,7 @@ if variations != 'else':
     fig_folder = cases_info['fig_folder']
 else:
 
-    folder_names = ['dx2.0', 'dx1.0', 'dx0.5']#['dx2', 'dx1', 'dx05', 'dx025', 'dx0125', 'dx00625']#
+    folder_names = ['dx2.0', 'dx1.0', 'dx0.5', 'dx0.25', 'dx0.125']#['dx2', 'dx1', 'dx05', 'dx025', 'dx0125', 'dx00625']#
    
     case_names = [r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$', r'$\Delta x = 0.0625$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
 
@@ -341,9 +341,9 @@ ranges['w'] = [-1*10**(-1), 1*10**(-1)]
 ranges['u'] = [-1*10**(-2), 1*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel_rms'] = [0, 8*10**(-3)]
-ranges['b_rms'] = [0, 3*10**(-5)]
+ranges['b_rms'] = [0, 5*10**(-5)]
 ranges['S'] = [-0.05, 0.05]
-ranges['b_fluc_center'] = [-5*10**(-4), 5*10**(-4)]
+ranges['b_fluc_center'] = [-8*10**(-4), 8*10**(-4)]
 ranges['bw_fluc'] = [-1*10**(-7), 1*10**(-7)]
 ranges['S_avg'] = [0, 2.0*10**(-3)]
 ranges['T_fluc_center'] = [-5*10**(-1), 5*10**(-1)]

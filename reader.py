@@ -419,7 +419,6 @@ class OceananigansData:
 
             if halos_needed:
                 file_indices = file_indices[:1]
-            print(f"Loading {plane} slice at {loc} from files {file_indices} (nearest grid points at {coord[nearest]})")
             files = [self.files[i] for i in file_indices]
 
         else:

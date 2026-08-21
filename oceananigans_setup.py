@@ -10,19 +10,19 @@ from interpolation import vertical_line, velocities_to_center, point
 # ==========================================================
 # FLAGS
 # ==========================================================
-binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
-buoyancy_flag = True
-fluc_flag = True # calculates turbulent statistics from binning information
-rms_flag = True # calculates RMS from 3D fields
+binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+buoyancy_flag = False
+fluc_flag = False # calculates turbulent statistics from binning information
+rms_flag = False # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
-contour_flag = True # calculates radius of contour at each depth and time that is not in the default
-mass_flag = True
-negative_tracer_flag = True # calculates the number of negative tracer values in the domain and the average of those values
+contour_flag = False # calculates radius of contour at each depth and time that is not in the default
+mass_flag = False
+negative_tracer_flag = False # calculates the number of negative tracer values in the domain and the average of those values
 
 # model options
-with_halos = False
+with_halos = True
 salinity = True
 
 # update flags if salinity is False
@@ -34,14 +34,13 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = ' /glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/weno9/mpi_change/condensed_files'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO3/dx0.125'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
 reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
-print(reader.Nranks)
-print(reader.files)
+test = output
 # ==========================================================
 # PARAMETERS
 # ==========================================================
