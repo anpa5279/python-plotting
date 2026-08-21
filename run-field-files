@@ -6,7 +6,6 @@ file=oceananigans_condense_files.py
 
 cp $file scripts/
 cp reader.py scripts/
-cp interpolation.py scripts/
 
 ###uv init scripts
 cd scripts
@@ -16,7 +15,7 @@ cat > EXEC_FILES << EXEC
 
 #PBS -A UCUB0166
 #PBS -N $jobn
-#PBS -q main 
+#PBS -q develop 
 #PBS -j oe
 #PBS -l job_priority=economy
 #PBS -l walltime=00:20:00

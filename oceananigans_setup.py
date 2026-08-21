@@ -34,13 +34,14 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/longer/condensed_files'
+folder = ' /glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/weno9/mpi_change/condensed_files'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
 reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
-
+print(reader.Nranks)
+print(reader.files)
 # ==========================================================
 # PARAMETERS
 # ==========================================================
@@ -58,7 +59,6 @@ nt = reader.nt
 dx = reader.dx
 lx = reader.lx
 time = reader.t
-
 
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
