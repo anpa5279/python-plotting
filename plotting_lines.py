@@ -3,14 +3,15 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import scipy
 
 from matplotlib.lines import Line2D
 from matplotlib import cm
 
 from plotting_general import save_frame
 ### -------------------------PLOTTING 1D LINES FUNCTIONS------------------------- ###
-## xy averages ###
-def plot_lines(time, it, color_opt, fig_folder, case_names, z, lines_var_it):
+## xy averages ##
+def plot_lines(title, it, color_opt, fig_folder, case_names, z, lines_var_it):
     """
     Plot rms, horizontal averages, or vertical centerlines for each variable
     comparing all cases on the same axes, one subplot per variable.
@@ -50,24 +51,23 @@ def plot_lines(time, it, color_opt, fig_folder, case_names, z, lines_var_it):
 
     var_names = list(lines_var_it.keys())
     n_vars = len(var_names)
-    num_cases = len(z)
+    num_cases = len(color_opt)
 
     ncols = 4
     if n_vars < ncols:
         ncols = n_vars
     nrows = int(math.ceil(n_vars/ncols)) + 1 
     gridspec_kw =np.ones(nrows)
-    gridspec_kw[-1] = 0.1 # add space for universal legend
+    gridspec_kw[-1] = 0.2 # add space for universal legend
     gridspec_kw = {'height_ratios': gridspec_kw}
     hor_len = 12.0
-    vert_len = hor_len * nrows / (ncols)+1
+    vert_len = hor_len * (nrows-1) / (ncols) + 1
     size_in = (hor_len, vert_len)
-    th = time / 3600
     fig, axes = plt.subplots(nrows, ncols, figsize=size_in, sharey=True, constrained_layout=True, gridspec_kw=gridspec_kw)
     axes = axes.ravel()
-    fig.suptitle(f'{th:.2f} hours')
-    if n_vars == 1:
-        axes = [axes]
+    fig.suptitle(title)
+    #if n_vars == 1:
+    #    axes = [axes]
     # Force even pixel dimensions at 600 dpi
     w_px = int(fig.get_figwidth() * fig.dpi)
     h_px = int(fig.get_figheight() * fig.dpi)
@@ -96,13 +96,125 @@ def plot_lines(time, it, color_opt, fig_folder, case_names, z, lines_var_it):
         case_handles = [Line2D([0], [0], color=color_opt[n], linestyle='solid', label=case_names[n])for n in range(num_cases)]
         fig.legend(handles=case_handles,
                 loc='lower center',
-                ncol=num_cases,
+                ncol=num_cases//2,
                 bbox_to_anchor=(0.5, 0.0))
 
     # --- Save Frame ---
     save_frame(fig, outdir, it, size_in, file_name = 'profiles_frame_')
     return outdir
-## temporal analysis ###
+## horizontal lines ##
+def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_it, loc, xlabel = 'y [m]', error_norm = None, save_folder = 'field outputs'):
+    """
+        Plot horizontal line profiles (field value vs coord) for each panel,
+        comparing all cases on the same axes, one subplot per panel.
+
+        Called once per timestep from an external time loop; saves a single
+        frame image per call and returns the output directory, for use with
+        create_video.
+
+        Parameters
+        ----------
+        time : ndarray
+            Full time array; time[it] gives the current time for the title.
+        it : int
+            Current timestep index.
+        color_opt : list
+            Per-case color options.
+        fig_folder : str
+            Base output directory.
+        case_names : list of str
+            Legend labels, one per case.
+        coord : list of ndarray
+            Horizontal coordinate array (e.g. y or x) per case
+        lines_var_it : dict
+            Maps panel name -> dict with:
+            'var' : dict mapping series label -> list of 1D arrays
+                        (one array per case). A panel with a single series
+                        draws one line per case (no series legend); multiple
+                        series overlay with dotted/dashed/solid/dashdot styles
+                        and get their own legend, e.g.
+                        {'u_centerline': [...], 'v_centerline': [...], 'w_centerline': [...]}
+            'title'  : subplot title
+            'label'  : y-axis label (field units)
+            'range'  : y-axis limits, e.g. ranges['w']
+
+        Returns
+        -------
+        outdir : str
+            Directory the frame was saved to.
+    """
+    if error_norm is not None:
+        with_error = True
+        save_folder = os.path.join(save_folder, 'with error')
+    else:
+        with_error = False
+        save_folder = os.path.join(save_folder)
+    outdir = os.path.join(fig_folder, save_folder, loc)
+    os.makedirs(outdir, exist_ok=True)
+
+    var_names = list(lines_var_it.keys())
+    n_vars = len(var_names)
+    num_cases = len(coord)
+
+    ncols = n_vars
+    nrows = int(3) if with_error else int(2)  # extra row for universal legend
+    gridspec_kw = np.ones(nrows)
+    gridspec_kw[-1] = 0.1
+    gridspec_kw = {'height_ratios': gridspec_kw}
+
+    hor_len = 12.0
+    vert_len = hor_len * (nrows-1) / ncols + 1
+    size_in = (hor_len, vert_len)
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=size_in, constrained_layout=True, gridspec_kw=gridspec_kw)
+    for ax in axes[-1, :]:
+            ax.remove()
+    axes = axes.ravel()
+    fig.suptitle(title)
+
+    for a, var_name in enumerate(var_names):
+        profiles = lines_var_it[var_name]['var']
+        title = lines_var_it[var_name]['title']
+        label = lines_var_it[var_name]['label']
+        range_var = lines_var_it[var_name]['range']
+        for n in range(num_cases):
+            axes[a].plot(coord[n], profiles[n], color=color_opt[n], label=case_names[n])
+        axes[a].set_title(title)
+        axes[a].set_ylabel(label)
+        axes[a].set_ylim(range_var)
+        axes[a].set_xlabel(xlabel)
+        axes[a].set_xlim([min(coord[-1]), max(coord[-1])])
+        axes[a].ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True) 
+
+    if with_error:
+        for a, var_name in enumerate(var_names):
+            comparison_profile = lines_var_it[var_name]['var'][-1]
+            profiles = lines_var_it[var_name]['var']
+            normalize_error = error_norm[var_name]
+
+            for n in range(num_cases-1):
+                stepping = int(len(comparison_profile)/len(profiles[n]))
+                error = (profiles[n] - comparison_profile[::stepping])/normalize_error
+                axes[a+n_vars].plot(coord[n], error, color=color_opt[n], linestyle = 'dashed')
+            axes[a+n_vars].set_ylabel(r"$\frac{\Delta \phi}{\phi_{0}}$")
+            axes[a+n_vars].set_ylim([-0.2, 0.2])
+            axes[a+n_vars].set_xlabel(xlabel)
+            axes[a+n_vars].set_xlim([min(coord[-1]), max(coord[-1])])
+
+    plt.subplots_adjust(left=0.05, bottom=0.30)
+    if num_cases > 1:
+        case_handles = [Line2D([0], [0], color=color_opt[n], linestyle='solid',
+                                label=case_names[n]) for n in range(num_cases)]
+        fig.legend(handles=case_handles, loc='lower center',
+                   ncol=num_cases, bbox_to_anchor=(0.5, 0.0))
+    # --- Save Frame ---#
+    if with_error:
+        file_name = 'hor_centerline_frame_with_error_'
+    else:
+        file_name = 'hor_centerline_frame_'
+    save_frame(fig, outdir, it, size_in, file_name=file_name)
+    return outdir
+## temporal analysis ##
 def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
     num_cases = len(case_names)
     if num_cases==1:
@@ -273,7 +385,7 @@ def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, nam
     plt.savefig(frame_path)
     plt.close(fig)
     print("Temporal Plot Saved: ", frame_path)
-## turbulent statistics plotting
+## turbulent statistics plotting ##
 def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, u_rms, w_rms, uw, b_avg, bur_fluc_avg, bw_fluc_avg, Tu, Tw, Cu, Cw):
     num_cases = len(case_names)
     ncols = 3
@@ -395,7 +507,53 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
 
     return outdir # return the directory where frames are saved for video creation
 ### -------------------------PLOTTING DENSE PLUME FUNCTIONS------------------------- ###
-## buoyancy analysis 
+## scaling analysis ##
+def plot_scaling_analysis(time, fig_folder, F, F_transverse, eta, c_delta, loc_z):
+    def _F(eta, alpha):
+        return np.exp(-alpha * eta**2)
+    nz = len(loc_z)
+    nt = len(time)
+    size_in = (12, 6)
+    for it in range(nt):
+        outdir = os.path.join(fig_folder, 'scaling analysis/')
+        os.makedirs(outdir, exist_ok=True)
+        fig, axes = plt.subplots(1, nz, sharey = True, sharex = True, figsize=size_in)
+        axes = axes.ravel()
+        for n, ax in enumerate(axes):
+            F_it_k = F[it, :, n].ravel()
+            F_transverse_it_k = F_transverse[it, :, n].ravel()
+            eta_it_k = eta[it, :, n].ravel()
+            n_keep = np.where(~np.isnan(F_it_k))
+            F_it_k = F_it_k[n_keep]
+            F_transverse_it_k = F_transverse_it_k[n_keep]
+            eta_it_k = eta_it_k[n_keep]
+            alpha = scipy.optimize.curve_fit(_F, eta_it_k, F_it_k)[0][0]
+            def _F_transverse(eta, c_delta, alpha):
+                return (c_delta/(2*alpha))*(1/eta)*((2*alpha*eta**2 + 1)*np.exp(-alpha*eta**2) - 1)
+            print(f"it = {it}, z = {loc_z[n]:.2f} m: F fit coefficients: {alpha} \n F_trans fit coefficients: {c_delta[it]}")
+            ax.set_title(f"z = {loc_z[n]:.2f} m")
+            # plot r/z vs F_line and F_transverse_line
+            ax.plot(eta_it_k, _F(eta_it_k, alpha), label = rf"F$(\eta) \approx e^{{-{alpha:.2f} \eta^2}}$")
+            c = c_delta[it]
+            label = (
+                rf"$\frac{{{c:.2f}}}{{2\cdot {alpha:.2f}}} \frac{{1}}{{\eta}}"
+                rf"\left[\left(2\cdot {alpha:.2f}\, \eta^2+1\right) e^{{-{alpha:.2f} \eta^2}}-1\right]$"
+            )
+            ax.plot(eta_it_k, _F_transverse(eta_it_k, alpha, c_delta[it]), label=label)
+            # plot r/z vs F and F_transverse data
+            if n==0:
+                ax.scatter(eta_it_k, F_it_k, marker='o', s=10, label = r"$\frac{\bar{w}(r, z)}{w_c(z)} \equiv F(\eta)$")
+                ax.scatter(eta_it_k, F_transverse_it_k, marker='^', s=10, label = r"$\frac{\bar{u_{r}}(r, z)}{w_c(z)}$")
+            else:
+                ax.scatter(eta_it_k, F_it_k, marker='o', s=10)
+                ax.scatter(eta_it_k, F_transverse_it_k, marker='^', s=10)
+            #print(max(F_it), max(F_transverse_it), max(F_line), max(F_transverse_line))
+            ax.set_xlabel(r"$\eta$")
+            ax.legend(loc = 'upper right')
+        save_frame(fig, outdir, it, size_in)
+
+    return outdir
+## buoyancy analysis ##
 def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, mld, b_avg, w_avg, b_center, w_center, b_rms, bur_fluc_avg, bw_fluc_avg, b_fluc, rho_perturbed, Ri_avg, Ri_strat, Ri_plume, plume_depth_intrusion, plume_depth_neutral, w_neutral, w_intrusion, w_mld, rho_perturbed_neutral, rho_perturbed_intrusion, rho_perturbed_mld, bwfluc_neutral, bwfluc_intrusion, bwfluc_mld):
 
     outdir = os.path.join(fig_folder, 'NBP buoyancy analysis/')
@@ -577,7 +735,7 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     print(f"Time step {it + 1} captured: {frame_path}")
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
-## spatial vertical analysis ###
+## spatial vertical analysis ##
 def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
@@ -723,7 +881,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         save_frame(fig, outdir, it, size_in, file_name = 'comparison_vert_buoyancy_')
 
     return outdir # return the directory where frames are saved for video creation
-## spatial horizontal analysis ###
+## spatial horizontal analysis ##
 def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
     num_cases = len(case_names)
     if num_cases==0:
@@ -848,7 +1006,7 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
     save_frame(fig, outdir, it, size_in, file_name = 'hor_centerline_comparisons_')
 
     return outdir # return the directory where frames are saved for video creation
-## plume depths
+## plume depths ##
 def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral, zc, contour, trend = True):
     num_cases = len(case_names)
     ncols = 3
@@ -889,7 +1047,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral,
             tmax = time[i].max() / 3600
             ax[0].plot(time[i]/3600, zp[i], label=r"z$_{w=0}$", color = color_opt[i], linewidth = 0.75)
             ax[1].plot(time[i]/3600, zneutral[i], label=r"z$_{b=0}$", color = color_opt[i], linewidth = 0.75)
-            ax[2].plot(time[i]/3600, zc[i], label=rf"z$_{{contour = {contour:.3f}}}$", color = color_opt[i], linewidth = 0.75)
+            ax[2].plot(time[i]/3600, zc[i], label=rf"z$_{{contour = {contour:.2f}}}$", color = color_opt[i], linewidth = 0.75)
         else:
             tmax = max(tmax, time[i].max() / 3600)
             ax[0].plot(time[i]/3600, zp[i], color = color_opt[i], linewidth = 0.75)
