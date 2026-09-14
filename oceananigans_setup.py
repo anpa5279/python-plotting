@@ -2,27 +2,32 @@ import os
 import numpy as np
 import h5py
 import math
+import scipy.signal as signal
+import dask.array as da
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, compute_fluct_averages, compute_rms, binning_oc
+from diagnostics import compute_temporal_averages, compute_rms, binning_oc
 from interpolation import vertical_line, velocities_to_center, point
 
 # ==========================================================
 # FLAGS
 # ==========================================================
 binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+outer_length_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = False
-fluc_flag = False # calculates turbulent statistics from binning information
-rms_flag = False # calculates RMS from 3D fields
+fluc_flag = True # calculates turbulent statistics from binning information
+rms_flag = True # calculates RMS from 3D fields
 compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
 contour_flag = False # calculates radius of contour at each depth and time that is not in the default
 mass_flag = False
 negative_tracer_flag = False # calculates the number of negative tracer values in the domain and the average of those values
 
+binning_only = False # certain calculations will be done with binning data
+
 # model options
-with_halos = True
+with_halos = False
 salinity = True
 
 # update flags if salinity is False
@@ -34,13 +39,14 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO3/dx0.125'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi0125/longer/condensed_files'
+
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
 reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
-test = output
+
 # ==========================================================
 # PARAMETERS
 # ==========================================================
@@ -48,7 +54,9 @@ g = 9.80665
 T0 = 25.0
 rho0 = 1026 # kg/m^3
 mld = -60
-
+w0 = -0.001
+rp = 4.0
+Sval = reader.Sval
 # ==========================================================
 # MODEL INFORMATION
 # ==========================================================
@@ -62,7 +70,7 @@ time = reader.t
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
 x, y, z = reader.x, reader.y, reader.z
-ncirc = min(nx[0], nx[1])//2      # full circular shells
+ncirc = min(nx[0], nx[1])//2 # full circular shells
 
 # ==========================================================
 # ANALYSIS
@@ -81,38 +89,130 @@ if binning_flag:
             del f["ccc/T"]
         if "ccc/horizontal velocity" in f:
             del f["ccc/horizontal velocity"]
-        if "ccc/rotation velocity" in f:
-            del f["ccc/rotation velocity"]
+        if "ccc/rosadfasdfasdfadvadzfkjl;adfjgl;dfakgjadl;fkgjl'rkfi velocity" in f:
+            del f["ccc/rotational velocity"]
         if "ccc/w" in f:
             del f["ccc/w"]
         f.create_dataset("ccc/dimensions/r_bin", data = r)
         f.create_dataset("ccc/dimensions/z", data=z)
         f.create_dataset("ccc/dimensions/time", data=time)
     if reader.salinity:
-        S_rz = binning_oc('S', reader)
+        S_rz = binning_oc('S', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
         with h5py.File(bin_path, "a") as f:
             if "ccc/S" in f:
                 del f["ccc/S"]
             f.create_dataset("ccc/S", data=S_rz)
-    T_rz= binning_oc('T', reader)
+    T_rz= binning_oc('T', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
     with h5py.File(bin_path, "a") as f:
         f.create_dataset("ccc/T", data=T_rz)
     del T_rz
-    ur_rz = binning_oc('ur', reader)
+    ur_rz = binning_oc('ur', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
     with h5py.File(bin_path, "a") as f:
         f.create_dataset("ccc/horizontal velocity", data=ur_rz)
     del ur_rz
-    utheta_rz = binning_oc('utheta', reader)
+    utheta_rz = binning_oc('utheta', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
     with h5py.File(bin_path, "a") as f:
-        f.create_dataset("ccc/rotation velocity", data=utheta_rz)
+        if "ccc/rotational velocity" in f:
+            del f["ccc/rotational velocity"]
+        f.create_dataset("ccc/rotational velocity", data=utheta_rz)
     del utheta_rz
-    w_rz = binning_oc('w', reader)
+    w_rz = binning_oc('w', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
     with h5py.File(bin_path, "a") as f:
+        if "ccc/w" in f:
+            del f["ccc/w"]
         f.create_dataset("ccc/w", data=w_rz)
     del w_rz
     print(f"Saved binning to {bin_path}")
     reader.binning = True
     reader.bin_file = 'binning_rtz.h5'
+    
+###------------APPLYING AZIMUTHAL AVERAGING TO DATA-----------------###
+if outer_length_flag:
+    w_rz = reader.load_binning_var('w')
+    T_rz = reader.load_binning_var('T')
+    S_rz = reader.load_binning_var('S')
+    b_rz = g * reader.alpha * (T_rz - T0) - g * reader.beta * S_rz
+    ur_rz = reader.load_binning_var('horizontal velocity')
+    del T_rz, S_rz
+    area = reader.dx[0]*reader.dx[1]
+    Q = area*np.mean(w_rz, axis=-3) # [m^3/s]
+    M = area*np.mean(w_rz**2, axis=-3) # [m^4/s^2]
+    B = area*np.mean(b_rz*w_rz, axis=-3) # [m^4/s^3]
+    above_mld = np.where(reader.z>=mld+1.0)[0]
+    # ignoring first few time steps and information below the MLD
+    if reader.nt < 10:
+        it_range = np.arange(6, reader.nt)
+    else:
+        it_range = np.arange(6, 10)
+
+    IT, J, K = np.meshgrid(it_range, np.arange(len(r)), above_mld, indexing='ij')
+
+    # morton et al. 1956 scaling analysis
+    #Q = Q[above_mld[None, :], it_range]
+    #M = M[above_mld[None, :], it_range]
+    #B = B[above_mld[None, :], it_range]
+    #w_s = M / Q # outer velocity scale, shape (z, t)
+    #Q0 = (2*rp)**2*w0
+    #M0 = (2*rp)**2*w0**2
+    B0 = -g * reader.beta * Sval * w0 # [m^2/s^3]
+    #Ln = M**(3/4)/B**(1/2) # negative sqrt is nan and 
+    # scaling analysis from Peter's textbook
+    delta = np.empty((len(it_range), len(above_mld), ))
+    w_c = -w_rz[IT[:, 0, :], 0, K[:, 0, :]]
+    w_rz_filtered = np.empty((len(it_range), len(r), len(above_mld), ))
+    for it in range(len(it_range)):
+        for k in range(len(above_mld)):
+            var = np.pad(w_rz[it_range[it], :, above_mld[k]].squeeze(), (nx[0]//2, 0), mode='symmetric')
+            var = signal.fftconvolve(var, np.ones(int(rp//dx[0]))*dx[0]/rp, mode='same')
+            var = var[len(var)//2:]
+            w_rz_filtered[it, :, k] = var
+            var = w_rz[it_range[it], :, above_mld[k]].squeeze()
+            r_opt = point(var, r, f0 = -w_c[it, k]*10**-5)#0.1*w0)#
+            if np.size(r_opt) > 1:
+                delta[it, k] = np.max(r_opt)
+            elif np.size(r_opt) == 0:
+                delta[it, k] = np.nan
+            else:
+                delta[it, k] = r_opt
+
+    # calculate c_delta and c_w
+    c_delta = np.abs(delta/z[None, above_mld])
+    c_w = w_c*np.abs(z[None, above_mld])**(1/3)*(B0*(2*rp)**2)**(-1/3)
+    # caclulate ND 
+    eta = r[None, :, None]/delta[:, None, :]
+    F = -w_rz_filtered/w_c[:, None, :]
+    #alpha = -np.log(F)/(eta**2)
+    F_transverse = ur_rz[IT, J, K]/w_c[:, None, :]
+    # remove information that is outside the delta bounds
+    for it in range(len(it_range)):
+        for k in range(len(above_mld)):
+            F[it, :, k][r > delta[it, k]] = np.nan
+            F_transverse[it, :, k][r > delta[it, k]] = np.nan
+
+    # write to file 
+    with h5py.File(bin_path, "a") as f:
+        #if "scaling analysis/momentum buoyancy analysis/Ln" in f:
+        #    del f["scaling analysis/momentum buoyancy analysis/Ln"]
+        #f.create_dataset("scaling analysis/momentum buoyancy analysis/Ln", data=Ln)
+        #if "scaling analysis/momentum buoyancy analysis/velocity scale" in f:
+        #    del f["scaling analysis/momentum buoyancy analysis/velocity scale"]
+        #f.create_dataset("scaling analysis/momentum buoyancy analysis/velocity scale", data=w_s)
+        delta_opt = 'fft convolve w_c*10**-5' #'fft convolve w0*0.1'#w_c*10**-3
+        if "scaling analysis/outer length scale/"+delta_opt+"/delta" in f:
+            del f["scaling analysis/outer length scale/"+delta_opt+"/delta"]
+        f.create_dataset("scaling analysis/outer length scale/"+delta_opt+"/delta", data=delta)
+        if "scaling analysis/outer length scale/w filtered" in f:
+            del f["scaling analysis/outer length scale/w filtered"]
+        f.create_dataset("scaling analysis/outer length scale/w filtered", data=w_rz_filtered)
+        if "scaling analysis/outer length scale/"+delta_opt+"/outer velocity scale" in f:
+            del f["scaling analysis/outer length scale/"+delta_opt+"/outer velocity scale"]
+        f.create_dataset("scaling analysis/outer length scale/"+delta_opt+"/outer velocity scale", data=w_c)
+        if "scaling analysis/outer length scale/"+delta_opt+"/F" in f:
+            del f["scaling analysis/outer length scale/"+delta_opt+"/F"]
+        f.create_dataset("scaling analysis/outer length scale/"+delta_opt+"/F", data=F)
+        if "scaling analysis/outer length scale/"+delta_opt+"/F_transverse" in f:
+            del f["scaling analysis/outer length scale/"+delta_opt+"/F_transverse"]
+        f.create_dataset("scaling analysis/outer length scale/"+delta_opt+"/F_transverse", data=F_transverse)
 ###------------INTERPOLATION TO CENTERLINE--------------------------###
 if centerline_flag:
     file_path = os.path.join(folder, 'centerline.h5')
@@ -317,7 +417,6 @@ if planelsice_flag:
                 f.create_dataset(f"XY/z = {bound}/S'", data = S_fluc)
                 del S, S_fluc
         print(f"Saved plane slices for checking internal gravity waves to {file_path}")
-
 ###------------BUOYANCY CALCULATIONS--------------------------------###
 if buoyancy_flag:
     buoyancy_file = os.path.join(folder, 'buoyancy_profile.h5')
@@ -366,54 +465,191 @@ if buoyancy_flag:
     print(f"Saved buoyancy information to {buoyancy_file}")
 ###------------FLUCTUATION AVERAGES---------------------------------###
 if fluc_flag:
-    file_path = os.path.join(folder, 'fluctuations.h5')
-    data = compute_fluct_averages(reader)
-    with h5py.File(file_path, "a") as f:
-        if "fluctuations/T_fluc" in f:
-            del f["fluctuations/T_fluc"]
-        if "fluctuations/ur_fluc" in f:
-            del f["fluctuations/ur_fluc"]
-        if "fluctuations/utheta_fluc" in f:
-            del f["fluctuations/utheta_fluc"]
-        if "fluctuations/w_fluc" in f:
-            del f["fluctuations/w_fluc"]
-        if "fluctuations/b_fluc" in f:
-            del f["fluctuations/b_fluc"]
-        if "fluctuations/bur_fluc" in f:
-            del f["fluctuations/bur_fluc"]
-        if "fluctuations/butheta_fluc" in f:
-            del f["fluctuations/butheta_fluc"]
-        if "fluctuations/bw_fluc" in f:
-            del f["fluctuations/bw_fluc"]
-        f.create_dataset("fluctuations/T_fluc", data=data['T_fluc'])
-        f.create_dataset("fluctuations/ur_fluc", data=data['ur_fluc'])
-        f.create_dataset("fluctuations/utheta_fluc", data=data['utheta_fluc'])
-        f.create_dataset("fluctuations/w_fluc", data=data['w_fluc'])
-        f.create_dataset("fluctuations/b_fluc", data=data['b_fluc'])
-        f.create_dataset("fluctuations/bur_fluc", data=data['bur_fluc'])
-        f.create_dataset("fluctuations/butheta_fluc", data=data['butheta_fluc'])
-        f.create_dataset("fluctuations/bw_fluc", data=data['bw_fluc'])
-        if salinity:
-            if "fluctuations/S_fluc" in f:
-                del f["fluctuations/S_fluc"]
-            f.create_dataset("fluctuations/S_fluc", data=data['S_fluc'])
-    print(f"Saved fluctuations to {file_path}")
+    if binning_only:
+        ur_rz = reader.load_binning_var('horizontal velocity')
+        w_rz = reader.load_binning_var('w')
+        T_rz = reader.load_binning_var('T')
+        S_rz = reader.load_binning_var('S')
+        b_rz = g * reader.alpha * (T_rz - T0) - g * reader.beta * S_rz
+        bw_rz = b_rz * w_rz
+        bur_rz = b_rz * ur_rz
+        del T_rz, S_rz
+
+        # calculate averages
+        ur_avg = np.mean(ur_rz, axis=-3)
+        w_avg = np.mean(w_rz, axis=-3)
+        b_avg = np.mean(b_rz, axis=-3)
+        bw_avg = np.mean(bw_rz, axis=-3)
+        bur_avg = np.mean(bur_rz, axis=-3)
+
+        # calculate fluctuations
+        ur_fluc = ur_rz - ur_avg[None, :, :]
+        del ur_rz
+        w_fluc = w_rz - w_avg[None, :, :]
+        b_fluc = b_rz - b_avg[None, :, :]
+        b_fluc_avg = np.mean(b_fluc, axis=-3)
+        b_fluc_w_avg = np.mean(b_fluc * w_rz, axis=-3)
+        del b_rz
+        b_fluc_w_fluc = b_fluc * w_rz - b_fluc_w_avg[None, :, :]
+        bw_fluc = bw_rz - bw_avg[None, :, :]
+        del bw_rz, w_rz
+        bur_fluc = bur_rz - bur_avg[None, :, :]
+        del bur_rz
+
+        with h5py.File(bin_path, "a") as f:
+            if "averages/horizontal velocity" in f:
+                del f["averages/horizontal velocity"]
+            f.create_dataset("averages/horizontal velocity", data=ur_avg)
+            if "averages/w" in f:
+                del f["averages/w"]
+            f.create_dataset("averages/w", data=w_avg)
+            if "averages/b" in f:
+                del f["averages/b"]
+            f.create_dataset("averages/b", data=b_avg)
+            if "averages/b_fluc" in f:
+                del f["averages/b_fluc"]
+            f.create_dataset("averages/b_fluc", data=b_fluc_avg)
+            if "averages/b_fluc_w" in f:
+                del f["averages/b_fluc_w"]
+            f.create_dataset("averages/b_fluc_w", data=b_fluc_w_avg)
+            if "averages/bw" in f:
+                del f["averages/bw"]
+            f.create_dataset("averages/bw", data=bw_avg)
+            if "averages/bur" in f:
+                del f["averages/bur"]
+            f.create_dataset("averages/bur", data=bur_avg)
+            del ur_avg, w_avg, b_avg, bw_avg, bur_avg
+
+            if "fluctuations/ur" in f:
+                del f["fluctuations/ur"]
+            f.create_dataset("fluctuations/ur", data=ur_fluc)
+            if "fluctuations/w" in f:
+                del f["fluctuations/w"]
+            f.create_dataset("fluctuations/w", data=w_fluc)
+            if "fluctuations/b" in f:
+                del f["fluctuations/b"]
+            f.create_dataset("fluctuations/b", data=b_fluc)
+            if "fluctuations/bur" in f:
+                del f["fluctuations/bur"]
+            f.create_dataset("fluctuations/bur", data=bur_fluc)
+            if "fluctuations/bw" in f:
+                del f["fluctuations/bw"]
+            f.create_dataset("fluctuations/bw", data=bw_fluc)
+            if "fluctuations/b_fluc_w" in f:
+                del f["fluctuations/b_fluc_w"]
+            f.create_dataset("fluctuations/b_fluc_w", data=b_fluc_w_fluc)
+            del b_fluc, bur_fluc, bw_fluc
+        print(f"Saved fluctuations to {bin_path}")
+    else:
+        file_path = os.path.join(folder, 'fluctuations.h5')
+
+        # Calcualting buoyancy
+        dims = (-3, -2)
+        T = reader.lazy_field('T').compute()
+        if reader.salinity:
+            S = reader.lazy_field('S').compute()
+            # Buoyancy (still lazy)
+            beta  = reader.beta
+            b = g * alpha * (T - T0) - (g * beta * S)
+            del S
+        else:
+            b = g * alpha * (T - T0)
+
+        # Temperature fluctuations
+        T_xy = da.mean(T, axis=dims)
+
+        T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
+
+        with h5py.File(file_path, "a") as f:
+            if "fluctuations/T_fluc" in f:
+                del f["fluctuations/T_fluc"]
+            f.create_dataset("fluctuations/T_fluc", data=da.mean(T_fluc, axis=dims))
+
+        del T, T_fluc
+
+        b_xy = da.mean(b, axis=dims)
+
+        b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
+        w = reader.lazy_field('w').compute()
+        
+        # Center velocities (still lazy)
+        w = velocities_to_center(w, axis=-1)
+
+        with h5py.File(file_path, "a") as f:
+            if "fluctuations/ur_fluc" in f:
+                del f["fluctuations/ur_fluc"]
+            if "fluctuations/utheta_fluc" in f:
+                del f["fluctuations/utheta_fluc"]
+            if "fluctuations/w_fluc" in f:
+                del f["fluctuations/w_fluc"]
+            if "fluctuations/b_fluc" in f:
+                del f["fluctuations/b_fluc"]
+            if "fluctuations/bur_fluc" in f:
+                del f["fluctuations/bur_fluc"]
+            if "fluctuations/butheta_fluc" in f:
+                del f["fluctuations/butheta_fluc"]
+            if "fluctuations/bw_fluc" in f:
+                del f["fluctuations/bw_fluc"]
+            f.create_dataset("fluctuations/b_fluc", data=da.mean(b_fluc, axis=dims))
+            f.create_dataset("fluctuations/bw_fluc", data=da.mean(b_fluc * w, axis=dims))
+        del b, b_fluc, w
+        print(f"Saved fluctuations to {file_path}")
 ###------------ROOT MEAN SQUARE-------------------------------------###
 if rms_flag:
-    file_path = os.path.join(folder, 'fluctuations.h5')
-    rms_values = compute_rms(reader)
-    with h5py.File(file_path, "a") as f:
-        if "rms/u" in f:
-            del f["rms/u"]
-        if "rms/v" in f:
-            del f["rms/v"]
-        if "rms/w" in f:
-            del f["rms/w"]
-        f.create_dataset("rms/u", data=rms_values['u_rms'])
-        f.create_dataset("rms/v", data=rms_values['v_rms'])
-        f.create_dataset("rms/w", data=rms_values['w_rms'])
-    del rms_values
-    print(f"Saved RMS to {file_path}")
+    if binning_only:
+        ur_fluc = reader.load_fluc('ur', file = 'binning_rtz.h5')
+        ur_rms = np.mean(ur_fluc**2, axis=-3)**0.5
+        del ur_fluc
+        w_fluc = reader.load_fluc('w', file = 'binning_rtz.h5')
+        w_rms = np.mean(w_fluc**2, axis=-3)**0.5
+        del w_fluc
+        b_fluc = reader.load_fluc('b', file = 'binning_rtz.h5')
+        b_rms = np.mean(b_fluc**2, axis=-3)**0.5
+        del b_fluc
+        bw_fluc = reader.load_fluc('bw', file = 'binning_rtz.h5')
+        bw_rms = np.mean(bw_fluc**2, axis=-3)**0.5
+        del bw_fluc
+        bur_fluc = reader.load_fluc('bur', file = 'binning_rtz.h5')
+        bur_rms = np.mean(bur_fluc**2, axis=-3)**0.5
+        del bur_fluc
+
+        with h5py.File(bin_path, "a") as f:
+            if "rms/horizontal velocity" in f:
+                del f["rms/horizontal velocity"]
+            f.create_dataset("rms/horizontal velocity", data=ur_rms)
+            del ur_rms
+            if "rms/w" in f:
+                del f["rms/w"]
+            f.create_dataset("rms/w", data=w_rms)
+            del w_rms
+            if "rms/b" in f:
+                del f["rms/b"]
+            f.create_dataset("rms/b", data=b_rms)
+            del b_rms
+            if "rms/bw" in f:
+                del f["rms/bw"]
+            f.create_dataset("rms/bw", data=bw_rms)
+            del bw_rms
+            if "rms/bur" in f:
+                del f["rms/bur"]
+            f.create_dataset("rms/bur", data=bur_rms)
+            del bur_rms
+        print(f"Saved RMS to {bin_path}")
+    else:
+        file_path = os.path.join(folder, 'fluctuations.h5')
+        rms_values = compute_rms(reader)
+        with h5py.File(file_path, "a") as f:
+            if "rms/u" in f:
+                del f["rms/u"]
+            if "rms/v" in f:
+                del f["rms/v"]
+            if "rms/w" in f:
+                del f["rms/w"]
+            f.create_dataset("rms/u", data=rms_values['u_rms'])
+            f.create_dataset("rms/v", data=rms_values['v_rms'])
+            f.create_dataset("rms/w", data=rms_values['w_rms'])
+        del rms_values
+        print(f"Saved RMS to {file_path}")
 ###------------TEMPORAL AVERAGES------------------------------------###
 if compute_temporal_averages_flag:
     start = 10
@@ -531,7 +767,7 @@ if mass_flag:
         f.create_dataset("S mass", data=S_mass)
         f.create_dataset("time gradient of S mass", data=dmdt)
     print(f"Saved mass calculations to {bin_path}")
-###------------NEGATIVE MASS CALCULATIONS------------------------------------###
+###------------NEGATIVE MASS CALCULATIONS---------------------------###
 if negative_tracer_flag:
     S = reader.lazy_field('S').compute()
     vol = math.prod(reader.lx)

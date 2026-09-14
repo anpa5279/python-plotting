@@ -32,14 +32,14 @@ drho1 = 0.012
 N_exp = np.array([39.79, 66.25]) #59.44, 87.62, 
 Q = np.array([4.4, 15])*1e-6 #4.4, 4.4, 
 F_exp = Q*g*(rho_b-rho_j)/rho_b
-hml_exp = np.array([7.7, 1.2])/100
+mld_exp = np.array([7.7, 1.2])/100
 # 2017 LES
 F_17 = np.array([94.65, 91.77, 129.63])
 N_17 = 0.007 * np.ones(len(F_17))
-hml_17 = np.ones(len(N_17)) * 160.0 
+mld_17 = np.ones(len(N_17)) * 160.0 
 # 2026 preprint
 h_nd = np.array([0.02, 0.06, 0.11, 0.21, 0.53, 1.06, 2.11, 3.17, 4.23, 5.29, 7.93, 8.89, 15.8, 29.7, 50.0, 88.9, 167, 281])
-hml = 500.0*np.ones(len(h_nd))
+mld = 500.0*np.ones(len(h_nd))
 """
     # personal cases
     cases_info = comparison_info('all')
@@ -52,7 +52,7 @@ hml = 500.0*np.ones(len(h_nd))
             'r0':  rp * np.ones(cases_info['num_cases']),
             'F0':  F0_current,
             'N':   N_current,
-            'hml': cases_info['mld'],
+            'mld': cases_info['mld'],
             'Ln':  (F0_current / N_current**3)**(1/4),
         },
 """
@@ -63,7 +63,7 @@ papers = [
         'r0':  r_exp*np.ones(len(N_exp)),
         'F0':  F_exp,
         'N':   N_exp,
-        'hml': hml_exp,
+        'mld': mld_exp,
         'Ln':  (F_exp/N_exp**3)**(1/4),
     },
     {
@@ -72,7 +72,7 @@ papers = [
         'r0':  np.array([5, 10, 10]),
         'F0':  F_17,
         'N':   N_17,
-        'hml': 160.0 * np.ones(3),
+        'mld': 160.0 * np.ones(3),
         'Ln':  (F_17 / N_17**3)**(1/4),
     },
     {
@@ -81,7 +81,7 @@ papers = [
         'r0':  0.005,
         'F0':  3.96e-07,
         'N':   1.0,
-        'hml': 0.2,
+        'mld': 0.2,
         'Ln':  0.025,
     },
     {
@@ -90,7 +90,7 @@ papers = [
         'r0':  (0.005) * np.ones(3),
         'F0':  (5e-6)  * np.ones(3),
         'N':   np.array([1.0, 10.0, 100.0]),
-        'hml': 0.2 * np.ones(3),
+        'mld': 0.2 * np.ones(3),
         'Ln':  np.array([0.0473, 0.0084, 0.0015]),
     },
 
@@ -100,8 +100,8 @@ papers = [
         'r0':  27.42*np.ones(len(h_nd)),
         'F0':  1e-5,
         'N':   5e-5,
-        'hml': hml,
-        'Ln':  hml/h_nd,
+        'mld': mld,
+        'Ln':  mld/h_nd,
     },
     {
         'title': 'Proposed Cases',
@@ -109,7 +109,7 @@ papers = [
         'r0':  rp * np.ones(len(h_ml)),
         'F0':  F0,
         'N':   N,
-        'hml': h_ml,
+        'mld': h_ml,
         'Ln':  Ln,
     },
 ]
@@ -170,11 +170,11 @@ if with_mld:
         style = paper_style[title]
 
         r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
-        hml = np.atleast_1d(np.asarray(paper['hml'], dtype=float))
+        mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
         Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
 
         x = Ln  / r0    # Ln / r0
-        y = hml / r0    # hml / r0
+        y = mld / r0    # mld / r0
 
         ax.scatter(
             x, y,
@@ -236,11 +236,11 @@ if with_mld:
         style = paper_style[title]
 
         r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
-        hml = np.atleast_1d(np.asarray(paper['hml'], dtype=float))
+        mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
         Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
 
         x = Ln  / r0    # Ln / r0
-        y = hml / Ln    # hml / Ln
+        y = mld / Ln    # mld / Ln
 
         ax.scatter(
             x, y,
@@ -419,11 +419,11 @@ else:
         style = paper_style[title]
 
         r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
-        hml = np.atleast_1d(np.asarray(paper['hml'], dtype=float))
+        mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
         Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
 
         x = Ln  / r0    # Ln / r0
-        y = hml / r0    # hml / r0
+        y = mld / r0    # mld / r0
 
         ax0.scatter(
             x, y,

@@ -434,6 +434,7 @@ def plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r, tol, neu
     plt.close(fig)
 
 ### ---------------------- CONVERGENCE TESTS ----------------------------- ###
+##
 def convergence_tests(time, it, ranges, fig_folder, lx, nx, x, y, z, cases_sorted, matrix_N, ver, hor, 
                       b, b_avg, b_rms_sign, w_rms, b_rms, bw_fluc, b_flux_avg, b_max_sign_change_to_negative_loc, L_ozmidov, L_ozmidov_background, idx_neg, plot_points = False):
 

@@ -45,7 +45,7 @@ if plot_variables:
     os.makedirs(fig_var_folder, exist_ok=True)
 
 # parameters
-hml = 60
+mld = 60
 # collecting model information for all cases
 x = reader.x
 y = reader.y
@@ -141,8 +141,8 @@ if plot_depth:
         nz_opt = np.max(np.where(b_fluc_centerline_sign_change[it, :]>0))
         z_bfluc_sign = point(b_fluc_centerline[it, nz_opt-2:nz_opt+2], z[nz_opt-2:nz_opt+2], f0 = 0.0)
 ############ PLOTTING ############
-hml_var = np.arange(-10**2, 10**2)
-hml_array = -hml * np.ones(len(hml_var))
+mld_var = np.arange(-10**2, 10**2)
+mld_array = -mld * np.ones(len(mld_var))
 ranges = plot_ranges()
 ranges['w'] = [-2.2*10**-1, 2.2*10**-1]
 ranges['b_fluc'] = [-8*10**(-4), 8*10**(-4)]
@@ -183,7 +183,7 @@ if plot_raw_output:
         for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
             for n, var in enumerate(vars):
                 im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-                axes[count].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+                axes[count].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
                 axes[count].legend(loc='lower left')
                 axes[count].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
                 axes[count].set_ylim(z.min(), z.max())
@@ -225,7 +225,7 @@ if plot_zt:
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     for n, var in enumerate(vars):
         im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-        axes[n].plot(time, -hml*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+        axes[n].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
         axes[n].set_ylim(z.min(), z.max())
@@ -268,7 +268,7 @@ if plot_variables:
                 ncol=nvars,
                 bbox_to_anchor=(0.52, 0.01))
 
-        ax0.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax0.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax0.plot(w_centerline[it, :], z, color = color_opt[0], linewidth = width)
         ax0.plot(w_fluc_centerline[it, :], z, color = color_opt[2], linewidth = width)
         ax0.set_xlim(ranges['w'])
@@ -277,7 +277,7 @@ if plot_variables:
         ax0.set_xlabel("[m/s]")
         ax0.set_ylabel("z [m]")
 
-        ax1.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax1.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax1.plot(dwdz_centerline[it, :], z, color = color_opt[0], linewidth = width)
         ax1.plot(dwflucdz_centerline[it, :], z, color = color_opt[2], linewidth = width)
         ax1.set_xlim(ranges['gradw'])
@@ -285,20 +285,20 @@ if plot_variables:
         ax1.set_xlabel("dw/dz [1/s]")
         #ax1.set_ylabel("z [m]")
 
-        ax2.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax2.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax2.plot(w_rms[it, :], z, color = color_opt[1], linewidth = width)
         ax2.set_xlim(ranges['vel_rms'])
         ax2.set_title(r"w$_{rms}$")
         ax2.set_xlabel(r"w$_{rms}$ [m/s]")
 
-        ax3.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax3.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax3.plot(dwrmsdz[it, :], z, color = color_opt[1], linewidth = width)
         ax3.set_xlim(ranges['gradw'][0]*factor, ranges['gradw'][1]*factor)
         ax3.set_title(r"dw$_{rms}$/dz")
         ax3.set_xlabel("dw/dz [1/s]")
         #ax3.set_ylabel("z [m]")
 
-        ax4.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax4.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax4.plot(np.sign(w_centerline[it, :]), z, color = color_opt[0], linewidth = width)
         ax4.plot(np.sign(w_fluc_centerline[it, :]), z, color = color_opt[2], linewidth = width)
         ax4.plot(np.sign(b_fluc_centerline[it, :]), z, color = color_opt[4], linewidth = width)
@@ -306,33 +306,33 @@ if plot_variables:
         ax4.set_title("Sign")
         ax4.set_xlabel("Sign")
 
-        ax5.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax5.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax5.plot(b_fluc_centerline[it, :], z, color = color_opt[4], linewidth = width)
         ax5.set_xlim(ranges['b_fluc'])
         ax5.set_title("b'")
         ax5.set_xlabel(r"b' [m/s$^2$]")
         ax5.set_ylabel("z [m]")
 
-        ax6.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax6.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax6.plot(dbflucdz[it, :], z, color = color_opt[4], linewidth = width)
         ax6.set_xlim(ranges['gradb'])
         ax6.set_title("db'/dz")
         ax6.set_xlabel(r"db'/dz [1/s$^2$]")
 
-        ax7.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax7.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax7.plot(b_rms[it, :], z, color = color_opt[3], linewidth = width)
         ax7.set_xlim(ranges['b_rms'])
         ax7.set_title(r"b$_{rms}$")
         ax7.set_xlabel(r"b$_{rms}$ [m/s$^2$]")
         #ax7.set_ylabel("z [m]")
 
-        ax8.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax8.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax8.plot(dbrmsdz[it, :], z, color = color_opt[3], linewidth = width)
         ax8.set_xlim(ranges['gradb'][0]*factor, ranges['gradb'][1]*factor)
         ax8.set_title(r"db$_{rms}$/dz")
         ax8.set_xlabel(r"db$_{rms}$/dz [1/s$^2$]")
 
-        ax9.plot(hml_var, hml_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
+        ax9.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
         ax9.plot(w_centerline_mag[it, :], z, color = color_opt[0], linewidth = width)
         ax9.plot(w_fluc_centerline_mag[it, :], z, color = color_opt[1], linewidth = width)
         ax9.plot(w_rms_mag[it, :], z, color = color_opt[2], linewidth = width)

@@ -57,17 +57,17 @@ if vertical_verification:
 if horizontal_verification:
     fig_folder_horiz = os.path.join(fig_folder, 'horizontal_line')
     os.makedirs(fig_folder_horiz, exist_ok=True)
-    hml = 60
-    hml_opt = np.argmin(np.abs(z + hml)) # approximate since we what to compare interpolation to raw output
-    hml_opt = [hml_opt, hml_opt + 1]
+    mld = 60
+    mld_opt = np.argmin(np.abs(z + mld)) # approximate since we what to compare interpolation to raw output
+    mld_opt = [mld_opt, mld_opt + 1]
     hor_opt = [nx[1]//2, nx[1]//2 + 1]
-    hor_idx, hml_idx = np.meshgrid(hor_opt, hml_opt, indexing = 'ij')
+    hor_idx, mld_idx = np.meshgrid(hor_opt, mld_opt, indexing = 'ij')
     xf = reader.xf
     yf = reader.yf
     u = reader.lazy_field('u').compute()
-    u = u[:, :, hor_idx, hml_idx]
+    u = u[:, :, hor_idx, mld_idx]
     v = reader.lazy_field('v').compute()
-    v = v[:, hor_opt, :, :][:, :, :, hml_opt]
+    v = v[:, hor_opt, :, :][:, :, :, mld_opt]
     u_center_function = velocities_to_center(u, -3)
     v_center_function = velocities_to_center(v, -2)
     uf = np.concatenate([u, np.take(u, [0], axis=-3)], axis=-3)
@@ -76,13 +76,13 @@ if horizontal_verification:
     v_averaging = (vf[:, :, :-1, :] + vf[:, :, 1:, :])/2
     u_interpolation = np.empty_like(u_center_function)
     v_interpolation = np.empty_like(v_center_function)
-    for k, hml_k in enumerate(hml_opt):
+    for k, mld_k in enumerate(mld_opt):
         for i in range(nx[0]):
             for j in range(len(hor_opt)):
-                u_interpolation[:, i, j, k] = point(uf[:, :, j, k][:, :, None, None], z[hml_idx], x = xf, x0 = x[i])
+                u_interpolation[:, i, j, k] = point(uf[:, :, j, k][:, :, None, None], z[mld_idx], x = xf, x0 = x[i])
         for i in range(len(hor_opt)):
             for j in range(nx[1]):
-                v_interpolation[:, i, j, k] = point(vf[:, i, :, k][:, None, :, None], z[hml_k], y = yf, y0 = y[j])
+                v_interpolation[:, i, j, k] = point(vf[:, i, :, k][:, None, :, None], z[mld_k], y = yf, y0 = y[j])
 ############ PLOTTING ############
 """
     Plotting throughout time...
@@ -155,7 +155,7 @@ if horizontal_verification:
                 bbox_to_anchor=(0.52, 0.005))
         count = 0
         for j, jy in enumerate(hor_opt):
-            for k, kz in enumerate(hml_opt):
+            for k, kz in enumerate(mld_opt):
                 axes[j + k + count].set_title(f"u at (Ny = {jy}, Nz = {kz})")
                 axes[j + k + count].plot(xf, uf[it, :, j, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
                 axes[j + k + count].plot(x, u_center_function[it, :, j, k], label = labels[1], color = color_opt[1], linestyle = line_opt[1])
@@ -164,7 +164,7 @@ if horizontal_verification:
             count += 1
         count += kz.size + jy.size
         for i, ix in enumerate(hor_opt):
-            for k, kz in enumerate(hml_opt):
+            for k, kz in enumerate(mld_opt):
                 axes[i + k + count].set_title(f"v at (Nx = {ix}, Nz = {kz})")
                 axes[i + k + count].plot(yf, v[it, i, :, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
                 axes[i + k + count].plot(y, v_center_function[it, i, :, k], label = labels[1], color = color_opt[1], linestyle = line_opt[1])

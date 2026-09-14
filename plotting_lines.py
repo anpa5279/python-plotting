@@ -159,7 +159,7 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
     ncols = n_vars
     nrows = int(3) if with_error else int(2)  # extra row for universal legend
     gridspec_kw = np.ones(nrows)
-    gridspec_kw[-1] = 0.1
+    gridspec_kw[-1] = 0.2
     gridspec_kw = {'height_ratios': gridspec_kw}
 
     hor_len = 12.0
@@ -196,17 +196,18 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
                 stepping = int(len(comparison_profile)/len(profiles[n]))
                 error = (profiles[n] - comparison_profile[::stepping])/normalize_error
                 axes[a+n_vars].plot(coord[n], error, color=color_opt[n], linestyle = 'dashed')
+                #print(f"it: {it}, var: {lines_var_it[var_name]['title']}, case: {case_names[n]}, abs max error: {np.max(np.abs(error))}, abs avg error: {np.mean(np.abs(error))}")
             axes[a+n_vars].set_ylabel(r"$\frac{\Delta \phi}{\phi_{0}}$")
             axes[a+n_vars].set_ylim([-0.2, 0.2])
             axes[a+n_vars].set_xlabel(xlabel)
             axes[a+n_vars].set_xlim([min(coord[-1]), max(coord[-1])])
-
+    #print('\n')
     plt.subplots_adjust(left=0.05, bottom=0.30)
     if num_cases > 1:
         case_handles = [Line2D([0], [0], color=color_opt[n], linestyle='solid',
                                 label=case_names[n]) for n in range(num_cases)]
         fig.legend(handles=case_handles, loc='lower center',
-                   ncol=num_cases, bbox_to_anchor=(0.5, 0.0))
+                   ncol=num_cases//2, bbox_to_anchor=(0.5, 0.0))
     # --- Save Frame ---#
     if with_error:
         file_name = 'hor_centerline_frame_with_error_'
@@ -511,45 +512,42 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
 def plot_scaling_analysis(time, fig_folder, F, F_transverse, eta, c_delta, loc_z):
     def _F(eta, alpha):
         return np.exp(-alpha * eta**2)
+
+    def _F_transverse(eta, c_delta, alpha):
+        return (c_delta/(2*alpha))*(1/eta)*((2*alpha*eta**2 + 1)*np.exp(-alpha*eta**2) - 1)
+
     nz = len(loc_z)
     nt = len(time)
     size_in = (12, 6)
+
+    outdir = os.path.join(fig_folder, 'scaling analysis/')
+    os.makedirs(outdir, exist_ok=True)
+
+    cmap = plt.get_cmap('viridis', nz)
+
+
     for it in range(nt):
-        outdir = os.path.join(fig_folder, 'scaling analysis/')
-        os.makedirs(outdir, exist_ok=True)
-        fig, axes = plt.subplots(1, nz, sharey = True, sharex = True, figsize=size_in)
-        axes = axes.ravel()
-        for n, ax in enumerate(axes):
+        fig, ax = plt.subplots(1, 1, figsize=size_in)
+
+        for n in range(nz):
             F_it_k = F[it, :, n].ravel()
-            F_transverse_it_k = F_transverse[it, :, n].ravel()
             eta_it_k = eta[it, :, n].ravel()
+
             n_keep = np.where(~np.isnan(F_it_k))
             F_it_k = F_it_k[n_keep]
-            F_transverse_it_k = F_transverse_it_k[n_keep]
             eta_it_k = eta_it_k[n_keep]
+
             alpha = scipy.optimize.curve_fit(_F, eta_it_k, F_it_k)[0][0]
-            def _F_transverse(eta, c_delta, alpha):
-                return (c_delta/(2*alpha))*(1/eta)*((2*alpha*eta**2 + 1)*np.exp(-alpha*eta**2) - 1)
-            print(f"it = {it}, z = {loc_z[n]:.2f} m: F fit coefficients: {alpha} \n F_trans fit coefficients: {c_delta[it]}")
-            ax.set_title(f"z = {loc_z[n]:.2f} m")
-            # plot r/z vs F_line and F_transverse_line
-            ax.plot(eta_it_k, _F(eta_it_k, alpha), label = rf"F$(\eta) \approx e^{{-{alpha:.2f} \eta^2}}$")
-            c = c_delta[it]
-            label = (
-                rf"$\frac{{{c:.2f}}}{{2\cdot {alpha:.2f}}} \frac{{1}}{{\eta}}"
-                rf"\left[\left(2\cdot {alpha:.2f}\, \eta^2+1\right) e^{{-{alpha:.2f} \eta^2}}-1\right]$"
-            )
-            ax.plot(eta_it_k, _F_transverse(eta_it_k, alpha, c_delta[it]), label=label)
-            # plot r/z vs F and F_transverse data
-            if n==0:
-                ax.scatter(eta_it_k, F_it_k, marker='o', s=10, label = r"$\frac{\bar{w}(r, z)}{w_c(z)} \equiv F(\eta)$")
-                ax.scatter(eta_it_k, F_transverse_it_k, marker='^', s=10, label = r"$\frac{\bar{u_{r}}(r, z)}{w_c(z)}$")
-            else:
-                ax.scatter(eta_it_k, F_it_k, marker='o', s=10)
-                ax.scatter(eta_it_k, F_transverse_it_k, marker='^', s=10)
-            #print(max(F_it), max(F_transverse_it), max(F_line), max(F_transverse_line))
-            ax.set_xlabel(r"$\eta$")
-            ax.legend(loc = 'upper right')
+
+            color = cmap(n)
+            ax.plot(eta_it_k, _F(eta_it_k, alpha), color=color,
+                    label=rf"z={loc_z[n]:.2f} m, $\alpha={alpha:.2f}$")
+            ax.scatter(eta_it_k, F_it_k, marker='o', s=10, color=color)
+
+        ax.set_xlabel(r"$\eta$")
+        ax.set_ylabel(r"$F(\eta)$")
+        ax.set_title(f"t = {time[it]/3600:.2f} hours")
+        ax.legend(loc='upper right', fontsize='small')
         save_frame(fig, outdir, it, size_in)
 
     return outdir

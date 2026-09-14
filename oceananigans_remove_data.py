@@ -3,7 +3,10 @@ import numpy as np
 import h5py
 
 from reader import OceananigansData
-
+"""
+Script to remove data from Oceananigans post processed files. This is for if the data is old or incorrect and needs to be reprocessed. 
+The script will delete the data from the h5 files.
+"""
 # set flags
 binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps

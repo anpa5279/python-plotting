@@ -49,7 +49,9 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
                 return np.array([])          # no crossing in this profile
             f0, f1 = f[idx], f[idx + 1]
             c0, c1 = coord[idx], coord[idx + 1]
+
             w = (target - f0) / (f1 - f0)
+            #print(f"interp1d_axis shapes: c0 = {c0.shape}, c1 = {c1.shape}, f0 = {f0.shape}, f1 = {f1.shape}, w = {w}")
             return (1 - w) * c0 + w * c1
         else:
             idx = np.searchsorted(f, f_new) - 1
@@ -64,7 +66,9 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
             sl1[axis] = idx + 1
             c0 = coord[tuple(sl0)]
             c1 = coord[tuple(sl1)]
+
             w = (f_new - f0) / (f1 - f0)
+            #print(f"interp1d_axis shapes: c0 = {c0.shape}, c1 = {c1.shape}, f0 = {f0.shape}, f1 = {f1.shape}, w = {w}")
             return (1 - w) * c0 + w * c1
     if coord_new is not None:
         coord = np.asarray(coord)
@@ -74,6 +78,7 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
         idx = np.clip(idx, 0, len(coord) - 2)
         c0 = coord[idx]
         c1 = coord[idx + 1]
+        #print(f"interp1d_axis: f shape = {f.shape}, coord shape = {coord.shape}, axis = {axis}, idx = {idx}, c0 = {c0}, c1 = {c1}")
 
         # slice helpers
         sl0 = [slice(None)] * f.ndim
@@ -86,6 +91,7 @@ def interp1d_axis(f, coord, f_new = None, coord_new = None, axis=-1):
         f1 = f[tuple(sl1)]
         
         w = (coord_new - c0) / (c1 - c0)
+        #print(f"interp1d_axis shapes: c0 = {c0.shape}, c1 = {c1.shape}, f0 = {f0.shape}, f1 = {f1.shape}, w = {w}")
 
         return (1 - w) * f0 + w * f1
 # ------------------------- PLANE SLICES ------------------------- #
@@ -106,10 +112,17 @@ def vertical_line(f, x = None, y = None, x0 = 0.0, y0 = 0.0):
 
     return fxy  # shape: (Nz,)
 
-def horizontal_line(f, hor, z, hor0, z0, axis=-2):
-    fh = interp1d_axis(f, hor, coord_new = hor0, axis=axis)
+def horizontal_line(f, hor = None, hor0 = None, z = None, z0 = None, axis=-2):
+    if hor is not None and z is not None:
+        fh = interp1d_axis(f, hor, coord_new = hor0, axis=axis)
+        return interp1d_axis(fh, z, coord_new = z0, axis=-1)
+    else:
+        if hor is not None:
+            fh = interp1d_axis(f, hor, coord_new = hor0, axis=axis)
+        elif z is not None:
+            fh = interp1d_axis(f, z, coord_new = z0, axis=axis)
+        return fh
 
-    return interp1d_axis(fh, z, coord_new = z0, axis=-1)
 
 # ------------------------- GRID POINT ------------------------- #
 def point(f, z, f0 = None, z0 = None, x = None, x0 = 0.0, y = None, y0 = 0.0):

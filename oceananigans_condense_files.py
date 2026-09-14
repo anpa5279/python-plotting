@@ -47,7 +47,7 @@ else:
 
 
 # ==========================================================
-# COMBINING FILES  697 to main files as time iteration 4508
+# COMBINING FILES 
 # ==========================================================
 if field_files_flag:
     print(f'Copying field files to {outdir}')

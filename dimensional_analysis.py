@@ -11,11 +11,10 @@ from plotting_lines import plot_plume_horizontal_spatial, plot_plume_vertical_sp
 from plotting_analysis import plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
 
 # flags for what to plot
-plot_variables = False
-plot_1d_z = True
-plot_1d_y = False
+plot_1d_z = False
 transient_mld = False
 temporal_averages_flag = False
+error_calc = True
 video = True
 
 ND = False
@@ -116,24 +115,6 @@ else:
 
 # plotting prep
 plot_format()
-if plot_variables:
-    if salinity:
-        var_names = ['Tracer', 'Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['Tracer', 'T', 'b', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
-    else:
-        var_names = ['Temperature', 'Density', 'u', 'v', 'w']#, 'Perturbed Vertical Buoyancy Flux', 'Perturbed Density']
-        range_names = ['T', 'b', 'u', 'v', 'w']#, 'bw_fluc', 'rho_fluc']
-    planeslice = 'vertical' # 'vertical' or 'horizontal'
-    variable_dir = {}
-    if planeslice == 'horizontal':
-        name_uni += '_horizontal_slice'
-        loc = 'z' # 'cell' or 'z'
-        if loc == 'z':
-            loc_z = -mld
-            name_uni += '_at_mld'
-        else:
-            n = 254
-            loc_z = z[:, n]
 
 S_tol = 10**(-6)
 ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
@@ -148,21 +129,8 @@ ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel_rms'] = [0, 4*10**-3]
 ranges['bw_fluc'] = [-5*10**(-9), 5*10**(-9)]
-if plot_1d_z or plot_1d_y:
+if plot_1d_z:
     color_opt, line_opt = comparison_plot_opt(num_cases)
-
-if plot_1d_y:
-    ranges_hor = ranges.copy()
-    ranges_hor['Tracer'] = [S_tol, 3*10**(-2)]
-    ranges_hor['vel_rms'] = [0, 4*10**-3]
-    ranges_hor['bw_fluc'] = [-2*10**(-5), 2*10**(-5)]
-    ranges_hor['b_flux'] = [-4*10**(-6), 4*10**(-6)]
-    ranges_hor['b_fluc'] = [-2*10**(-4), 2*10**(-4)]
-    ranges_hor['w'] = [-0.15, 0.15]
-    ranges_hor['T'] = [T0 - 0.2, T0 + 0.2]
-    loc_z = -mld
-    hor_str = ' '.join([f"{depth} m" for depth in loc_z])
-    name_xy = name_uni + f"at z = {hor_str}"
 
 ############ NONDIMENSIONALIZATION ############
 if ND:
@@ -190,7 +158,7 @@ if ND:
         z_nd = (z+mld)/(Ln)
         z_str = r'$(z + h$_{ML}$)/L_M$'
         #for i in range(num_cases):
-        #    z_nd[0:mld_idx[i], i] = (z[0:mld_idx[i], i]+mld[i])*(mld[i])**(1/3)/(Ln[i]**(4/3))
+        #    z_nd[0:mld_idx[n], i] = (z[0:mld_idx[n], i]+mld[n])*(mld[n])**(1/3)/(Ln[n]**(4/3))
 
     if temporal_averages_flag:
         T_avg = np.zeros((nx[2], num_cases))
@@ -217,10 +185,10 @@ if ND:
                     dbdz = np.gradient(b_avg[:, i], z[:, i])
                     dbdz_tol = dbdz <= (5.0*10**(-7))
                     if np.any(dbdz_tol):
-                        mld_idx[i] = np.min(np.where(dbdz_tol))
+                        mld_idx[n] = np.min(np.where(dbdz_tol))
                     else:
-                        mld_idx[i] = nx[2] - 1
-                    mld[i] = -z[mld_idx[i], i]
+                        mld_idx[n] = nx[2] - 1
+                    mld[n] = -z[mld_idx[n], i]
         if transient_mld:
             Ln =(F0/N2**(3/2))**(1/4)
             z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
@@ -271,7 +239,7 @@ else:
             r_profile = []
             b_center = []
             T_fluc_center = []
-        if plot_1d_y:
+        if plot_horiz_profiles:
             centery = 0.0
             u_hor = []
             v_hor = []
@@ -281,14 +249,6 @@ else:
             bv_fluc_hor = []
             bw_fluc_hor = []
             T_hor = []
-        if plot_variables:
-            T_plane = []
-            u_plane = []
-            v_plane = []
-            w_plane = []
-            b_plane = []
-            bw_plane = []
-            rho_fluc_plane = []
         for n, reader in enumerate(readers):
             # Load data from files
             u = reader.lazy_field('u', steps = reader.t_save[it])
@@ -327,70 +287,29 @@ else:
                 # dense plume analysis
                 if salinity:
                     S_avg.append(np.mean(S, axis=(-3, -2)))
-                    dense_plume[i].input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
-                    r_profile.append(dense_plume[i].plume_tracer_radius(x = x, y = y))
+                    dense_plume[n].input_info(S, b_tracer = b['b_C'], b_background = b['b_T'], bw_fluc = bw_fluc)
+                    r_profile.append(dense_plume[n].plume_tracer_radius(x = x, y = y))
                     b_center.append(vertical_line(b, x, y, x0, centery))
-                    T_fluc_center.append(vertical_line(T-T_avg[i], x, y, x0, centery))
-                    S_fluc_center.append(vertical_line(S-S_avg[i], x, y, x0, centery))
+                    T_fluc_center.append(vertical_line(T-T_avg[n], x, y, x0, centery))
+                    S_fluc_center.append(vertical_line(S-S_avg[n], x, y, x0, centery))
             # horizontal lines to save for plotting
-            if plot_1d_y:
-                u_hor.append(horizontal_line(u, y, z[i, :], centery, loc_z[i]))
-                v_hor.append(horizontal_line(v, y, z[i, :], centery, loc_z[i]))
-                w_hor.append(horizontal_line(w, y, z[i, :], centery, loc_z[i]))
-                b_fluc_hor.append(horizontal_line(b-b_avg[i], y, z[i, :], centery, loc_z[i]))
-                bu_fluc_hor.append(horizontal_line(bu_fluc, y, z[i, :], centery, loc_z[i]))
-                bv_fluc_hor.append(horizontal_line(bv_fluc, y, z[i, :], centery, loc_z[i]))
-                bw_fluc_hor.append(horizontal_line(bw_fluc, y, z[i, :], centery, loc_z[i]))
-                T_hor.append(horizontal_line(T, y, z[i, :], centery, loc_z[i]))
-                S_hor.append(horizontal_line(S, y, z[i, :], centery, loc_z[i]))
-            # plane slices to save for plotting
-            if plot_variables and planeslice == 'vertical':
-                T_plane.append(plane_slice_calc(T, x, x0))
-                u_plane.append(plane_slice_calc(u, x, x0))
-                v_plane.append(plane_slice_calc(v, x, x0))
-                w_plane.append(plane_slice_calc(w, x, x0))
-                b_plane.append(plane_slice_calc(b, x, x0))
-                if salinity:
-                    S_plane.append(plane_slice_calc(S, x, x0))
-            elif plot_variables and planeslice == 'horizontal':
-                if loc == 'z':
-                    T_plane.append(plane_slice_calc(T, z, loc_z[i]))
-                    u_plane.append(plane_slice_calc(u, z, loc_z[i]))
-                    v_plane.append(plane_slice_calc(v, z, loc_z[i]))
-                    w_plane.append(plane_slice_calc(w, z, loc_z[i]))
-                    b_plane.append(plane_slice_calc(b, z, loc_z[i]))
-                    if salinity:
-                        S_plane.append(plane_slice_calc(S, z, loc_z[i]))
-                else:
-                    T_plane.append(T[:, :, n])
-                    u_plane.append(u[:, :, n])
-                    v_plane.append(v[:, :, n])
-                    w_plane.append(w[:, :, n])
-                    b_plane.append(b[:, :, n])
-                    if salinity:
-                        S_plane.append(S[:, :, n])
+            if plot_horiz_profiles:
+                u_hor.append(horizontal_line(u, y, z[n, :], centery, loc_z[n]))
+                v_hor.append(horizontal_line(v, y, z[n, :], centery, loc_z[n]))
+                w_hor.append(horizontal_line(w, y, z[n, :], centery, loc_z[n]))
+                b_fluc_hor.append(horizontal_line(b-b_avg[n], y, z[n, :], centery, loc_z[n]))
+                bu_fluc_hor.append(horizontal_line(bu_fluc, y, z[n, :], centery, loc_z[n]))
+                bv_fluc_hor.append(horizontal_line(bv_fluc, y, z[n, :], centery, loc_z[n]))
+                bw_fluc_hor.append(horizontal_line(bw_fluc, y, z[n, :], centery, loc_z[n]))
+                T_hor.append(horizontal_line(T, y, z[n, :], centery, loc_z[n]))
+                S_hor.append(horizontal_line(S, y, z[n, :], centery, loc_z[n]))
 
     ############ PLOTTING ############
     for it in nt:
-        if plot_variables:
-            if salinity: #'Tracer', 'T', 'Density', 'u', 'v', 'w'
-                variables = [S_plane, T_plane, b_plane, u_plane, v_plane, w_plane]
-                colorbar_labels = [r"g/kg", r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
-                cmaps = ['viridis', 'viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r']
-            else: #'T', 'Density', 'u', 'v', 'w'
-                variables = [T_plane, b_plane, u_plane, v_plane, w_plane]
-                colorbar_labels = [r"$^\circ$C", r"kg/m$^3$", r"m/s", r"m/s", r"m/s"]
-                cmaps = ['viridis', 'viridis', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r', 'RdBu_r']
-            if planeslice == 'vertical':
-                for dir, var in enumerate(variables):
-                    variable_dir[var_names[dir]] = plot_variable_vert_slice(time[it], it, ranges, fig_folder, lx[-1], y, z, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir], plane='YZ')
-            elif planeslice == 'horizontal':
-                for dir, var in enumerate(variables):
-                    variable_dir[var_names[dir]] = plot_variable_xy_slice(time[it], it, ranges, fig_folder, lx[-1], x, y, var, case_names, var_names[dir], range_names[dir], colorbar_label = colorbar_labels[dir], cmap = cmaps[dir])
         if plot_1d_z:
             buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, color_opt, fig_folder, case_names, name_uni, lx[-1], z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
-        if plot_1d_y:
-            buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_hor, color_opt, fig_folder, case_names, name_xy, lx[-1], y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
+        if plot_horiz_profiles:
+            buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_horiz, color_opt, fig_folder, case_names, name_xy, lx[-1], y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
         if ND:
             if variations == 'all' or combo_flag:
                 plot_combo_exponents(color_opt, title, name_uni, fig_folder, w_rms, b_center, bw_fluc_avg, r_profile, T_fluc_center, S_avg, z_nd, cases_info['vars_exps'], Ri_g, Fr_flux, mld/rj, case_names)
@@ -411,11 +330,8 @@ else:
     print("All frames created.")
     # creating videos
     if video:
-        if plot_variables:
-            for dir, name in enumerate(var_names):
-                create_video(variable_dir[var_names[dir]], fig_folder, name_uni, name)
         if plot_1d_z:
             create_video(buoyancy_dir_z, fig_folder, name_uni, 'vertical profile')
-        if plot_1d_y:
+        if plot_horiz_profiles:
             create_video(buoyancy_dir_y, fig_folder, name_uni, 'horizontal profile')
 

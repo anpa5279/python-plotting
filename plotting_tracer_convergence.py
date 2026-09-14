@@ -3,13 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib import colors
-from matplotlib.lines import Line2D
-
 from plotting_general import save_frame
-
-def interp_reference(z_case, z_ref, ref_profile):
-    return np.interp(z_case, z_ref, ref_profile)
 
 def percent_difference_interp(profile, z_profile, ref_profile, z_ref):
     ref_interp = np.interp(z_profile, z_ref, ref_profile)
@@ -17,52 +11,6 @@ def percent_difference_interp(profile, z_profile, ref_profile, z_ref):
     return (100 * (profile - ref_interp) / (np.abs(ref_interp) + 1e-12))
 
 ### ------------------------- TRACER CONVERGENCE PLOTTING FUNCTIONS ------------------------- ###
-## tracer slice comparison across all cases
-def plot_tracer_slice_comparison(time_sec, it, case_names, ranges, y, z, tracer_fields, Sval, fig_folder, ylim = (-5, 5), zlim = (-10, 0), binning = False, folder_name = "tracer_zoom_frames", negative = False):
-    if negative:
-        folder_name += "_log_neg"
-    frame_dir = os.path.join(fig_folder, folder_name)
-    os.makedirs(frame_dir, exist_ok = True)
-    num_cases = len(z)
-    hor_len = 4 * num_cases
-    vert_len = 5 * (zlim[1] - zlim[0]) / (ylim[1] - ylim[0])
-    fig, axes = plt.subplots(1, num_cases, figsize = (hor_len, vert_len), constrained_layout = True, sharey = True)
-
-    if num_cases == 1:
-        axes = [axes]
-    if binning:
-        xlabel = "r [m]"
-    else:
-        xlabel = "y [m]"
-
-    levels = [0.005 * Sval, 0.01 * Sval, 0.05 * Sval]
-    legend_lines = [Line2D([0], [0], color='orange', lw=2, label=r'0.5% S$_0$'),
-                    Line2D([0], [0], color='red', lw=2, label=r'1% S$_0$'),
-                    Line2D([0], [0], color='black', lw=2, label=r'5% S$_0$')]
-    for n in range(num_cases):
-        S = tracer_fields[n]
-        if negative:
-            im = axes[n].imshow(S.T, origin = "lower", interpolation = "none", norm=colors.SymLogNorm(linthresh=1e-8, vmin=ranges['log neg S'][0], vmax=ranges['log neg S'][-1]), extent = [y[n].min(), y[n].max(), z[n].min(), z[n].max()], aspect = "auto", cmap = "RdBu")
-        else:
-            im = axes[n].imshow(S.T, origin = "lower", interpolation = "none", norm = colors.LogNorm(vmin = ranges['Tracer'][0], vmax = ranges['Tracer'][1]), extent = [y[n].min(), y[n].max(), z[n].min(), z[n].max()], aspect = "auto", cmap = "Blues")
-            axes[n].contour(y[n], z[n], S.T, levels = levels, colors = ["orange", "red", "black"])
-
-        axes[n].set_xlim(ylim)
-        axes[n].set_ylim(zlim)
-        axes[n].set_title(case_names[n])
-        axes[n].set_xlabel(xlabel)
-        if n == 0:
-            axes[n].set_ylabel("z [m]")
-        axes[n].set_aspect('equal')
-    if not negative:
-        axes[0].legend(handles=legend_lines,loc='lower right')
-
-    plt.colorbar(im, ax = axes, anchor = (0.5, 0.0), orientation='horizontal', shrink=0.75, aspect=80)
-    fig.suptitle(f"t = {time_sec/3600:.2f} hr")
-    fig.set_size_inches(hor_len, vert_len)
-    save_frame(fig, frame_dir, it, (hor_len, vert_len))
-    return frame_dir
-
 ## turbulent statistics convergence plotting across all cases
 def plot_turbulence_convergence(time_sec, it, case_names, ranges, plot_line_opt, z, u_rms, v_rms, w_rms, bw_fluc, fig_folder,):
     color_opt, marker_opt, marker_iter = plot_line_opt

@@ -98,7 +98,7 @@ axes[2].plot(r_opt, log_10_fit(r_opt, *coef), color=color_opt[0], label=rf'error
 #axes[2].plot(r_opt, r_opt**m, color=color_opt[0], label=rf'error={coef[0]:.2e}(dr/$\sigma$)$^2$ + {coef[1]:.2e}', linestyle=line_opt[2], linewidth = 0.6)
 
 for i, dr in enumerate(dr_nd):
-    axes[2].scatter(dr, area_err[i], marker='x')
+    axes[2].scatter(dr, area_err[i], color=color_opt[i+1], marker='x')
 axes[2].set_title("Error of Integrated Area")
 axes[2].set_xlim(min(dr_nd)*0.9, max(dr_nd)*1.1)
 axes[2].set_xlabel(r'dr/$\sigma$')
