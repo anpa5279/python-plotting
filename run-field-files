@@ -17,7 +17,6 @@ cat > EXEC_FILES << EXEC
 #PBS -N $jobn
 #PBS -q develop 
 #PBS -j oe
-#PBS -l job_priority=economy
 #PBS -l walltime=02:20:00
 #PBS -l select=1:ncpus=$cpus:mem=235GB
 
