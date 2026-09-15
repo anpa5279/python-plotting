@@ -6,8 +6,9 @@ import scipy.signal as signal
 import dask.array as da
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, compute_rms, binning_oc
+from diagnostics import compute_temporal_averages, binning_oc
 from interpolation import vertical_line, velocities_to_center, point
+from physics import rms
 
 # ==========================================================
 # FLAGS
@@ -89,7 +90,7 @@ if binning_flag:
             del f["ccc/T"]
         if "ccc/horizontal velocity" in f:
             del f["ccc/horizontal velocity"]
-        if "ccc/rosadfasdfasdfadvadzfkjl;adfjgl;dfakgjadl;fkgjl'rkfi velocity" in f:
+        if "ccc/rotational velocity" in f:
             del f["ccc/rotational velocity"]
         if "ccc/w" in f:
             del f["ccc/w"]
@@ -420,13 +421,11 @@ if planelsice_flag:
 ###------------BUOYANCY CALCULATIONS--------------------------------###
 if buoyancy_flag:
     buoyancy_file = os.path.join(folder, 'buoyancy_profile.h5')
-    alpha = reader.alpha
     T = reader.lazy_field('T').compute()
-    b = g * alpha * (T - T0)
+    b = g * reader.alpha * (T - T0)
     if reader.salinity:
-        beta = reader.beta
         S = reader.lazy_field('S').compute()
-        b += - g * beta * S
+        b += - g * reader.beta * S
         del S
     del T
     b_avg = np.mean(b, axis=(-3, -2))
@@ -434,11 +433,10 @@ if buoyancy_flag:
     b_rms = np.mean(b_fluc**2, axis=(-3, -2))**0.5
     if reader.averaging:
         T_avg = reader.load_averages('T')
-        b_avg = g * alpha * (T_avg - T0) 
+        b_avg = g * reader.alpha * (T_avg - T0) 
         if reader.salinity:
             S_avg = reader.load_averages('S')
-            beta = reader.beta
-            b_avg += - g * beta * S_avg
+            b_avg += - g * reader.beta * S_avg
             del S_avg
         del T_avg
     if not reader.centerline:
@@ -546,52 +544,48 @@ if fluc_flag:
         # Calcualting buoyancy
         dims = (-3, -2)
         T = reader.lazy_field('T').compute()
-        if reader.salinity:
-            S = reader.lazy_field('S').compute()
-            # Buoyancy (still lazy)
-            beta  = reader.beta
-            b = g * alpha * (T - T0) - (g * beta * S)
-            del S
-        else:
-            b = g * alpha * (T - T0)
 
         # Temperature fluctuations
         T_xy = da.mean(T, axis=dims)
 
         T_fluc = T - T_xy[:, np.newaxis, np.newaxis, :]
+        del T_xy
 
         with h5py.File(file_path, "a") as f:
             if "fluctuations/T_fluc" in f:
                 del f["fluctuations/T_fluc"]
             f.create_dataset("fluctuations/T_fluc", data=da.mean(T_fluc, axis=dims))
 
-        del T, T_fluc
+        del T_fluc
+
+        if reader.salinity:
+            S = reader.lazy_field('S').compute()
+            # Buoyancy (still lazy)
+            b = g * reader.alpha * (T - T0) - (g * reader.beta * S)
+            del T, S
+        else:
+            b = g * reader.alpha * (T - T0)
+            del T
 
         b_xy = da.mean(b, axis=dims)
 
         b_fluc = b - b_xy[:, np.newaxis, np.newaxis, :]
+
+        del b, b_xy
+
+        with h5py.File(file_path, "a") as f:
+            if "fluctuations/b_fluc" in f:
+                del f["fluctuations/b_fluc"]
+            f.create_dataset("fluctuations/b_fluc", data=da.mean(b_fluc, axis=dims))
+        
         w = reader.lazy_field('w').compute()
         
         # Center velocities (still lazy)
         w = velocities_to_center(w, axis=-1)
-
         with h5py.File(file_path, "a") as f:
-            if "fluctuations/ur_fluc" in f:
-                del f["fluctuations/ur_fluc"]
-            if "fluctuations/utheta_fluc" in f:
-                del f["fluctuations/utheta_fluc"]
-            if "fluctuations/w_fluc" in f:
-                del f["fluctuations/w_fluc"]
-            if "fluctuations/b_fluc" in f:
-                del f["fluctuations/b_fluc"]
-            if "fluctuations/bur_fluc" in f:
-                del f["fluctuations/bur_fluc"]
-            if "fluctuations/butheta_fluc" in f:
-                del f["fluctuations/butheta_fluc"]
-            if "fluctuations/bw_fluc" in f:
-                del f["fluctuations/bw_fluc"]
-            f.create_dataset("fluctuations/b_fluc", data=da.mean(b_fluc, axis=dims))
-            f.create_dataset("fluctuations/bw_fluc", data=da.mean(b_fluc * w, axis=dims))
+            if "fluctuations/b'w" in f:
+                del f["fluctuations/b'w"]
+            f.create_dataset("fluctuations/b'w", data=da.mean(b_fluc * w, axis=dims))
         del b, b_fluc, w
         print(f"Saved fluctuations to {file_path}")
 ###------------ROOT MEAN SQUARE-------------------------------------###
@@ -636,19 +630,43 @@ if rms_flag:
             del bur_rms
         print(f"Saved RMS to {bin_path}")
     else:
+        # u rms
         file_path = os.path.join(folder, 'fluctuations.h5')
-        rms_values = compute_rms(reader)
+        u_rms = np.empty((reader.nt, reader.nx[2]))
+        for it, t in enumerate(reader.t_save):
+            u = reader.lazy_field('u', steps=t).compute()
+            u = velocities_to_center(u, axis=-3)
+            u_rms[it, :] = rms(u)
         with h5py.File(file_path, "a") as f:
             if "rms/u" in f:
                 del f["rms/u"]
+            f.create_dataset("rms/u", data=u_rms)
+        del u_rms
+
+        # v rms
+        v_rms = np.empty((reader.nt, reader.nx[2]))
+        for it, t in enumerate(reader.t_save):
+            v = reader.lazy_field('v', steps=t).compute()
+            v = velocities_to_center(v, axis=-2)
+            v_rms[it, :] = rms(v)
+        with h5py.File(file_path, "a") as f:
             if "rms/v" in f:
                 del f["rms/v"]
+            f.create_dataset("rms/v", data=v_rms)
+        del v_rms
+
+        # w rms
+        w_rms = np.empty((reader.nt, reader.nx[2]))
+        for it, t in enumerate(reader.t_save):
+            w = reader.lazy_field('w', steps=t).compute()
+            w = velocities_to_center(w, axis=-1)
+            w_rms[it, :] = rms(w)
+        with h5py.File(file_path, "a") as f:
             if "rms/w" in f:
                 del f["rms/w"]
-            f.create_dataset("rms/u", data=rms_values['u_rms'])
-            f.create_dataset("rms/v", data=rms_values['v_rms'])
-            f.create_dataset("rms/w", data=rms_values['w_rms'])
-        del rms_values
+            f.create_dataset("rms/w", data=w_rms)
+        del w_rms
+
         print(f"Saved RMS to {file_path}")
 ###------------TEMPORAL AVERAGES------------------------------------###
 if compute_temporal_averages_flag:
