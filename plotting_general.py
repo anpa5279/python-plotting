@@ -11,7 +11,7 @@ def stratification_profile(z, a0, dadz, mld):
     return a
 ### -------------------------PLOTTING PREP FUNCTIONS------------------------- ###
 ## default plot formatting 
-def plot_format(fontsize = 12):
+def plot_format(fontsize = 20):
     plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
     plt.rcParams['font.serif'] = 'cmr10'
     plt.rcParams['font.sans-serif'] = 'cmss10'
@@ -79,20 +79,38 @@ def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, 
         ranges[key] = np.array(ranges[key])
     return ranges
 ## for multiple case comparison plotting
-def comparison_plot_opt(ncases, markers = False):
-    colors = ['black', 'red', 'orange', 'blue', 'green', 'purple', 'pink', 'gray', 'olive', 'cyan', 'magenta']
-    line_styles = ['solid', 'dashed', 'dotted', 'dashdot', 'dashdotted']
-    if markers:
-        markers = ['o', 's', '^', 'D', 'v', '*', 'x', '+', 'p', 'h']
-        return colors[:ncases], line_styles[:ncases], markers[:ncases]
+def comparison_plot_opt(cases, case_opt = 'coolwarm', distinct_groups = [1, ]):
+    if isinstance(cases, int):
+        ncases = cases
+        cases = [f'case_{i}' for i in range(ncases)]
     else:
-        return colors[:ncases], line_styles[:ncases]
+        ncases = len(cases)
+    case_opts = {}
+    line_styles = ['dashed', 'dotted', 'dashdot', 'dashdotted', 'solid']
+    markers = ['o', 's', '^', 'D', 'v', '*', 'x', '+', 'p', 'h']
+    if len(distinct_groups)>1: # defining distinct groups by colors
+        case_opt = ['Purples', 'Blues', 'Greens', 'Oranges', 'Reds', 'OrRd', 'BuPu'][0:len(distinct_groups)]
+        for n, group in enumerate(distinct_groups):
+            cmap = plt.get_cmap(case_opt[n], group+1)
+            group_cases = cases[sum(distinct_groups[:n]):sum(distinct_groups[:n+1])]
+            for i, case in enumerate(group_cases):
+                case_opts[case] = {'color': cmap(i+1), 'linestyle': line_styles[n], 'marker': markers[i%len(markers)]}
+    else:
+        cmap = plt.get_cmap(case_opt, ncases)
+        for i, case in enumerate(cases):
+            case_opts[case] = {'color': cmap(i), 'linestyle': line_styles[i%len(line_styles)], 'marker': markers[i%len(markers)]}
+    case_opts[cases[-1]]['linestyle'] = 'solid' # make last case solid line
+    return case_opts
+    # if you want cases separated by line
 ### -------------------------SAVING FRAMES AND MAKING VIDEOS------------------------- ###
-def save_frame(fig, outdir, it, size_in, file_name = '', dpi = 200):
-    size_px = (size_in[0] * dpi, size_in[1] * dpi)
+def round_up_to_multiple(px, m=16):
+    return int(np.ceil(px / m) * m)
+def save_frame(fig, outdir, it, size_in, file_name='', dpi=200):
+    w_px = round_up_to_multiple(size_in[0] * dpi)
+    h_px = round_up_to_multiple(size_in[1] * dpi)
+    fig.set_size_inches(w_px / dpi, h_px / dpi)
     frame_path = os.path.join(outdir, file_name + f'{it:04d}.png')
-    fig.set_size_inches(size_px[0] / dpi, size_px[1] / dpi)
-    plt.savefig(frame_path, dpi = dpi)
+    plt.savefig(frame_path, dpi=dpi)
     plt.close(fig)
 def create_video(outdir, fig_folder, name, plot_type):
     print("Creating video...")

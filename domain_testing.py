@@ -301,7 +301,7 @@ for n, reader in enumerate(readers):
 
         peaks = np.argsort(P_search)[-5:]
     if scaling_analysis_text:
-        opt = 'fft convolve w_c*10**-5'
+        opt = 'fft convolve w_rz'
         with h5py.File(file_path, 'r') as f:
             c_delta_loc = f["scaling analysis/outer length scale/"+opt+"/c_delta"][:]
             alpha_loc = f["scaling analysis/outer length scale/"+opt+"/alpha"][:]
@@ -344,8 +344,8 @@ if error_analysis:
 # ==========================================================
 # PLOTTING
 # ==========================================================
-color_opt, line_opt = comparison_plot_opt(num_cases)
-plot_format(fontsize = 18)
+case_opt = comparison_plot_opt(case_names)
+plot_format(fontsize = 20)
 if tracer_mass:
     scale = [1, 0.1]
     gridspec_kw={'height_ratios': scale}
@@ -354,7 +354,7 @@ if tracer_mass:
             a.remove()
     axes = axes.ravel()
     plt.subplots_adjust(top=0.9)
-    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
+    case_handles = [Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=case_names[n]) for n in range(num_cases)]
     leg_col = num_cases//2 if num_cases >= 4 else num_cases
     fig.legend(handles=case_handles,
             loc='lower center',
@@ -384,14 +384,14 @@ if tracer_mass:
     axes[2].set_ylabel(r'$\frac{(\text{S} - \text{S}_{\text{control}})}{\text{S}_{\text{control}}} $[%]')
 
     for n in range(num_cases):
-        axes[0].plot(t[n], S_mass[n], color = color_opt[n], label=case_names[n])
-        axes[1].plot(t[n], dmdt[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], S_mass[n], color = case_opt[case]['color'], label=case_names[n])
+        axes[1].plot(t[n], dmdt[n], color = case_opt[case]['color'], label=case_names[n])
         if n>0:
             if len(S_mass[n]) == len(S_mass[0]):
-                axes[2].plot(t[n], (S_mass[n] - S_mass[0])/S_mass[0]*100, color = color_opt[n], label=case_names[n])
+                axes[2].plot(t[n], (S_mass[n] - S_mass[0])/S_mass[0]*100, color = case_opt[case]['color'], label=case_names[n])
             else:
                 min_len = min(len(S_mass[n]), len(S_mass[0]))
-                axes[2].plot(t[n][:min_len], (S_mass[n][:min_len] - S_mass[0][:min_len])/S_mass[0][:min_len]*100, color = color_opt[n], label=case_names[n])
+                axes[2].plot(t[n][:min_len], (S_mass[n][:min_len] - S_mass[0][:min_len])/S_mass[0][:min_len]*100, color = case_opt[case]['color'], label=case_names[n])
 
     for a in axes[:4]:
         if a.get_yscale() != 'log':
@@ -411,7 +411,7 @@ if mass_divergence:
     axes = axes.ravel()
     axes[-1].remove()
     #plt.subplots_adjust(top=0.9, right=0.8)
-    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i]) for i in range(num_cases)]
+    case_handles = [Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=case_names[n]) for n in range(num_cases)]
     leg_col = num_cases//2 if num_cases >= 4 else num_cases
     fig.legend(handles=case_handles,
             loc='lower center',
@@ -423,15 +423,15 @@ if mass_divergence:
     axes[0].set_ylabel(r'$\frac{\partial\text{w}}{\partial z}_{bottom} - \frac{\partial\text{w}}{\partial z}_{top}$')
 
     for n in range(num_cases):
-        if n == 0: #, marker = 'o', markersize=3
+        if n == 0: 
 
-            axes[0].plot(t[n], div_faces[n], color = color_opt[n], linestyle = 'solid', label=r'$\frac{\partial\text{w}}{\partial z}$')
-            axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dashed', label=r'$\frac{\partial\text{w}}{\partial z}_{bottom}$')
-            axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dotted', label=r'$\frac{\partial\text{w}}{\partial z}_{top}$')
+            axes[0].plot(t[n], div_faces[n], color = case_opt[case]['color'], linestyle = 'solid', label=r'$\frac{\partial\text{w}}{\partial z}$')
+            axes[0].plot(t[n], div_bottom[n], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=r'$\frac{\partial\text{w}}{\partial z}_{bottom}$')
+            axes[0].plot(t[n], div_top[n], color = case_opt[case]['color'], linestyle = 'dotted', label=r'$\frac{\partial\text{w}}{\partial z}_{top}$')
         else:
-            axes[0].plot(t[n], div_faces[n], color = color_opt[n], linestyle = 'solid')
-            axes[0].plot(t[n], div_bottom[n], color = color_opt[n], linestyle = 'dashed')
-            axes[0].plot(t[n], div_top[n], color = color_opt[n], linestyle = 'dotted')
+            axes[0].plot(t[n], div_faces[n], color = case_opt[case]['color'], linestyle = 'solid')
+            axes[0].plot(t[n], div_bottom[n], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'])
+            axes[0].plot(t[n], div_top[n], color = case_opt[case]['color'], linestyle = 'dotted')
 
     axes[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
@@ -448,10 +448,10 @@ if neg_tracer:
         fig.suptitle(f"Tracer statistics with area scaling (r = {rp}m)")
 
     for n in range(num_cases):
-        axes[0].plot(t[n], neg_avg[n], color = color_opt[n], label=case_names[n])
-        axes[1].plot(t[n], S_neg_percent[n], color = color_opt[n], label=case_names[n])
-        axes[2].plot(t[n], S_min[n], color = color_opt[n], label=case_names[n])
-        axes[3].plot(t[n], S_max[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], neg_avg[n], color = case_opt[case]['color'], label=case_names[n])
+        axes[1].plot(t[n], S_neg_percent[n], color = case_opt[case]['color'], label=case_names[n])
+        axes[2].plot(t[n], S_min[n], color = case_opt[case]['color'], label=case_names[n])
+        axes[3].plot(t[n], S_max[n], color = case_opt[case]['color'], label=case_names[n])
 
     axes[0].set_title(r'-S$_{avg}$/N$_{\text{negative}}$')
     axes[0].set_ylabel('[g/kg]')
@@ -494,16 +494,16 @@ if w_surface:
     axes[2].set_ylabel(r'$\text{w}_{sum}$')
 
     for n in range(num_cases):
-        axes[0].plot(t[n], w_min[n], color = color_opt[n], label=case_names[n])
-        axes[1].plot(t[n], w_max[n], color = color_opt[n], label=case_names[n])
-        axes[2].plot(t[n], w_sum[n], color = color_opt[n], label=case_names[n])
+        axes[0].plot(t[n], w_min[n], color = case_opt[case]['color'], label=case_names[n])
+        axes[1].plot(t[n], w_max[n], color = case_opt[case]['color'], label=case_names[n])
+        axes[2].plot(t[n], w_sum[n], color = case_opt[case]['color'], label=case_names[n])
 
     axes[0].legend(loc='upper left', handlelength = 0.55)
 
     plt.savefig(os.path.join(fig_folder, variations + ' w_surface.svg'))
 
 if internal_gravity_waves:
-    outdir =  os.path.join(fig_folder, "testing/")
+    outdir = os.path.join(fig_folder, "testing/")
     os.makedirs(outdir, exist_ok=True)
     for i in range(omega_len):
         ncols = 3
@@ -516,7 +516,7 @@ if internal_gravity_waves:
         fig, axes = plt.subplots(nrows, ncols, figsize=(hor_len, vert_len), sharey = True, sharex = True, constrained_layout=True)
         axes = [axes,]#axes.ravel()
         for n, reader in enumerate(readers):
-            im =  axes[n].imshow(power[n][i, :, :].T, origin = "lower", interpolation = "none", cmap = 'RdBu_r', extent = [reader.y[0], reader.y[-1], reader.z[0], reader.z[-1]], aspect = 'auto')
+            im = axes[n].imshow(power[n][i, :, :].T, origin = "lower", interpolation = "none", cmap = 'RdBu_r', extent = [reader.y[0], reader.y[-1], reader.z[0], reader.z[-1]], aspect = 'auto')
 
             axes[n].set_xlabel(r"$\omega$ [rad s$^{-1}$]")
             axes[n].set_ylabel(r"$|\hat{w}|^2$")
@@ -540,8 +540,8 @@ if scaling_analysis_text:
         c_err = [np.min(c_delta[n]), np.max(c_delta[n])]
         alpha_err = np.array([[np.median(alpha[n]) - alpha_err[0]], [alpha_err[1] - np.median(alpha[n])]])
         c_err = np.array([[np.median(c_delta[n]) - c_err[0]], [c_err[1] - np.median(c_delta[n])]])
-        axes[0].errorbar(dx[0, n], np.median(alpha[n]), yerr=alpha_err, color = color_opt[n], label=case_names[n], fmt="--o", capsize=3)
-        axes[1].errorbar(dx[0, n], np.median(c_delta[n]), yerr=c_err, color = color_opt[n], label=case_names[n], fmt="--o", capsize=3)
+        axes[0].errorbar(dx[0, n], np.median(alpha[n]), yerr=alpha_err, color = case_opt[case]['color'], label=case_names[n], fmt="--o", capsize=3)
+        axes[1].errorbar(dx[0, n], np.median(c_delta[n]), yerr=c_err, color = case_opt[case]['color'], label=case_names[n], fmt="--o", capsize=3)
     def _func(x):
         return np.log2(x)
     def _inverse(x):
@@ -562,8 +562,7 @@ if error_analysis:
         lines_var_it['b'] = {'var':[b_bin_hor[n][it, k] for n in range(num_cases)], 'title': f'b(r, {loc})', 'label': r"[m/s$^2$]"}
         with h5py.File(h5_error_path, 'r') as f:
             case_types = list(f.keys())
-            if color_opt is None:
-                color_opt, _, marker_opt = comparison_plot_opt(len(case_types), markers = True)
+            case_opt = comparison_plot_opt(case_types)
             var_names = list(lines_var_it.keys())
             nrows = len(loc_z) * len(r_targets)+1
             ncols = len(var_names)
@@ -592,18 +591,18 @@ if error_analysis:
                             if c >= num_cases:
                                 c_opt += 1
                                 m_opt = c_opt +1
-                                colors.append(color_opt[c_opt])
+                                colors.append(case_opt[c_opt])
                                 markers.append(marker_opt[m_opt])
                             else:
                                 c_opt = c
                                 m_opt = c
-                                colors.append(color_opt[c_opt])
+                                colors.append(case_opt[c_opt])
                                 markers.append(marker_opt[m_opt])
-                            ax.scatter(dx_vals[order], err_vals[order], color=color_opt[c_opt], marker=marker_opt[m_opt], label=case)
+                            ax.scatter(dx_vals[order], err_vals[order], color = case_opt['color'][c_opt], marker=marker_opt[m_opt], label=case)
                         ax.set_title(f"{var_name}, z={z0:.1f} m, r={r0:.1f} m")
                         ax.set_xlabel(r'$\Delta x$ [m]')
                         ax.set_ylabel('Normalized error')
                     row += 1
             handles, labels = axes[0, 0].get_legend_handles_labels()
-            case_handles = [Line2D([0], [0], color=colors[n], markerstyle=markers[n], linestyle = None, label=case_names[n]) for n in range(num_cases)]
+            case_handles = [Line2D([0], [0], color = case_opt[case]['color'], markerstyle=markers[n], linestyle = None, label=case_names[n]) for n in range(num_cases)]
             fig.legend(handles=case_handles, loc='lower center', ncol=num_cases, bbox_to_anchor=(0.5, 0.0))

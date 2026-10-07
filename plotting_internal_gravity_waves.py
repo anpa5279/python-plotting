@@ -43,7 +43,7 @@ def plot_frequency_spectrum(omega, P_omega, N_profile, z, z_ref=None, n_peaks=5,
     ax.scatter(omega[peak_indices], P[peak_indices], zorder=5)
 
     for i in peak_indices:
-        ax.annotate(fr'$\omega={omega[i]:.3e}$', (omega[i], P[i]), xytext=(5, 5), textcoords='offset points', fontsize=9)
+        ax.annotate(fr'$\omega={omega[i]:.3e}$', (omega[i], P[i]), xytext=(5, 5), textcoords='offset points', fontsize = 20)
 
     # Reference N
     if z_ref is not None:
@@ -111,7 +111,7 @@ def plot_frequency_maps(omega, power, y, z, N_profile=None, peak_indices=None, n
             N_map = np.broadcast_to(N_profile, (len(y), len(z)))
 
             try:
-                ax.contour(y,     z,     N_map.T,     levels=[omega[i]],     linewidths=2, )
+                ax.contour(y,    z,    N_map.T,    levels=[omega[i]],    linewidths=2, )
             except ValueError:
                 pass
 
@@ -128,7 +128,7 @@ def plot_frequency_maps(omega, power, y, z, N_profile=None, peak_indices=None, n
     for j in range(nplot, len(axes)):
         axes[j].remove()
 
-    fig.suptitle(r'Internal-wave spectral power at $x=x_{\max}$', fontsize=15)
+    fig.suptitle(r'Internal-wave spectral power at $x=x_{\max}$', fontsize = 20)
 
     return fig, axes
 

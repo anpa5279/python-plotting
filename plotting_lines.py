@@ -1,17 +1,18 @@
 import os
 import numpy as np
 import math
+from matplotlib import cm
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.lines import Line2D
+
 import scipy
 
-from matplotlib.lines import Line2D
-from matplotlib import cm
 
 from plotting_general import save_frame
 ### -------------------------PLOTTING 1D LINES FUNCTIONS------------------------- ###
 ## xy averages ##
-def plot_lines(title, it, color_opt, fig_folder, case_names, z, lines_var_it):
+def plot_lines(title, it, case_opt, fig_folder, case_names, z, lines_var_it, save_folder = 'profiles'):
     """
     Plot rms, horizontal averages, or vertical centerlines for each variable
     comparing all cases on the same axes, one subplot per variable.
@@ -29,7 +30,7 @@ def plot_lines(title, it, color_opt, fig_folder, case_names, z, lines_var_it):
     ranges : dict
         Axis range dictionary (expects keys matching the variable names,
         e.g. ranges['T'], ranges['u'], etc.).
-    color_opt, line_opt : list
+    case_opt : list
         Per-case color/linestyle options from comparison_plot_opt.
     fig_folder : str
         Base output directory.
@@ -46,29 +47,31 @@ def plot_lines(title, it, color_opt, fig_folder, case_names, z, lines_var_it):
     frame_paths : list of str
         Sorted list of all saved frame file paths (for create_video).
     """
-    outdir = os.path.join(fig_folder, 'averages')
+    outdir = os.path.join(fig_folder, save_folder)
     os.makedirs(outdir, exist_ok=True)
 
     var_names = list(lines_var_it.keys())
     n_vars = len(var_names)
-    num_cases = len(color_opt)
+    num_cases = len(case_opt.keys())
 
-    ncols = 4
-    if n_vars < ncols:
+    ncols = 3
+    if n_vars%4 == 0:
+        ncols = 4
+    elif n_vars < (2*ncols-1):
         ncols = n_vars
     nrows = int(math.ceil(n_vars/ncols)) + 1 
     gridspec_kw =np.ones(nrows)
-    gridspec_kw[-1] = 0.2 # add space for universal legend
+    gridspec_kw[-1] = 0.32 # add space for universal legend
     gridspec_kw = {'height_ratios': gridspec_kw}
     hor_len = 12.0
-    vert_len = hor_len * (nrows-1) / (ncols) + 1
+    vert_len = hor_len * (nrows-1) / (ncols) + 2.5
     size_in = (hor_len, vert_len)
     fig, axes = plt.subplots(nrows, ncols, figsize=size_in, sharey=True, constrained_layout=True, gridspec_kw=gridspec_kw)
     axes = axes.ravel()
     fig.suptitle(title)
     #if n_vars == 1:
     #    axes = [axes]
-    # Force even pixel dimensions at 600 dpi
+    # Force even pixel dimensions at 200 dpi
     w_px = int(fig.get_figwidth() * fig.dpi)
     h_px = int(fig.get_figheight() * fig.dpi)
     if w_px % 2 != 0:
@@ -84,26 +87,29 @@ def plot_lines(title, it, color_opt, fig_folder, case_names, z, lines_var_it):
         title = lines_var_it[var_name]['title']
         label = lines_var_it[var_name]['label']
         range_var = lines_var_it[var_name]['range']
-        for n in range(num_cases):
-            ax.plot(profiles[n], z[n], color=color_opt[n], label=case_names[n])
+        for n, case in enumerate(case_opt.keys()):
+            if num_cases==1 or n == num_cases-1:
+                ax.plot(profiles[n], z[n], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth = 2.0, label=case_names[n])
+            else:
+                ax.plot(profiles[n], z[n], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth = 2.0, label=case_names[n])
         ax.set_title(title)
         ax.set_xlabel(label)
         ax.set_xlim(range_var)
-        ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
+        ax.ticklabel_format(axis='x', style='sci', scilimits=(-2,2), useMathText=True) 
 
         ax.set_ylabel('z [m]')
     if num_cases > 1:
-        case_handles = [Line2D([0], [0], color=color_opt[n], linestyle='solid', label=case_names[n])for n in range(num_cases)]
+        case_handles = [Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth = 2.0, label=case)for n, case in enumerate(case_names)]
         fig.legend(handles=case_handles,
                 loc='lower center',
-                ncol=num_cases//2,
+                ncol=np.ceil(num_cases/2).astype(int),
                 bbox_to_anchor=(0.5, 0.0))
 
     # --- Save Frame ---
     save_frame(fig, outdir, it, size_in, file_name = 'profiles_frame_')
     return outdir
 ## horizontal lines ##
-def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_it, loc, xlabel = 'y [m]', error_norm = None, save_folder = 'field outputs'):
+def plot_lines_h(title, it, case_opt, fig_folder, case_names, coord, lines_var_it, loc, xlabel = 'y [m]', error_norm = None, save_folder = 'field outputs'):
     """
         Plot horizontal line profiles (field value vs coord) for each panel,
         comparing all cases on the same axes, one subplot per panel.
@@ -118,8 +124,6 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
             Full time array; time[it] gives the current time for the title.
         it : int
             Current timestep index.
-        color_opt : list
-            Per-case color options.
         fig_folder : str
             Base output directory.
         case_names : list of str
@@ -159,7 +163,7 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
     ncols = n_vars
     nrows = int(3) if with_error else int(2)  # extra row for universal legend
     gridspec_kw = np.ones(nrows)
-    gridspec_kw[-1] = 0.2
+    gridspec_kw[-1] = 0.3
     gridspec_kw = {'height_ratios': gridspec_kw}
 
     hor_len = 12.0
@@ -177,13 +181,13 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
         title = lines_var_it[var_name]['title']
         label = lines_var_it[var_name]['label']
         range_var = lines_var_it[var_name]['range']
-        for n in range(num_cases):
-            axes[a].plot(coord[n], profiles[n], color=color_opt[n], label=case_names[n])
+        for n, case in enumerate(case_opt.keys()):
+            axes[a].plot(coord[n], profiles[n], color = case_opt[case]['color'], label=case)
         axes[a].set_title(title)
         axes[a].set_ylabel(label)
         axes[a].set_ylim(range_var)
         axes[a].set_xlabel(xlabel)
-        axes[a].set_xlim([min(coord[-1]), max(coord[-1])])
+        axes[a].set_xlim([min(coord[-1]), max(coord[-1])/2])
         axes[a].ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True) 
 
     if with_error:
@@ -195,8 +199,8 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
             for n in range(num_cases-1):
                 stepping = int(len(comparison_profile)/len(profiles[n]))
                 error = (profiles[n] - comparison_profile[::stepping])/normalize_error
-                axes[a+n_vars].plot(coord[n], error, color=color_opt[n], linestyle = 'dashed')
-                #print(f"it: {it}, var: {lines_var_it[var_name]['title']}, case: {case_names[n]}, abs max error: {np.max(np.abs(error))}, abs avg error: {np.mean(np.abs(error))}")
+                axes[a+n_vars].plot(coord[n], error, color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
+                #print(f"it: {it}, var: {lines_var_it[var_name]['title']}, case: {case}, abs max error: {np.max(np.abs(error))}, abs avg error: {np.mean(np.abs(error))}")
             axes[a+n_vars].set_ylabel(r"$\frac{\Delta \phi}{\phi_{0}}$")
             axes[a+n_vars].set_ylim([-0.2, 0.2])
             axes[a+n_vars].set_xlabel(xlabel)
@@ -204,10 +208,9 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
     #print('\n')
     plt.subplots_adjust(left=0.05, bottom=0.30)
     if num_cases > 1:
-        case_handles = [Line2D([0], [0], color=color_opt[n], linestyle='solid',
-                                label=case_names[n]) for n in range(num_cases)]
+        case_handles = [Line2D([0], [0], color = case_opt[case]['color'], linewidth = 2.0, label=case) for n, case in enumerate(case_names)]
         fig.legend(handles=case_handles, loc='lower center',
-                   ncol=num_cases//2, bbox_to_anchor=(0.5, 0.0))
+                   ncol=np.ceil(num_cases/2).astype(int), bbox_to_anchor=(0.5, 0.0))
     # --- Save Frame ---#
     if with_error:
         file_name = 'hor_centerline_frame_with_error_'
@@ -215,179 +218,8 @@ def plot_lines_h(title, it, color_opt, fig_folder, case_names, coord, lines_var_
         file_name = 'hor_centerline_frame_'
     save_frame(fig, outdir, it, size_in, file_name=file_name)
     return outdir
-## temporal analysis ##
-def plume_temporal_analysis(time, ranges, color_opt, fig_folder, case_names, name, lx, start_neutral, mld, h_neutral, h_max, r_mld, r_neutral, r_hmax, w_mld, w_neutral, w_hmax, b_mld, b_neutral, b_hmax, T_mld, T_neutral, T_hmax, tracer_mld, tracer_neutral, tracer_hmax, tracerw_fluc_avg, Tw_fluc_avg, ND = False):
-    num_cases = len(case_names)
-    if num_cases==1:
-        fig, axes = plt.subplots(2, 4, figsize=(12, 5))
-        outdir = os.path.join(fig_folder, 'plume analysis/')
-        os.makedirs(outdir, exist_ok=True)
-    else:
-        outdir = os.path.join(fig_folder, 'comparison plume analysis/')
-        os.makedirs(outdir, exist_ok=True)
-        gridspec_kw={'height_ratios': [1, 1, 0.1]} # add space for universal legend
-        fig, axes = plt.subplots(3, 4, figsize=(12, 6.5), gridspec_kw=gridspec_kw)
-        for a in axes[2, :]:
-            a.remove()
-        case_handles = [
-            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
-            for i in range(num_cases)
-        ]
-        fig.legend(handles=case_handles,
-                loc='lower center',
-                ncol=num_cases,
-                bbox_to_anchor=(0.52, 0.015))
-    #fig.tight_layout()
-    ax1 = axes[0, 0] # depth of plume through time 
-    ax2 = axes[0, 1] # max and average radius of plume through time 
-    ax3 = axes[0, 2] # vertical velocity at depth through time
-    ax4 = axes[0, 3] # perturbed buoyancy at depth through time
-    ax5 = axes[1, 0] # perturbed Temperature at depth through time
-    ax6 = axes[1, 1] # perturbed tracer at depth through time
-    ax7 = axes[1, 2] # average tracer at MLD through time
-    ax8 = axes[1, 3] # w_avg at MLD through time 
-    if ND:
-        ax1.set_ylabel(r"z/h$_{\text{MLD}}$")
-        ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel(r"$\langle$r$\rangle_{\text{xy}}$/l$_{j}$") #(r"$\langle$r$\rangle_{\text{xy}}$/h$_{\text{MLD}}$") #
-        ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel(r"w/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}})$")
-        ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
-        ax4.set_ylabel(r"b'/(h$_{\mathrm{MLD}_0} N^{2}$)")
-        ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$/T$_{0}$")
-        ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"$\langle$C'$\rangle_{\text{xy}}$/S$_{\text{max}}$") #(\text{h}_{mld} \sqrt{N^{2}}$)/(F$_{\text{C}}$)") #(r"$\langle$C$'\sqrt{g\text{r}_{j}}$/(F$_{\text{C}}$)") #
-        ax6.set_ylim(ymin = ranges['Tracer_fluc'][0], ymax = ranges['Tracer_fluc'][-1])
-        ax7.set_ylabel(r"$\langle$C'w$\rangle_{\text{xy}}$/F$_{\text{C}}$") #(\text{h}_{mld}\sqrt{N^{2}}$)/(F$_{\text{C}}$)")# (r"$\langle$C$\rangle_{\text{xy}}$\sqrt{g\text{r}_{j}}$/(F$_{\text{C}}$)")#
-        ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
-        ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$/(h$_{\mathrm{MLD}_0} \sqrt{N^{2}}$)")
-        ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
-    else:
-        ax1.set_ylabel("[m]")
-        ax1.set_ylim(ymin = -lx[-1], ymax = 0)
-        ax2.set_ylabel("[m]")
-        ax2.set_ylim(ymin = ranges['radius'][0], ymax = ranges['radius'][-1])
-        ax3.set_ylabel("[m/s]")
-        ax3.set_ylim(ymin = ranges['w'][0], ymax = ranges['w'][-1])
-        ax4.set_ylabel(r"[m/s$^2$]")
-        ax4.set_ylim(ymin = ranges['b_fluc'][0], ymax = ranges['b_fluc'][-1])
-        ax5.set_ylabel(r"$\langle$T$'\rangle_{\text{xy}}$ [$^{\circ}$C]")
-        ax5.set_ylim(ymin = ranges['T_fluc'][0], ymax = ranges['T_fluc'][-1])
-        ax6.set_ylabel(r"$\langle$C$'\rangle_{\text{xy}}$ [g/kg]")
-        ax6.set_ylim(ymin = ranges['Tracer_fluc'][0], ymax = ranges['Tracer_fluc'][-1])
-        ax7.set_ylabel(r"$\langle$C$'\text{w}\rangle_{\text{xy}}$ [g/kg]")
-        ax7.set_ylim(ymin = ranges['Sw_fluc'][0], ymax = ranges['Sw_fluc'][-1])
-        ax8.set_ylabel(r"$\langle$T$'$w$\rangle_{\text{xy}}$ [$^{\circ}$C $\cdot$ m/s]")
-        ax8.set_ylim(ymin = ranges['Tw_fluc'][0], ymax = ranges['Tw_fluc'][-1])
-    # Depth of plume through time 
-    for i in range(num_cases):
-        if i == 0:
-            ax1.plot(time/ 3600 / 24, -mld[:, i], label = r"h$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], label = r"h$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax1.plot(time/ 3600 / 24, h_max[:, i], label = r"h$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else: 
-            ax1.plot(time/ 3600 / 24, -mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax1.plot(time/ 3600 / 24, h_max[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax1.plot(time[start_neutral[i]::]/ 3600 / 24, h_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-    ax1.set_title("Plume Depths", size = 10)
-    #ax1.set_xlabel("Time [days]") 
-    ax1.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
-    ax1.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    # radius of plume 
-    for i in range(num_cases):
-        if i == 0:
-            ax2.plot(time/ 3600 / 24, r_mld[:, i], label = r"r$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax2.plot(time[start_neutral[i]::]/ 3600 / 24, r_neutral[start_neutral[i]::, i], label = r"r$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax2.plot(time/ 3600 / 24, r_hmax[:, i], label = r"r$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else: 
-            ax2.plot(time/ 3600 / 24, r_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax2.plot(time[start_neutral[i]::]/ 3600 / 24, r_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax2.plot(time/ 3600 / 24, r_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-    ax2.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    ax2.set_title("Plume Radii", size = 10)
-    #ax2.set_xlabel("Time [days]") 
-    ax2.legend(loc='upper left', labelspacing = 0.25, handlelength=0.75)
-    # vertical velocity
-    for i in range(num_cases):
-        if i == 0:
-            ax3.plot(time/ 3600 / 24, w_mld[:, i], label = r"w$_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax3.plot(time[start_neutral[i]::]/ 3600 / 24, w_neutral[start_neutral[i]::, i], label = r"w$_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax3.plot(time/ 3600 / 24, w_hmax[:, i],label = r"w$_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax3.plot(time/ 3600 / 24, w_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax3.plot(time[start_neutral[i]::]/ 3600 / 24, w_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax3.plot(time/ 3600 / 24, w_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-    #ax3.set_xlabel("Time [days]") 
-    ax3.set_title("Vertical Velocity", size = 10)
-    ax3.legend(loc='upper right', labelspacing = 0.25, handlelength=0.75)
-    ax3.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24]) 
-    # buoyancy perturbations 
-    for i in range(num_cases):
-        if i == 0:
-            ax4.plot(time/ 3600 / 24, b_mld[:, i], label = r"b$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax4.plot(time[start_neutral[i]::]/ 3600 / 24, b_neutral[start_neutral[i]::, i], label = r"b$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax4.plot(time/ 3600 / 24, b_hmax[:, i], label = r"b$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax4.plot(time/ 3600 / 24, b_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax4.plot(time/ 3600 / 24, b_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax4.plot(time[start_neutral[i]::]/ 3600 / 24, b_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-    #ax4.set_xlabel("Time [days]") 
-    ax4.set_title("Perturbed Buoyancy", size = 10)
-    ax4.legend(loc='upper right', labelspacing = 0.25, handlelength=0.75)
-    ax4.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    ax4.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    # temperature perturbations 
-    for i in range(num_cases):
-        if i == 0:
-            ax5.plot(time/ 3600 / 24, T_mld[:, i], label = r"T$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax5.plot(time[start_neutral[i]::]/ 3600 / 24, T_neutral[start_neutral[i]::, i], label = r"T$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax5.plot(time/ 3600 / 24, T_hmax[:, i], label = r"T$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax5.plot(time/ 3600 / 24, T_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax5.plot(time/ 3600 / 24, T_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax5.plot(time[start_neutral[i]::]/ 3600 / 24, T_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-    ax5.set_xlabel("Time [days]") 
-    ax5.set_title("Perturbed Temperature", size = 10)
-    ax5.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
-    ax5.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    ax5.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    # tracer perturbations 
-    for i in range(num_cases):
-        if i == 0:
-            ax6.plot(time/ 3600 / 24, tracer_mld[:, i], label = r"C$'_{\text{MLD}}$", linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], label = r"C$'_{\text{neutral}}$", linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-            ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], label = r"C$'_{\text{intrusion}}$", linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-        else:
-            ax6.plot(time/ 3600 / 24, tracer_mld[:, i], linewidth = 0.75, linestyle = 'dashed', color = color_opt[i])
-            ax6.plot(time/ 3600 / 24, tracer_hmax[:, i], linewidth = 0.75, linestyle = 'solid', color = color_opt[i])
-            ax6.plot(time[start_neutral[i]::]/ 3600 / 24, tracer_neutral[start_neutral[i]::, i], linewidth = 0.75, linestyle = 'dotted', color = color_opt[i])
-    ax6.set_xlabel("Time [days]") 
-    ax6.set_title("Perturbed Tracer", size = 10)
-    ax6.legend(loc='lower right', labelspacing = 0.25, handlelength=0.75)
-    ax6.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    ax6.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    # average salinity at MLD
-    for i in range(num_cases):
-        ax7.plot(time/ 3600 / 24, tracerw_fluc_avg[:, i], linewidth = 0.75, color = color_opt[i])
-    ax7.set_xlabel("Time [days]")
-    ax7.set_title(r"$\langle$C$'$w$\rangle_{\text{xy}}$ at MLD", size = 10)
-    ax7.ticklabel_format(axis='y', scilimits=(-1,1), useMathText=True)
-    ax7.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    # root mean square w at MLD 
-    for i in range(num_cases):
-        ax8.plot(time/ 3600 / 24, Tw_fluc_avg[:, i], linewidth = 0.75, color = color_opt[i])
-    ax8.set_xlabel("Time [days]")
-    ax8.set_title(r"$\langle$T$'$w$\rangle_{\text{xy}}$ at MLD", size = 10)
-    ax8.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
-    ax8.set_xlim([time.min() / 3600 / 24, time.max() / 3600 / 24])
-    # --- Save Frame ---
-    frame_path = os.path.join(outdir, f"{name}_temporal_comparison.png")
-    plt.savefig(frame_path)
-    plt.close(fig)
-    print("Temporal Plot Saved: ", frame_path)
 ## turbulent statistics plotting ##
-def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, u_rms, w_rms, uw, b_avg, bur_fluc_avg, bw_fluc_avg, Tu, Tw, Cu, Cw):
+def plot_turb_stats_bin(time, it, ranges, case_opt, fig_folder, case_names, z, u_rms, w_rms, uw, b_avg, bur_fluc_avg, bw_fluc_avg, Tu, Tw, Cu, Cw):
     num_cases = len(case_names)
     ncols = 3
     nrows = 2
@@ -403,9 +235,8 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     for a in axes[2, :]:
         a.remove()
     case_handles = [
-        Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
-        for i in range(num_cases)
-    ]
+        Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=case)
+        for n, case in enumerate(case_names)]
     fig.legend(handles=case_handles,
             loc='lower center',
             ncol=num_cases,
@@ -440,11 +271,11 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     # velocity rms
     for i in range(num_cases):
         if i == 0:
-            axes[0].plot(u_rms[i], z[i], label=r"$\langle$u$_{r,\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            axes[0].plot(w_rms[i], z[i], label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            axes[0].plot(u_rms[i], z[i], label=r"$\langle$u$_{r,\text{rms}}\rangle_{\text{xy}}$", color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            axes[0].plot(w_rms[i], z[i], label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         else:
-            axes[0].plot(u_rms[i], z[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            axes[0].plot(w_rms[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            axes[0].plot(u_rms[i], z[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            axes[0].plot(w_rms[i], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     axes[0].set_title("Root Mean Square Velocities")
     axes[0].set_xlim(ranges['vel_rms'])
     axes[0].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
@@ -452,7 +283,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
 
     # reynolds stresses
     for i in range(num_cases):
-        axes[1].plot(uw[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        axes[1].plot(uw[i], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     axes[1].set_title(r"Reynolds Stresses, $\langle$u$_r$'w'$\rangle_{\text{xy}}$")
     axes[1].set_xlim(ranges['restress'])
     axes[1].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True)
@@ -460,11 +291,11 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     # perturbed buoyancy flux 
     for i in range(num_cases):
         if i == 0:
-            axes[2].plot(bur_fluc_avg[i], z[i], color = color_opt[i], label = r"$\langle$b'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
-            axes[2].plot(bw_fluc_avg[i], z[i], color = color_opt[i], label = r"$\langle$b'w$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+            axes[2].plot(bur_fluc_avg[i], z[i], color = case_opt['color'][i], label = r"$\langle$b'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 2.0)
+            axes[2].plot(bw_fluc_avg[i], z[i], color = case_opt['color'][i], label = r"$\langle$b'w$\rangle_{\text{xy}}$", linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         else:
-            axes[2].plot(bur_fluc_avg[i], z[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            axes[2].plot(bw_fluc_avg[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            axes[2].plot(bur_fluc_avg[i], z[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            axes[2].plot(bw_fluc_avg[i], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     axes[2].legend(loc='upper left')
     axes[2].set_title("Perturbed Buoyancy Flux")
     axes[2].set_xlim(ranges['bw_fluc'])
@@ -473,11 +304,11 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     # perturbed temperature flux 
     for i in range(num_cases):
         if i == 0:
-            axes[3].plot(Tu[i], z[i], color = color_opt[i], label = r"$\langle$T'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
-            axes[3].plot(Tw[i], z[i], color = color_opt[i], label = r"$\langle$T'w$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+            axes[3].plot(Tu[i], z[i], color = case_opt['color'][i], label = r"$\langle$T'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 2.0)
+            axes[3].plot(Tw[i], z[i], color = case_opt['color'][i], label = r"$\langle$T'w$\rangle_{\text{xy}}$", linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         else:
-            axes[3].plot(Tu[i], z[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            axes[3].plot(Tw[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            axes[3].plot(Tu[i], z[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            axes[3].plot(Tw[i], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     axes[3].legend(loc='upper right')
     axes[3].set_title("Perturbed Temperature Flux")
     axes[3].set_xlim(ranges['Tw_fluc'])
@@ -486,11 +317,11 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     # tracer flux 
     for i in range(num_cases):
         if i == 0:
-            axes[4].plot(Cu[i], z[i], color = color_opt[i], label = r"$\langle$Cu$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
-            axes[4].plot(Cw[i], z[i], color = color_opt[i], label = r"$\langle$Cw$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+            axes[4].plot(Cu[i], z[i], color = case_opt['color'][i], label = r"$\langle$Cu$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 2.0)
+            axes[4].plot(Cw[i], z[i], color = case_opt['color'][i], label = r"$\langle$Cw$\rangle_{\text{xy}}$", linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         else:
-            axes[4].plot(Cu[i], z[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            axes[4].plot(Cw[i], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            axes[4].plot(Cu[i], z[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            axes[4].plot(Cw[i], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     axes[4].legend(loc='lower right')
     axes[4].set_title("Tracer Flux")
     axes[4].set_xlim(ranges['Cw'])
@@ -498,7 +329,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
 
     # buoyancy profile
     for i in range(num_cases):
-        axes[5].plot(b_avg[i], z[i], color = color_opt[i], linewidth = 0.75)
+        axes[5].plot(b_avg[i], z[i], color = case_opt['color'][i], linewidth = 2.0)
     axes[5].set_title("Buoyancy Profile")
     axes[5].set_xlim(ranges['b_avg'])
     axes[5].ticklabel_format(axis='x', style='sci', scilimits=(-3,2), useMathText=True) 
@@ -509,7 +340,7 @@ def plot_turb_stats_bin(time, it, ranges, color_opt, fig_folder, case_names, z, 
     return outdir # return the directory where frames are saved for video creation
 ### -------------------------PLOTTING DENSE PLUME FUNCTIONS------------------------- ###
 ## scaling analysis ##
-def plot_scaling_analysis(time, fig_folder, F, F_transverse, eta, c_delta, loc_z):
+def plot_scaling_analysis(time, case_opt, fig_folder, F, eta, loc_z):
     def _F(eta, alpha):
         return np.exp(-alpha * eta**2)
 
@@ -523,9 +354,6 @@ def plot_scaling_analysis(time, fig_folder, F, F_transverse, eta, c_delta, loc_z
     outdir = os.path.join(fig_folder, 'scaling analysis/')
     os.makedirs(outdir, exist_ok=True)
 
-    cmap = plt.get_cmap('viridis', nz)
-
-
     for it in range(nt):
         fig, ax = plt.subplots(1, 1, figsize=size_in)
 
@@ -538,16 +366,14 @@ def plot_scaling_analysis(time, fig_folder, F, F_transverse, eta, c_delta, loc_z
             eta_it_k = eta_it_k[n_keep]
 
             alpha = scipy.optimize.curve_fit(_F, eta_it_k, F_it_k)[0][0]
-
-            color = cmap(n)
-            ax.plot(eta_it_k, _F(eta_it_k, alpha), color=color,
+            ax.plot(eta_it_k, _F(eta_it_k, alpha), color = case_opt[case]['color'],
                     label=rf"z={loc_z[n]:.2f} m, $\alpha={alpha:.2f}$")
-            ax.scatter(eta_it_k, F_it_k, marker='o', s=10, color=color)
+            ax.scatter(eta_it_k, F_it_k, marker='o', s=10, color = case_opt[case]['color'])
 
         ax.set_xlabel(r"$\eta$")
         ax.set_ylabel(r"$F(\eta)$")
         ax.set_title(f"t = {time[it]/3600:.2f} hours")
-        ax.legend(loc='upper right', fontsize='small')
+        ax.legend(loc='upper right', fontsize = 20)
         save_frame(fig, outdir, it, size_in)
 
     return outdir
@@ -580,7 +406,7 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     levels = 500
 
     # Depth of plume through time
-    ax1.plot(time/ 3600 / 24, -mld*np.ones(len(time)), linestyle='--', linewidth = 0.5, color = 'black', label = "MLD")
+    ax1.plot(time/ 3600 / 24, -mld*np.ones(len(time)), linestyle='--', linewidth = 2.0, color = 'black', label = "MLD")
     ax1.plot(time[:it+1]/ 3600 / 24, plume_depth_intrusion, color = 'blue', label = r"h$_{\text{intrusion}}$")
     ax1.plot(time[:it+1]/ 3600 / 24, plume_depth_neutral, color = 'red', label = r"h$_{\text{neutral}}$")
     ax1.set_xlabel("Time [days]") 
@@ -624,9 +450,9 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     ax4.set_xlim([0, time.max() / 3600 / 24])
 
     #Richardson profile
-    ax5.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
-    ax5.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
-    ax5.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
+    ax5.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 2.0, color = 'black')
+    ax5.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'cornflowerblue')
+    ax5.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'mediumblue')
     ax5.set_xlim(ranges['Ri'])
     if len(np.shape(Ri_strat))>1: # if we have the Hassanzadeh Richardson number, plot that as well
         Ri_strat_h = Ri_strat[:, 1]
@@ -648,12 +474,12 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     ax5.set_ylim(-lx[2], 0)
 
     # buoyancy 
-    ax6.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
-    ax6.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
-    ax6.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
+    ax6.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 2.0, color = 'black')
+    ax6.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'cornflowerblue')
+    ax6.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'mediumblue')
     ax6.set_xlim(ranges['b'])
-    ax6.plot(b_avg, z, color='black', label = r"$\langle$b$\rangle_{\text{xy}}")
-    ax6.plot(b_center, z, color='red', label = r"b$_{\text{centerline}}$")
+    ax6.plot(b_avg, z, color = 'black', label = r"$\langle$b$\rangle_{\text{xy}}")
+    ax6.plot(b_center, z, color = 'red', label = r"b$_{\text{centerline}}$")
     ax6.set_title("Buoyancy Profile")
     ax6.set_xlabel("[m/s$^{2}$]")
     ax6.set_ylabel("Depth [m]")
@@ -662,12 +488,12 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     ax6.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
 
     # w
-    ax7.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
-    ax7.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
-    ax7.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
+    ax7.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 2.0, color = 'black')
+    ax7.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'cornflowerblue')
+    ax7.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'mediumblue')
     ax7.set_xlim(xmin = ranges['w'][0]*10, xmax = ranges['w'][-1]*1)
-    ax7.plot(w_avg, zf, color='black', label = r"w$_{\text{average}}$")
-    ax7.plot(w_center, zf, color='red', label = r"w$_{\text{centerline}}$")
+    ax7.plot(w_avg, zf, color = 'black', label = r"w$_{\text{average}}$")
+    ax7.plot(w_center, zf, color = 'red', label = r"w$_{\text{centerline}}$")
     ax7.set_title("Vertical Velocity Profile")
     ax7.set_xlabel("[m/s]")
     ax7.set_ylim(-lx[2], 0)
@@ -675,11 +501,11 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     ax7.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
 
     # RMS buoyancy 
-    ax8.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
-    ax8.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
-    ax8.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
+    ax8.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 2.0, color = 'black')
+    ax8.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'cornflowerblue')
+    ax8.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'mediumblue')
     ax8.set_xlim(ranges['b_rms'])
-    ax8.plot(b_rms, z, color='black')
+    ax8.plot(b_rms, z, color = 'black')
     ax8.set_title("Buoyancy Root Mean Square Error")
     ax8.set_xlabel(r"[m/s$^{2}$]")
     ax8.set_ylabel("Depth [m]")
@@ -687,12 +513,12 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     ax8.ticklabel_format(axis='x', style='sci', scilimits=(-1,1), useMathText=True)
 
     # RMS buoyancy flux 
-    ax9.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 0.5, color = 'black')
-    ax9.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'cornflowerblue')
-    ax9.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 0.5, color = 'mediumblue')
+    ax9.plot([-1*10**6, 1*10**6], -mld*np.ones(2), linestyle='--', linewidth = 2.0, color = 'black')
+    ax9.plot([-1*10**6, 1*10**6], plume_depth_intrusion[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'cornflowerblue')
+    ax9.plot([-1*10**6, 1*10**6], plume_depth_neutral[it]*np.ones(2), linestyle='--', linewidth = 2.0, color = 'mediumblue')
     ax9.set_xlim(ranges['bw_fluc'])
-    ax9.plot(bur_fluc_avg, z, color='black', label = r"b'u$_r$")
-    ax9.plot(bw_fluc_avg, z, color='red', label = r"b'w")
+    ax9.plot(bur_fluc_avg, z, color = 'black', label = r"b'u$_r$")
+    ax9.plot(bw_fluc_avg, z, color = 'red', label = r"b'w")
     ax9.legend(loc='lower right', handlelength=0.9)
     ax9.set_xlabel(r"[m$^{2}$/s$^{3}$]")
     #ax9.set_ylabel("Depth [m]")
@@ -734,15 +560,13 @@ def buoyancy_analysis_plot(time, it, ranges, fig_folder, lx, nx, z, zf, X, Z, ml
     plt.close(fig)
     return outdir # return the directory where frames are saved for video creation
 ## spatial vertical analysis ##
-def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
+def plot_plume_vertical_spatial(time, ranges, case_opt, fig_folder, case_names, name, lx, z, tracer_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc, tracer, ND = False, z_nd = r"(z - h$_{\mathrm{MLD}_0}$)/l$_{j}$"):
     num_cases = len(case_names)
     outdir = os.path.join(fig_folder, 'vertical centerline-' + name)
     os.makedirs(outdir, exist_ok=True)
     if num_cases>1:
         case_handles = [
-            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
-            for i in range(num_cases)
-        ]
+            Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=case) for i in range(num_cases)]
     for it, t in enumerate(time):
         if num_cases==1:
             size_in = (12, 8)
@@ -795,13 +619,13 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         # velocity rms
         for i in range(num_cases):
             if i == 0:
-                ax1.plot(u_rms[i][it], z[i], label=r"$\langle$u$_{\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-                ax1.plot(v_rms[i][it], z[i], label=r"$\langle$v$_{\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='dashed', linewidth = 0.75)
-                ax1.plot(w_rms[i][it], z[i], label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = color_opt[i], linestyle='solid', linewidth = 0.75)
+                ax1.plot(u_rms[i][it], z[i], label=r"$\langle$u$_{\text{rms}}\rangle_{\text{xy}}$", color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+                ax1.plot(v_rms[i][it], z[i], label=r"$\langle$v$_{\text{rms}}\rangle_{\text{xy}}$", color = case_opt['color'][i], linestyle=case_opt['line_styles'], linewidth = 2.0)
+                ax1.plot(w_rms[i][it], z[i], label=r"$\langle$w$_{\text{rms}}\rangle_{\text{xy}}$", color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
             else:
-                ax1.plot(u_rms[i][it], z[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-                ax1.plot(v_rms[i][it], z[i], color = color_opt[i], linestyle='dashed', linewidth = 0.75)
-                ax1.plot(w_rms[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+                ax1.plot(u_rms[i][it], z[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+                ax1.plot(v_rms[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt['line_styles'], linewidth = 2.0)
+                ax1.plot(w_rms[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax1.set_title("Root Mean Square Velocities")
         ax1.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax1.set_xlim(ranges['vel_rms'])
@@ -810,7 +634,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
         # tracer profile 
         for i in range(num_cases):
-            ax2.plot(tracer_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax2.plot(tracer_avg[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax2.set_title('Tracer Profile')
         ax2.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax2.set_xlim(ranges['Tracer_avg'])
@@ -819,11 +643,11 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         # buoyancy profiles
         for i in range(num_cases):
             if i == 0:
-                ax3.plot(b_avg[i][it], z[i], color = color_opt[i], label = r"$\langle$b$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
-                ax3.plot(b_center[i][it], z[i], color = color_opt[i], label = r"b$_{\text{centerline}}$", linestyle='dashed', linewidth = 0.75)
+                ax3.plot(b_avg[i][it], z[i], color = case_opt['color'][i], label = r"$\langle$b$\rangle_{\text{xy}}$", linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
+                ax3.plot(b_center[i][it], z[i], color = case_opt['color'][i], label = r"b$_{\text{centerline}}$", linestyle=case_opt['line_styles'], linewidth = 2.0)
             else:
-                ax3.plot(b_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
-                ax3.plot(b_center[i][it], z[i], color = color_opt[i], linestyle='dashed', linewidth = 0.75)
+                ax3.plot(b_avg[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
+                ax3.plot(b_center[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt['line_styles'], linewidth = 2.0)
         ax3.set_title("Buoyancy Profile")
         ax3.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax3.set_xlim(ranges['b_avg'])
@@ -832,7 +656,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
         # temperature fluctuations 
         for i in range(num_cases):
-            ax4.plot(tracer[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax4.plot(tracer[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax4.set_title("Tracer")
         ax4.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax4.set_xlim(ranges['Tracer'])
@@ -840,7 +664,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
         # plume radius
         for i in range(num_cases):
-            ax5.plot(r_profile[i][:, it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax5.plot(r_profile[i][:, it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax5.set_title("Plume Radius with Depth")
         ax5.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax5.set_xlim(0, min(lx[0, :])/1.9)
@@ -848,11 +672,11 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
         # perturbed buoyancy flux 
         for i in range(num_cases):
             if i == 0:
-                ax6.plot(bur_fluc_avg[i][it], z[i], color = color_opt[i], label = r"$\langle$b'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 0.75)
-                ax6.plot(bw_fluc_avg[i][it], z[i], color = color_opt[i], label = r"$\langle$b'w$\rangle_{\text{xy}}$", linestyle='solid', linewidth = 0.75)
+                ax6.plot(bur_fluc_avg[i][it], z[i], color = case_opt['color'][i], label = r"$\langle$b'u$_r\rangle_{\text{xy}}$", linestyle='dotted', linewidth = 2.0)
+                ax6.plot(bw_fluc_avg[i][it], z[i], color = case_opt['color'][i], label = r"$\langle$b'w$\rangle_{\text{xy}}$", linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
             else:
-                ax6.plot(bur_fluc_avg[i][it], z[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-                ax6.plot(bw_fluc_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+                ax6.plot(bur_fluc_avg[i][it], z[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+                ax6.plot(bw_fluc_avg[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax6.legend(loc='lower right')
         ax6.set_title("Buoyancy Flux Fluctuations")
         ax6.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
@@ -861,7 +685,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
         # average temperature
         for i in range(num_cases):
-            ax7.plot(T_avg[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax7.plot(T_avg[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax7.set_title("Temperature")
         ax7.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax7.set_xlim(ranges['T'])
@@ -869,7 +693,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
         # temperature fluctuations 
         for i in range(num_cases):
-            ax8.plot(T_fluc[i][it], z[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax8.plot(T_fluc[i][it], z[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         ax8.set_title("Perturbed Temperature")
         ax8.set_ylim(ymin = -min(lx[-1, :]), ymax = 0.0)
         ax8.set_xlim(ranges['T_fluc'])
@@ -880,7 +704,7 @@ def plot_plume_vertical_spatial(time, ranges, color_opt, fig_folder, case_names,
 
     return outdir # return the directory where frames are saved for video creation
 ## spatial horizontal analysis ##
-def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
+def plot_plume_horizontal_spatial(time, it, ranges, case_opt, fig_folder, case_names, name, lx, y, u, v, w, b_center, bu_fluc, bv_fluc, bw_fluc, T, tracer, ND = False):
     num_cases = len(case_names)
     if num_cases==0:
         size_in = (12, 7)
@@ -896,8 +720,7 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
         for a in axes[2, :]:
             a.remove()
         case_handles = [
-            Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
-            for i in range(num_cases)]
+            Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=case_names[n]) for n, case in enumerate(case_names)]
 
         fig.legend(handles=case_handles,
                 loc='lower center',
@@ -944,13 +767,13 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
     # velocity
     for i in range(num_cases):
         if i == 0:
-            ax1.plot(y, u[i], label=r"u$_{\text{centerline}}$", color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            ax1.plot(y, v[i], label=r"v$_{\text{centerline}}$", color = color_opt[i], linestyle='dashed', linewidth = 0.75)
-            ax1.plot(y, w[i], label=r"w$_{\text{centerline}}$", color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax1.plot(y, u[i], label=r"u$_{\text{centerline}}$", color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            ax1.plot(y, v[i], label=r"v$_{\text{centerline}}$", color = case_opt['color'][i], linestyle=case_opt['line_styles'], linewidth = 2.0)
+            ax1.plot(y, w[i], label=r"w$_{\text{centerline}}$", color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
         else:
-            ax1.plot(y, u[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            ax1.plot(y, v[i], color = color_opt[i], linestyle='dashed', linewidth = 0.75)
-            ax1.plot(y, w[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+            ax1.plot(y, u[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            ax1.plot(y, v[i], color = case_opt['color'][i], linestyle=case_opt['line_styles'], linewidth = 2.0)
+            ax1.plot(y, w[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     ax1.set_title("Velocity")
     ax1.set_xlim(-lx[0][1]/2, lx[0][1]/2)
     ax1.set_ylim(ranges['w'])
@@ -960,11 +783,11 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
     # horizontal buoyancy flux 
     for i in range(num_cases):
         if i == 0:
-            ax2.plot(y, bu_fluc[i], color = color_opt[i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted', linewidth = 0.75)
-            ax2.plot(y, bv_fluc[i], color = color_opt[i], label = r"b$'$v$'_{\text{centerline}}$", linestyle='dashed', linewidth = 0.75)
+            ax2.plot(y, bu_fluc[i], color = case_opt['color'][i], label = r"b$'$u$'_{\text{centerline}}$", linestyle='dotted', linewidth = 2.0)
+            ax2.plot(y, bv_fluc[i], color = case_opt['color'][i], label = r"b$'$v$'_{\text{centerline}}$", linestyle=case_opt['line_styles'], linewidth = 2.0)
         else:
-            ax2.plot(y, bu_fluc[i], color = color_opt[i], linestyle='dotted', linewidth = 0.75)
-            ax2.plot(y, bv_fluc[i], color = color_opt[i], linestyle='dashed', linewidth = 0.75)
+            ax2.plot(y, bu_fluc[i], color = case_opt['color'][i], linestyle='dotted', linewidth = 2.0)
+            ax2.plot(y, bv_fluc[i], color = case_opt['color'][i], linestyle=case_opt['line_styles'], linewidth = 2.0)
     ax2.set_title('Horizontal Buoyancy Flux Fluctuations')
     ax2.set_xlim(-lx[0][1]/2, lx[0][1]/2)
     ax2.set_ylim(ymin = ranges['b_flux'][0], ymax = ranges['b_flux'][1])
@@ -972,7 +795,7 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
 
     # tracer  
     for i in range(num_cases):
-        ax3.plot(y, tracer[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        ax3.plot(y, tracer[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     ax3.set_title("Tracer")
     ax3.set_xlim(-lx[0][1]/2, lx[0][1]/2)
     ax3.set_ylim(ranges['Tracer'])
@@ -980,14 +803,14 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
 
     # Perturbed buoyancy 
     for i in range(num_cases):
-        ax4.plot(y, b_center[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        ax4.plot(y, b_center[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     ax4.set_title("Perturbed Buoyancy")
     ax4.set_xlim(-lx[0][1]/2, lx[0][1]/2)
     ax4.set_ylim(ranges['b_fluc'])
     ax4.ticklabel_format(axis='y', style='sci', scilimits=(-3,2), useMathText=True)
     # perturbed buoyancy flux 
     for i in range(num_cases):
-        ax5.plot(y, bw_fluc[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        ax5.plot(y, bw_fluc[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     ax5.set_title("Vertical Buoyancy Flux Fluctuations")
     ax5.set_xlim(-lx[0][1]/2, lx[0][1]/2)
     ax5.set_ylim(ranges['bw_fluc'])
@@ -995,7 +818,7 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
 
     # temperature  
     for i in range(num_cases):
-        ax6.plot(y, T[i], color = color_opt[i], linestyle='solid', linewidth = 0.75)
+        ax6.plot(y, T[i], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
     ax6.set_title("Temperature")
     ax6.set_xlim(-lx[0][1]/2, lx[0][1]/2)
     ax6.set_ylim(ranges['T'])
@@ -1005,7 +828,7 @@ def plot_plume_horizontal_spatial(time, it, ranges, color_opt, fig_folder, case_
 
     return outdir # return the directory where frames are saved for video creation
 ## plume depths ##
-def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral, zc, contour, trend = True):
+def plot_plume_depths(time, case_opt, fig_folder, case_names, lx, zp, zneutral, zc, contour, trend = True):
     num_cases = len(case_names)
     ncols = 3
     nrows = 2
@@ -1018,7 +841,7 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral,
     for a in axes[-1, :]:
         a.remove()
     case_handles = [
-        Line2D([0], [0], color=color_opt[i], linestyle='solid', label=case_names[i])
+        Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], label=case_names[n])
         for i in range(num_cases)
     ]
     fig.legend(handles=case_handles,
@@ -1043,22 +866,22 @@ def plot_plume_depths(time, color_opt, fig_folder, case_names, lx, zp, zneutral,
     for i in range(num_cases):
         if i == 0:
             tmax = time[i].max() / 3600
-            ax[0].plot(time[i]/3600, zp[i], label=r"z$_{w=0}$", color = color_opt[i], linewidth = 0.75)
-            ax[1].plot(time[i]/3600, zneutral[i], label=r"z$_{b=0}$", color = color_opt[i], linewidth = 0.75)
-            ax[2].plot(time[i]/3600, zc[i], label=rf"z$_{{contour = {contour:.2f}}}$", color = color_opt[i], linewidth = 0.75)
+            ax[0].plot(time[i]/3600, zp[i], label=r"z$_{w=0}$", color = case_opt['color'][i], linewidth = 2.0)
+            ax[1].plot(time[i]/3600, zneutral[i], label=r"z$_{b=0}$", color = case_opt['color'][i], linewidth = 2.0)
+            ax[2].plot(time[i]/3600, zc[i], label=rf"z$_{{contour = {contour:.2f}}}$", color = case_opt['color'][i], linewidth = 2.0)
         else:
             tmax = max(tmax, time[i].max() / 3600)
-            ax[0].plot(time[i]/3600, zp[i], color = color_opt[i], linewidth = 0.75)
-            ax[1].plot(time[i]/3600, zneutral[i], color = color_opt[i], linewidth = 0.75)
-            ax[2].plot(time[i]/3600, zc[i], color = color_opt[i], linewidth = 0.75)
+            ax[0].plot(time[i]/3600, zp[i], color = case_opt['color'][i], linewidth = 2.0)
+            ax[1].plot(time[i]/3600, zneutral[i], color = case_opt['color'][i], linewidth = 2.0)
+            ax[2].plot(time[i]/3600, zc[i], color = case_opt['color'][i], linewidth = 2.0)
         if trend:
             start = 10
             print(time[i][start:]/3600)
             print(zp[i][start:])
             vars = np.polyfit(time[i][start:]/3600, zp[i][start:], 1)
             z_trend = time[i]/3600 * vars[0] + vars[1]
-            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
-            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = color_opt[i], linestyle = '--', linewidth = 0.5)
+            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = case_opt['color'][i], linestyle = '--', linewidth = 2.0)
+            ax[0].plot(time[i]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = case_opt['color'][i], linestyle = '--', linewidth = 2.0)
     for a in ax:
         a.set_ylim(ymin = -lx[-1].max(), ymax = 0.0)
         a.set_xlim(0, tmax)

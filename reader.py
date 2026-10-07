@@ -65,7 +65,7 @@ class OceananigansData:
             self.bin_file = 'binning_rtz.h5'
             self.binning = True
             with h5py.File(os.path.join(self.folder, self.bin_file), 'r') as f:
-                self.r =  f['/ccc/dimensions/r_bin'][()] 
+                self.r = f['/ccc/dimensions/r_bin'][()] 
         else:
             self.binning = False
 
@@ -237,20 +237,20 @@ class OceananigansData:
         if len(self.files) != 0:
             fname = os.path.join(self.folder, self.files[-1])
             with h5py.File(fname, 'r') as f:
-                self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
+                self.alpha = f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
                 if self.salinity:
                     self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
         elif self.averaging:
             fname = os.path.join(self.folder, self.averaging_file)
             with h5py.File(fname, 'r') as f:
-                self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
+                self.alpha = f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
                 if self.salinity:
                     self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
 
         else:
             fname = os.path.join(self.folder, self.bin_file)
             with h5py.File(fname, 'r') as f:
-                self.alpha =  f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
+                self.alpha = f['buoyancy/formulation/equation_of_state/thermal_expansion'][()]
                 if self.salinity:
                     self.beta = f['buoyancy/formulation/equation_of_state/haline_contraction'][()]
 
@@ -520,23 +520,23 @@ class OceananigansData:
                 out = out - self.u_s
 
             return out.compute().squeeze()
-    def field_centerline(self, field, steps=None):
+    def field_centerline(self, field, steps=None, binning=False):
         """
         Returns a 1D slice of the field along the centerline throughout time.
         Output shape is (nt,).
         """
-        if self.centerline:
+        if self.centerline and not binning: # centerline files exist — load from there
             if self.centerline_file is not None: # the interpolated centerline file exists — load from there
                 with h5py.File(os.path.join(self.folder, self.centerline_file), 'r') as f:
-                    s_centerline = f[f'centerline/{field}'][()] # (z,)
+                    centerline = f[f'centerline/{field}'][()] # (z,)
                 if steps is not None:
                     time_indices = np.array([np.where(self.time_center == t)[0][0] for t in steps])
-                    s_centerline = s_centerline[time_indices]
+                    centerline = centerline[time_indices]
             elif self.centerline_file is None and self.centerline_output is not None: # the interpolated centerline file does not exist, but the higher frequency output does 
                 if steps is None:
                     steps = self.t_save_center
                 steps = np.atleast_1d(steps)
-                s_centerline = np.empty((len(steps), self.nx[2]))
+                centerline = np.empty((len(steps), self.nx[2]))
                 for it, t in enumerate(steps):
                     with h5py.File(os.path.join(self.folder, self.centerline_output), 'r') as f:
                         data = f[f'timeseries/{field}/{int(t)}']
@@ -550,15 +550,18 @@ class OceananigansData:
                     if field == 'w': # because raw data is ccf
                         s = velocities_to_center(s, axis=-1)
                     s = np.mean(s, axis=(0, 1))
-                    s_centerline[it, :] = s
+                    centerline[it, :] = s
 
                 if field == 'u' and self.u_s is not None:
-                    s_centerline = s_centerline - self.u_s
+                    centerline = centerline - self.u_s
+        elif binning and self.binning: # centerline files do not exist, but binning file does — load from there
+            field_data = self.load_binning_var(field)
+            centerline = field_data[:, 0, :] # (nt, Nz)
         else: # no centerline files at all — need to extract from field files
             if steps is None:
                 steps = self.t_save
             steps = np.atleast_1d(steps)
-            s_centerline = np.empty((len(steps), self.nx[2]))
+            centerline = np.empty((len(steps), self.nx[2]))
             for it, t in enumerate(steps):
                 s = self.field_slice(field, steps = t)
                 # linear interpolation of x and y points is the same as averaging the 4 grid points in file
@@ -567,11 +570,11 @@ class OceananigansData:
                     s = np.mean(s[self.nx[1]//2:self.nx[1]//2+2, :], axis=0) 
                 else: # because raw data is ccc
                     s = np.mean(s[self.nx[1]//2:self.nx[1]//2+2, :], axis=0) 
-                s_centerline[it, :] = s.squeeze()
+                centerline[it, :] = s.squeeze()
 
             if field == 'u' and self.u_s is not None:
-                s_centerline = s_centerline - self.u_s
-        return s_centerline.squeeze()
+                centerline = centerline - self.u_s
+        return centerline.squeeze()
     def field_line(self, field, steps=None, line='XZ', loc1=None, loc2=None):
         """
         Returns a 1D line of the field throughout time, loaded directly from
@@ -638,7 +641,19 @@ class OceananigansData:
                 b = f['field data/b'][()]
                 b_fluc = f['field data/b_fluc'][()]
             return b, b_fluc
-        else:
+        elif file == self.bin_file and self.binning:
+            T = self.load_binning_var('T')
+            b = 9.80665 * self.alpha * (T - self.T0)
+            if self.salinity:
+                S = self.load_binning_var('S')
+                b -= 9.80665 * self.beta * S
+            b_avg = np.mean(b, axis=-2)
+            b_fluc = b - b_avg[:, None, :]
+            b_rms = np.mean(b_fluc**2, axis=-2)**0.5
+            b_centerline = b[:, 0, :]
+            b_fluc_centerline = b_fluc[:, 0, :]
+            return b_avg, b_rms, b_centerline, b_fluc_centerline
+        elif file == 'buoyancy_profile.h5':
             self.load_equation_of_state()
             g = 9.80665
             if os.path.exists(buoyancy_file) and not self.centerline and not self.averaging: # the buoyancy file exists and no centerline or averaging files exist
@@ -658,7 +673,7 @@ class OceananigansData:
                     self.centerline_file = [f for f in self.folder if (f.endswith('.h5') and f.startswith('centerline'))][0]
                 with h5py.File(os.path.join(self.folder, self.centerline_file), 'r') as f:
                     T_centerline = f[f'centerline/T'][...]
-                    b_centerline =  g * self.alpha * (T_centerline - self.T0)
+                    b_centerline = g * self.alpha * (T_centerline - self.T0)
                     if self.salinity:
                         S_centerline = f[f'centerline/S'][...]
                         b_centerline += - g * self.beta * S_centerline
@@ -738,8 +753,8 @@ class OceananigansData:
             return S
         else:
             return self.Sval
-    def load_averages(self, field, steps=None):
-        if self.averaging:
+    def load_averages(self, field, steps=None, binning=False):
+        if self.averaging and not binning:
             if steps is None:
                 steps = self.t_save_avg
             steps = np.atleast_1d(steps)
@@ -757,6 +772,10 @@ class OceananigansData:
                 else:
                     field_avg[it, :] = np.squeeze(dset)/self.Nranks
             f.close()
+        elif binning and self.binning:
+            if field == 'ur':
+                field = 'horizontal velocity'
+            field_avg = self.load_binning_var('averages/' + field)
         else: # calculate from field files
             if steps is None:
                 steps = self.t_save
@@ -770,11 +789,13 @@ class OceananigansData:
         Loads binning. [nr, nz, nt]
         """
         if self.binning:
-
             fname = os.path.join(self.folder, self.bin_file)
-            if field == 'ur':
-                field = 'horizontal velocity'
-            opt = 'ccc/'+field
+            if '/' in field:
+                opt = field
+            else:
+                if field == 'ur':
+                    field = 'horizontal velocity'
+                opt = 'ccc/'+field
 
             with h5py.File(fname, 'r') as f:
                 a = f[opt][()]
@@ -799,27 +820,6 @@ class OceananigansData:
             return r
         else:
             raise ValueError("Salinity needs to be a tracer in oreder to have said contour.")
-    def load_scaling_analysis(self, field):
-        """
-        Loads scaling analysis data for a given field.
-        options for field are: 'F', 'F_transverse', 'c_delta', 'c_w', 'eta', 'w_c', 'delta', 'outer velocity scale', 'outer length scale'.
-        """
-        if self.binning:
-
-            fname = os.path.join(self.folder, self.bin_file)
-            if field == 'w_c':
-                field = 'outer velocity scale'
-            elif field == 'delta':
-                field = 'outer length scale'
-            opt = 'scaling analysis/'+field
-
-            with h5py.File(fname, 'r') as f:
-                a = f[opt][()]
-
-            return a
-        else:
-            raise FileNotFoundError("Binning file not found in folder. Run oceananigans_setup.py with binning enabled to generate this file.")
-
     # ------------------------ FLUCTUATIONS ----------------------------- #
     def load_fluc(self, field, file = 'fluctuations.h5'):
         """

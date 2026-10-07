@@ -49,7 +49,7 @@ elif variations == 'else':
     dTdz = np.ones(num_cases)*0.01
     case_names =[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']#[r'L$_z = 96$m', r'L$_z = 160$m']#r'$\Delta z = 0.5$m', r'$\Delta z = 0.375$m'#
 
-color_opt, _ = comparison_plot_opt(len(contours))
+case_opt = comparison_plot_opt(len(contours))
 
 readers = []
 alpha = np.empty(num_cases)
@@ -163,4 +163,4 @@ for n, reader in enumerate(readers):
         lz = [np.min(lz), np.max(lz)]
 ############ PLOTTING ############
 plot_format()
-plot_r_at_depth_in_time(color_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, [best_fit, best_fit_max], fit_exp, ND, auto_log)
+plot_r_at_depth_in_time(case_opt, fig_folder, case_names, time, r_contour, contours, neutral_depths, r_maximum, where_max, lz, [best_fit, best_fit_max], fit_exp, ND, auto_log)

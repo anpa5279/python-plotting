@@ -153,7 +153,7 @@ ranges['vel_rms'] = [0, 5*10**-3]
 ranges['S'] = [0.0, 0.09]
 factor = 10**(-2)
 nvars = 5
-color_opt, line_opt  = comparison_plot_opt(nvars)
+case_opt = comparison_plot_opt(labels)
 plot_format()
 os.makedirs(outdir, exist_ok=True)
 if plot_raw_output:
@@ -183,7 +183,7 @@ if plot_raw_output:
         for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
             for n, var in enumerate(vars):
                 im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-                axes[count].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+                axes[count].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = case_opt['linestyle'][1])
                 axes[count].legend(loc='lower left')
                 axes[count].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
                 axes[count].set_ylim(z.min(), z.max())
@@ -225,7 +225,7 @@ if plot_zt:
     plt.subplots_adjust(bottom = 0.1, top = 0.95)
     for n, var in enumerate(vars):
         im = axes[n].imshow(var.T, extent=[time.min()/(3600*24), time.max()/(3600*24), z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-        axes[n].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+        axes[n].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = case_opt['linestyle'][1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), time.max()/(3600*24))
         axes[n].set_ylim(z.min(), z.max())
@@ -244,7 +244,7 @@ if plot_variables:
     gridspec_kw={'height_ratios': [1, 1, 0.1]}
     width = 0.8
     labels = [r'$\text{w}_{(0, 0)}$', r"$\text{w}_{rms}$", r"$\text{w'}_{0, 0}$", r"$\text{b}_{rms}$", r"$\text{b'}_{0, 0}$"]
-    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
+    case_handles = [Line2D([0], [0], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth=width, label=labels[i]) for i in range(nvars)]
 
     for it in range(nt):
         td = time[it]/(3600*24)
@@ -268,76 +268,76 @@ if plot_variables:
                 ncol=nvars,
                 bbox_to_anchor=(0.52, 0.01))
 
-        ax0.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax0.plot(w_centerline[it, :], z, color = color_opt[0], linewidth = width)
-        ax0.plot(w_fluc_centerline[it, :], z, color = color_opt[2], linewidth = width)
+        ax0.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax0.plot(w_centerline[it, :], z, color = case_opt['color'][0], linewidth = width)
+        ax0.plot(w_fluc_centerline[it, :], z, color = case_opt['color'][2], linewidth = width)
         ax0.set_xlim(ranges['w'])
         ax0.legend(loc='lower left')
         ax0.set_title("w")
         ax0.set_xlabel("[m/s]")
         ax0.set_ylabel("z [m]")
 
-        ax1.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax1.plot(dwdz_centerline[it, :], z, color = color_opt[0], linewidth = width)
-        ax1.plot(dwflucdz_centerline[it, :], z, color = color_opt[2], linewidth = width)
+        ax1.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax1.plot(dwdz_centerline[it, :], z, color = case_opt['color'][0], linewidth = width)
+        ax1.plot(dwflucdz_centerline[it, :], z, color = case_opt['color'][2], linewidth = width)
         ax1.set_xlim(ranges['gradw'])
         ax1.set_title("dw/dz")
         ax1.set_xlabel("dw/dz [1/s]")
         #ax1.set_ylabel("z [m]")
 
-        ax2.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax2.plot(w_rms[it, :], z, color = color_opt[1], linewidth = width)
+        ax2.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax2.plot(w_rms[it, :], z, color = case_opt['color'][1], linewidth = width)
         ax2.set_xlim(ranges['vel_rms'])
         ax2.set_title(r"w$_{rms}$")
         ax2.set_xlabel(r"w$_{rms}$ [m/s]")
 
-        ax3.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax3.plot(dwrmsdz[it, :], z, color = color_opt[1], linewidth = width)
+        ax3.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax3.plot(dwrmsdz[it, :], z, color = case_opt['color'][1], linewidth = width)
         ax3.set_xlim(ranges['gradw'][0]*factor, ranges['gradw'][1]*factor)
         ax3.set_title(r"dw$_{rms}$/dz")
         ax3.set_xlabel("dw/dz [1/s]")
         #ax3.set_ylabel("z [m]")
 
-        ax4.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax4.plot(np.sign(w_centerline[it, :]), z, color = color_opt[0], linewidth = width)
-        ax4.plot(np.sign(w_fluc_centerline[it, :]), z, color = color_opt[2], linewidth = width)
-        ax4.plot(np.sign(b_fluc_centerline[it, :]), z, color = color_opt[4], linewidth = width)
+        ax4.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax4.plot(np.sign(w_centerline[it, :]), z, color = case_opt['color'][0], linewidth = width)
+        ax4.plot(np.sign(w_fluc_centerline[it, :]), z, color = case_opt['color'][2], linewidth = width)
+        ax4.plot(np.sign(b_fluc_centerline[it, :]), z, color = case_opt['color'][4], linewidth = width)
         ax4.set_xlim([-1.5, 1.5])
         ax4.set_title("Sign")
         ax4.set_xlabel("Sign")
 
-        ax5.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax5.plot(b_fluc_centerline[it, :], z, color = color_opt[4], linewidth = width)
+        ax5.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax5.plot(b_fluc_centerline[it, :], z, color = case_opt['color'][4], linewidth = width)
         ax5.set_xlim(ranges['b_fluc'])
         ax5.set_title("b'")
         ax5.set_xlabel(r"b' [m/s$^2$]")
         ax5.set_ylabel("z [m]")
 
-        ax6.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax6.plot(dbflucdz[it, :], z, color = color_opt[4], linewidth = width)
+        ax6.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax6.plot(dbflucdz[it, :], z, color = case_opt['color'][4], linewidth = width)
         ax6.set_xlim(ranges['gradb'])
         ax6.set_title("db'/dz")
         ax6.set_xlabel(r"db'/dz [1/s$^2$]")
 
-        ax7.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax7.plot(b_rms[it, :], z, color = color_opt[3], linewidth = width)
+        ax7.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax7.plot(b_rms[it, :], z, color = case_opt['color'][3], linewidth = width)
         ax7.set_xlim(ranges['b_rms'])
         ax7.set_title(r"b$_{rms}$")
         ax7.set_xlabel(r"b$_{rms}$ [m/s$^2$]")
         #ax7.set_ylabel("z [m]")
 
-        ax8.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax8.plot(dbrmsdz[it, :], z, color = color_opt[3], linewidth = width)
+        ax8.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax8.plot(dbrmsdz[it, :], z, color = case_opt['color'][3], linewidth = width)
         ax8.set_xlim(ranges['gradb'][0]*factor, ranges['gradb'][1]*factor)
         ax8.set_title(r"db$_{rms}$/dz")
         ax8.set_xlabel(r"db$_{rms}$/dz [1/s$^2$]")
 
-        ax9.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax9.plot(w_centerline_mag[it, :], z, color = color_opt[0], linewidth = width)
-        ax9.plot(w_fluc_centerline_mag[it, :], z, color = color_opt[1], linewidth = width)
-        ax9.plot(w_rms_mag[it, :], z, color = color_opt[2], linewidth = width)
-        ax9.plot(b_rms_mag[it, :], z, color = color_opt[3], linewidth = width)
-        ax9.plot(b_fluc_centerline_mag[it, :], z, color = color_opt[4], linewidth = width)
+        ax9.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax9.plot(w_centerline_mag[it, :], z, color = case_opt['color'][0], linewidth = width)
+        ax9.plot(w_fluc_centerline_mag[it, :], z, color = case_opt['color'][1], linewidth = width)
+        ax9.plot(w_rms_mag[it, :], z, color = case_opt['color'][2], linewidth = width)
+        ax9.plot(b_rms_mag[it, :], z, color = case_opt['color'][3], linewidth = width)
+        ax9.plot(b_fluc_centerline_mag[it, :], z, color = case_opt['color'][4], linewidth = width)
         ax9.set_xlim([-15, 1])
         ax9.set_title("Order of magnitude")
         ax9.set_xlabel(r"n in 10$^n$")

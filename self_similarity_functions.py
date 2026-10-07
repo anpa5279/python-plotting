@@ -6,64 +6,7 @@ import matplotlib.pyplot as plt
 from plotting_general import save_frame
 
 # ----------------------------------------------------------------------
-# 1. Centerline velocity and half-width
-# ----------------------------------------------------------------------
-
-def _half_width_1d(r, wprof, wc_val, threshold=0.5):
-    """
-    Radius at which a single 1D profile wprof(r) first crosses
-    threshold*wc_val, via linear interpolation between the bracketing
-    grid points. Returns np.nan if no crossing is found.
-    """
-    target = threshold * wc_val
-    if not np.isfinite(wc_val) or wc_val == 0:
-        return np.nan
-
-    below = np.where(wprof <= target)[0]
-    if below.size == 0:
-        return np.nan  # profile never drops to half the centerline value
-
-    i1 = below[0]
-    if i1 == 0:
-        # first grid point already at/below target -> can't bracket
-        return r[0]
-
-    i0 = i1 - 1
-    w0, w1 = wprof[i0], wprof[i1]
-    if w1 == w0:
-        return r[i1]
-
-    frac = (target - w0) / (w1 - w0)
-    return r[i0] + frac * (r[i1] - r[i0])
-
-def compute_delta(w, r, wc, threshold=0.5):
-    """
-    Half-width delta(t, z): the radius where w(r, z, t) = threshold * w_c(t, z).
-
-    w  : ndarray, shape (nt, nr, nz)
-    r  : ndarray, shape (nr,)
-    wc : ndarray, shape (nt, nz) 
-
-    Returns
-    -------
-    delta : ndarray, shape (nt, nz)
-    """
-    if w.ndim == 3:
-        nt, nr, nz = w.shape
-        delta = np.empty((nt, nz))
-        for t in range(nt):
-            for k in range(nz):
-                delta[t, k] = _half_width_1d(r, w[t, :, k], wc[t, k], threshold)
-        return delta
-    else:
-        nr, nz = w.shape
-        delta = np.empty((nz))
-        for k in range(nz):
-            delta[k] = _half_width_1d(r, w[:, k], wc[k], threshold)
-        return delta
-
-# ----------------------------------------------------------------------
-# 2. Power-law fit via curve_fit in log-log space
+# Power-law fit via curve_fit in log-log space
 # ----------------------------------------------------------------------
 
 def _linear_model(log_z, log_C, alpha):
@@ -153,5 +96,6 @@ def plot_loglog_fit(outdir, z, y, C, alpha, ylabel, leg_label, title, range, it 
     if isinstance(it, str):
         frame_path = os.path.join(outdir, it + '.png')
         plt.savefig(frame_path, dpi = 200)
+        plt.close(fig)
     else:
         save_frame(fig, outdir, it, size_in)

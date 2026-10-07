@@ -47,14 +47,15 @@ if variations != 'else':
     fig_folder = cases_info['fig_folder']
 else:
     dx_res = 0.25
-    folder_names = [f'WENO9/dx{dx_res}', f'WENO9/dx{dx_res*0.5}', f'WENO5/dx{dx_res*0.5}', f'WENO5/dx{dx_res*0.5**2}'] #f'WENO5/dx{dx_res}', 
+    folder_names = [f'WENO9/dx{dx_res}', f'WENO9/dx{dx_res*0.5}', f'WENO5/dx{dx_res}', f'WENO5/dx{dx_res*0.5}', f'WENO5/dx{dx_res*0.5**2}'] #
     #['dx2.0', 'dx1.0', 'dx0.5', 'dx0.25', 'dx0.125']#, 'dx0.0625']#['dx2', 'dx1', 'dx05', 'dx025', 'dx0125', 'dx00625']#
 
-    case_names = [rf'WENO9, $\Delta x = {dx_res}$', rf'WENO9, $\Delta x = {dx_res*0.5}$', rf'WENO5, $\Delta x = {dx_res*0.5}$', rf'WENO5, $\Delta x = {dx_res*0.5**2}$'] #rf'WENO5, $\Delta x = {dx_res}$', 
+    case_names = [rf'WENO9, $\Delta x = {dx_res}$', rf'WENO9, $\Delta x = {dx_res*0.5}$', rf'WENO5, $\Delta x = {dx_res}$', rf'WENO5, $\Delta x = {dx_res*0.5}$', rf'WENO5, $\Delta x = {dx_res*0.5**2}$'] #
     #[r'$\Delta x = 2.0$', r'$\Delta x = 1.0$', r'$\Delta x = 0.5$', r'$\Delta x = 0.25$', r'$\Delta x = 0.125$', r'$\Delta x = 0.0625$']#, r'$\Delta x = 0.25$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 1.0$ $ \Delta z = 2.0$', r'$\Delta x = \Delta y = 0.5$ $ \Delta z = 2.0$']#[r'$\Delta x = \Delta y = \Delta z = 2.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 1.0$', r'$\Delta x = \Delta y = 2.0$ $ \Delta z = 0.5$']#
 
     num_cases = len(folder_names)
-    fig_folder = os.path.join(universal_folder, 'comparison figures', 'comparing cases to WENO9 high res')#f'dx{dx_res}')
+    case_groups = [2, 3] #[1, ]
+    fig_folder = os.path.join(universal_folder, 'comparison figures', 'comparing cases to WENO9 high res', 'tracer testing')#f'dx{dx_res}')
     dTdz = 0.01*np.ones(num_cases)
     mld = 60**np.ones(num_cases)
     F_s = 0.1*np.ones(num_cases)
@@ -102,10 +103,9 @@ for n, reader in enumerate(readers):
 nt_min = int(nt_min)
 
 if plot_salinity or plot_temperature or plot_turbulence:
-    color_opt, line_opt, marker_opt = comparison_plot_opt(num_cases, markers = True)
+    case_opt = comparison_plot_opt(case_names, distinct_groups = case_groups)
     nz = np.array([reader.nx[2] for reader in readers])
     marker_iter = [int(nz_loc/min(nz)*5) for nz_loc in nz]
-    plot_line_opt = [color_opt, marker_opt, marker_iter]
 
 # ==========================================================
 # DATA STORAGE
@@ -221,13 +221,13 @@ for it in range(nt_min):
         bin_zoom_dir = plot_tracer_slice_comparison(time_min[it], it, case_names, ranges, r, z_plot, [S_bin[n][it, :, :].squeeze() for n in range(num_cases)], readers[0].Sval, fig_folder, ylim = (0, 31), zlim = (-100, 0), binning = True, folder_name = "tracer_bin_zoom_frames", negative = log_neg_plot)
 
     if plot_turbulence:
-        turbulence_dir = plot_turbulence_convergence(time_min[it], it, case_names, ranges, plot_line_opt, z_plot, [u_rms[n][it] for n in range(num_cases)],[v_rms[n][it] for n in range(num_cases)],[w_rms[n][it] for n in range(num_cases)],[bw_fluc[n][it] for n in range(num_cases)], fig_folder)
+        turbulence_dir = plot_turbulence_convergence(time_min[it], it, case_names, ranges, case_opt, z_plot, [u_rms[n][it] for n in range(num_cases)],[v_rms[n][it] for n in range(num_cases)],[w_rms[n][it] for n in range(num_cases)],[bw_fluc[n][it] for n in range(num_cases)], fig_folder)
 
     if plot_salinity:
-        salinity_dir = plot_salinity_convergence(time_min[it], it, case_names, ranges, plot_line_opt, z_plot, [S_avg[n][it] for n in range(num_cases)],[S_center[n][it] for n in range(num_cases)],[r_tracer[n][:, it] for n in range(num_cases)], contour, fig_folder)
+        salinity_dir = plot_salinity_convergence(time_min[it], it, case_names, ranges, case_opt, z_plot, [S_avg[n][it] for n in range(num_cases)],[S_center[n][it] for n in range(num_cases)],[r_tracer[n][:, it] for n in range(num_cases)], contour, fig_folder)
 
     if plot_temperature:
-        temperature_dir = (plot_temperature_convergence(time_min[it], it, case_names, ranges, plot_line_opt, z_plot, [T_avg[n][it] for n in range(num_cases)],[T_fluc_center[n][it] for n in range(num_cases)], fig_folder))
+        temperature_dir = (plot_temperature_convergence(time_min[it], it, case_names, ranges, case_opt, z_plot, [T_avg[n][it] for n in range(num_cases)],[T_fluc_center[n][it] for n in range(num_cases)], fig_folder))
 
     print(f"Plotted frame {it+1}/{nt_min}")
 

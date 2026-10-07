@@ -8,7 +8,6 @@ from matplotlib.lines import Line2D
 from reader import OceananigansData
 from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
 from plotting_planes import plot_var_planeslice
-from plotting_lines import plot_lines, plot_scaling_analysis
 from interpolation import point, vertical_line, interp1d_axis, velocities_to_center
 """
     what is the best way to find the maximum penetration depth of a plume via momentum?
@@ -33,18 +32,24 @@ from interpolation import point, vertical_line, interp1d_axis, velocities_to_cen
 plot_xt = False
 plot_yt = False
 plot_zt = False
-plot_xy_slice = False
+plot_rt = False
+plot_xy_plane = False
+plot_bin_plane = True
 plot_raw_centerline = False
 plot_1dz_stats = False
 verify_outputs = False
-plot_scaling_analysis_text = True
-plot_vert_comparisons = False
+
+temporal_avg = True
 video = True
+
+if temporal_avg:
+    nsteps = 5 # number of time steps to average over for plotting, also trying 5
+
 
 # ==========================================================
 # MODEL INFORMATION
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scaled S double to match both gauss/WENO5/dx2.0'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx0.5'
 
 outdir = os.path.join(folder, 'figures')
 reader = OceananigansData(folder, salinity = True, with_halos=True)
@@ -76,6 +81,7 @@ else:
 S_tol = 10**(-6)
 mld = 60
 g = 9.80665
+T0 = reader.T0
 
 # ==========================================================
 # ANALYSIS
@@ -97,7 +103,7 @@ if plot_zt or verify_outputs:
         w_coarse_centerline = vertical_line(w_slice, y = reader.y, y0 = 0.0)
         T_slice = reader.load_plane_var('T')
         T_coarse_centerline = vertical_line(T_slice, y = reader.y, y0 = 0.0)
-        b_coarse_centerline =  g * reader.alpha * (T_coarse_centerline - reader.T0)
+        b_coarse_centerline = g * reader.alpha * (T_coarse_centerline - reader.T0)
         del T_coarse_centerline
         if reader.salinity:
             S_centerline = S_centerline[::100, :]
@@ -154,7 +160,7 @@ if plot_xt:
         b_xt += - g * reader.beta * S_xt
     b_fluc_xt = b_xt - b_avg_xt[:, None, :]
     del w_plane, S_plane, T_plane, b_xt
-if plot_xy_slice:
+if plot_xy_plane:
 
     # choose depth of horizontal slice
     z_plot = 0.0
@@ -163,81 +169,16 @@ if plot_xy_slice:
 
     if reader.salinity:
         S_hor = reader.field_slice('S', plane='XY')
-if plot_scaling_analysis_text:
-    loc_z = [-50, -40, -20]#, -10] #-mld, 
-    above_mld = np.where(reader.z>=-mld+1.0)[0]
-    # ignoring first few time steps and information below the MLD
-    if reader.nt < 10:
-        it_range = np.arange(6, reader.nt)
-    else:
-        it_range = np.arange(6, 10)
-    #"""
-    opt = 'fft convolve w_c*10**-5'
-    w_rz = reader.load_scaling_analysis('outer length scale/w filtered')
-    d_remove = int(len(w_rz[0, 0, :]) - 12.0/dx[-1]) 
-    above_mld = above_mld[:d_remove]
-    z_mld = z[above_mld]
-    w_rz = w_rz[:, :, :d_remove]
-    w_c = w_rz[:, 0, :].squeeze()
-    u_r = reader.load_binning_var('horizontal velocity')
-    u_r = u_r[it_range, :, :d_remove]#u_r[np.ix_(it_range, np.arange(u_r.shape[1]), above_mld)]#
-    delta_full = reader.load_scaling_analysis('outer length scale/'+opt+'/delta')
-    delta_full = delta_full[:, :d_remove]
-    eta_full = r[None, :, None]/delta_full[:, None, :]
-    nt_loc = delta_full.shape[0]
-    
-    F_full = w_rz/w_c[:, None, :]
-    F_transverse_full = u_r/w_c[:, None, :]
+if plot_bin_plane:
+    range_names = ['T', 'ur', 'w', 'S', 'log w', 'log Tracer'] 
+    var_names = ['T', 'ur', 'w', 'S', 'w', 'S'] 
+    var_units = [r'[$^\circ$C]', '[m/s]', '[m/s]', '[g/kg]', '[m/s]', '[g/kg]']
+    cmap_opt = ['Blues_r', 'RdBu_r', 'RdBu_r', 'Blues', 'RdBu_r', 'Blues']
 
-    eta = np.empty((nt_loc, len(r), len(loc_z)))
-    delta = np.empty((nt_loc, len(loc_z)))
-    F = np.empty((nt_loc, len(r), len(loc_z)))
-    F_transverse = np.empty((nt_loc, len(r), len(loc_z)))
-    for n, z_opt in enumerate(loc_z): # interpolate to locations of interest
-        eta[:, :, n] = point(eta_full, z_mld, z0 = z_opt)
-        delta[:, n] = point(delta_full, z_mld, z0 = z_opt)
-        F[:, :, n] = point(F_full, z_mld, z0 = z_opt)
-        F_transverse[:, :, n] = point(F_transverse_full, z_mld, z0 = z_opt)
-    rz = np.ones((len(r), len(loc_z)))*r[:, None]/np.abs(loc_z)
+    variables = {}
+    for n in range(len(range_names)):
+        variables[var_names[n]] = {'var':reader.load_binning_var(var_names[n]), 'title': var_names[n], 'label':var_units[n], 'cmap': cmap_opt[n], 'range_name':range_names[n]}
 
-    def _delta(z, origin, c_delta):
-        return origin + c_delta * z
-    def _F(eta, alpha):
-        return np.exp(-alpha * eta**2)
-    c_delta = np.empty(nt_loc)
-    alpha = np.empty((nt_loc, len(above_mld)))
-    for it in range(nt_loc):
-        c_delta[it] = scipy.optimize.curve_fit(_delta, -z_mld, delta_full[it, :].squeeze())[0][-1]
-        for k in range(len(above_mld)):
-            eta_it_k = eta_full[it, :, k].squeeze()
-            F_it_k = F_full[it, :, k].squeeze()
-            alpha[it, k] = scipy.optimize.curve_fit(_F, eta_it_k, F_it_k)[0][0]
-        for k in range(len(loc_z)):
-            F[it, :, k][r > delta[it, k]] = np.nan
-            F_transverse[it, :, k][r > delta[it, k]] = np.nan
-    
-    bin_path = os.path.join(folder, 'binning_rtz.h5')
-    with h5py.File(bin_path, "a") as f:
-        if "scaling analysis/outer length scale/"+opt+"/c_delta" in f:
-            del f["scaling analysis/outer length scale/"+opt+"/c_delta"]
-        f.create_dataset("scaling analysis/outer length scale/"+opt+"/c_delta", data=c_delta)
-        if "scaling analysis/outer length scale/"+opt+"/alpha" in f:
-            del f["scaling analysis/outer length scale/"+opt+"/alpha"]
-        f.create_dataset("scaling analysis/outer length scale/"+opt+"/alpha", data=alpha)
-
-    #"""
-if plot_vert_comparisons:
-    if reader.nt < 10:
-        it_range = np.arange(6, reader.nt)
-    else:
-        it_range = np.arange(6, 10)
-    above_mld = np.where(reader.z>=-mld+1.0)[0]
-    z_mld = z[above_mld]
-    w_rz = reader.load_binning_var('w')
-    w_rz = w_rz[np.ix_(it_range, np.arange(w_rz.shape[1]), above_mld)]
-    w_rz_filtered = reader.load_scaling_analysis('outer length scale/w filtered')
-print("finished loading data")
-#test = word
 # finding centerlines
 if plot_raw_centerline:
     steps = reader.t_save_center
@@ -262,7 +203,14 @@ if plot_1dz_stats:
 
     dbrmsdz = np.gradient(b_rms, z, axis = -1)
     dbflucdz = np.gradient(b_fluc_centerline, z, axis = -1)
-
+if temporal_avg:
+    n_start = (nsteps-1)//2
+    n_end = nt - (nsteps-1)//2
+    for it, it_true in enumerate(np.arange(n_start, n_end)):
+        if plot_bin_plane:
+            for n in range(len(range_names)):
+                variables[var_names[n]]['var'][it, :, :] = np.mean(variables[var_names[n]]['var'][it_true-n_start:it_true+n_start+1, :, :], axis = 0)
+print("finished loading data")
 # ==========================================================
 # PLOTTING
 # ==========================================================
@@ -270,16 +218,19 @@ if plot_1dz_stats:
 mld_var = np.arange(-10**2, 10**2)
 mld_array = -mld * np.ones(len(mld_var))
 ranges = plot_ranges()
-ranges['w'] = [-1.8*10**-1, 1.8*10**-1]
+ranges['w'] = [-1*10**-1, 1*10**-1]
 ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
 ranges['gradw'] = [-0.05, 0.05]
 ranges['gradb'] = [-0.0008, 0.0008]
 ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['vel_rms'] = [0, 4*10**-3]
 ranges['S'] = [0.0, 0.1]
+ranges['log Tracer'] =[S_tol, 0.1]
+ranges['log w'] = [-0.1, 0.1]
+ranges['T'] =[T0 - 0.7, T0 + 0.05]
+ranges['u'] = [-1*10**(-2), 1*10**(-2)]
 factor = 10**(-2)
 nvars = 7
-color_opt, line_opt  = comparison_plot_opt(nvars)
 plot_format(fontsize = 20)
 os.makedirs(outdir, exist_ok=True)
 if plot_raw_centerline:
@@ -301,6 +252,7 @@ if plot_raw_centerline:
         vars = [w_output, T_output]
         fig, axes = plt.subplots(4, 2, figsize=(7, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
         file = 'wT_outputs_zt.svg'
+    case_opt = comparison_plot_opt(labels)
     last_t = time.max()/(3600*24)
     ratio = (last_t)/lx[2]
     axes = axes.ravel()
@@ -310,7 +262,7 @@ if plot_raw_centerline:
         for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
             for n, var in enumerate(vars):
                 im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), last_t, z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-                axes[count].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+                axes[count].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = case_opt['linestyle'][1])
                 axes[count].legend(loc='lower left')
                 axes[count].set_xlim(time.min()/(3600*24), last_t)
                 axes[count].set_ylim(z.min(), z.max())
@@ -348,7 +300,7 @@ if plot_zt:
         vars = [w_centerline[:stop*100, :], b_fluc_centerline[:stop*100, :], w_rms[:stop, :], b_rms[:stop, :]]
         fig, axes = plt.subplots(1, 4, figsize=(12, 4))
         file = 'wb_rms_zt.svg'
-
+    case_opt = comparison_plot_opt(labels)
     last_t = time[stop]/(3600*24)#time.max()/(3600*24)
     ratio = (last_t)/lx[2]
     axes = axes.ravel()
@@ -356,7 +308,7 @@ if plot_zt:
     for n, var in enumerate(vars):
         #np.flipud(var.T), var.T
         im = axes[n].imshow(np.flipud(var.T), extent=[time.min()/(3600*24), last_t, z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-        axes[n].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = line_opt[1])
+        axes[n].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = case_opt['linestyle'][1])
         axes[n].legend(loc='lower left')
         axes[n].set_xlim(time.min()/(3600*24), last_t)
         axes[n].set_ylim(z.min(), z.max())
@@ -388,6 +340,7 @@ if plot_yt:
         labels = ['[m/s]', r'[$^\circ$C]', r'[m/s$^2$]']
         vars = [w_yt, T_yt, b_fluc_yt]
         file = 'wTb_yt.svg'
+    case_opt = comparison_plot_opt(labels)
     if len(vars) <= 4:
         ncols = len(vars)
         nrows = 1
@@ -434,6 +387,7 @@ if plot_xt:
         labels = ['[m/s]', r'[$^\circ$C]', r'[m/s$^2$]']
         vars = [w_xt, T_xt, b_fluc_xt]
         file = 'wTb_xt.svg'
+    case_opt = comparison_plot_opt(labels)
     if len(vars) <= 4:
         ncols = len(vars)
         nrows = 1
@@ -462,7 +416,8 @@ if plot_xt:
         frame_path = os.path.join(outdir, rf'z{z_loc[j]}_{file}')
         plt.savefig(frame_path)
         plt.close(fig)
-if plot_xy_slice:
+    
+if plot_xy_plane:
     hor_ranges = ranges.copy()
     hor_ranges['S'] = [S_tol, 0.2]
     hor_ranges['w'] = [-2*10**(-3), 2*10**(-3)]
@@ -479,11 +434,22 @@ if plot_xy_slice:
         xy_outdir[0] = plot_var_planeslice(t, it, hor_ranges, outdir, lx, x, y, S_hor[it, :, :], [''], vars[0], vars[0], colorbar_label='g/kg', cmap='Blues')
         xy_outdir[1] = plot_var_planeslice(t, it, hor_ranges, outdir, lx, x, y, w_hor[it, :, :], [''], vars[1], vars[1], colorbar_label='m/s', cmap='RdBu_r')
         xy_outdir[2] = plot_var_planeslice(t, it, hor_ranges, outdir, lx, x, y, Sw_hor, [''], vars[2], vars[2], colorbar_label='m/s', cmap='RdBu_r')
+if plot_bin_plane:
+    bin_dir = {}
+    for it in range(nt):
+        for n in range(len(range_names)):
+            variables[var_names[n]] = {'title': var_names[n], 'label':var_units[n], 'cmap':'Blues', 'range':ranges[range_names[n]], 'range_name':range_names[n]}
+
+        for dir, var in enumerate(var_names):
+            l_bin = [lx[0]/2, lx[-1]]
+            bin_dir[range_names[dir]] = plot_var_planeslice(time[it], it, outdir, lx, r, z, variables[var], ['',], plane='binning', ylim = (0, 32), zlim = (-60, -30))
+
 if plot_1dz_stats:
     gridspec_kw={'height_ratios': [1, 1, 0.1]}
     width = 0.8
     labels = [r'$\text{w}_{(0, 0)}$', r"$\text{w}_{rms}$", r"$\text{w'}_{0, 0}$", r"$\text{b}_{rms}$", r"$\text{b'}_{0, 0}$"]
-    case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
+    case_opt = comparison_plot_opt(labels)
+    case_handles = [Line2D([0], [0], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth=width, label=labels[i]) for i in range(nvars)]
 
     for it in range(nt):
         td = time[it]/(3600*24)
@@ -505,56 +471,56 @@ if plot_1dz_stats:
                 ncol=nvars,
                 bbox_to_anchor=(0.52, 0.01))
 
-        ax0.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax0.plot(w_centerline[it, :], z, color = color_opt[0], linewidth = width)
+        ax0.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax0.plot(w_centerline[it, :], z, color = case_opt['color'][0], linewidth = width)
         ax0.set_xlim(ranges['w'])
         ax0.legend(loc='lower left')
         ax0.set_title("w")
         ax0.set_xlabel("[m/s]")
         ax0.set_ylabel("z [m]")
 
-        ax1.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax1.plot(dwdz_centerline[it, :], z, color = color_opt[0], linewidth = width)
+        ax1.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax1.plot(dwdz_centerline[it, :], z, color = case_opt['color'][0], linewidth = width)
         ax1.set_xlim(ranges['gradw'])
         ax1.set_title("dw/dz")
         ax1.set_xlabel("dw/dz [1/s]")
         #ax1.set_ylabel("z [m]")
 
-        ax2.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax2.plot(w_rms[it, :], z, color = color_opt[1], linewidth = width)
+        ax2.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax2.plot(w_rms[it, :], z, color = case_opt['color'][1], linewidth = width)
         ax2.set_xlim(ranges['vel_rms'])
         ax2.set_title(r"w$_{rms}$")
         ax2.set_xlabel(r"w$_{rms}$ [m/s]")
 
-        ax3.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax3.plot(dwrmsdz[it, :], z, color = color_opt[1], linewidth = width)
+        ax3.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax3.plot(dwrmsdz[it, :], z, color = case_opt['color'][1], linewidth = width)
         ax3.set_xlim(ranges['gradw'][0]*factor, ranges['gradw'][1]*factor)
         ax3.set_title(r"dw$_{rms}$/dz")
         ax3.set_xlabel("dw/dz [1/s]")
         #ax3.set_ylabel("z [m]")
 
-        ax5.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax5.plot(b_fluc_centerline[it, :], z, color = color_opt[4], linewidth = width)
+        ax5.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax5.plot(b_fluc_centerline[it, :], z, color = case_opt['color'][4], linewidth = width)
         ax5.set_xlim(ranges['b_fluc'])
         ax5.set_title("b'")
         ax5.set_xlabel(r"b' [m/s$^2$]")
         ax5.set_ylabel("z [m]")
 
-        ax6.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax6.plot(dbflucdz[it, :], z, color = color_opt[4], linewidth = width)
+        ax6.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax6.plot(dbflucdz[it, :], z, color = case_opt['color'][4], linewidth = width)
         ax6.set_xlim(ranges['gradb'])
         ax6.set_title("db'/dz")
         ax6.set_xlabel(r"db'/dz [1/s$^2$]")
 
-        ax7.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax7.plot(b_rms[it, :], z, color = color_opt[3], linewidth = width)
+        ax7.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax7.plot(b_rms[it, :], z, color = case_opt['color'][3], linewidth = width)
         ax7.set_xlim(ranges['b_rms'])
         ax7.set_title(r"b$_{rms}$")
         ax7.set_xlabel(r"b$_{rms}$ [m/s$^2$]")
         #ax7.set_ylabel("z [m]")
 
-        ax8.plot(mld_var, mld_array, color = color_opt[0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = line_opt[1])
-        ax8.plot(dbrmsdz[it, :], z, color = color_opt[3], linewidth = width)
+        ax8.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
+        ax8.plot(dbrmsdz[it, :], z, color = case_opt['color'][3], linewidth = width)
         ax8.set_xlim(ranges['gradb'][0]*factor, ranges['gradb'][1]*factor)
         ax8.set_title(r"db$_{rms}$/dz")
         ax8.set_xlabel(r"db$_{rms}$/dz [1/s$^2$]")
@@ -576,7 +542,7 @@ if verify_outputs:
         plt.subplots_adjust(top = 0.9)
         fig.suptitle(f"t = {td:.2f} days")
         axes[0].plot(w_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
-        axes[0].plot(w_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = line_opt[1], label='coarse output')
+        axes[0].plot(w_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = case_opt['linestyle'][1], label='coarse output')
         axes[0].set_title("w")
         axes[0].set_xlabel("[m/s]")
         axes[0].set_xlim(ranges['w'])
@@ -584,7 +550,7 @@ if verify_outputs:
         axes[0].legend(loc='lower left')
 
         axes[1].plot(b_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
-        axes[1].plot(b_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = line_opt[1], label='coarse output')
+        axes[1].plot(b_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = case_opt['linestyle'][1], label='coarse output')
         axes[1].set_title("b")
         axes[1].set_xlabel(r"[m/s$^2$]")
         axes[1].set_xlim(ranges['b'])
@@ -592,7 +558,7 @@ if verify_outputs:
 
         if reader.salinity:
             axes[2].plot(S_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
-            axes[2].plot(S_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = line_opt[1], label='coarse output')
+            axes[2].plot(S_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = case_opt['linestyle'][1], label='coarse output')
             axes[2].set_title("S")
             axes[2].set_xlabel(r"[g/kg]")
             axes[2].set_xlim(ranges['S'])
@@ -601,51 +567,16 @@ if verify_outputs:
         frame_path = os.path.join(outdir_verify, f'verify_outputs_{it}.png')
         plt.savefig(frame_path)
         plt.close(fig)
-if plot_scaling_analysis_text:
-    plot_scaling_analysis(time[it_range], outdir, F, F_transverse, eta, c_delta, loc_z)
-    """
-    delta = []
-    z_mlds = []
-    #delta.append(reader.load_scaling_analysis('outer length scale/2*w0/delta'))
-    #z_mlds.append(z_mld)
-    delta.append(reader.load_scaling_analysis('outer length scale/w0/delta'))
-    z_mlds.append(z_mld)
-    #delta.append(reader.load_scaling_analysis('outer length scale/0.1*w0/delta'))
-    #z_mlds.append(z_mld)
-    delta.append(reader.load_scaling_analysis('outer length scale/0.0/delta'))
-    z_mlds.append(z_mld)
-    delta.append(reader.load_scaling_analysis('outer length scale/fft convolve w0/delta'))
-    z_mlds.append(z_mld)
-    delta.append(reader.load_scaling_analysis('outer length scale/fft convolve w_c*10**-3/delta'))
-    z_mlds.append(z_mld)
-    delta.append(reader.load_scaling_analysis('outer length scale/fft convolve w_c*10**-5/delta'))
-    z_mlds.append(z_mld)
-    delta_names = [#r"$\delta = f(2\cdot w_{0}$)", 
-                    r"$\delta = f(w_{0})$", #r"$\delta = f(0.1\cdot w_{0})$", 
-                    r"$\delta = f(0.0)$", 
-                   r"$\delta = f(\text{fft convolve } w_{0})$", r"$\delta = f(\text{fft convolve } 10^{-3}\cdot w_{c})$", r"$\delta = f(\text{fft convolve } 10^{-5}\cdot w_{c})$"]
-    for it1, it in enumerate(it_range):
-        lines_var_it = {}
-        lines_var_it['delta'] = {'var': [delta[n][it1, :] for n in range(len(delta))], 'title': r"$\delta$", 'label': '[m]', 'range': [0, reader.lx[1]/4]}
-        vert_dir_frames = plot_lines(rf'{time[it]/3600:.2f} hours', it, np.array(color_opt)[[1, 3, 4, 5, 6]], outdir, delta_names, z_mlds, lines_var_it)
-    """
-if plot_vert_comparisons:
-    bin_dir = {}
-    colorbar_labels = [r"g/kg", r"$^\circ$C", r"m/s", r"m/s", r"m/s"]
-    ranges['log w'] = [-0.1, 0.1]
-    for n, it in enumerate(it_range):
-        variables = [w_rz[n, :, :].T, w_rz_filtered[n, :, :].T]
-        bin_dir['w'] = plot_var_planeslice(time[it], it, ranges, outdir, lx, [r, r], [z_mld, z_mld], variables, ['w(r, z)', r'w$_{\text{fft convolve}}$(r, z)'], 'w', 'log w', colorbar_label = "m/s", cmap = 'RdBu_r', plane='binning')
+
 # creating videos
 if video:
     if plot_1dz_stats:
         create_video(fig_var_folder, outdir, '', 'max penetration variables')
     if verify_outputs:
         create_video(outdir_verify, outdir, '', 'verify_outputs')
-    if plot_scaling_analysis_text:
-        create_video(vert_dir_frames, outdir, 'delta', '')
-    if plot_xy_slice:
+    if plot_xy_plane:
         for n, folder in enumerate(xy_outdir):
             create_video(folder, outdir, '', vars[n])
-    if plot_vert_comparisons:
-        create_video(bin_dir['w'], outdir, '', 'w') 
+    if plot_bin_plane:
+        for n, name in enumerate(range_names):
+            create_video(bin_dir[range_names[n]], outdir, 'binning', name)

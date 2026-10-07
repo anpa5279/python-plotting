@@ -169,23 +169,23 @@ if with_mld:
         title = paper['title']
         style = paper_style[title]
 
-        r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
+        r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
         mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
-        Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
+        Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
 
         x = Ln  / r0    # Ln / r0
         y = mld / r0    # mld / r0
 
         ax.scatter(
             x, y,
-            color=style['color'], marker=style['marker'],
+            color = style['color'], marker=style['marker'],
             s=style['size'], edgecolors='white',
             linewidths=style['lw_edge'], zorder=style['zorder'],
         )
 
         legend_handles.append(mlines.Line2D(
             [], [],
-            marker=style['marker'], color='none',
+            marker=style['marker'], color = 'none',
             markerfacecolor=style['color'],
             markeredgecolor='white', markeredgewidth=0.5,
             markersize=9 if title == 'Proposed Cases' else 7,
@@ -212,7 +212,7 @@ if with_mld:
         ncol=2,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
-        title='Studies', title_fontsize=12,
+        title='Studies', title_fontsize = 20,
     )
 
     # ── Save ───────────────────────────────────────────────────────────────────────
@@ -235,16 +235,16 @@ if with_mld:
         title = paper['title']
         style = paper_style[title]
 
-        r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
+        r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
         mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
-        Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
+        Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
 
         x = Ln  / r0    # Ln / r0
         y = mld / Ln    # mld / Ln
 
         ax.scatter(
             x, y,
-            color=style['color'], marker=style['marker'],
+            color = style['color'], marker=style['marker'],
             s=style['size'], edgecolors='white',
             linewidths=style['lw_edge'], zorder=style['zorder'],
         )
@@ -268,7 +268,7 @@ if with_mld:
         ncol=2,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
-        title='Studies', title_fontsize=12,
+        title='Studies', title_fontsize = 20,
     )
 
     # ── Save ───────────────────────────────────────────────────────────────────────
@@ -403,7 +403,7 @@ else:
     # ── Figure ─────────────────────────────────────────────────────────────────────
     scale = [0.15, 0.9, 0.05]
     gridspec_kw = {'height_ratios': scale}
-    fig, axes_grid = plt.subplots(3, 1, figsize=(12, 7), sharex = True,  gridspec_kw=gridspec_kw)
+    fig, axes_grid = plt.subplots(3, 1, figsize=(12, 7), sharex = True, gridspec_kw=gridspec_kw)
 
     # Remove the dummy bottom row axes used for legend space
     axes_grid[0].remove()
@@ -418,23 +418,23 @@ else:
         title = paper['title']
         style = paper_style[title]
 
-        r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
+        r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
         mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
-        Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
+        Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
 
         x = Ln  / r0    # Ln / r0
         y = mld / r0    # mld / r0
 
         ax0.scatter(
             x, y,
-            color=style['color'], marker=style['marker'],
+            color = style['color'], marker=style['marker'],
             s=style['size'], edgecolors='white',
             linewidths=style['lw_edge'], zorder=style['zorder'],
         )
         if title != 'Proposed Cases':
             legend_handles.append(mlines.Line2D(
                 [], [],
-                marker=style['marker'], color='none',
+                marker=style['marker'], color = 'none',
                 markerfacecolor=style['color'],
                 markeredgecolor='white', markeredgewidth=0.5,
                 markersize=7,
@@ -454,21 +454,21 @@ else:
         title = paper['title']
         style = paper_style[title]
 
-        r0  = np.atleast_1d(np.asarray(paper['r0'],  dtype=float))
-        Ln  = np.atleast_1d(np.asarray(paper['Ln'],  dtype=float))
+        r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
+        Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
 
         x = Ln  / r0    # Ln / r0
 
         ax1.scatter(
             x, np.zeros_like(x),
-            color=style['color'], marker=style['marker'],
+            color = style['color'], marker=style['marker'],
             s=style['size'], edgecolors='white',
             linewidths=style['lw_edge'], zorder=style['zorder'],
         )
 
         legend_handles.append(mlines.Line2D(
             [], [],
-            marker=style['marker'], color='none',
+            marker=style['marker'], color = 'none',
             markerfacecolor=style['color'],
             markeredgecolor='white', markeredgewidth=0.5,
             markersize=10 if title == 'Proposed Cases' else 7,
@@ -496,7 +496,7 @@ else:
         ncol=4,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
-        title='Studies', title_fontsize=12,
+        title='Studies', title_fontsize = 20,
     )
 
     # ── Save ───────────────────────────────────────────────────────────────────────

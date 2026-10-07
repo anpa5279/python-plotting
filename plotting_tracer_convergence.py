@@ -12,8 +12,7 @@ def percent_difference_interp(profile, z_profile, ref_profile, z_ref):
 
 ### ------------------------- TRACER CONVERGENCE PLOTTING FUNCTIONS ------------------------- ###
 ## turbulent statistics convergence plotting across all cases
-def plot_turbulence_convergence(time_sec, it, case_names, ranges, plot_line_opt, z, u_rms, v_rms, w_rms, bw_fluc, fig_folder,):
-    color_opt, marker_opt, marker_iter = plot_line_opt
+def plot_turbulence_convergence(time_sec, it, case_names, ranges, case_opt, z, u_rms, v_rms, w_rms, bw_fluc, fig_folder,):
     num_cases = len(z)
 
     ref_u_rms = u_rms[-1]
@@ -28,17 +27,17 @@ def plot_turbulence_convergence(time_sec, it, case_names, ranges, plot_line_opt,
     fig, axes = plt.subplots(2, 4, figsize = size_in, sharey = True)
 
     for i in range(num_cases):
-        axes[0,0].plot(u_rms[i], z[i], label = case_names[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,0].plot(percent_difference_interp(u_rms[i], z[i], ref_u_rms, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
+        axes[0,0].plot(u_rms[i], z[i], label = case_names[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,0].plot(percent_difference_interp(u_rms[i], z[i], ref_u_rms, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
 
-        axes[0,1].plot(v_rms[i], z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,1].plot(percent_difference_interp(v_rms[i], z[i], ref_v_rms, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
+        axes[0,1].plot(v_rms[i], z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,1].plot(percent_difference_interp(v_rms[i], z[i], ref_v_rms, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
 
-        axes[0,2].plot(w_rms[i], z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,2].plot(percent_difference_interp(w_rms[i], z[i], ref_w_rms, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
+        axes[0,2].plot(w_rms[i], z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,2].plot(percent_difference_interp(w_rms[i], z[i], ref_w_rms, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
 
-        axes[0,3].plot(bw_fluc[i], z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,3].plot(percent_difference_interp(bw_fluc[i], z[i], ref_bw, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
+        axes[0,3].plot(bw_fluc[i], z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,3].plot(percent_difference_interp(bw_fluc[i], z[i], ref_bw, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
 
     axes[0,0].set_title("u RMS")
     axes[0,0].set_ylabel("Depth [m]")
@@ -80,8 +79,8 @@ def plot_turbulence_convergence(time_sec, it, case_names, ranges, plot_line_opt,
     return frame_dir
 
 ## tracer convergence plotting across all cases
-def plot_salinity_convergence(time_sec, it, case_names, ranges, plot_line_opt, z, S_avg, S_center, plume_radius, contour, fig_folder):
-    color_opt, marker_opt, marker_iter = plot_line_opt
+def plot_salinity_convergence(time_sec, it, case_names, ranges, case_opt, z, S_avg, S_center, plume_radius, contour, fig_folder):
+    
     num_cases = len(z)
 
     frame_dir = os.path.join(fig_folder, "salinity_frames", f"contour_{contour}S0")
@@ -95,12 +94,12 @@ def plot_salinity_convergence(time_sec, it, case_names, ranges, plot_line_opt, z
     ref_r = plume_radius[-1]
 
     for i in range(num_cases):
-        axes[0,0].plot(S_avg[i], z[i], label = case_names[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[0,1].plot(S_center[i], z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[0,2].plot(plume_radius[i], z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,0].plot(percent_difference_interp(S_avg[i], z[i], ref_avg, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,1].plot(percent_difference_interp(S_center[i], z[i], ref_center, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,2].plot(percent_difference_interp(plume_radius[i], z[i], ref_r, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
+        axes[0,0].plot(S_avg[i], z[i], label = case_names[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[0,1].plot(S_center[i], z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[0,2].plot(plume_radius[i], z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,0].plot(percent_difference_interp(S_avg[i], z[i], ref_avg, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,1].plot(percent_difference_interp(S_center[i], z[i], ref_center, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,2].plot(percent_difference_interp(plume_radius[i], z[i], ref_r, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
 
     axes[0,0].legend(loc='lower right')
     axes[0,0].set_title(r"$\langle$S$\rangle_{\text{xy}}$")
@@ -137,8 +136,8 @@ def plot_salinity_convergence(time_sec, it, case_names, ranges, plot_line_opt, z
     return frame_dir
 
 ## temperature convergence plotting across all cases
-def plot_temperature_convergence(time_sec, it, case_names, ranges, plot_line_opt, z, T_avg, T_fluc_center, fig_folder):
-    color_opt, marker_opt, marker_iter = plot_line_opt
+def plot_temperature_convergence(time_sec, it, case_names, ranges, case_opt, z, T_avg, T_fluc_center, fig_folder):
+
     num_cases = len(z)
 
     frame_dir = os.path.join(fig_folder, "temperature_frames")
@@ -151,10 +150,10 @@ def plot_temperature_convergence(time_sec, it, case_names, ranges, plot_line_opt
     ref_prime = T_fluc_center[-1]
 
     for i in range(num_cases):
-        axes[0,0].plot(T_avg[i], z[i], label = case_names[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[0,1].plot(T_fluc_center[i], z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,0].plot(percent_difference_interp(T_avg[i], z[i], ref_avg, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
-        axes[1,1].plot(percent_difference_interp(T_fluc_center[i], z[i], ref_prime, z[-1]), z[i], color = color_opt[i])#, linewidth = 0.5, marker = marker_opt[i], markevery = marker_iter[i])
+        axes[0,0].plot(T_avg[i], z[i], label = case_names[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[0,1].plot(T_fluc_center[i], z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,0].plot(percent_difference_interp(T_avg[i], z[i], ref_avg, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
+        axes[1,1].plot(percent_difference_interp(T_fluc_center[i], z[i], ref_prime, z[-1]), z[i], color = case_opt['color'][i])#, linewidth = 2.0, marker = case_opt['marker'][i], markevery = marker_iter[i])
 
     axes[0,0].set_title(r"$\langle$T$\rangle_{\text{xy}}$ [$^{\circ}$C]")
     axes[0,0].set_ylabel("Depth [m]")

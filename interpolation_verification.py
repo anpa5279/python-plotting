@@ -89,12 +89,12 @@ if horizontal_verification:
     columns: the 4 center grid cells around the center
     interpolated w averaged between with grid cells vs interpolated w using velocities_to_center vs interpolated w using interpolation.py
 """
-color_opt, line_opt  = comparison_plot_opt(nvars)
+case_opt = comparison_plot_opt(labels)
 plot_format()
 os.makedirs(fig_folder, exist_ok=True)
 gridspec_kw={'height_ratios': [1, 1, 0.15]}
 width = 0.8
-case_handles = [Line2D([0], [0], color=color_opt[i], linestyle='solid', linewidth=width, label=labels[i]) for i in range(nvars)]
+case_handles = [Line2D([0], [0], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth=width, label=labels[i]) for i in range(nvars)]
 if vertical_verification:
     ncols = idx.size
     os.makedirs(fig_folder_vert, exist_ok=True)
@@ -117,10 +117,10 @@ if vertical_verification:
         for i, ix in enumerate(i_opt):
             for j, jy in enumerate(j_opt):
                 axes[i + j + count].set_title(f"w at (Nx = {ix}, Ny = {jy})")
-                axes[i + j + count].plot(w[it, i, j, :], zf, label = labels[0], color = color_opt[0], linestyle = line_opt[0])
-                axes[i + j + count].plot(w_center_function[it, i, j, :], z, label = labels[1], color = color_opt[1], linestyle = line_opt[1])
-                axes[i + j + count].plot(w_averaging[it, i, j, :], z, label = labels[2], color = color_opt[2], linestyle = line_opt[1])
-                axes[i + j + count].plot(w_interpolation[it, i, j, :], z, label = labels[3], color = color_opt[3], linestyle = line_opt[1])
+                axes[i + j + count].plot(w[it, i, j, :], zf, label = labels[0], color = case_opt['color'][0], linestyle = case_opt['linestyle'][0])
+                axes[i + j + count].plot(w_center_function[it, i, j, :], z, label = labels[1], color = case_opt['color'][1], linestyle = case_opt['linestyle'][1])
+                axes[i + j + count].plot(w_averaging[it, i, j, :], z, label = labels[2], color = case_opt['color'][2], linestyle = case_opt['linestyle'][2])
+                axes[i + j + count].plot(w_interpolation[it, i, j, :], z, label = labels[3], color = case_opt['color'][3], linestyle = case_opt['linestyle'][3])
             count += 1
 
         # --- Save Frame ---
@@ -157,19 +157,19 @@ if horizontal_verification:
         for j, jy in enumerate(hor_opt):
             for k, kz in enumerate(mld_opt):
                 axes[j + k + count].set_title(f"u at (Ny = {jy}, Nz = {kz})")
-                axes[j + k + count].plot(xf, uf[it, :, j, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
-                axes[j + k + count].plot(x, u_center_function[it, :, j, k], label = labels[1], color = color_opt[1], linestyle = line_opt[1])
-                axes[j + k + count].plot(x, u_averaging[it, :, j, k], label = labels[2], color = color_opt[2], linestyle = line_opt[1])
-                axes[j + k + count].plot(x, u_interpolation[it, :, j, k], label = labels[3], color = color_opt[3], linestyle = line_opt[1])
+                axes[j + k + count].plot(xf, uf[it, :, j, k], label = labels[0], color = case_opt['color'][0], linestyle = case_opt['linestyle'][0])
+                axes[j + k + count].plot(x, u_center_function[it, :, j, k], label = labels[1], color = case_opt['color'][1], linestyle = case_opt['linestyle'][1])
+                axes[j + k + count].plot(x, u_averaging[it, :, j, k], label = labels[2], color = case_opt['color'][2], linestyle = case_opt['linestyle'][2])
+                axes[j + k + count].plot(x, u_interpolation[it, :, j, k], label = labels[3], color = case_opt['color'][3], linestyle = case_opt['linestyle'][3])
             count += 1
         count += kz.size + jy.size
         for i, ix in enumerate(hor_opt):
             for k, kz in enumerate(mld_opt):
                 axes[i + k + count].set_title(f"v at (Nx = {ix}, Nz = {kz})")
-                axes[i + k + count].plot(yf, v[it, i, :, k], label = labels[0], color = color_opt[0], linestyle = line_opt[0])
-                axes[i + k + count].plot(y, v_center_function[it, i, :, k], label = labels[1], color = color_opt[1], linestyle = line_opt[1])
-                axes[i + k + count].plot(y, v_averaging[it, i, :, k], label = labels[2], color = color_opt[2], linestyle = line_opt[1])
-                axes[i + k + count].plot(y, v_interpolation[it, i, :, k], label = labels[3], color = color_opt[3], linestyle = line_opt[1])
+                axes[i + k + count].plot(yf, v[it, i, :, k], label = labels[0], color = case_opt['color'][0], linestyle = case_opt['linestyle'][0])
+                axes[i + k + count].plot(y, v_center_function[it, i, :, k], label = labels[1], color = case_opt['color'][1], linestyle = case_opt['linestyle'][1])
+                axes[i + k + count].plot(y, v_averaging[it, i, :, k], label = labels[2], color = case_opt['color'][2], linestyle = case_opt['linestyle'][2])
+                axes[i + k + count].plot(y, v_interpolation[it, i, :, k], label = labels[3], color = case_opt['color'][3], linestyle = case_opt['linestyle'][3])
             count += 1
         # --- Save Frame ---
         frame_path = os.path.join(fig_folder_horiz, f"interpolation_testing_{it:04d}.png")

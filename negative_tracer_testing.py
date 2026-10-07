@@ -157,7 +157,7 @@ ranges['S_avg'] = [0.0, 6*10**-4]
 ranges['b_avg'] = [-1.5*10**(-3), 1.0*10**(-5)]
 ranges['b_rms'] = [0, 4*10**(-5)]
 ranges['percent'] = [-1, 1]
-color_opt, line_opt  = comparison_plot_opt(2)
+case_opt = comparison_plot_opt(2)
 plot_format()
 os.makedirs(outdir, exist_ok=True)
 if plot_tracer_profile:
@@ -165,28 +165,28 @@ if plot_tracer_profile:
     os.makedirs(tracer_dir, exist_ok=True)
     for it in range(nt):
         fig, axes = plt.subplots(2, len(contours)+1, figsize=(4*(len(contours)+1), 8), sharey =True)
-        axes[0, 0].plot(S_avg[it, :], z, color=color_opt[0], label=r'S$_{data}$')
-        axes[0, 0].plot(S_pos_avg[it, :], z, color=color_opt[1], label=r'S$_{positive}$')
+        axes[0, 0].plot(S_avg[it, :], z, color = case_opt['color'][0], label=r'S$_{data}$')
+        axes[0, 0].plot(S_pos_avg[it, :], z, color = case_opt['color'][1], label=r'S$_{positive}$')
         axes[0, 0].set_title(r'S$_{xy}$')
         axes[0, 0].set_xlabel('[g/kg]')
         axes[0, 0].legend(loc = 'lower right')
         axes[0, 0].set_xlim(ranges['S_avg'])
 
         diff = (S_pos_avg[it, :] - S_avg[it, :])/Sval
-        axes[1, 0].plot(diff, z, color=color_opt[1])
+        axes[1, 0].plot(diff, z, color = case_opt['color'][1])
         axes[1, 0].set_title(f'Percent Difference Tracer contour {contour}')
         axes[1, 0].set_xlabel(r'100$\cdot \frac{S_{positive} - S_{data}}{S_{0}}$[%]')
         axes[1, 0].set_xlim(ranges['percent'])
 
         for n, contour in enumerate(contours):
-            axes[0, n + 1].plot(r_tracer[n, :, it], z, color=color_opt[0], label=r'S$_{data}$')
-            axes[0, n + 1].plot(r_pos_tracer[n, :, it], z, color=color_opt[1], label=r'S$_{positive}$')
+            axes[0, n + 1].plot(r_tracer[n, :, it], z, color = case_opt['color'][0], label=r'S$_{data}$')
+            axes[0, n + 1].plot(r_pos_tracer[n, :, it], z, color = case_opt['color'][1], label=r'S$_{positive}$')
             axes[0, n + 1].set_title(rf'Tracer contour {contour}$\cdot \text{{S}}_{{0}}$')
             axes[0, n + 1].set_xlabel('Radius [m]')
             axes[0, n + 1].set_xlim([0, r.max()])
 
             diff = (r_pos_tracer[n, :, it] - r_tracer[n, :, it])/r_tracer[n, :, it]
-            axes[1, n + 1].plot(diff, z, color=color_opt[1])
+            axes[1, n + 1].plot(diff, z, color = case_opt['color'][1])
             axes[1, n + 1].set_title(f'Percent Difference Tracer contour {contour}')
             axes[1, n + 1].set_xlabel(r'100$\cdot \frac{r_{positive} - r_{data}}{r_{data}}$[%]')
             axes[1, n + 1].set_xlim(ranges['percent'])
@@ -200,8 +200,8 @@ if plot_buoyancy_profile:
     os.makedirs(b_dir, exist_ok=True)
     for it in range(nt):
         fig, axes = plt.subplots(2, 2, figsize=(12, 12), sharey =True)
-        axes[0, 0].plot(b_avg[it, :], z, color=color_opt[0], label=r'S$_{data}$')
-        axes[0, 0].plot(b_pos_avg[it, :], z, color=color_opt[1], label=r'S$_{positive}$')
+        axes[0, 0].plot(b_avg[it, :], z, color = case_opt['color'][0], label=r'S$_{data}$')
+        axes[0, 0].plot(b_pos_avg[it, :], z, color = case_opt['color'][1], label=r'S$_{positive}$')
         axes[0, 0].set_title('Buoyancy Profile')
         axes[0, 0].set_xlabel(r'[$\text{m}/\text{s}^2$]')
         axes[0, 0].set_ylabel('Depth [m]')
@@ -209,21 +209,21 @@ if plot_buoyancy_profile:
         axes[0, 0].set_xlim(ranges['b_avg'])
 
         diff = (b_pos_avg[it, :] - b_avg[it, :])/(g*reader.beta*Sval)
-        axes[1, 0].plot(diff, z, color=color_opt[1])
+        axes[1, 0].plot(diff, z, color = case_opt['color'][1])
         axes[1, 0].set_title(r'b$_{xy}$ Percent Difference')
         axes[1, 0].set_xlabel(r'100$\cdot \frac{b_{positive} - b_{data}}{b_{0}}$[%]')
         axes[1, 0].set_ylabel('Depth [m]')
         axes[1, 0].set_xlim(ranges['percent'])
 
-        axes[0, 1].plot(b_rms[it, :], z, color=color_opt[0])
-        axes[0, 1].plot(b_pos_rms[it, :], z, color=color_opt[1])
+        axes[0, 1].plot(b_rms[it, :], z, color = case_opt['color'][0])
+        axes[0, 1].plot(b_pos_rms[it, :], z, color = case_opt['color'][1])
         axes[0, 1].set_title('RMS Buoyancy Profile')
         axes[0, 1].set_xlabel(r'[$\text{m}/\text{s}^2$]')
         #axes[0, 1].set_ylabel('Depth [m]')
         axes[0, 1].set_xlim(ranges['b_rms'])
 
         diff = (b_pos_rms[it, :] - b_rms[it, :])/(g*reader.beta*Sval)
-        axes[1, 1].plot(diff, z, color=color_opt[1])
+        axes[1, 1].plot(diff, z, color = case_opt['color'][1])
         axes[1, 1].set_title(r"b$_{rms}$ Percent Difference")
         axes[1, 1].set_xlabel(r"100$\cdot \frac{b_{positive} - b_{data}}{b_{0}}$[%]")
         #axes[1, 1].set_ylabel('Depth [m]')

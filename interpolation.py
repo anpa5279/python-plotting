@@ -120,7 +120,7 @@ def horizontal_line(f, hor = None, hor0 = None, z = None, z0 = None, axis=-2):
         if hor is not None:
             fh = interp1d_axis(f, hor, coord_new = hor0, axis=axis)
         elif z is not None:
-            fh = interp1d_axis(f, z, coord_new = z0, axis=axis)
+            fh = interp1d_axis(f, z, coord_new = z0, axis=-1)
         return fh
 
 
