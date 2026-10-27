@@ -7,7 +7,7 @@ import re
 from interpolation import plane_slice_calc, velocities_to_center, vertical_line, horizontal_line
 
 class OceananigansData:
-    def __init__(self, folder, temperature=True, salinity = False, with_halos=False, grid_specs = False, Sval=None, read_fields=True):
+    def __init__(self, folder, temperature=True, salinity = False, with_halos=False, grid_specs = False, Sval=None, read_fields=True, file_name='fields'):
         self.folder = folder
 
         # Grid-related (set by load_grid)
@@ -52,10 +52,9 @@ class OceananigansData:
         self.all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') or f.endswith('.h5'))]
 
         # ensuring file order for field files
-        fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields'))]
+        fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith(file_name))]
 
         self.Nranks = len(fields_files)
-        print(f'Found {self.Nranks} rank(s) in {self.folder}')
         if self.Nranks > 1 and read_fields: # ensuring that the files are in proper order
             self.files = [f'fields_rank{n}.jld2' for n in range(self.Nranks)]
         else: # does not matter if there is only one file
@@ -192,7 +191,6 @@ class OceananigansData:
             self.dr = self.r[1] - self.r[0]
     # ------------------------- TIME ------------------------------------ #
     def load_time(self):
-        print(len(self.files))
         if self.averaging:
             with h5py.File(os.path.join(self.folder, self.averaging_file), 'r') as f:
                 t_group = f['timeseries/t']
