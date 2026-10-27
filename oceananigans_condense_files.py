@@ -180,7 +180,7 @@ def main():
     iter_off, time_off = 0, 0.0
     for i, fld in enumerate(chain):
         file_name = 'fields_pickup' if i > 0 else 'fields'
-        print(f'  [{i}] {fld}')
+        print(f'  [{i}] {fld} with file name prefix "{file_name}"')
         reader = OceananigansData(fld, salinity=salinity, with_halos=with_halos, file_name=file_name)
         lv = Level(fld, reader, iter_off, time_off)
         levels.append(lv)

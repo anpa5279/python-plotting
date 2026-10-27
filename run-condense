@@ -6,6 +6,7 @@ file=oceananigans_condense_files.py
 
 cp $file scripts/
 cp reader.py scripts/
+cp interpolation.py scripts/
 
 ###uv init scripts
 cd scripts
