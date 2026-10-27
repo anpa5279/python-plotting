@@ -11,7 +11,8 @@ from plotting_lines import plot_plume_horizontal_spatial, plot_plume_vertical_sp
 from plotting_analysis import plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
 
 # flags for what to plot
-plot_1d_z = False
+plot_vert_profiles = False
+plot_horiz_profiles = False
 transient_mld = False
 temporal_averages_flag = False
 error_calc = True
@@ -84,13 +85,13 @@ for n, reader in enumerate(readers):
     z.append(reader.z)
     nx.append(reader.nx)
     lx.append(reader.lx)
-    if i == 0:
+    if n == 0:
         nt = reader.nt
         nz = reader.nx[2]
     else:
         nt = np.min([nt, reader.nt])
         nz = np.max([nz, reader.nx[2]])
-    if salinity and plot_1d_z:
+    if salinity and plot_vert_profiles:
         S_value = reader.load_S_temporal_avg()
 
 x = readers[0].x
@@ -129,12 +130,15 @@ ranges['u'] = [-1.2*10**(-2), 1.2*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
 ranges['vel_rms'] = [0, 4*10**-3]
 ranges['bw_fluc'] = [-5*10**(-9), 5*10**(-9)]
-if plot_1d_z:
+if plot_vert_profiles:
     case_opt = comparison_plot_opt(case_names)
-
-############ NONDIMENSIONALIZATION ############
+if plot_horiz_profiles:
+    ranges_horiz = ranges.copy()
 if ND:
+    ############ NONDIMENSIONALIZATION ############
     area = (2*rj)**2 
+    alpha = reader.alpha
+    beta = reader.beta
     N2 = g * alpha * dTdz 
     Ri_g = N2/(g/rj)
     Fr_flux = F_s * beta / np.sqrt(rj * g)
@@ -173,22 +177,22 @@ if ND:
         S_avg = np.zeros((nx[2], num_cases))
         for n, reader in enumerate(readers):
             vel_rms_avgt, bw_avgt, T_avgt, S_avgt, r_plume_avgt = reader.load_temporal_averages('interp_temporal_averages.h5', temperature=True, salinity=salinity)
-            w_rms[:, i] = vel_rms_avgt['w_rms']
-            b_avg[:, i] = bw_avgt['b_avg']
-            bw_fluc_avg[:, i] = bw_avgt['bw_fluc_avg']
-            b_center[:, i] = bw_avgt['b_centerline_avg']
-            T_fluc_center[:, i] = T_avgt['T_fluc_centerline_avg']
-            S_avg[:, i] = S_avgt['S_avg']
-            r_profile[:, i] = r_plume_avgt['tracer radius']
+            w_rms[:, n] = vel_rms_avgt['w_rms']
+            b_avg[:, n] = bw_avgt['b_avg']
+            bw_fluc_avg[:, n] = bw_avgt['bw_fluc_avg']
+            b_center[:, n] = bw_avgt['b_centerline_avg']
+            T_fluc_center[:, n] = T_avgt['T_fluc_centerline_avg']
+            S_avg[:, n] = S_avgt['S_avg']
+            r_profile[:, n] = r_plume_avgt['tracer radius']
 
             if transient_mld:
-                    dbdz = np.gradient(b_avg[:, i], z[:, i])
+                    dbdz = np.gradient(b_avg[:, n], z[:, n])
                     dbdz_tol = dbdz <= (5.0*10**(-7))
                     if np.any(dbdz_tol):
                         mld_idx[n] = np.min(np.where(dbdz_tol))
                     else:
                         mld_idx[n] = nx[2] - 1
-                    mld[n] = -z[mld_idx[n], i]
+                    mld[n] = -z[mld_idx[n], n]
         if transient_mld:
             Ln =(F0/N2**(3/2))**(1/4)
             z_nd = (z+mld)*(mld)**(1/3)/(Ln**(4/3))
@@ -224,7 +228,7 @@ else:
             S_fluc_center = []
             S_hor = []
             S_plane = []
-        if plot_1d_z:
+        if plot_vert_profiles:
             T_avg = []
             b_avg = []
             u_rms = []
@@ -273,7 +277,7 @@ else:
             bw_fluc = a_fluc_b(b, w)
 
             # vertical lines to save for plotting
-            if plot_1d_z:
+            if plot_vert_profiles:
                 # rms fluctuations
                 u_rms.append(rms(reader, 'u'))
                 v_rms.append(rms(reader, 'v'))
@@ -306,7 +310,7 @@ else:
 
     ############ PLOTTING ############
     for it in nt:
-        if plot_1d_z:
+        if plot_vert_profiles:
             buoyancy_dir_z = plot_plume_vertical_spatial(time[it], it, ranges, case_opt, fig_folder, case_names, name_uni, lx[-1], z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_profile, bu_fluc_avg, bv_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_fluc_center)
         if plot_horiz_profiles:
             buoyancy_dir_y = plot_plume_horizontal_spatial(time[it], it, ranges_horiz, case_opt, fig_folder, case_names, name_xy, lx[-1], y, u_hor, v_hor, w_hor, b_fluc_hor, bu_fluc_hor, bv_fluc_hor, bw_fluc_hor, T_hor, S_hor)
@@ -330,7 +334,7 @@ else:
     print("All frames created.")
     # creating videos
     if video:
-        if plot_1d_z:
+        if plot_vert_profiles:
             create_video(buoyancy_dir_z, fig_folder, name_uni, 'vertical profile')
         if plot_horiz_profiles:
             create_video(buoyancy_dir_y, fig_folder, name_uni, 'horizontal profile')

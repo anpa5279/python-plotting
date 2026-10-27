@@ -6,9 +6,10 @@ from matplotlib import colors
 from matplotlib.lines import Line2D
 
 from plotting_general import save_frame
+from interpolation import horizontal_line
 ### -------------------------PLOTTING PLANE SLICES FUNCTIONS------------------------- ###
 ## variable vertical plane slice across all cases
-def plot_var_planeslice(time, it, fig_folder, lx, hor, z, var, case_names, loc = 0.0, plane='YZ', ylim = (-5, 5), zlim = (-10, 0)):
+def plot_var_planeslice(time, it, fig_folder, hor, z, var, case_names, loc = 0.0, plane='YZ', ylim = (-5, 5), zlim = (-10, 0)):
     planeslice = var['var']
     name = var['title']
     range_name = var['range_name']
@@ -16,34 +17,26 @@ def plot_var_planeslice(time, it, fig_folder, lx, hor, z, var, case_names, loc =
     colorbar_label = var['label']
     range_var = var['range']
     td = time / 3600 / 24
-    ar = (ylim[1]-ylim[0]) / (zlim[1]-zlim[0])
+    ar = np.abs(zlim[1]-zlim[0]) / np.abs(ylim[1]-ylim[0])
     if plane == 'YZ': #yz plane
-        lhor = np.min(lx[1])
-        lz = np.max(np.abs(lx[2]))
         plane = 'YZ plane'
         xlabel = "y [m]"
         ylabel = "Depth [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
         out_folder = f'x = {loc:.2f} m'
     elif plane == 'XZ': #xz plane
-        lhor = np.max(lx[0])
-        lz = np.max(np.abs(lx[2]))
         plane = 'XZ plane'
         xlabel = "x [m]"
         ylabel = "Depth [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
         out_folder = f'y = {loc:.2f} m'
-    elif plane == 'XY': #xz plane
-        lhor = np.max(lx[0])
-        lz = np.max(np.abs(lx[1]))
+    elif plane == 'XY': #xy plane
         plane = 'XY plane'
         xlabel = "x [m]"
         ylabel = "y [m]"
         title = name + ', ' + plane + ', ' + f'{td:.2f} days'
         out_folder = f'z = {loc:.2f} m'
     elif plane == 'binning':
-        lhor = np.min(lx[0:1])/2
-        lz = np.max(np.abs(lx[2]))
         xlabel = "r [m]"
         ylabel = "Depth [m]"
         title = name + ', ' + f'{td:.2f} days'
@@ -53,13 +46,109 @@ def plot_var_planeslice(time, it, fig_folder, lx, hor, z, var, case_names, loc =
 
     outdir = os.path.join(fig_folder, 'comparison plume analysis/', range_name, plane, out_folder)
     os.makedirs(outdir, exist_ok=True)
-    num_cases = len(planeslice)
+    num_cases = len(case_names)
     ncols = 4
     if num_cases < ncols*2:
         ncols = num_cases
     nrows = int(math.ceil(num_cases/ncols))
     hor_len = 12.0
     if num_cases == 1:
+        hor_len = 7.0 if ar >= 3.0 else 12.0
+        vert_len = hor_len * np.abs(ar-2)
+    else:
+        hor_len = 12.0
+        vert_len = (hor_len * ar / (ncols) + 0.25 )* nrows - 1.0
+    size_in = (hor_len, vert_len)#(4 * num_cases, 8)
+    extent = [ylim[0], ylim[1], zlim[0], zlim[1]]
+    fig, axes = plt.subplots(nrows, ncols, figsize=size_in, sharey = True, sharex = True, constrained_layout=True)
+    # Force even pixel dimensions at 200 dpi
+    w_px = int(fig.get_figwidth() * fig.dpi)
+    h_px = int(fig.get_figheight() * fig.dpi)
+    if w_px % 2 != 0:
+        fig.set_figwidth((w_px + 1) / fig.dpi)
+    if h_px % 2 != 0:
+        fig.set_figheight((h_px + 1) / fig.dpi)
+    if num_cases>1:
+        if num_cases != (nrows*ncols):
+            for i in range(num_cases, nrows*ncols):
+                axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
+    
+    axes = [axes] if num_cases == 1 else axes.ravel()
+    fig.suptitle(title)
+    for n in range(num_cases):
+        if num_cases > 1:
+            slice_opt = planeslice[n]
+        else:
+            slice_opt = planeslice
+        if 'log' in range_name and 'w' not in range_name and 'neg' not in range_name:
+            slice_opt[slice_opt <= 0] = 10**(-16)
+            im = axes[n].imshow(slice_opt, extent =extent, interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=range_var[0], vmax=range_var[-1]))
+        elif any(('log' in range_name, 'neg' in range_name)):
+            im = axes[n].imshow(slice_opt, extent =extent, interpolation ='none', origin ='lower', cmap = cmap, norm=colors.SymLogNorm(linthresh=1e-5, vmin=range_var[0], vmax=range_var[-1]))
+        else:
+            im = axes[n].imshow(slice_opt, vmin=range_var[0], vmax=range_var[-1], extent =extent, interpolation ='none', origin ='lower', cmap = cmap)
+        if num_cases > 1:
+            axes[n].set_title(case_names[n])
+        
+        axes[n].set_xlim(ylim)
+        axes[n].set_ylim(zlim)
+        
+        axes[n].set_aspect('equal')
+        if n == 0 or n%ncols == 0:
+            axes[n].set_ylabel(ylabel)
+        if n >= (nrows - 1) * ncols:
+            axes[n].set_xlabel(xlabel)
+
+    active_axes = [axes[n] for n in range(num_cases)]
+    shrink = 0.9
+    cbar = fig.colorbar(im, ax = active_axes, shrink=shrink, aspect=50, label = colorbar_label)#, anchor = (0.5, 0.05), orientation='horizontal')
+    if all(('log' not in range_name, 'neg' not in range_name)):
+        cbar.formatter.set_useOffset(False)
+        cbar.formatter.set_powerlimits((-2, 5))
+        cbar.update_ticks() 
+
+    # --- Save Frame ---
+    save_frame(fig, outdir, it, size_in, file_name = "oc_plane_slices_")
+    return outdir
+## variable vertical plane slice across all cases
+def plot_debug_planeslice(it, title, fig_folder, hor, z, var, case_names, loc = 0.0, plane='YZ', ylim = (-5, 5), zlim = (-10, 0), loc_opt = None):
+    planeslice = var['var']
+    range_name = var['range_name']
+    cmap = var['cmap']
+    colorbar_label = var['label']
+    range_var = var['range']
+    ar = (ylim[1]-ylim[0]) / (zlim[1]-zlim[0])
+    if plane == 'YZ': #yz plane
+        plane = 'YZ plane'
+        xlabel = "y [m]"
+        ylabel = "Depth [m]"
+        out_folder = f'x = {loc:.2f} m'
+    elif plane == 'XZ': #xz plane
+        plane = 'XZ plane'
+        xlabel = "x [m]"
+        ylabel = "Depth [m]"
+        out_folder = f'y = {loc:.2f} m'
+    elif plane == 'XY': #xy plane
+        plane = 'XY plane'
+        xlabel = "x [m]"
+        ylabel = "y [m]"
+        out_folder = f'z = {loc:.2f} m'
+    elif plane == 'binning':
+        xlabel = "r [m]"
+        ylabel = "Depth [m]"
+        out_folder = f''
+    else:
+        raise ValueError("Invalid plane specified. Choose from 'YZ', 'XZ', 'XY', or 'binning'.")
+
+    outdir = os.path.join(fig_folder, 'comparison plume analysis', range_name, 'debugging', plane, out_folder)
+    os.makedirs(outdir, exist_ok=True)
+    num_cases = len(case_names)
+    ncols = num_cases
+    nrows = int(math.ceil(num_cases/ncols))
+    hor_len = 12.0
+    if num_cases == 1:
+        hor = [hor,]
+        z = [z,]
         hor_len = 4.0 if ar > 4.0 else 12.0
         vert_len = hor_len / ar - 1.0
     else:
@@ -74,26 +163,23 @@ def plot_var_planeslice(time, it, fig_folder, lx, hor, z, var, case_names, loc =
         fig.set_figwidth((w_px + 1) / fig.dpi)
     if h_px % 2 != 0:
         fig.set_figheight((h_px + 1) / fig.dpi)
-    if num_cases != (nrows*ncols):
-        for i in range(num_cases, nrows*ncols):
-            axes[i].remove() # remove extra subplots if number of cases is less than nrows*ncols
+
+    axes = [axes] if not isinstance(axes, list) else axes.ravel()
     fig.suptitle(title)
     for n in range(num_cases):
-        if num_cases > 1:
-            axes = axes.ravel()
-            extent = [hor[n].min(), hor[n].max(), z[n].min(), z[n].max()]
-        else:
-            axes = [axes, ]
-            extent = [hor.min(), hor.max(), z.min(), z.max()]
+        extent = [hor[n].min(), hor[n].max(), z[n].min(), z[n].max()]
         if 'log' in range_name and 'w' not in range_name and 'neg' not in range_name:
             planeslice[n][planeslice[n] <= 0] = 10**(-16)
             im = axes[n].imshow(planeslice[n], extent =extent, interpolation ='none', origin ='lower', cmap = cmap, norm=colors.LogNorm(vmin=range_var[0], vmax=range_var[-1]))
         elif any(('log' in range_name, 'neg' in range_name)):
-            im = axes[n].imshow(planeslice[n], extent =extent, interpolation ='none', origin ='lower', cmap = cmap, norm=colors.SymLogNorm(linthresh=1e-5, vmin=range_var[0], vmax=range_var[-1]))
+            im = axes[n].imshow(planeslice[n], extent =extent, interpolation ='none', origin ='lower', cmap = cmap, norm=colors.SymLogNorm(linthresh=1e-6, vmin=range_var[0], vmax=range_var[-1]))
         else:
             im = axes[n].imshow(planeslice[n], vmin=range_var[0], vmax=range_var[-1], extent =extent, interpolation ='none', origin ='lower', cmap = cmap)
         if num_cases > 1:
             axes[n].set_title(case_names[n])
+        if loc_opt is not None:
+            for zk in loc_opt:
+                axes[n].plot(hor[n], zk*np.ones_like(hor[n]), color = 'black', linestyle = '--')
         
         axes[n].set_xlim(ylim)
         axes[n].set_ylim(zlim)

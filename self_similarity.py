@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
+from matplotlib.lines import Line2D
 
 
 from reader import OceananigansData
@@ -162,12 +163,8 @@ if coeff_calc:
     plot_loglog_fit(outdir, z_opt, delta_avg, Cd_avg, alpha2_avg, r'$\delta$', fr"$\delta$ = {Cd_avg:.3f} |z|$^{{{alpha2_avg:.3f}}}$", r'log-log fit of $\delta$ vs z, time average', (np.min(delta_avg)*range_scales[0], np.max(delta_avg)*range_scales[1]), it = 'delta_avg')
 
 size_in = (12, 6)
-case_opt = comparison_plot_opt(len(z_opt)+1)
-colors = colors[1:] # first color is black, which is used for the fit
+case_opt = comparison_plot_opt(len(z_opt), case_opt = 'Blues_r')
 if check_steady_state:
-    fig_folder = os.path.join(outdir, 'steady state check')
-    os.makedirs(fig_folder, exist_ok=True)
-
     nsteps = 11 # number of time steps to average over
     n_start = (nsteps-1)//2
     n_end = reader.nt - 1 - (nsteps-1)//2
@@ -181,27 +178,35 @@ if check_steady_state:
 
     wmin = np.min(w_avg_t)
     wmax = np.max(w_avg_t)
+    gridspec_kw =np.ones(len(r_opt)+1)
+    gridspec_kw[0] = 0.3 # add space for universal legend
+    gridspec_kw = {'height_ratios': gridspec_kw}
 
-    fig, axes = plt.subplots(len(r_opt), 1, figsize=(8, 10), sharex = True)
+    fig, axes = plt.subplots(len(r_opt)+1, 1, figsize=(6, 10), sharex = True, gridspec_kw = gridspec_kw)
     axes = axes.ravel()
 
-    for ij, r_loc in enumerate(r_opt):
-        for k, z_loc in enumerate(z_opt):
-            if ij ==0:
-                axes[ij].plot(t_avg, w_avg_t[:, ij, k], marker = case_opt['marker'][k], color = case_opt['color'][k], label = f'z = {z_loc} m')
-                axes[ij].legend(loc='upper right', fontsize = 20, ncols = len(z_opt))
-            elif ij == len(r_opt)-1:
-                axes[ij].plot(t_avg, w_avg_t[:, ij, k], marker = case_opt['marker'][k], color = case_opt['color'][k])
-                axes[ij].set_xlabel(r"time [hrs]")
+    for n, ij in zip(np.arange(len(r_opt))+1, np.arange(len(r_opt))):
+        for k, case in enumerate(case_opt.keys()):
+            if n == len(r_opt):
+                axes[n].plot(t_avg, -w_avg_t[:, ij, k], marker = case_opt[case]['marker'], color = case_opt[case]['color'])
+                axes[n].set_xlabel(r"time [hrs]")
             else:
-                axes[ij].plot(t_avg, w_avg_t[:, ij, k], marker = case_opt['marker'][k], color = case_opt['color'][k])
-        axes[ij].set_ylabel(r"w [m/s]")
+                axes[n].plot(t_avg, -w_avg_t[:, ij, k], marker = case_opt[case]['marker'], color = case_opt[case]['color'])
+        axes[n].set_ylabel(r"w [m/s]")
 
-        #axes[ij].set_xlim(min(reader.t)/3600, max(reader.t)/3600)
-        #axes[ij].set_ylim(wmin*0.9, wmax*1.1)
-        axes[ij].set_title(f"r = {r_loc} m")
-        axes[ij].ticklabel_format(axis='y', style='sci', scilimits=(-2,2), useMathText=True) 
-
+        #axes[n].set_xlim(min(reader.t)/3600, max(reader.t)/3600)
+        #axes[n].set_ylim(wmin*0.9, wmax*1.1)
+        axes[n].set_title(f"r = {r_opt[ij]} m")
+        axes[n].ticklabel_format(axis='y', style='sci', scilimits=(-2,2), useMathText=True) 
+    
+    axes[0].remove()
+    case_handles = [Line2D([0], [0], color = case_opt[case]['color'], 
+                           marker = case_opt[case]['marker'], label=f'z = {z_opt[k]} m')
+                           for k, case in enumerate(case_opt.keys())]
+    fig.legend(handles=case_handles,
+        loc='lower center',
+        ncols=len(z_opt)//2+1,
+        bbox_to_anchor=(0.5, 0.93)),
     frame_path = os.path.join(outdir, f'steady state check nsteps={nsteps}.png')
     plt.savefig(frame_path, dpi = 200)
     plt.close(fig)
@@ -216,8 +221,8 @@ if not all_depth_opts:
     for it in range(len(it_range)):
         fig, ax = plt.subplots(1, 1, figsize=size_in)
 
-        for k, z_loc in enumerate(z_opt):
-            ax.plot(r, w_rz[it, :, k], marker = case_opt['marker'][k], color = case_opt['color'][k], label = f'z = {z_loc} m')
+        for k, case in enumerate(case_opt.keys()):
+            ax.plot(r, w_rz[it, :, k], marker = case_opt[case]['marker'], color = case_opt[case]['color'], label = f'z = {z_opt[k]} m')
 
         ax.set_xlabel(r"r [m]")
         ax.set_xlim(0, max(r)*0.625)
@@ -232,15 +237,15 @@ if not all_depth_opts:
     # temporal average plot
     fig, ax = plt.subplots(1, 1, figsize=size_in)
 
-    for k, z_loc in enumerate(z_opt):
-        ax.plot(r, w_rz_avg[:, k], marker = case_opt['marker'][k], color = case_opt['color'][k], label = f'z = {z_loc} m')
+    for k, case in enumerate(case_opt.keys()):
+        ax.plot(r, -w_rz_avg[:, k], marker = case_opt[case]['marker'], color = case_opt[case]['color'], label = f'z = {z_opt[k]} m')
 
     ax.set_xlabel(r"r [m]")
     ax.set_xlim(0, max(r)*0.625)
     ax.set_ylabel(r"w [m/s]")
-    ax.set_ylim(np.min(w_rz_avg), np.max(w_rz_avg))
+    ax.set_ylim(np.min(-w_rz_avg), np.max(-w_rz_avg))
     ax.set_title(f"Temporal average, t = {time[it_range[0]]/3600:.2f} to {time[it_range[-1]]/3600:.2f} hours")
-    ax.legend(loc='upper right', fontsize = 20)
+    ax.legend(loc='lower right', fontsize = 20)
 
     frame_path = os.path.join(outdir, 'temporal average w vs r at specified depths.png')
     plt.savefig(frame_path, dpi = 200)
@@ -260,8 +265,8 @@ if centerline_plot:
         Cw = scipy.optimize.curve_fit(_wc, -z_opt, w_c[it, :])[0][0]
         ax.plot(_wc(-z_constrained, Cw), z_constrained, color = 'black', label=rf"{Cw:.3f}|B$_0|^{{1/3}}$|z|$^{{-1/3}}$")
 
-        for k, z_loc in enumerate(z_opt):
-            ax.scatter(w_c[it, k], z_loc, marker = case_opt['marker'][k], s=10, color = case_opt['color'][k], label = f'z = {z_loc} m')
+        for k, case in enumerate(case_opt.keys()):
+            ax.scatter(w_c[it, k], z_loc, marker = case_opt[case]['marker'], s=10, color = case_opt[case]['color'], label = f'z = {z_opt[k]} m')
         ax.set_xlabel(r"w [m/s]")
         ax.set_xlim(0, 0.1)
         ax.set_ylabel(r"z [m]")
@@ -277,8 +282,8 @@ if centerline_plot:
     Cw = scipy.optimize.curve_fit(_wc, -z_opt, w_c_avg)[0][0]
 
     ax.plot(_wc(-z_constrained, Cw), z_constrained, color = 'black', label=rf"{Cw:.3f}|B$_0|^{{1/3}}$|z|$^{{-1/3}}$")
-    for k, z_loc in enumerate(z_opt):
-        ax.scatter(w_c_avg[k], z_loc, marker = case_opt['marker'][k], s=10, color = case_opt['color'][k], label = f'z = {z_loc} m')
+    for k, case in enumerate(case_opt.keys()):
+        ax.scatter(w_c_avg[k], z_loc, marker = case_opt[case]['marker'], s=10, color = case_opt[case]['color'], label = f'z = {z_opt[k]} m')
 
     ax.set_xlabel(r"w [m/s]")
     ax.set_xlim(0, 0.1)
@@ -310,7 +315,7 @@ if plot_nd:
 
         alpha = scipy.optimize.curve_fit(_F, eta_it_k, F_it_k)[0][0]
 
-        for k, z_loc in enumerate(z_opt):
+        for k, case in enumerate(case_opt.keys()):
             loc = np.argsort(eta[it, :, k].ravel())
             F_it_k = F[it, :, k].ravel()
             eta_it_k = eta[it, :, k].ravel()
@@ -321,15 +326,15 @@ if plot_nd:
             F_it_k = F_it_k[n_keep]
             eta_it_k = eta_it_k[n_keep]
             if k == 0 or k == len(z_opt)-1 or not all_depth_opts:
-                ax.plot(eta_it_k, F_it_k, marker = case_opt['marker'][k], color = case_opt['color'][k], label = f'z = {z_loc} m')
+                ax.plot(eta_it_k, F_it_k, marker = case_opt[case]['marker'], color = case_opt[case]['color'], label = f'z = {z_opt[k]} m')
             else:
-                ax.plot(eta_it_k, F_it_k, marker = case_opt['marker'][k], color = case_opt['color'][k])
+                ax.plot(eta_it_k, F_it_k, marker = case_opt[case]['marker'], color = case_opt[case]['color'])
 
         ax.plot(np.arange(0, 1, 0.01), _F(np.arange(0, 1, 0.01), alpha), color = 'black', linewidth=4.0,
                 label=rf"exp(-{alpha:.2f}$\eta^2$)")
 
         ax.set_xlabel(r"$\eta$")
-        ax.set_xlim(0, 1.1)
+        ax.set_xlim(0, 1)
         ax.set_ylabel(r"$F(\eta)$")
         ax.set_ylim(0, 1.1)
         ax.set_title(f"t = {time[it_range[it]]/3600:.2f} hours")
@@ -351,7 +356,7 @@ if plot_nd:
 
     alpha = scipy.optimize.curve_fit(_F, eta_avg_a, F_avg_a)[0][0]
 
-    for k, z_loc in enumerate(z_opt):
+    for k, case in enumerate(case_opt.keys()):
         loc = np.argsort(eta_avg[:, k].ravel())
         F_avg_k = F_avg[:, k].ravel()
         eta_avg_k = eta_avg[:, k].ravel()
@@ -362,15 +367,15 @@ if plot_nd:
         F_avg_k = F_avg_k[n_keep]
         eta_avg_k = eta_avg_k[n_keep]
         if k == 0 or k == len(z_opt)-1 or not all_depth_opts:
-            ax.plot(eta_avg_k, F_avg_k, marker = case_opt['marker'][k], color = case_opt['color'][k], label = f'z = {z_loc} m')
+            ax.plot(eta_avg_k, F_avg_k, marker = case_opt[case]['marker'], color = case_opt[case]['color'], label = f'z = {z_opt[k]} m')
         else:
-            ax.plot(eta_avg_k, F_avg_k, marker = case_opt['marker'][k], color = case_opt['color'][k])
+            ax.plot(eta_avg_k, F_avg_k, marker = case_opt[case]['marker'], color = case_opt[case]['color'])
 
     ax.plot(np.arange(0, 1, 0.01), _F(np.arange(0, 1, 0.01), alpha), color = 'black', linewidth=4.0,
             label=rf"exp(-{alpha:.2f}$\eta^2$)")
 
     ax.set_xlabel(r"$\eta$")
-    ax.set_xlim(0, 1.1)
+    ax.set_xlim(0, 1)
     ax.set_ylabel(r"$F(\eta)$")
     ax.set_ylim(0, 1.1)
     ax.set_title(f"Temporal average, t = {time[it_range[0]]/3600:.2f} to {time[it_range[-1]]/3600:.2f} hours")

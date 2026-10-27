@@ -7,7 +7,7 @@ import re
 from interpolation import plane_slice_calc, velocities_to_center, vertical_line, horizontal_line
 
 class OceananigansData:
-    def __init__(self, folder, temperature=True, salinity = False, with_halos=False, grid_specs = False, Sval=None):
+    def __init__(self, folder, temperature=True, salinity = False, with_halos=False, grid_specs = False, Sval=None, read_fields=True):
         self.folder = folder
 
         # Grid-related (set by load_grid)
@@ -55,7 +55,7 @@ class OceananigansData:
         fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup'))]
 
         self.Nranks = len(fields_files)
-        if self.Nranks > 1: # ensuring that the files are in proper order
+        if self.Nranks > 1 and read_fields: # ensuring that the files are in proper order
             self.files = [f'fields_rank{n}.jld2' for n in range(self.Nranks)]
         else: # does not matter if there is only one file
             self.files = fields_files
@@ -138,7 +138,11 @@ class OceananigansData:
                 if '/grid/H' in f:
                     self.hx = [f['grid/H'][()], f['grid/H'][()], f['grid/H'][()]]
                 else:
-                    self.hx = [3, 3, 3]
+                    if isinstance(self.halos, int):
+                        self.hx = [self.halos, self.halos, self.halos]
+                        self.halos = True
+                    else:
+                        self.hx = [3, 3, 3]
             self.x = np.linspace(-self.lx[0]/2 + self.dx[0]/2, self.lx[0]/2 - self.dx[0]/2, self.nx[0])
             self.xf = np.linspace(-self.lx[0]/2, self.lx[0]/2, self.nx[0]+1)
             self.y = np.linspace(-self.lx[1]/2 + self.dx[1]/2, self.lx[1]/2 - self.dx[1]/2, self.nx[1])

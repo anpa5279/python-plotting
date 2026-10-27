@@ -2,30 +2,11 @@ import os
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
-import scipy
-from matplotlib.lines import Line2D
 
 from reader import OceananigansData
 from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
-from plotting_planes import plot_var_planeslice
-from interpolation import point, vertical_line, interp1d_axis, velocities_to_center
-"""
-    what is the best way to find the maximum penetration depth of a plume via momentum?
-    ways to consider w:
-        1. w_avg = 1D array of shape (nt, nz) --> average w at each depth and time step
-        2. w centerline = 1D array of shape (nt, nz) --> w at (0.0, 0.0) and time step
-        3. w_rms = 1D array of shape (nt, nz) --> average w' at each depth and time step
-        4. w_fluc_centerline = 1D array of shape (nt, nz) --> w' at (0.0, 0.0) and time step
-
-    ways to consider buoyancy, b:
-        1. b_rms = 1D array of shape (nt, nz) --> average b' at each depth and time step
-        2. b_fluc_centerline = 1D array of shape (nt, nz) --> b' at (0.0, 0.0) and time step
-
-    ways to percieve w and/or b:
-        1. sign changes
-        2. order of magnitude changes
-        3. gradient changes
-"""
+from plotting_planes import plot_var_planeslice, plot_debug_planeslice
+from interpolation import point, interp1d_axis
 # ==========================================================
 # FLAGS
 # ==========================================================
@@ -35,27 +16,24 @@ plot_zt = False
 plot_rt = False
 plot_xy_plane = False
 plot_bin_plane = True
-plot_raw_centerline = False
-plot_1dz_stats = False
-verify_outputs = False
+debugging = False
 
-temporal_avg = True
+temporal_avg = False
 video = True
 
+if debugging:
+    plot_bin_plane = True
 if temporal_avg:
-    nsteps = 5 # number of time steps to average over for plotting, also trying 5
+    nsteps =11 # number of time steps to average over for plotting, also trying 5
 
 
 # ==========================================================
 # MODEL INFORMATION
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx0.5'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx0.0625'
 
 outdir = os.path.join(folder, 'figures')
-reader = OceananigansData(folder, salinity = True, with_halos=True)
-if plot_1dz_stats:
-    fig_var_folder = os.path.join(outdir, 'max penetration variables')
-    os.makedirs(fig_var_folder, exist_ok=True)
+reader = OceananigansData(folder, salinity = True, with_halos=True, read_fields=False)
 
 # collecting model information for all cases
 x = reader.x
@@ -68,7 +46,7 @@ dx = reader.dx
 dx_scale = max(dx[:-1]) # not including dz
 r = np.arange(dx[0]/2, lx[0]/2, dx_scale)
 # video or not setup
-if video or plot_zt or plot_raw_centerline or plot_yt or plot_xt:
+if video or plot_zt or plot_yt or plot_xt:
     time = reader.t
     if reader.centerline:
         time1 = reader.time_center
@@ -89,28 +67,12 @@ T0 = reader.T0
 if plot_yt or plot_xt:
     z_loc = -1.0*np.array([mld, mld+1, mld+2, mld+5, mld+10])#, mld+20]) #-[mld, ]
 # load in information
-if plot_zt or verify_outputs:
+if plot_zt:
     w_centerline = reader.field_centerline('w')
     b_avg, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
     if reader.salinity:
         S_centerline = reader.field_centerline('S')
-    if verify_outputs:
-        w_centerline = w_centerline[::100, :]
-        b_centerline = b_centerline[::100, :]
-        reader.centerline = False
-        w_slice = reader.load_plane_var('w')
-        w_slice = velocities_to_center(w_slice, axis = -1)
-        w_coarse_centerline = vertical_line(w_slice, y = reader.y, y0 = 0.0)
-        T_slice = reader.load_plane_var('T')
-        T_coarse_centerline = vertical_line(T_slice, y = reader.y, y0 = 0.0)
-        b_coarse_centerline = g * reader.alpha * (T_coarse_centerline - reader.T0)
-        del T_coarse_centerline
-        if reader.salinity:
-            S_centerline = S_centerline[::100, :]
-            S_slice = reader.load_plane_var('S')
-            S_coarse_centerline = vertical_line(S_slice, y = reader.y, y0 = 0.0)
-            b_coarse_centerline += - g * reader.beta * S_coarse_centerline
-if plot_1dz_stats or (plot_zt or verify_outputs):
+if plot_zt:
     w_rms = reader.load_rms('w')
     u_r = reader.load_binning_var('horizontal velocity')
     u_r_avg = np.mean(u_r, axis = -3)
@@ -169,47 +131,35 @@ if plot_xy_plane:
 
     if reader.salinity:
         S_hor = reader.field_slice('S', plane='XY')
-if plot_bin_plane:
+if plot_bin_plane and not debugging:
     range_names = ['T', 'ur', 'w', 'S', 'log w', 'log Tracer'] 
     var_names = ['T', 'ur', 'w', 'S', 'w', 'S'] 
     var_units = [r'[$^\circ$C]', '[m/s]', '[m/s]', '[g/kg]', '[m/s]', '[g/kg]']
     cmap_opt = ['Blues_r', 'RdBu_r', 'RdBu_r', 'Blues', 'RdBu_r', 'Blues']
+elif plot_bin_plane and debugging:
+    range_names = ['log Tracer'] 
+    var_names = ['S'] 
+    var_units = ['[g/kg]']
+    cmap_opt = ['Blues']
 
+if plot_bin_plane or debugging:
     variables = {}
     for n in range(len(range_names)):
-        variables[var_names[n]] = {'var':reader.load_binning_var(var_names[n]), 'title': var_names[n], 'label':var_units[n], 'cmap': cmap_opt[n], 'range_name':range_names[n]}
+        variables[range_names[n]] = {'var':reader.load_binning_var(var_names[n]), 'title': var_names[n], 'label':var_units[n], 'cmap': cmap_opt[n], 'range_name':range_names[n]}
 
 # finding centerlines
-if plot_raw_centerline:
-    steps = reader.t_save_center
-    w_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]+1))
-    T_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]))
-    S_output = np.empty(((nt-1)*100 + 1, 2, 2, nx[2]))
-    with h5py.File(os.path.join(reader.folder, reader.centerline_output), 'r') as f:
-        for it, t in enumerate(steps):
-            w_data = f[f'timeseries/w/{int(t)}']
-            T_data = f[f'timeseries/T/{int(t)}']
-            S_data = f[f'timeseries/S/{int(t)}']
-            w_data = w_data[reader.hx[2]:-reader.hx[2], :, :] # (z, y, x_local)
-            T_data = T_data[reader.hx[2]:-reader.hx[2], :, :] 
-            S_data = S_data[reader.hx[2]:-reader.hx[2], :, :] 
-            w_output[it, :, :, :] = w_data.transpose(2, 1, 0) # (x_local, y, z)
-            T_output[it, :, :, :] = T_data.transpose(2, 1, 0) 
-            S_output[it, :, :, :] = S_data.transpose(2, 1, 0) 
-if plot_1dz_stats:
-    # calculating gradients
-    dwdz_centerline = np.gradient(w_centerline, z, axis = -1)
-    dwrmsdz = np.gradient(w_rms, z, axis = -1)
-
-    dbrmsdz = np.gradient(b_rms, z, axis = -1)
-    dbflucdz = np.gradient(b_fluc_centerline, z, axis = -1)
 if temporal_avg:
     n_start = (nsteps-1)//2
     n_end = nt - (nsteps-1)//2
-    for it, it_true in enumerate(np.arange(n_start, n_end)):
-        if plot_bin_plane:
-            for n in range(len(range_names)):
-                variables[var_names[n]]['var'][it, :, :] = np.mean(variables[var_names[n]]['var'][it_true-n_start:it_true+n_start+1, :, :], axis = 0)
+
+    if plot_bin_plane or debugging:
+        for n in range(len(range_names)):
+            var_temp = np.empty((n_end-n_start, len(r), len(z)))
+            for it, it_true in enumerate(np.arange(n_start, n_end)):
+                if plot_bin_plane or debugging:
+                    for n in range(len(range_names)):
+                        var_temp[it, :, :] = np.mean(variables[range_names[n]]['var'][it_true-(nsteps-1)//2:it_true+(nsteps-1)//2, :, :], axis = 0)
+            variables[range_names[n]]['var'] = var_temp
 print("finished loading data")
 # ==========================================================
 # PLOTTING
@@ -218,7 +168,7 @@ print("finished loading data")
 mld_var = np.arange(-10**2, 10**2)
 mld_array = -mld * np.ones(len(mld_var))
 ranges = plot_ranges()
-ranges['w'] = [-1*10**-1, 1*10**-1]
+ranges['w'] = [-2*10**-3, 2*10**-3]
 ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
 ranges['gradw'] = [-0.05, 0.05]
 ranges['gradb'] = [-0.0008, 0.0008]
@@ -226,61 +176,13 @@ ranges['b_rms'] = [0, 1.5*10**(-5)]
 ranges['vel_rms'] = [0, 4*10**-3]
 ranges['S'] = [0.0, 0.1]
 ranges['log Tracer'] =[S_tol, 0.1]
-ranges['log w'] = [-0.1, 0.1]
+ranges['log w'] = ranges['w']
 ranges['T'] =[T0 - 0.7, T0 + 0.05]
-ranges['u'] = [-1*10**(-2), 1*10**(-2)]
+ranges['ur'] = [-1*10**(-2), 1*10**(-2)]
 factor = 10**(-2)
 nvars = 7
 plot_format(fontsize = 20)
 os.makedirs(outdir, exist_ok=True)
-if plot_raw_centerline:
-    ranges['T'] = [reader.T0 - 0.7, reader.T0 + 0.05]
-    gridspec_kw={'height_ratios': [0.8, 0.8, 0.8, 1.15]}
-    if reader.salinity:
-        range_opt = [ranges['w'], ranges['S'], ranges['T']]
-        titles = [r"w", r"S", r"T"]
-        colors = ['RdBu', 'Blues', 'viridis']
-        labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]']
-        vars = [w_output, S_output, T_output]
-        fig, axes = plt.subplots(4, 3, figsize=(12, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
-        file = 'wST_outputs_zt.svg'
-    else:
-        range_opt = [ranges['w'], ranges['T']]
-        titles = [r"w", r"T"]
-        colors = ['RdBu', 'viridis']
-        labels = ['[m/s]', '[g/kg]', r'[$^\circ$C]']
-        vars = [w_output, T_output]
-        fig, axes = plt.subplots(4, 2, figsize=(7, 17), gridspec_kw=gridspec_kw, sharex = True, sharey = True)
-        file = 'wT_outputs_zt.svg'
-    case_opt = comparison_plot_opt(labels)
-    last_t = time.max()/(3600*24)
-    ratio = (last_t)/lx[2]
-    axes = axes.ravel()
-    plt.subplots_adjust(bottom = 0.1, top = 0.95)
-    count = 0
-    for ix, i in enumerate([nx[0]//2, nx[0]//2+1]):
-        for jy, j in enumerate([nx[1]//2, nx[1]//2+1]):
-            for n, var in enumerate(vars):
-                im = axes[count].imshow(var[:, ix, jy, :].T, extent=[time.min()/(3600*24), last_t, z.min(), z.max()], interpolation ='none', cmap=colors[n], vmin=range_opt[n][0], vmax=range_opt[n][1])
-                axes[count].plot(time, -mld*np.ones_like(time), color = 'k', label=r"$\text{h}_{ML}$", linewidth = 0.9, linestyle = case_opt['linestyle'][1])
-                axes[count].legend(loc='lower left')
-                axes[count].set_xlim(time.min()/(3600*24), last_t)
-                axes[count].set_ylim(z.min(), z.max())
-                axes[count].set_aspect(ratio)
-                if count <= 3: # only include title in first row
-                    axes[count].set_title(titles[n])
-                if count == 0 or count % 3 == 0: # only include y label in first column
-                    axes[count].set_ylabel(f"[{i}, {j}, 1:N$_z$]\nz [m]")
-                if count >= 9: # only add colorbar to last row 
-                    axes[count].set_xlabel("time [days]")
-                    cbar = fig.colorbar(im, ax = axes[count], anchor = (0.5, 0.9), orientation='horizontal', label=labels[n], shrink=0.75, aspect=30)
-                    cbar.formatter.set_useOffset(False)
-                    cbar.formatter.set_powerlimits((-3, 5))
-                    cbar.update_ticks() 
-                count += 1
-    frame_path = os.path.join(outdir, file)
-    plt.savefig(frame_path)
-    plt.close(fig)
 if plot_zt:
     if reader.salinity:
         range_opt = [ranges['w'], ranges['S'], ranges['b_fluc'], ranges['vel_rms'], ranges['b_rms'], ranges['vel_rms']]
@@ -431,152 +333,46 @@ if plot_xy_plane:
         t = reader.t[it]
         Sw_hor = S_hor[it, :, :] * w_hor[it, :, :]
 
-        xy_outdir[0] = plot_var_planeslice(t, it, hor_ranges, outdir, lx, x, y, S_hor[it, :, :], [''], vars[0], vars[0], colorbar_label='g/kg', cmap='Blues')
-        xy_outdir[1] = plot_var_planeslice(t, it, hor_ranges, outdir, lx, x, y, w_hor[it, :, :], [''], vars[1], vars[1], colorbar_label='m/s', cmap='RdBu_r')
-        xy_outdir[2] = plot_var_planeslice(t, it, hor_ranges, outdir, lx, x, y, Sw_hor, [''], vars[2], vars[2], colorbar_label='m/s', cmap='RdBu_r')
+        xy_outdir[0] = plot_var_planeslice(t, it, hor_ranges, outdir, x, y, S_hor[it, :, :], [''], vars[0], vars[0], colorbar_label='g/kg', cmap='Blues')
+        xy_outdir[1] = plot_var_planeslice(t, it, hor_ranges, outdir, x, y, w_hor[it, :, :], [''], vars[1], vars[1], colorbar_label='m/s', cmap='RdBu_r')
+        xy_outdir[2] = plot_var_planeslice(t, it, hor_ranges, outdir, x, y, Sw_hor, [''], vars[2], vars[2], colorbar_label='m/s', cmap='RdBu_r')
 if plot_bin_plane:
     bin_dir = {}
-    for it in range(nt):
-        for n in range(len(range_names)):
-            variables[var_names[n]] = {'title': var_names[n], 'label':var_units[n], 'cmap':'Blues', 'range':ranges[range_names[n]], 'range_name':range_names[n]}
-
-        for dir, var in enumerate(var_names):
-            l_bin = [lx[0]/2, lx[-1]]
-            bin_dir[range_names[dir]] = plot_var_planeslice(time[it], it, outdir, lx, r, z, variables[var], ['',], plane='binning', ylim = (0, 32), zlim = (-60, -30))
-
-if plot_1dz_stats:
-    gridspec_kw={'height_ratios': [1, 1, 0.1]}
-    width = 0.8
-    labels = [r'$\text{w}_{(0, 0)}$', r"$\text{w}_{rms}$", r"$\text{w'}_{0, 0}$", r"$\text{b}_{rms}$", r"$\text{b'}_{0, 0}$"]
-    case_opt = comparison_plot_opt(labels)
-    case_handles = [Line2D([0], [0], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth=width, label=labels[i]) for i in range(nvars)]
-
-    for it in range(nt):
-        td = time[it]/(3600*24)
-        fig, axes = plt.subplots(3, 5, figsize=(12, 5), sharey = True, gridspec_kw=gridspec_kw)
-        fig.suptitle(f"t = {td:.2f} days")
-        for ax in axes[-1, :]:
-            ax.remove()
-        axes = axes.ravel()
-        ax0 = axes[0]  # w, w' 
-        ax1 = axes[1]  # dw/dz
-        ax2 = axes[2]  # w rms
-        ax3 = axes[3]  # dwrms/dz
-        ax5 = axes[5]  # b'
-        ax6 = axes[6]  # db'/dz
-        ax7 = axes[7]  # b rms
-        ax8 = axes[8]  # dbrms/dz
-        fig.legend(handles=case_handles,
-                loc='lower center',
-                ncol=nvars,
-                bbox_to_anchor=(0.52, 0.01))
-
-        ax0.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax0.plot(w_centerline[it, :], z, color = case_opt['color'][0], linewidth = width)
-        ax0.set_xlim(ranges['w'])
-        ax0.legend(loc='lower left')
-        ax0.set_title("w")
-        ax0.set_xlabel("[m/s]")
-        ax0.set_ylabel("z [m]")
-
-        ax1.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax1.plot(dwdz_centerline[it, :], z, color = case_opt['color'][0], linewidth = width)
-        ax1.set_xlim(ranges['gradw'])
-        ax1.set_title("dw/dz")
-        ax1.set_xlabel("dw/dz [1/s]")
-        #ax1.set_ylabel("z [m]")
-
-        ax2.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax2.plot(w_rms[it, :], z, color = case_opt['color'][1], linewidth = width)
-        ax2.set_xlim(ranges['vel_rms'])
-        ax2.set_title(r"w$_{rms}$")
-        ax2.set_xlabel(r"w$_{rms}$ [m/s]")
-
-        ax3.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax3.plot(dwrmsdz[it, :], z, color = case_opt['color'][1], linewidth = width)
-        ax3.set_xlim(ranges['gradw'][0]*factor, ranges['gradw'][1]*factor)
-        ax3.set_title(r"dw$_{rms}$/dz")
-        ax3.set_xlabel("dw/dz [1/s]")
-        #ax3.set_ylabel("z [m]")
-
-        ax5.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax5.plot(b_fluc_centerline[it, :], z, color = case_opt['color'][4], linewidth = width)
-        ax5.set_xlim(ranges['b_fluc'])
-        ax5.set_title("b'")
-        ax5.set_xlabel(r"b' [m/s$^2$]")
-        ax5.set_ylabel("z [m]")
-
-        ax6.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax6.plot(dbflucdz[it, :], z, color = case_opt['color'][4], linewidth = width)
-        ax6.set_xlim(ranges['gradb'])
-        ax6.set_title("db'/dz")
-        ax6.set_xlabel(r"db'/dz [1/s$^2$]")
-
-        ax7.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax7.plot(b_rms[it, :], z, color = case_opt['color'][3], linewidth = width)
-        ax7.set_xlim(ranges['b_rms'])
-        ax7.set_title(r"b$_{rms}$")
-        ax7.set_xlabel(r"b$_{rms}$ [m/s$^2$]")
-        #ax7.set_ylabel("z [m]")
-
-        ax8.plot(mld_var, mld_array, color = case_opt['color'][0], label=r"$\text{h}_{ML}$", linewidth = width/2, linestyle = case_opt['linestyle'][1])
-        ax8.plot(dbrmsdz[it, :], z, color = case_opt['color'][3], linewidth = width)
-        ax8.set_xlim(ranges['gradb'][0]*factor, ranges['gradb'][1]*factor)
-        ax8.set_title(r"db$_{rms}$/dz")
-        ax8.set_xlabel(r"db$_{rms}$/dz [1/s$^2$]")
-
-        for ax in axes:
-            ax.ticklabel_format(axis='x', style='sci', scilimits=(-1,2), useMathText=True)
-        # --- Save Frame ---
-        frame_path = os.path.join(fig_var_folder, f"variables_of_interest_{it:04d}.png")
-        plt.savefig(frame_path)
-        plt.close(fig)
-if verify_outputs:
-    outdir_verify = os.path.join(outdir, 'verify_outputs')
-    os.makedirs(outdir_verify, exist_ok=True)
-    width = 0.8
-    for it in range(nt):
-        td = time[it]/(3600*24)
-        fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharey = True)
-        axes = axes.ravel()
-        plt.subplots_adjust(top = 0.9)
-        fig.suptitle(f"t = {td:.2f} days")
-        axes[0].plot(w_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
-        axes[0].plot(w_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = case_opt['linestyle'][1], label='coarse output')
-        axes[0].set_title("w")
-        axes[0].set_xlabel("[m/s]")
-        axes[0].set_xlim(ranges['w'])
-        axes[0].set_ylabel("z [m]")
-        axes[0].legend(loc='lower left')
-
-        axes[1].plot(b_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
-        axes[1].plot(b_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = case_opt['linestyle'][1], label='coarse output')
-        axes[1].set_title("b")
-        axes[1].set_xlabel(r"[m/s$^2$]")
-        axes[1].set_xlim(ranges['b'])
-        axes[1].legend(loc='upper left')
-
-        if reader.salinity:
-            axes[2].plot(S_centerline[it, :], z, color = 'k', linewidth = width, label='high frequency')
-            axes[2].plot(S_coarse_centerline[it, :], z, color = 'b', linewidth = width/2, linestyle = case_opt['linestyle'][1], label='coarse output')
-            axes[2].set_title("S")
-            axes[2].set_xlabel(r"[g/kg]")
-            axes[2].set_xlim(ranges['S'])
-            axes[2].legend(loc='lower right')
-
-        frame_path = os.path.join(outdir_verify, f'verify_outputs_{it}.png')
-        plt.savefig(frame_path)
-        plt.close(fig)
-
+    if not temporal_avg and not debugging:
+        l_bin = [lx[0]/2, lx[-1]]
+        for it in range(nt):
+            for dir, var in enumerate(range_names):
+                variables[var]['range'] = ranges[var]
+                var_temp = variables[var].copy()
+                var_temp['var'] = variables[var]['var'][it, :, :].T
+                bin_dir[range_names[dir]] = plot_var_planeslice(time[it], it, outdir, r, z, var_temp, ['',], plane='binning', ylim = (0, 32), zlim = (np.min(z), 0.0))
+    elif temporal_avg and not debugging:
+        l_bin = [lx[0]/2, lx[-1]]
+        for it in range(n_start, n_end):
+            for dir, var in enumerate(range_names):
+                variables[var]['range'] = ranges[var]
+                var_temp = variables[var].copy()
+                var_temp['var'] = variables[var]['var'][it-(nsteps-1)//2:it+(nsteps-1)//2, :, :]
+                bin_dir[range_names[dir]] = plot_var_planeslice(time[it], it, outdir, r, z, var_temp, ['',], plane='binning', ylim = (0, 32), zlim = (-60, -30))
+    elif temporal_avg and debugging:
+        l_bin = [lx[0]/2, lx[-1]]
+        for it in range(n_start, n_end):
+            for dir, var in enumerate(range_names):
+                variables[var]['range'] = ranges[var]
+                var_temp = variables[var].copy()
+                var_temp['var'] = variables[var]['var'][it-(nsteps-1)//2:it+(nsteps-1)//2, :, :]
+                title = var_names[dir]+f" temporal average, t = {time[it-(nsteps-1)//2]/3600:.2f} to {time[it+(nsteps-1)//2]/3600:.2f} hours"
+                bin_dir[var] = plot_debug_planeslice(it, title, outdir, r, z, var_temp, ['',], plane='binning', ylim = (0, 32), zlim = (-55, -35), loc_opt = np.array([-50, -40]))
 # creating videos
 if video:
-    if plot_1dz_stats:
-        create_video(fig_var_folder, outdir, '', 'max penetration variables')
-    if verify_outputs:
-        create_video(outdir_verify, outdir, '', 'verify_outputs')
     if plot_xy_plane:
         for n, folder in enumerate(xy_outdir):
             create_video(folder, outdir, '', vars[n])
-    if plot_bin_plane:
+    if plot_bin_plane and not debugging:
         for n, name in enumerate(range_names):
             create_video(bin_dir[range_names[n]], outdir, 'binning', name)
+    elif plot_bin_plane and debugging:
+        for n, name in enumerate(range_names):
+            print(f"creating video for {name}")
+            print(f"bin_dir[range_names[n]] = {bin_dir[range_names[n]]}")
+            create_video(bin_dir[range_names[n]], outdir, 'binning', name+'debugging')

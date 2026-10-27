@@ -89,17 +89,25 @@ def comparison_plot_opt(cases, case_opt = 'coolwarm', distinct_groups = [1, ]):
     line_styles = ['dashed', 'dotted', 'dashdot', 'dashdotted', 'solid']
     markers = ['o', 's', '^', 'D', 'v', '*', 'x', '+', 'p', 'h']
     if len(distinct_groups)>1: # defining distinct groups by colors
-        case_opt = ['Purples', 'Blues', 'Greens', 'Oranges', 'Reds', 'OrRd', 'BuPu'][0:len(distinct_groups)]
+        case_opt = ['Reds', 'Blues', 'Purples', 'Greens', 'Oranges', 'OrRd', 'BuPu'][0:len(distinct_groups)]
         for n, group in enumerate(distinct_groups):
             cmap = plt.get_cmap(case_opt[n], group+1)
             group_cases = cases[sum(distinct_groups[:n]):sum(distinct_groups[:n+1])]
             for i, case in enumerate(group_cases):
-                case_opts[case] = {'color': cmap(i+1), 'linestyle': line_styles[n], 'marker': markers[i%len(markers)]}
+                case_opts[case] = {'color': cmap(i+1), 'linestyle': line_styles[i], 'marker': markers[i%len(markers)]}
     else:
-        cmap = plt.get_cmap(case_opt, ncases)
-        for i, case in enumerate(cases):
-            case_opts[case] = {'color': cmap(i), 'linestyle': line_styles[i%len(line_styles)], 'marker': markers[i%len(markers)]}
-    case_opts[cases[-1]]['linestyle'] = 'solid' # make last case solid line
+        if case_opt == 'coolwarm' or case_opt == 'viridis' or case_opt == 'plasma' or case_opt == 'cividis':
+            cmap = plt.get_cmap(case_opt, ncases)
+            for i, case in enumerate(cases):
+                case_opts[case] = {'color': cmap(i), 'linestyle': line_styles[i%len(line_styles)], 'marker': markers[i%len(markers)]}
+        else:
+            cmap = plt.get_cmap(case_opt, ncases+1)
+            for i in range(ncases+1):
+                if i < (ncases):
+                    case_opts[cases[i]] = {'color': cmap(i), 'linestyle': line_styles[i%len(line_styles)], 'marker': markers[i%len(markers)]}
+                else:
+                    cmap(i)
+    #case_opts[cases[-1]]['linestyle'] = 'solid' # make last case solid line
     return case_opts
     # if you want cases separated by line
 ### -------------------------SAVING FRAMES AND MAKING VIDEOS------------------------- ###

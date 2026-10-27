@@ -6,7 +6,7 @@ import scipy.signal as signal
 import dask.array as da
 
 from reader import OceananigansData
-from diagnostics import compute_temporal_averages, binning_oc
+from diagnostics import binning_oc
 from interpolation import vertical_line, velocities_to_center, point
 from physics import rms
 
@@ -15,37 +15,35 @@ from physics import rms
 # ==========================================================
 binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 filtered_bins_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
-centerline_flag = False # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
+centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = False
-fluc_flag = True # calculates turbulent statistics from binning information
-rms_flag = True # calculates RMS from 3D fields
-compute_temporal_averages_flag = False # computes temporal averages of S and w at the default contour value and writes to file
+fluc_flag = False # calculates turbulent statistics from binning information
+rms_flag = False # calculates RMS from 3D fields
 contour_flag = False # calculates radius of contour at each depth and time that is not in the default
 mass_flag = False
 negative_tracer_flag = False # calculates the number of negative tracer values in the domain and the average of those values
 
-binning_only = True # certain calculations will be done with binning data
+binning_only = False # certain calculations will be done with binning data
 
 # model options
-with_halos = False
+with_halos = True
 salinity = True
 
 # update flags if salinity is False
 if not salinity:
-    compute_temporal_averages_flag = False
     contour_flag = False
     mass_flag = False
 
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx1.0'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx0.125'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
-reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
+reader = OceananigansData(folder, salinity = salinity, with_halos=int(5), Sval=0.1, read_fields=False)
 
 # ==========================================================
 # PARAMETERS
@@ -611,28 +609,6 @@ if rms_flag:
         del w_rms
 
         print(f"Saved RMS to {file_path}")
-###------------TEMPORAL AVERAGES------------------------------------###
-if compute_temporal_averages_flag:
-    start = 10
-    if reader.averaging:
-        start = start*100
-    data_temp = compute_temporal_averages(reader, start = start)
-    # compute radius of plume 
-    data = {
-        'S_value': data_temp['S_value'],
-        'w_value': data_temp['w_value'], 
-    }
-    folder_contour = f"contour temporal averages"
-
-    with h5py.File(bin_path, "a") as f:
-        if folder_contour in f:
-            del f[folder_contour]
-        f.create_group(f'{folder_contour}')
-        f.create_dataset(f'{folder_contour}/S', data=data['S_value'])
-        f.create_dataset(f'{folder_contour}/w', data=data['w_value'])
-    f.close()
-    del data_temp
-    print(f"Saved temporal averages to {bin_path}")
 ###------------PLUME CONTOURS---------------------------------------###
 if contour_flag:
     contours = np.array([0.001, 0.005, 0.01, 0.05])

@@ -58,7 +58,7 @@ width_opt = np.ones(ncols)
 fig, axes = plt.subplots(1, ncols, figsize=(12, 5), gridspec_kw={'width_ratios': width_opt})
 axes = axes.ravel()
 for i, bin in enumerate(binned):
-    axes[0].scatter(r[i], bin, color = case_opt['color'][i], label=rf'dr/$\sigma$ = {dr_bins[i]/s}', marker='x')
+    axes[0].scatter(r[i], bin, color = case_opt[case]['color'], label=rf'dr/$\sigma$ = {dr_bins[i]/s}', marker='x')
 axes[0].plot(x[n_gauss[0]//2:], gaus[n_gauss[0]//2:, n_gauss[1]//2], color = case_opt['color'][0], label=r'A$\cdot$exp$(-\frac{(x^2+y^2)}{2\sigma^2})$')
 axes[0].set_title("Field vs Binning")
 axes[0].set_xlim(0, x[-1])

@@ -94,7 +94,7 @@ plot_format()
 os.makedirs(fig_folder, exist_ok=True)
 gridspec_kw={'height_ratios': [1, 1, 0.15]}
 width = 0.8
-case_handles = [Line2D([0], [0], color = case_opt['color'][i], linestyle=case_opt[case]['linestyle'], linewidth=width, label=labels[i]) for i in range(nvars)]
+case_handles = [Line2D([0], [0], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth=width, label=case) for n, case in enumerate(labels)]
 if vertical_verification:
     ncols = idx.size
     os.makedirs(fig_folder_vert, exist_ok=True)
@@ -111,7 +111,7 @@ if vertical_verification:
         fig.suptitle(f"Time = {time[it]/3600/24:.2f} days", )
         fig.legend(handles=case_handles,
                 loc='lower center',
-                ncol=nvars,
+                ncols=nvars,
                 bbox_to_anchor=(0.52, 0.005))
         count = 0
         for i, ix in enumerate(i_opt):
@@ -151,7 +151,7 @@ if horizontal_verification:
         fig.suptitle(f"Time = {time[it]/3600/24:.2f} days", )
         fig.legend(handles=case_handles,
                 loc='lower center',
-                ncol=nvars,
+                ncols=nvars,
                 bbox_to_anchor=(0.52, 0.005))
         count = 0
         for j, jy in enumerate(hor_opt):

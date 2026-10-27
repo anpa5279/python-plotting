@@ -7,167 +7,9 @@ from interpolation import velocities_to_center
 from physics import rms
 
 ### -------------------------COLLECTING COMPARISON CASE INFO----------------- ###
-def comparison_info(variations, universal_folder, ND=False, name_uni = ''):
+def comparison_info(variations, universal_folder):
     wp = -0.001
-    if variations == 'strat':
-        folder_names =['S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60'] 
-        case_names =[r'dTdz = 0.005', r'dTdz = 0.01', r'dTdz = 0.05', r'dTdz = 0.10']  
-        num_cases = len(folder_names)
-        dTdz = np.array([0.005, 0.01, 0.05, 0.1]) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases) 
-        F_s = wp * 0.1 * np.ones(num_cases) 
-    elif variations == 'MLD':
-        folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 70']
-        case_names =[r'MLD = 50m', r'MLD = 60m', r'MLD = 70m']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = np.array([50, 60, 70])
-        F_s = wp * 0.1 * np.ones(num_cases) 
-    elif variations == 'flux':
-        folder_names =['S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
-        case_names =[r'F$_{\text{C}} = -5.0\cdot 10^{-5}$', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$', r'F$_{\text{C}} = -1.5\cdot 10^{-4}$', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)  
-        F_s = wp * np.array([0.05, 0.1, 0.15, 0.2])
-    elif variations == 'all':
-        folder_names =['S0 = 0.1 dTdz = 0.01 MLD = 60', 
-                    'S0 = 0.1 dTdz = 0.01 MLD = 50', 'S0 = 0.1 dTdz = 0.01 MLD = 70', 
-                    'S0 = 0.1 dTdz = 0.005 MLD = 60', 'S0 = 0.1 dTdz = 0.05 MLD = 60', 'S0 = 0.1 dTdz = 0.1 MLD = 60',
-                    'S0 = 0.05 dTdz = 0.01 MLD = 60', 'S0 = 0.15 dTdz = 0.01 MLD = 60', 'S0 = 0.2 dTdz = 0.01 MLD = 60']
-        case_names =[r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', 
-                    r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 50m, dTdz = 0.01', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 70m, dTdz = 0.01', 
-                    r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.005', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.05', r'F$_{\text{C}} = -1.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.1', 
-                    r'F$_{\text{C}} = -5.0\cdot 10^{-5}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = -1.5\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01', r'F$_{\text{C}} = - 2.0\cdot 10^{-4}$, MLD = 60m, dTdz = 0.01']
-        num_cases = len(folder_names)
-        mld = np.array([60, 50, 70, 60, 60, 60, 60, 60, 60]) # mld in m
-        dTdz = np.array([0.01, 0.01, 0.01, 0.005, 0.05, 0.1, 0.01, 0.01, 0.01]) # background temperature gradient in K/m
-        F_s = wp * np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.15, 0.2])
-    elif variations == 'vertical resolution':
-        folder_names =['dz05', 
-                       'dz025',
-                       'dz0125',
-                       #'dz00625'
-                       ]
-        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m', r'$\Delta z = 0.125$m']#, r'$\Delta z = 0.0625$m']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'AR=1':
-        folder_names =[
-                    'AR=1/dx2', 
-                    'AR=1/dx1', 
-                    'dz05',
-                    'AR=1/dx025', 
-                    #'AR=1/dx0125', 
-                    #'AR=1/dx00625', 
-                       ]
-        case_names =[r'$\Delta x = 2.0$m', r'$\Delta x = 1.0$m', r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m',]
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)    
-    elif variations == 'closure':
-        folder_names =[
-                    'dx1',
-                    'dx05',
-                    'dx025', 
-                    #'dx0125', 
-                       ]
-        case_names =[r'$\Delta x = 1.0$m', 
-                     r'$\Delta x = 0.5$m', 
-                     r'$\Delta x = 0.25$m', 
-                     #r'$\Delta x = 0.125$m'
-                     ]
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'horizontal resolution':
-        folder_names =['dz05', 
-                       'dx025', 
-                       'dx0125', 
-                       #'dx00625', 
-                       ]
-        case_names =[r'$\Delta x = 0.5$m', r'$\Delta x = 0.25$m', r'$\Delta x = 0.125$m']#, r'$\Delta x = 0.0625$m']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases) 
-    elif variations == 'vertical erf':
-        folder_names =[
-                       'ground0-erf',
-                       'vertical/dz-025', 
-                       #'vertical/dz-0125',
-                       ]
-        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m']#, r'$\Delta z = 0.125$m']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'visc':
-        folder_names =[
-                       'dz-05',
-                       'dz-025', 
-                       'dz-0125',
-                       ]
-        case_names =[r'$\Delta z = 0.5$m', r'$\Delta z = 0.25$m', r'$\Delta z = 0.125$m']
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'w BC':
-        folder_names = ['open w BC', 
-                        'open w top BC', 
-                        'open w BC without scheme', 
-                        'open w top BC without scheme', 
-                        'open w BC bottom adjusted',
-                        'testing gaussian top/open w gauss top BC 0 scheme'
-                        ]
-        case_names = ['Open BC with PA top and \nOpen BC with nothing bottom', 
-                      'Open BC with PA top', 
-                      'Open BC top and \nOpen BC with nothing bottom', 
-                      'Open BC top',
-                      'Open BC with PA top & \nOpen BC with PA bottom', 
-                      'Open gaussian BC with PA top & \nOpen BC with nothing bottom', 
-                      
-                      ]
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'w timescale BC':
-        folder_names = [#'open w BC', 
-                        'testing timescale/open w BC bottom adjusted default scheme', 
-                        'open w BC bottom adjusted', 
-                        ]
-        case_names = [ 
-                      'Open BC with default PA top \n& Open BC with default PA bottom scaled', 
-                      'Open BC with 0.0 PA top \n& Open BC with 0.0 PA bottom scaled', 
-                      ]
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'w gaus BC':
-        folder_names = [
-                        'open w gauss top BC default scheme',
-                        'open w gauss top BC 0 scheme',
-                        'open w 2rp gauss top BC default scheme',
-                        'open w 2rp gauss BC 0 scheme',
-                        ]
-        case_names = [
-                      r'Open BC $\sigma$ = 4m top w/ default PA' + os.linesep +'& Open BC w/ nothing bottom',
-                      r'Open BC $\sigma$ = 4m top w/ 0.0 PA' + os.linesep +'& Open BC w/ nothing bottom',
-                      r'Open BC $\sigma$ = 8m top w/ default PA' + os.linesep +'& Open BC w/ nothing bottom',
-                      r'Open BC $\sigma$ = 8m BC top w/ 0.0 PA' + os.linesep +'& Open BC w/ nothing bottom',
-                      ]
-        num_cases = len(folder_names)
-        dTdz = 0.01 * np.ones(num_cases) # background temperature gradient in K/m
-        mld = 60 * np.ones(num_cases)
-        F_s = wp * 0.1 * np.ones(num_cases)
-    elif variations == 'WENO':
+    if variations == 'WENO':
         folder_names = ['S0 = 0.1 dTdz = 0.01 MLD = 60', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod', 'S0 = 0.1 dTdz = 0.01 MLD = 60 WENO mod callback']
         case_names = [r'Default', r'WENO modified', r'WENO modified with callback 0 function']
         num_cases = len(folder_names)
@@ -179,38 +21,16 @@ def comparison_info(variations, universal_folder, ND=False, name_uni = ''):
         return None # user defined specific case not defined here
     folder_names = [os.path.join(universal_folder, folder) for folder in folder_names]
     # Set up folder and simulation parameters
-    if ND:
-        vars_exps = np.array([ # columns: Ri, Fr, MLD
-            [0, -1/3, -1/2], # w_rms
-            [-1/2, -1/3, 1/3], # b_center
-            [-1/3, -3/4, -1], # bw_fluc_avg
-            [-1/4, -1/4, -1/2], # r_profile
-            [-1/2, -1/4, 3/4], # T_fluc_center
-            [-1/3, -3/4, 3/4] # S_avg
-        ]) # manually manipulate
-        fig_folder = os.path.join(universal_folder, 'ND analysis', 'interpolation', variations, name_uni)
-        os.makedirs(fig_folder, exist_ok=True)
-        case_info = {
-            "folder_names": folder_names,
-            "fig_folder": fig_folder,
-            "case_names": case_names,
-            "num_cases": num_cases,
-            "dTdz": dTdz,
-            "mld": mld,
-            "F_s": F_s,
-            "vars_exps": vars_exps
-        }
-    else:
-        fig_folder = os.path.join(universal_folder, 'comparison figures', variations + ' comparison figures')
-        case_info = {
-            "folder_names": folder_names,
-            "fig_folder": fig_folder,
-            "case_names": case_names,
-            "num_cases": num_cases,
-            "dTdz": dTdz,
-            "mld": mld,
-            "F_s": F_s
-        }
+    fig_folder = os.path.join(universal_folder, 'comparison figures', variations + ' comparison figures')
+    case_info = {
+        "folder_names": folder_names,
+        "fig_folder": fig_folder,
+        "case_names": case_names,
+        "num_cases": num_cases,
+        "dTdz": dTdz,
+        "mld": mld,
+        "F_s": F_s
+    }
     return case_info
 ### -------------------------BINNING----------------------------------------- ###
 def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
@@ -285,51 +105,3 @@ def vel_to_cylindrical(u, v, X, Y):
     ur = u*X/dist + v*Y/dist
     utheta = -u*Y/dist + v*X/dist
     return ur, utheta
-### -------------------------CALCULATING 1D AVERAGES------------------------- ###
-def compute_temporal_averages(reader, start=10):
-    # Load constants once
-    
-
-    # Load all fields lazily — shape (nt - start, nx, ny, nz)
-    S = reader.field_centerline('S')
-    S = S[start:, :]
-    w = reader.field_centerline('w')
-    w = w[start:, :]
-
-    #loading in vertical 1D info
-    b_xy, b_rms, b_centerline, b_fluc_centerline = reader.load_buoyancy()
-    
-    # Fluctuation and flux
-    bw = b_fluc_centerline[start:, :] * w   # (nt - start, nz)
-
-    # bw_idx per timestep — argmax not lazy, so compute bw now
-    bw_idx = np.argmax(bw, axis = 1)            # (nt,)
-
-    # Point values per timestep
-    it_idx = np.arange(bw.shape[0])
-    # extract the (nt - start, nx, ny, nz) arrays only at needed points
-    S_value = np.mean(S[it_idx, bw_idx])
-    w_value = np.mean(w[it_idx, bw_idx])
-
-    return {
-        "S_value":  S_value,
-        "w_value":  w_value,
-    }
-
-def compute_rms(reader):
-    u_rms = np.empty((reader.nt, reader.nx[2]))
-    v_rms = np.empty((reader.nt, reader.nx[2]))
-    w_rms = np.empty((reader.nt, reader.nx[2]))
-    for it, t in enumerate(reader.t_save):
-        u = reader.lazy_field('u', steps=t).compute()
-        v = reader.lazy_field('v', steps=t).compute()
-        w = reader.lazy_field('w', steps=t).compute()
-        u = velocities_to_center(u, axis=-3)
-        v = velocities_to_center(v, axis=-2) 
-        w = velocities_to_center(w, axis=-1)
-        u_rms[it, :] = rms(u)
-        v_rms[it, :] = rms(v)
-        w_rms[it, :] = rms(w)
-    return {'u_rms': u_rms,
-            'v_rms': v_rms,
-            'w_rms': w_rms}

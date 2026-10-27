@@ -9,18 +9,20 @@ import matplotlib.lines as mlines
 
 # flags for plotting
 with_mld = True
+with_r_nd = True
+
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 output_folder = '/Users/annapauls/Documents/TESLa /Simulations/Oceananigans/dense plume/salinity and temperature/literature review/'
 os.makedirs(output_folder, exist_ok=True)
 name_mod = ''
 # ── Paper data ─────────────────────────────────────────────────────────────────
-rp    = 5.0 
+rp    = 4.0 
 g     = 9.80665
 alpha = 2e-4
 # proposed cases
-h_ml = np.array([1.0, 3.2, 10.0, 32.0, 10.0, 10.0, 10.0, 10.0, 3.2, 10.0, 32.0])*rp
-Ln = np.array([1.0, 1.0, 1.0, 1.0, 0.1, 10.0, 1e2, 1e3, 10, 10, 10])*rp
+h_ml = np.array([3.2, 10, 32, 10, 10, 3.2, 32])*rp
+Ln = np.array([1, 1, 1, 0.1, 10, 10, 10])*rp
 N = (g * alpha * 0.01)**0.5 * np.ones(len(h_ml))
 F0 = (N)**3 * Ln**4
 # 2016 experiment
@@ -38,8 +40,9 @@ F_17 = np.array([94.65, 91.77, 129.63])
 N_17 = 0.007 * np.ones(len(F_17))
 mld_17 = np.ones(len(N_17)) * 160.0 
 # 2026 preprint
-h_nd = np.array([0.02, 0.06, 0.11, 0.21, 0.53, 1.06, 2.11, 3.17, 4.23, 5.29, 7.93, 8.89, 15.8, 29.7, 50.0, 88.9, 167, 281])
-mld = 500.0*np.ones(len(h_nd))
+h_nd_wang = np.array([0.02, 0.06, 0.11, 0.21, 0.53, 1.06, 2.11, 3.17, 4.23, 5.29, 7.93, 8.89, 15.8, 29.7, 50.0, 88.9, 167, 281])
+Ln_wang = 500.0/5.29*np.ones(len(h_nd_wang))
+mld_wang = Ln_wang*h_nd_wang
 """
     # personal cases
     cases_info = comparison_info('all')
@@ -97,11 +100,11 @@ papers = [
     {
         'title': 'Wang, et al., 2026',
         'type': 'Implicit LES',
-        'r0':  27.42*np.ones(len(h_nd)),
+        'r0':  2*np.ones(len(h_nd_wang)),
         'F0':  1e-5,
         'N':   5e-5,
-        'mld': mld,
-        'Ln':  mld/h_nd,
+        'mld': mld_wang,#500*np.ones(len(h_nd_wang)), #
+        'Ln':  mld_wang/h_nd_wang,#500/h_nd_wang,#
     },
     {
         'title': 'Proposed Cases',
@@ -149,132 +152,143 @@ if with_mld:
             exp_count += 1
     # personal cases get special styling
     paper_style['Proposed Cases'].update({
-        'color': 'black', 'size': 150, 'zorder': 6, 'lw_edge': 0.6, 'marker': '*',
+        'color': 'black', 'size': 200, 'zorder': 6, 'lw_edge': 0.6, 'marker': '*',
     })
+    if with_r_nd:
+        # ── Figure ─────────────────────────────────────────────────────────────────────
+        scale = [1, 0.25]
+        gridspec_kw = {'height_ratios': scale}
+        fig, axes_grid = plt.subplots(2, 1, figsize=(12, 7), gridspec_kw=gridspec_kw)
 
-    # ── Figure ─────────────────────────────────────────────────────────────────────
-    scale = [1, 0.25]
-    gridspec_kw = {'height_ratios': scale}
-    fig, axes_grid = plt.subplots(2, 1, figsize=(12, 7), gridspec_kw=gridspec_kw)
+        # Remove the dummy bottom row axes used for legend space
+        axes_grid[-1].remove()
+        ax = axes_grid[0]
+        fig.patch.set_facecolor('white')
+        plt.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.30)
 
-    # Remove the dummy bottom row axes used for legend space
-    axes_grid[-1].remove()
-    ax = axes_grid[0]
-    fig.patch.set_facecolor('white')
-    plt.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.30)
+        legend_handles = []
 
-    legend_handles = []
+        for paper in papers:
+            title = paper['title']
+            style = paper_style[title]
 
-    for paper in papers:
-        title = paper['title']
-        style = paper_style[title]
+            r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
+            mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
+            Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
 
-        r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
-        mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
-        Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
+            x = Ln  / r0    # Ln / r0
+            y = mld / r0    # mld / r0
+            print(paper['title'], x, y)
 
-        x = Ln  / r0    # Ln / r0
-        y = mld / r0    # mld / r0
+            ax.scatter(
+                x, y,
+                color = style['color'], marker=style['marker'],
+                s=style['size'], edgecolors='white',
+                linewidths=style['lw_edge'], zorder=style['zorder'],
+            )
 
-        ax.scatter(
-            x, y,
-            color = style['color'], marker=style['marker'],
-            s=style['size'], edgecolors='white',
-            linewidths=style['lw_edge'], zorder=style['zorder'],
+            legend_handles.append(mlines.Line2D(
+                [], [],
+                marker=style['marker'], color = 'none',
+                markerfacecolor=style['color'],
+                markeredgecolor='white', markeredgewidth=0.5,
+                markersize=9 if title == 'Proposed Cases' else 7,
+                label=title,
+            ))
+
+        # ── Axis formatting ────────────────────────────────────────────────────────────
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlabel(r'$L_n / r_0$', )
+        ax.set_ylabel(r'$h_{ml} / r_0$', )
+        ax.tick_params(labelsize=10)
+        ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        fig.suptitle('Literature Review', )
+
+        # ── Legend ─────────────────────────────────────────────────────────────────────
+        fig.legend(
+            handles=legend_handles,
+            loc='lower center',
+            bbox_to_anchor=(0.5, 0.0),
+            ncols=2,
+            frameon=True, framealpha=0.92, edgecolor='#cccccc',
+            handletextpad=0.5, borderpad=0.7,
+            title='Studies', title_fontsize = 15,
         )
 
-        legend_handles.append(mlines.Line2D(
-            [], [],
-            marker=style['marker'], color = 'none',
-            markerfacecolor=style['color'],
-            markeredgecolor='white', markeredgewidth=0.5,
-            markersize=9 if title == 'Proposed Cases' else 7,
-            label=title,
-        ))
+        # ── Save ───────────────────────────────────────────────────────────────────────
+        out_path = os.path.join(output_folder, name_mod +'mld_vs_r_lit_review_plot.svg')
+        fig.savefig(out_path, dpi=180, bbox_inches='tight', facecolor='white')
+        print(f'Saved -> {out_path}')
+    else:
+        # ── Figure ─────────────────────────────────────────────────────────────────────
+        scale = [1, 0.25]
+        gridspec_kw = {'height_ratios': scale}
+        fig, axes_grid = plt.subplots(2, 1, figsize=(12, 7), gridspec_kw=gridspec_kw)
 
-    # ── Axis formatting ────────────────────────────────────────────────────────────
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel(r'$L_n / r_0$', )
-    ax.set_ylabel(r'$h_{ml} / r_0$', )
-    ax.tick_params(labelsize=10)
-    ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+        # Remove the dummy bottom row axes used for legend space
+        axes_grid[-1].remove()
+        ax = axes_grid[0]
+        fig.patch.set_facecolor('white')
+        plt.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.30)
 
-    fig.suptitle('Literature Review', )
+        legend_handles = []
+        for paper in papers:
+            title = paper['title']
+            style = paper_style[title]
 
-    # ── Legend ─────────────────────────────────────────────────────────────────────
-    fig.legend(
-        handles=legend_handles,
-        loc='lower center',
-        bbox_to_anchor=(0.5, 0.0),
-        ncol=2,
-        frameon=True, framealpha=0.92, edgecolor='#cccccc',
-        handletextpad=0.5, borderpad=0.7,
-        title='Studies', title_fontsize = 20,
-    )
+            r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
+            mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
+            Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
 
-    # ── Save ───────────────────────────────────────────────────────────────────────
-    out_path = os.path.join(output_folder, name_mod +'mld_vs_r_lit_review_plot.svg')
-    fig.savefig(out_path, dpi=180, bbox_inches='tight', facecolor='white')
-    print(f'Saved -> {out_path}')
+            x = Ln  / r0    # Ln / r0
+            y = mld / Ln    # mld / Ln
 
-    # ── Figure ─────────────────────────────────────────────────────────────────────
-    scale = [1, 0.25]
-    gridspec_kw = {'height_ratios': scale}
-    fig, axes_grid = plt.subplots(2, 1, figsize=(12, 7), gridspec_kw=gridspec_kw)
+            ax.scatter(
+                x, y,
+                color = style['color'], marker=style['marker'],
+                s=style['size'], edgecolors='white',
+                linewidths=style['lw_edge'], zorder=style['zorder'],
+            )
 
-    # Remove the dummy bottom row axes used for legend space
-    axes_grid[-1].remove()
-    ax = axes_grid[0]
-    fig.patch.set_facecolor('white')
-    plt.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.30)
+            legend_handles.append(mlines.Line2D(
+                [], [],
+                marker=style['marker'], color = 'none',
+                markerfacecolor=style['color'],
+                markeredgecolor='white', markeredgewidth=0.5,
+                markersize=9 if title == 'Proposed Cases' else 7,
+                label=title,
+            ))
+        # ── Axis formatting ────────────────────────────────────────────────────────────
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlabel(r'$L_n / r_0$', )
+        ax.set_ylabel(r'$h_{ml} / L_n$', )
+        ax.tick_params(labelsize=10)
+        ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
 
-    for paper in papers:
-        title = paper['title']
-        style = paper_style[title]
+        fig.suptitle('Literature Review', )
 
-        r0  = np.atleast_1d(np.asarray(paper['r0'], dtype=float))
-        mld = np.atleast_1d(np.asarray(paper['mld'], dtype=float))
-        Ln  = np.atleast_1d(np.asarray(paper['Ln'], dtype=float))
-
-        x = Ln  / r0    # Ln / r0
-        y = mld / Ln    # mld / Ln
-
-        ax.scatter(
-            x, y,
-            color = style['color'], marker=style['marker'],
-            s=style['size'], edgecolors='white',
-            linewidths=style['lw_edge'], zorder=style['zorder'],
+        # ── Legend ─────────────────────────────────────────────────────────────────────
+        fig.legend(
+            handles=legend_handles,
+            loc='lower center',
+            bbox_to_anchor=(0.5, 0.0),
+            ncols=2,
+            frameon=True, framealpha=0.92, edgecolor='#cccccc',
+            handletextpad=0.5, borderpad=0.7,
+            title='Studies', title_fontsize = 20,
         )
-    # ── Axis formatting ────────────────────────────────────────────────────────────
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel(r'$L_n / r_0$', )
-    ax.set_ylabel(r'$h_{ml} / L_n$', )
-    ax.tick_params(labelsize=10)
-    ax.grid(True, which='both', linestyle='--', alpha=0.35, zorder=0)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
 
-    fig.suptitle('Literature Review', )
-
-    # ── Legend ─────────────────────────────────────────────────────────────────────
-    fig.legend(
-        handles=legend_handles,
-        loc='lower center',
-        bbox_to_anchor=(0.5, 0.0),
-        ncol=2,
-        frameon=True, framealpha=0.92, edgecolor='#cccccc',
-        handletextpad=0.5, borderpad=0.7,
-        title='Studies', title_fontsize = 20,
-    )
-
-    # ── Save ───────────────────────────────────────────────────────────────────────
-    out_path = os.path.join(output_folder, name_mod +'mld_vs_Ln_lit_review_plot.svg')
-    fig.savefig(out_path, dpi=180, bbox_inches='tight', facecolor='white')
-    print(f'Saved -> {out_path}')
+        # ── Save ───────────────────────────────────────────────────────────────────────
+        out_path = os.path.join(output_folder, name_mod +'mld_vs_Ln_lit_review_plot.svg')
+        fig.savefig(out_path, dpi=180, bbox_inches='tight', facecolor='white')
+        print(f'Saved -> {out_path}')
 else:
     # ── additional paper data ───────────────────────────────
     # 2025 paper
@@ -371,7 +385,7 @@ else:
             marker_count += 1
     # personal cases get special styling
     paper_style['Proposed Cases'].update({
-        'color': 'black', 'size': 150, 'zorder': 6, 'lw_edge': 0.6, 'marker': '*',
+        'color': 'black', 'size': 200, 'zorder': 6, 'lw_edge': 0.6, 'marker': '*',
     })
     for i, paper in enumerate(no_mld_papers):
         if paper['type'] != 'Experiment':
@@ -398,7 +412,7 @@ else:
             marker_count += 1
     # personal cases get special styling
     paper_style['Proposed Cases'].update({
-        'color': 'black', 'size': 150, 'zorder': 6, 'lw_edge': 0.6, 'marker': '*',
+        'color': 'black', 'size': 200, 'zorder': 6, 'lw_edge': 0.6, 'marker': '*',
     })
     # ── Figure ─────────────────────────────────────────────────────────────────────
     scale = [0.15, 0.9, 0.05]
@@ -493,7 +507,7 @@ else:
         handles=legend_handles,
         loc='upper center',
         bbox_to_anchor=(0.525, 0.95),
-        ncol=4,
+        ncols=4,
         frameon=True, framealpha=0.92, edgecolor='#cccccc',
         handletextpad=0.5, borderpad=0.7,
         title='Studies', title_fontsize = 20,
