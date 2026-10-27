@@ -70,14 +70,6 @@ def find_pickup_chain(top_folder):
         chain.append(nxt)
 
 
-def ensure_grid_info(level_folder, top_folder):
-    """The reader wants a grid_info.jld2; borrow the original run's if the pickup has none."""
-    gi = os.path.join(level_folder, 'grid_info.jld2')
-    if not os.path.exists(gi):
-        print(f'  No grid_info in {level_folder}; copying from {top_folder}')
-        shutil.copy2(os.path.join(top_folder, 'grid_info.jld2'), gi)
-
-
 def rank_ratio(level_nranks, main_nranks):
     """How many pickup ranks make up one original rank."""
     if level_nranks == main_nranks:
@@ -187,8 +179,7 @@ def main():
     levels = []
     iter_off, time_off = 0, 0.0
     for i, fld in enumerate(chain):
-        if i > 0:
-            ensure_grid_info(fld, folder)
+        print(f'  [{i}] {fld}')
         reader = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
         lv = Level(fld, reader, iter_off, time_off)
         levels.append(lv)
