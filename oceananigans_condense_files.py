@@ -25,7 +25,7 @@ from reader import OceananigansData
 folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi00625/WENO9/'
 
 field_files_flag = True
-high_freq_files_flag = True
+high_freq_files_flag = False
 
 salinity = True
 with_halos = False
@@ -180,7 +180,7 @@ def main():
     shutil.copy2(os.path.join(folder, 'grid_info.jld2'), os.path.join(outdir, 'grid_info.jld2'))
 
     variables = ['u', 'v', 'w', 'T', 'S'] if salinity else ['u', 'v', 'w', 'T']
-
+ 
     # ---- build the chain of runs: folder, folder/pickup, folder/pickup/pickup, ...
     chain = find_pickup_chain(folder)
     print(f'Found {len(chain)} run(s) to condense:')
@@ -189,13 +189,13 @@ def main():
     for i, fld in enumerate(chain):
         if i > 0:
             ensure_grid_info(fld, folder)
-        rdr = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
-        lv = Level(fld, rdr, iter_off, time_off)
+        reader = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
+        lv = Level(fld, reader, iter_off, time_off)
         levels.append(lv)
         print(f'  [{i}] {fld}  (ranks = {lv.nranks}, x-halo = {lv.halo}, '
-              f'last saved iteration = {int(rdr.t_save[-1])})')
-        iter_off += int(rdr.t_save[-1])
-        time_off += float(rdr.t[-1])
+              f'last saved iteration = {int(reader.t_save[-1])})')
+        iter_off += int(reader.t_save[-1])
+        time_off += float(reader.t[-1])
 
     main_level = levels[0]
     main_nranks = main_level.nranks
