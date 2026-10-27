@@ -52,7 +52,7 @@ class OceananigansData:
         self.all_files = [f for f in os.listdir(self.folder) if (f.endswith('.jld2') or f.endswith('.h5'))]
 
         # ensuring file order for field files
-        fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup'))]
+        fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields'))]
 
         self.Nranks = len(fields_files)
         print(f'Found {self.Nranks} rank(s) in {self.folder}')
