@@ -13,10 +13,10 @@ from physics import rms
 # ==========================================================
 # FLAGS
 # ==========================================================
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
 filtered_bins_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
-planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
+planelsice_flag = True # creates plane slices of S, T, u, v, w at x = 0 for all time steps
 buoyancy_flag = False
 fluc_flag = False # calculates turbulent statistics from binning information
 rms_flag = False # calculates RMS from 3D fields
@@ -38,7 +38,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx0.125'
+folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi00625/WENO9/condensed_files'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')

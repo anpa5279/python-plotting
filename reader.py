@@ -2,7 +2,6 @@ import os
 import numpy as np
 import h5py
 import dask.array as da
-import re
 
 from interpolation import plane_slice_calc, velocities_to_center, vertical_line, horizontal_line
 

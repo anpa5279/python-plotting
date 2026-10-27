@@ -24,8 +24,8 @@ from reader import OceananigansData
 # ==========================================================
 folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi00625/WENO9/'
 
-field_files_flag = True
-high_freq_files_flag = False
+field_files_flag = False
+high_freq_files_flag = True
 
 salinity = True
 with_halos = False
