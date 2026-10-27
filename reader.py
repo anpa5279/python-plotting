@@ -55,6 +55,7 @@ class OceananigansData:
         fields_files = [f for f in self.all_files if (f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup'))]
 
         self.Nranks = len(fields_files)
+        print(f'Found {self.Nranks} rank(s) in {self.folder}')
         if self.Nranks > 1 and read_fields: # ensuring that the files are in proper order
             self.files = [f'fields_rank{n}.jld2' for n in range(self.Nranks)]
         else: # does not matter if there is only one file
@@ -191,6 +192,7 @@ class OceananigansData:
             self.dr = self.r[1] - self.r[0]
     # ------------------------- TIME ------------------------------------ #
     def load_time(self):
+        print(len(self.files))
         if self.averaging:
             with h5py.File(os.path.join(self.folder, self.averaging_file), 'r') as f:
                 t_group = f['timeseries/t']
