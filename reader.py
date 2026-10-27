@@ -56,7 +56,7 @@ class OceananigansData:
 
         self.Nranks = len(fields_files)
         if self.Nranks > 1 and read_fields: # ensuring that the files are in proper order
-            self.files = [f'fields_rank{n}.jld2' for n in range(self.Nranks)]
+            self.files = [f'{file_name}_rank{n}.jld2' for n in range(self.Nranks)]
         else: # does not matter if there is only one file
             self.files = fields_files
 
