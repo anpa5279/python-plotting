@@ -1,0 +1,35 @@
+#!/bin/bash
+nodes=1
+cpus=4
+jobn=postprocessing
+file=oceananigans_setup.py
+
+cp $file scripts/
+cp diagnostics.py scripts/
+cp interpolation.py scripts/
+cp reader.py scripts/
+
+uv init scripts
+cd scripts
+uv add numpy h5py dask scipy
+
+cat > EXEC_STEP << EXEC
+#!/bin/sh
+
+#SBATCH --account=ucb-general
+#SBATCH --qos=cpu-normal
+#SBATCH --job-name=$jobn
+#SBATCH --time=03:00:00
+#SBATCH --nodes=$nodes
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=$cpus
+#SBATCH --mem=150G
+
+module --force purge
+module load intel uv
+
+uv run python $file
+
+EXEC
+
+sbatch < EXEC_STEP
