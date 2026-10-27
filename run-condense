@@ -1,6 +1,6 @@
 #!/bin/bash
 nodes=1
-cpus=16
+cpus=8
 jobn=condense_files
 file=oceananigans_condense_files.py
 
@@ -17,13 +17,13 @@ cat > CONDENSE << EXEC
 #PBS -N $jobn
 #PBS -q develop 
 #PBS -j oe
-#PBS -l walltime=00:10:00
+#PBS -l walltime=03:00:00
 #PBS -l select=1:ncpus=$cpus:mem=235GB
 
 module --force purge
 module load ncarenv/25.10 uv
 
-uv add numpy contextlib h5py dataclasses os
+###uv add numpy contextlib h5py dataclasses os
 
 uv run python $file
 
