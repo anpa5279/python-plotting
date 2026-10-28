@@ -5,7 +5,7 @@ cpus=16
 jobn=postprocessing
 file=oceananigans_setup.py
 
-cp "$file" diagnostics.py interpolation.py reader.py scripts/
+cp "$file" diagnostics.py interpolation.py reader.py physics.py scripts/
 
 cd scripts || exit 1
 
@@ -15,7 +15,7 @@ cat > EXEC_STEP << EXEC
 #SBATCH --partition=acpu
 #SBATCH --qos=cpu-testing
 #SBATCH --job-name=$jobn
-#SBATCH --time=01:00:00
+#SBATCH --time=03:30:00
 #SBATCH --nodes=$nodes
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=$cpus
