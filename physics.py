@@ -54,5 +54,3 @@ def buoyancy(reader, type = 'field'):
         beta = reader.beta
         b = np.squeeze(g * alpha * (T - reader.T0) - g * beta * S)
     return b
-
-### -------------------------IMPORTANT DEPTHS------------------------- ###

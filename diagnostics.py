@@ -50,7 +50,7 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
         ncirc = ncirc//2+1      # full circular shells
     r_bin = np.sqrt((X/dx_scale)**2 + (Y/dx_scale)**2).astype(int)
     counts = np.bincount(r_bin.flat)  # number of points in each radial shell, including corners
-    #print(f'r_bin shape: {r_bin.shape}, var shape: {var.shape}')
+    print(f'r_bin shape: {r_bin.shape}, var shape: {var.shape}')
     bin_var = np.bincount(r_bin.flat, weights=var.flat)
 
     # cut off the corners that aren't full circles.
