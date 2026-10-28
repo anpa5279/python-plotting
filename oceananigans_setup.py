@@ -43,7 +43,7 @@ folder = '/scratch/alpine/anpa5279/dxi00625/weno9'
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
-reader = OceananigansData(folder, salinity = salinity, with_halos=int(5), Sval=0.1, read_fields=False)
+reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1, read_fields=False)
 
 # ==========================================================
 # PARAMETERS
