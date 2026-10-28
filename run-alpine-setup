@@ -1,22 +1,10 @@
 #!/bin/bash
 
 nodes=1
-cpus=4
+cpus=16
 jobn=postprocessing
 file=oceananigans_setup.py
 
-module load intel uv
-
-mkdir -p scripts
-cp "$file" diagnostics.py interpolation.py reader.py scripts/
-
-cd scripts || exit 1
-
-if [ ! -f pyproject.toml ]; then
-    uv init --bare
-fi
-
-uv add numpy h5py "dask[distributed]" scipy
 
 cat > EXEC_STEP << EXEC
 #!/bin/bash
@@ -31,7 +19,19 @@ cat > EXEC_STEP << EXEC
 #SBATCH --mem=150G
 
 module --force purge
+
 module load intel uv
+
+mkdir -p scripts
+cp "$file" diagnostics.py interpolation.py reader.py scripts/
+
+cd scripts || exit 1
+
+if [ ! -f pyproject.toml ]; then
+    uv init --bare
+fi
+
+uv add numpy h5py dask scipy
 
 uv run python $file
 EXEC
