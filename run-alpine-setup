@@ -5,31 +5,29 @@ cpus=16
 jobn=postprocessing
 file=oceananigans_setup.py
 
+cp "$file" diagnostics.py interpolation.py reader.py scripts/
+
+cd scripts || exit 1
 
 cat > EXEC_STEP << EXEC
 #!/bin/bash
 #SBATCH --account=ucb-general
 #SBATCH --partition=acpu
-#SBATCH --qos=cpu-normal
+#SBATCH --qos=cpu-testing
 #SBATCH --job-name=$jobn
 #SBATCH --time=03:00:00
 #SBATCH --nodes=$nodes
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=$cpus
 #SBATCH --mem=150G
+#SBATCH --output=$jobn-%j.out
 
 module --force purge
 
 module load intel uv
 
-mkdir -p scripts
-cp "$file" diagnostics.py interpolation.py reader.py scripts/
+uv init --bare
 
-cd scripts || exit 1
-
-if [ ! -f pyproject.toml ]; then
-    uv init --bare
-fi
 
 uv add numpy h5py dask scipy
 
