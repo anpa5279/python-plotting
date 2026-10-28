@@ -70,6 +70,7 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
     z = reader.z
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     nr = np.min(nx[:-1])//2
+    print(f'Binning var {var} with dx_scale = {dx_scale}, nr = {nr}, nx = {nx}, nt = {nt}')
     var_rz = np.empty((nr, nx[2], nt))
 
     for it, t in enumerate(t_save):
@@ -77,7 +78,7 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
             u = reader.lazy_field('u', t).compute()
             u = velocities_to_center(u, axis=-3)
             v = reader.lazy_field('v', t).compute()
-            v = velocities_to_center(u, axis=-2)
+            v = velocities_to_center(v, axis=-2)
             # u and v to cylindrical polar coordinates
             ur, utheta = vel_to_cylindrical(u, v, X, Y)
             if var=='ur':
@@ -95,6 +96,7 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
         elif var == 'w':
             var_field = velocities_to_center(var_field, axis=-1)
         for k in range(nx[2]):
+            print(f'Binning var {var} at with shape {var_field.shape} at time step {it+1}/{nt}, z-index {k+1}/{nx[2]}')
             var_rz[:, k, it] = azimuthal_avg(var_field[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
         del var_field # to be memory efficient
     return var_rz

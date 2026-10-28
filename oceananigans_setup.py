@@ -27,7 +27,7 @@ negative_tracer_flag = False # calculates the number of negative tracer values i
 binning_only = False # certain calculations will be done with binning data
 
 # model options
-with_halos = True
+with_halos = False
 salinity = True
 
 # update flags if salinity is False
