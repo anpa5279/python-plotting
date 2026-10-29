@@ -1,7 +1,7 @@
 #!/bin/bash
 
 nodes=1
-cpus=4
+cpus=16
 jobn=postprocessing
 file=oceananigans_setup.py
 
@@ -11,7 +11,7 @@ cd scripts || exit 1
 
 cat > EXEC_STEP << EXEC
 #!/bin/bash
-#SBATCH --account=ucb-general
+#SBATCH --account=
 #SBATCH --partition=amem
 #SBATCH --qos=mem-normal
 #SBATCH --job-name=$jobn
@@ -22,9 +22,9 @@ cat > EXEC_STEP << EXEC
 #SBATCH --mem=256G
 #SBATCH --output=$jobn-%j.out
 
-module --force purge
+module purge
 
-module load intel uv
+module --ignore_cache load intel uv
 
 uv init --bare
 

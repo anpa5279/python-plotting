@@ -278,6 +278,7 @@ class OceananigansData:
         for t in steps:
             rank_slabs = []
             for file in self.files:
+                print(f"Loading {field} at t={t} from {file}")
                 fname = os.path.join(self.folder, file)
                 with h5py.File(fname, 'r') as f:
                     dset = f[f'timeseries/{field}/{int(t)}'][...]  # load the small slab eagerly
@@ -299,8 +300,10 @@ class OceananigansData:
             # concatenate ranks along x — still lazy
             time_slabs.append(da.concatenate(rank_slabs, axis=0))  # if 3D, (Nx, Ny, Nz), if 1D (Nz,)
         out = da.stack(time_slabs, axis=0)               # if 3D, (Nt, Nx, Ny, Nz), if 1D (Nt, Nz,)
+        print(f"Loaded {field} with shape {out.shape}")
         if not transpose:
             out = out.transpose(0, 3, 2, 1) if out.ndim == 4 else out.transpose(0, 2, 1)  # (Nt, Nz, Ny, Nx) 
+        print(f"Transposed {field} to shape {out.shape}")
         return out.squeeze()                                 # drop time axis if Nt == 1
     def field_slice(self, field, steps=None, plane='YZ', loc=0.0, N=None):
         """
