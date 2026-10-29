@@ -26,10 +26,9 @@ module --force purge
 
 module load intel uv
 
-##uv init --bare
+uv init --bare
 
-
-##uv add numpy h5py dask scipy
+uv add numpy h5py dask scipy
 
 uv run python $file
 EXEC
