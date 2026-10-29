@@ -299,7 +299,6 @@ class OceananigansData:
             # concatenate ranks along x — still lazy
             time_slabs.append(da.concatenate(rank_slabs, axis=0))  # if 3D, (Nx, Ny, Nz), if 1D (Nz,)
         out = da.stack(time_slabs, axis=0)               # if 3D, (Nt, Nx, Ny, Nz), if 1D (Nt, Nz,)
-        print(f'Loaded field {field} with shape {out.shape} for time steps {steps}')
         if not transpose:
             out = out.transpose(0, 3, 2, 1) if out.ndim == 4 else out.transpose(0, 2, 1)  # (Nt, Nz, Ny, Nx) 
         return out.squeeze()                                 # drop time axis if Nt == 1

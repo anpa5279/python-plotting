@@ -89,6 +89,7 @@ def binning_oc(var, reader, center=(0.0, 0.0)):
         else:
             # Load data from files
             var_field = reader.lazy_field(var, t).compute()
+        print(f'Before z for loop: Loaded var {var} with shape {var_field.shape} at time step {it+1}/{nt}')
         if var =='u':
             var_field = velocities_to_center(var_field, axis=-3)
         elif var == 'v':
