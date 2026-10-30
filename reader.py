@@ -278,7 +278,6 @@ class OceananigansData:
         for t in steps:
             rank_slabs = []
             for file in self.files:
-                print(f"Loading {field} at t={t} from {file}")
                 fname = os.path.join(self.folder, file)
                 with h5py.File(fname, 'r') as f:
                     dset = f[f'timeseries/{field}/{int(t)}'][...]  # load the small slab eagerly
@@ -295,6 +294,7 @@ class OceananigansData:
                     darr = da.from_array(dset, chunks=dset.shape)
                 if darr.ndim == 3:
                     darr = darr.transpose(2, 1, 0)           # (x_local, y, z)
+                print(f"Loaded {field} from {file} with shape {darr.shape}")
                 rank_slabs.append(darr)
 
             # concatenate ranks along x — still lazy
