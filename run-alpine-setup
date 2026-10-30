@@ -10,16 +10,17 @@ cp "$file" diagnostics.py interpolation.py reader.py physics.py scripts/
 cd scripts || exit 1
 
 cat > EXEC_STEP << EXEC
-#!/bin/bash
+#!/bin/bash -l
+#SBATCH --export=NONE
 #SBATCH --account=ucb-general
-#SBATCH --partition=amem
-#SBATCH --qos=mem-normal
+#SBATCH --partition=acpu
+#SBATCH --qos=cpu-normal
 #SBATCH --job-name=$jobn
 #SBATCH --time=03:30:00
 #SBATCH --nodes=$nodes
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=$cpus
-#SBATCH --mem=256G
+#SBATCH --mem=100G
 #SBATCH --output=$jobn-%j.out
 
 module load intel/2024.2.1 uv
