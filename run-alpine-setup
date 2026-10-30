@@ -31,11 +31,11 @@ module spider intel 2>&1 | head -30
 
 #module purge
 
-#module --ignore_cache load intel uv
+module --ignore_cache load intel uv
 
-#uv init --bare
+uv init --bare
 
-#uv add numpy h5py dask scipy
+uv add numpy h5py dask scipy
 
 uv run python $file
 EXEC
