@@ -22,11 +22,10 @@ cat > EXEC_STEP << EXEC
 #SBATCH --mem=256G
 #SBATCH --output=$jobn-%j.out
 
-module load uv
+module load intel/2024.2.1 uv
 
 [ -f pyproject.toml ] || uv init --bare
 uv add numpy h5py dask scipy
-uv run python $file
 
 uv run python $file
 EXEC
