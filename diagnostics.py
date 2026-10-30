@@ -5,6 +5,7 @@ import h5py
 
 from interpolation import velocities_to_center
 from physics import rms
+import scipy.sparse as sp
 
 ### -------------------------COLLECTING COMPARISON CASE INFO----------------- ###
 def comparison_info(variations, universal_folder):
@@ -59,49 +60,58 @@ def azimuthal_avg(var, X, Y, dx_scale = None, return_r = False):
         r = np.arange(np.min(np.abs([X_bin, Y_bin]))/2, ncirc*dx_scale, dx_scale)
         return r, bin_var
     return bin_var
-def binning_oc(var, reader, center=(0.0, 0.0)):
-    nx = reader.nx
-    t_save = reader.t_save
-    nt = len(t_save)
 
-    dx_scale = np.max(reader.dx[:-1]) # not including dz
+def radial_binning_matrix(x, y, dx_scale, nr):
+    """Sparse (nr, nx*ny) operator that azimuthally averages a flattened (nx, ny) plane."""
+    X, Y = np.meshgrid(x, y, indexing='ij')
+    r_bin = np.sqrt((X / dx_scale)**2 + (Y / dx_scale)**2).astype(int).ravel()
+    counts = np.bincount(r_bin)[:nr]
+    keep = np.flatnonzero(r_bin < nr)
+    rows = r_bin[keep]
+    vals = 1.0 / counts[rows]
+    return sp.csr_matrix((vals, (rows, keep)), shape=(nr, r_bin.size))
+
+
+def binning_oc_multi(reader, names, center=(0.0, 0.0), nt_max=None):
+    """
+    Bin several variables in one pass, loading each raw field once per time step.
+    names: subset of ['T', 'S', 'w', 'ur', 'utheta']
+    Returns dict of arrays with shape (nt, nr, nz).
+    """
+    nx = reader.nx
+    t_save = reader.t_save if nt_max is None else reader.t_save[:nt_max]
+    nt = len(t_save)
+    dx_scale = np.max(reader.dx[:-1])
     x = reader.x - center[0]
     y = reader.y - center[1]
-    z = reader.z
-    X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-    nr = np.min(nx[:-1])//2
-    print(f'Binning var {var} with dx_scale = {dx_scale}, nr = {nr}, nx = {nx}, nt = {nt}')
-    var_rz = np.empty((nr, nx[2], nt))
+    nr = np.min(nx[:-1]) // 2
+
+    M = radial_binning_matrix(x, y, dx_scale, nr)
+    X2 = x[:, None, None]
+    Y2 = y[None, :, None]
+
+    out = {n: np.empty((nt, nr, nx[2])) for n in names}
+    need_vel = 'ur' in names or 'utheta' in names
 
     for it, t in enumerate(t_save):
-        if var=='ur' or var=='utheta':
-            u = reader.lazy_field('u', t).compute()
-            u = velocities_to_center(u, axis=-3)
-            v = reader.lazy_field('v', t).compute()
-            v = velocities_to_center(v, axis=-2)
-            # u and v to cylindrical polar coordinates
-            ur, utheta = vel_to_cylindrical(u, v, X, Y)
-            if var=='ur':
-                var_field = ur
-            else:
-                var_field = utheta
+        print(f'Binning time step {it+1}/{nt}', flush=True)
+        fields = {}
+        if need_vel:
+            u = velocities_to_center(reader.lazy_field('u', t).compute(), axis=-3)
+            v = velocities_to_center(reader.lazy_field('v', t).compute(), axis=-2)
+            ur, utheta = vel_to_cylindrical(u, v, X2, Y2)   # broadcasts, no 3D meshgrid
+            fields['ur'], fields['utheta'] = ur, utheta
             del u, v
-        else:
-            # Load data from files
-            var_field = reader.lazy_field(var, t).compute()
-        print(f'Before z for loop: Loaded var {var} with shape {var_field.shape} at time step {it+1}/{nt}')
-        if var =='u':
-            var_field = velocities_to_center(var_field, axis=-3)
-        elif var == 'v':
-            var_field = velocities_to_center(var_field, axis=-2)
-        elif var == 'w':
-            var_field = velocities_to_center(var_field, axis=-1)
-        for k in range(nx[2]):
-            print(f'Binning var {var} at with shape {var_field.shape} at time step {it+1}/{nt}, z-index {k+1}/{nx[2]}')
-            var_rz[:, k, it] = azimuthal_avg(var_field[:, :, k], X[:, :, k], Y[:, :, k], dx_scale=dx_scale)
-        del var_field # to be memory efficient
-    return var_rz
+        for n in ('T', 'S'):
+            if n in names:
+                fields[n] = reader.lazy_field(n, t).compute()
+        if 'w' in names:
+            fields['w'] = velocities_to_center(reader.lazy_field('w', t).compute(), axis=-1)
 
+        for n in names:
+            out[n][it] = M @ fields[n].reshape(nx[0] * nx[1], nx[2])   # (nr, nz)
+        del fields
+    return out
 ### -------------------------CYLINDRICAL POLAR COORDINATES------------------- ###
 def vel_to_cylindrical(u, v, X, Y):
     dist = np.sqrt(X**2 + Y**2)

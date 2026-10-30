@@ -6,7 +6,7 @@ import scipy.signal as signal
 import dask.array as da
 
 from reader import OceananigansData
-from diagnostics import binning_oc
+from diagnostics import binning_oc_multi
 from interpolation import vertical_line, velocities_to_center, point
 from physics import rms
 
@@ -27,7 +27,7 @@ negative_tracer_flag = False # calculates the number of negative tracer values i
 binning_only = False # certain calculations will be done with binning data
 
 # model options
-with_halos = False
+with_halos = True
 salinity = True
 
 # update flags if salinity is False
@@ -38,7 +38,8 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/scratch/alpine/anpa5279/dxi00625/weno9/condensed_files_old'
+folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx1.0'
+#'/scratch/alpine/anpa5279/dxi00625/weno9/condensed_files_old'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
@@ -75,51 +76,20 @@ ncirc = min(nx[0], nx[1])//2 # full circular shells
 # ==========================================================
 ###------------APPLYING AZIMUTHAL AVERAGING TO DATA-----------------###
 if binning_flag:
-    # write to file 
+    names = ['T', 'ur', 'utheta', 'w'] + (['S'] if reader.salinity else [])
+    binned = binning_oc_multi(reader, names)   # add nt_max=3 while debugging
+
+    h5names = {'T': 'ccc/T', 'ur': 'ccc/horizontal velocity',
+               'utheta': 'ccc/rotational velocity', 'w': 'ccc/w', 'S': 'ccc/S'}
     with h5py.File(bin_path, "a") as f:
-        if "ccc/dimensions/r_bin" in f:
-            del f["ccc/dimensions/r_bin"]
-        if "ccc/dimensions/z" in f:
-            del f["ccc/dimensions/z"]
-        if "ccc/dimensions/time" in f:
-            del f["ccc/dimensions/time"]
-        if "ccc/T" in f:
-            del f["ccc/T"]
-        if "ccc/horizontal velocity" in f:
-            del f["ccc/horizontal velocity"]
-        if "ccc/rotational velocity" in f:
-            del f["ccc/rotational velocity"]
-        if "ccc/w" in f:
-            del f["ccc/w"]
-        f.create_dataset("ccc/dimensions/r_bin", data = r)
-        f.create_dataset("ccc/dimensions/z", data=z)
-        f.create_dataset("ccc/dimensions/time", data=time)
-    if reader.salinity:
-        S_rz = binning_oc('S', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
-        with h5py.File(bin_path, "a") as f:
-            if "ccc/S" in f:
-                del f["ccc/S"]
-            f.create_dataset("ccc/S", data=S_rz)
-    T_rz= binning_oc('T', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
-    with h5py.File(bin_path, "a") as f:
-        f.create_dataset("ccc/T", data=T_rz)
-    del T_rz
-    ur_rz = binning_oc('ur', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
-    with h5py.File(bin_path, "a") as f:
-        f.create_dataset("ccc/horizontal velocity", data=ur_rz)
-    del ur_rz
-    utheta_rz = binning_oc('utheta', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
-    with h5py.File(bin_path, "a") as f:
-        if "ccc/rotational velocity" in f:
-            del f["ccc/rotational velocity"]
-        f.create_dataset("ccc/rotational velocity", data=utheta_rz)
-    del utheta_rz
-    w_rz = binning_oc('w', reader).transpose(2, 0, 1) # shape: (Nt, Nr, Nz)
-    with h5py.File(bin_path, "a") as f:
-        if "ccc/w" in f:
-            del f["ccc/w"]
-        f.create_dataset("ccc/w", data=w_rz)
-    del w_rz
+        for key, data in {'ccc/dimensions/r_bin': r, 'ccc/dimensions/z': z,
+                          'ccc/dimensions/time': time}.items():
+            if key in f: del f[key]
+            f.create_dataset(key, data=data)
+        for n, arr in binned.items():
+            if h5names[n] in f: del f[h5names[n]]
+            f.create_dataset(h5names[n], data=arr)
+    del binned
     print(f"Saved binning to {bin_path}")
     reader.binning = True
     reader.bin_file = 'binning_rtz.h5'
