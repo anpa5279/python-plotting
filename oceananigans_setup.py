@@ -75,7 +75,7 @@ ncirc = min(nx[0], nx[1])//2 # full circular shells
 # ==========================================================
 ###------------APPLYING AZIMUTHAL AVERAGING TO DATA-----------------###
 if binning_flag:
-    names = ['T', 'ur', 'utheta', 'w'] + (['S'] if reader.salinity else [])
+    names = ['S', 'w', 'T']#['T', 'ur', 'utheta', 'w'] + (['S'] if reader.salinity else [])
     binned = binning_oc_multi(reader, names)   # add nt_max=3 while debugging
 
     h5names = {'T': 'ccc/T', 'ur': 'ccc/horizontal velocity',
