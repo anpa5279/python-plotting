@@ -94,7 +94,7 @@ def plot_lines(title, it, case_opt, fig_folder, z, lines_var_it, save_folder = '
         ax.set_xlabel(label)
         ax.set_xlim(range_var)
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-2,2), useMathText=True) 
-    axes[0].set_ylim(ymin=-40, ymax=0.0)#(ymin = min(z[-1]), ymax = 0.0)
+    axes[0].set_ylim(ymin=-80, ymax=0.0)#(ymin = min(z[-1]), ymax = 0.0)
     axes[0].set_ylabel('z [m]')
     axes[n_vars].set_ylabel('z [m]')
 

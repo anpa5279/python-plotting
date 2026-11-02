@@ -22,19 +22,20 @@ from reader import OceananigansData
 # ==========================================================
 # SETTINGS
 # ==========================================================
-folder = '/glade/derecho/scratch/apauls/outputs/version109/square-inlet/open-bottom-BC/AR1/dxi00625/WENO9/'
+folder = ''
 
 field_files_flag = False
-high_freq_files_flag = True
+high_freq_files_flag = False
+time_step_debugging = True   # also save the very last time step as one global 3D file
 
 salinity = True
-with_halos = False
+with_halos = True
 
-# The xy-average file stores a sum over ranks (OceananigansData.load_averages
-# divides by Nranks). If a pickup run used a different number of ranks than the
-# original, its averages must be rescaled so that dividing by the ORIGINAL
-# Nranks still gives the right mean.
-RESCALE_XY_AVG = True
+# Raw xy_avg files store a sum over ranks, so each run's averages are divided by
+# THAT run's own number of ranks before being combined. The result is written to
+# a file ending in '_condensed.jld2' so the reader knows not to divide by Nranks again.
+AVG_OUT_NAME = 'xy_avg_condensed.jld2'
+DEBUG_OUT_NAME = 'last_time_step.jld2'
 
 PICKUP_NAME = 'pickup'
 OUTDIR_NAME = 'condensed_files'
@@ -70,6 +71,20 @@ def find_pickup_chain(top_folder):
         chain.append(nxt)
 
 
+def has_field_files(level_folder):
+    """Same criterion OceananigansData uses to find field files."""
+    return any(f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup')
+               for f in os.listdir(level_folder))
+
+
+def ensure_grid_info(level_folder, top_folder):
+    """The reader wants a grid_info.jld2; borrow the original run's if the pickup has none."""
+    gi = os.path.join(level_folder, 'grid_info.jld2')
+    if not os.path.exists(gi):
+        print(f'  No grid_info in {level_folder}; copying from {top_folder}')
+        shutil.copy2(os.path.join(top_folder, 'grid_info.jld2'), gi)
+
+
 def rank_ratio(level_nranks, main_nranks):
     """How many pickup ranks make up one original rank."""
     if level_nranks == main_nranks:
@@ -97,6 +112,50 @@ def merge_along_x(pieces, halo):
         hi = p.shape[-1] if i == n - 1 else p.shape[-1] - halo
         trimmed.append(p[..., lo:hi])
     return np.concatenate(trimmed, axis=-1)
+
+
+# ==========================================================
+# LAST TIME STEP (DEBUGGING)
+# ==========================================================
+def strip_halos(arr, hx):
+    """Drop halos from a raw (z, y, x) array and return it as (x, y, z), like OceananigansData.lazy_field."""
+    hx_, hy, hz = hx
+    arr = arr[hz:-hz or None, hy:-hy or None, hx_:-hx_ or None]
+    return arr.transpose(2, 1, 0)
+
+
+def save_last_time_step(level, outdir, variables):
+    """
+    Assemble every rank's data for the final saved time step of `level` into one
+    global (Nx, Ny, Nz) array per variable. Reads straight from the last run's own
+    field files, so it does not depend on the condensed field files existing.
+    """
+    r = level.reader
+    t_last = r.t_save[-1]
+    k = int(t_last)
+    iteration = int(t_last + level.iter_offset)
+    time = float(r.t[-1]) + level.time_offset
+    hx = [int(h) for h in r.hx] if with_halos else [0, 0, 0]
+    out_path = os.path.join(outdir, DEBUG_OUT_NAME)
+    print(f'Saving last time step (iteration {iteration}, from {level.folder}, '
+          f'{level.nranks} rank files) to {out_path}')
+
+    dsets, nx_local = {}, {}
+    with h5py.File(out_path, 'w') as out:
+        out.create_dataset('iteration', data=iteration)
+        out.create_dataset('t', data=time)
+        out.attrs['source_folder'] = str(level.folder)
+        out.attrs['array_order'] = 'x, y, z (halos removed)'
+        for rank, fname in enumerate(r.files):
+            with h5py.File(os.path.join(level.folder, fname), 'r') as f:
+                for var in variables:
+                    block = strip_halos(f[f'timeseries/{var}/{k}'][...], hx)
+                    if var not in dsets:
+                        nx_local[var], ny, nz = block.shape
+                        dsets[var] = out.create_dataset(
+                            var, shape=(nx_local[var] * level.nranks, ny, nz), dtype=block.dtype)
+                    n = nx_local[var]
+                    dsets[var][rank * n:(rank + 1) * n] = block
 
 
 # ==========================================================
@@ -130,7 +189,7 @@ def append_field_level(level, main_files, outdir, ratio, variables):
 # ==========================================================
 # HIGH-FREQUENCY FILES (xy average + centerline)
 # ==========================================================
-def append_highfreq_level(level, main_nranks, is_first, is_last, f_avg, f_cen, variables):
+def append_highfreq_level(level, is_first, is_last, f_avg, f_cen, variables):
     r = level.reader
     t_saves = np.asarray(r.t_save_avg)
     keep = np.ones(len(t_saves), dtype=bool)
@@ -140,11 +199,9 @@ def append_highfreq_level(level, main_nranks, is_first, is_last, f_avg, f_cen, v
         keep &= t_saves <= r.t_save[-1]      # drop output past the point the next run restarts from
     sel = t_saves[keep]
 
-    scale = 1.0
-    if RESCALE_XY_AVG and level.nranks != main_nranks:
-        scale = main_nranks / level.nranks
+    norm = level.nranks
     print(f'  Adding {len(sel)} high-frequency saves '
-          f'(iteration offset {level.iter_offset}, xy_avg scale {scale:g})')
+          f'(iteration offset {level.iter_offset}, xy_avg divided by {norm} ranks)')
 
     with h5py.File(os.path.join(level.folder, r.averaging_file), 'r') as src_avg, \
          h5py.File(os.path.join(level.folder, r.centerline_output), 'r') as src_cen:
@@ -155,9 +212,7 @@ def append_highfreq_level(level, main_nranks, is_first, is_last, f_avg, f_cen, v
             f_avg.create_dataset(f'timeseries/t/{new}', data=t)
             f_cen.create_dataset(f'timeseries/t/{new}', data=t)
             for var in variables:
-                avg = src_avg[f'timeseries/{var}_avg/{k}'][:]
-                if scale != 1.0:
-                    avg = avg * scale
+                avg = src_avg[f'timeseries/{var}_avg/{k}'][:] / norm
                 f_avg.create_dataset(f'timeseries/{var}_avg/{new}', data=avg)
                 f_cen.create_dataset(f'timeseries/{var}/{new}',
                                      data=src_cen[f'timeseries/{var}/{k}'][:])
@@ -172,22 +227,33 @@ def main():
     shutil.copy2(os.path.join(folder, 'grid_info.jld2'), os.path.join(outdir, 'grid_info.jld2'))
 
     variables = ['u', 'v', 'w', 'T', 'S'] if salinity else ['u', 'v', 'w', 'T']
- 
+
     # ---- build the chain of runs: folder, folder/pickup, folder/pickup/pickup, ...
     chain = find_pickup_chain(folder)
     print(f'Found {len(chain)} run(s) to condense:')
     levels = []
     iter_off, time_off = 0, 0.0
     for i, fld in enumerate(chain):
-        file_name = 'fields_pickup' if i > 0 else 'fields'
-        print(f'  [{i}] {fld} with file name prefix "{file_name}"')
-        reader = OceananigansData(fld, salinity=salinity, with_halos=with_halos, file_name=file_name)
-        lv = Level(fld, reader, iter_off, time_off)
+        if not has_field_files(fld):
+            found = sorted(f for f in os.listdir(fld) if f.endswith(('.jld2', '.h5')))
+            msg = (f'No field files (fields*.jld2, excluding fields_pickup*) in {fld}. '
+                   f'.jld2/.h5 files present: {found}')
+            if i == 0:
+                raise FileNotFoundError(msg)
+            print(f'  WARNING: {msg}\n  Stopping the chain here; later pickups (if any) are ignored.')
+            break
+        if i > 0:
+            ensure_grid_info(fld, folder)
+        rdr = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
+        lv = Level(fld, rdr, iter_off, time_off)
         levels.append(lv)
         print(f'  [{i}] {fld}  (ranks = {lv.nranks}, x-halo = {lv.halo}, '
-              f'last saved iteration = {int(reader.t_save[-1])})')
-        iter_off += int(reader.t_save[-1])
-        time_off += float(reader.t[-1])
+              f'last saved iteration = {int(rdr.t_save[-1])})')
+        iter_off += int(rdr.t_save[-1])
+        time_off += float(rdr.t[-1])
+
+    if time_step_debugging:
+        save_last_time_step(levels[-1], outdir, variables)
 
     main_level = levels[0]
     main_nranks = main_level.nranks
@@ -210,13 +276,13 @@ def main():
 
     # ---- high-frequency files
     if high_freq_files_flag:
-        avg_out = os.path.join(outdir, 'xy_avg.jld2')
+        avg_out = os.path.join(outdir, AVG_OUT_NAME)
         cen_out = os.path.join(outdir, 'centerline.jld2')
         print(f'Combining averaging and centerline files into {outdir}')
         with h5py.File(avg_out, 'w') as f_avg, h5py.File(cen_out, 'w') as f_cen:
             for i, lv in enumerate(levels):
                 print(f'Level {i}: {lv.folder}')
-                append_highfreq_level(lv, main_nranks, i == 0, i == len(levels) - 1,
+                append_highfreq_level(lv, i == 0, i == len(levels) - 1,
                                       f_avg, f_cen, variables)
 
             # buoyancy information from the original run

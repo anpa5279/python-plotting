@@ -18,10 +18,10 @@ plot_plane_hor = False
 plot_plane_bin_vert = False
 plot_depths = False
 plot_plume_z = False
-plot_higher_output_data = False
+plot_higher_output_data = True
 plot_vert_profiles = False
 plot_horiz_profiles = False
-plot_hor_bin_profiles = True
+plot_hor_bin_profiles = False
 plot_scaling_analysis_text = False
 
 video = True
@@ -46,7 +46,11 @@ if binning_only:
 else:
     fluc_file = 'fluctuations.h5'
 if temporal_avg:
+    temporal_avg_hf = True
     nsteps = 5 # number of time steps to average over for plotting, also trying 5
+    nsteps_hf = 100*nsteps # high-output data is written 100x more often, so 100*nsteps
+else: 
+    temporal_avg_hf = False
 
 # flags for how to read the model information
 with_halos = False
@@ -431,7 +435,24 @@ if temporal_avg:
             T_fluc_center[n] = T_fluc_center_loc
             ur_avg[n] = ur_avg_line_loc
             #b_bin_hor[n] = b_bin_line_loc
+# temporal averaging of the high-output data (sliding window, window i covers steps i ... i+nsteps_hf-1)
+def running_mean(a, nwin):
+    c = np.concatenate([np.zeros((1,) + a.shape[1:]), np.cumsum(a, axis=0, dtype=float)], axis=0)
+    return (c[nwin:] - c[:-nwin]) / nwin
 
+if plot_higher_output_data and temporal_avg_hf:
+    if nsteps_hf > nt_avg:
+        raise ValueError(f'nsteps_hf = {nsteps_hf} exceeds the shortest high-output record ({nt_avg} steps)')
+    S_avg_hf = []
+    S_center_hf = []
+    w_center_hf = []
+    T_fluc_center_hf = []
+    for n in range(num_cases):
+        # truncate every case to the shortest record so frames line up across cases
+        S_avg_hf.append(running_mean(S_avg[n][:nt_avg], nsteps_hf))
+        S_center_hf.append(running_mean(S_center[n][:nt_avg], nsteps_hf))
+        w_center_hf.append(running_mean(w_center[n][:nt_avg], nsteps_hf))
+        T_fluc_center_hf.append(running_mean(T_fluc_center[n][:nt_avg], nsteps_hf))
 # ==========================================================
 # PLOTTING
 # ==========================================================
@@ -450,7 +471,7 @@ ranges['Tracer negative'] = [-0.15, 0.15]
 ranges['Tracer_fluc'] = [-0.2, 0.2]
 ranges['Tracer_avg'] = [0, 8*10**(-4)]
 ranges['T'] = [T0-0.7, T0 + 0.05]
-ranges['w'] = [-1.2*10**(-1), 1.2*10**(-1)]#[-8*10**(-2), 8*10**(-2)]
+ranges['w'] = [-1.8*10**(-1), 1.8*10**(-1)]#[-8*10**(-2), 8*10**(-2)]
 ranges['u'] = [-5*10**(-3), 5*10**(-3)]
 ranges['ur'] = [-1*10**(-2), 1*10**(-2)]
 ranges['v'] = [-2*10**(-2), 2*10**(-2)]
@@ -522,15 +543,27 @@ if any([plot_plane_vert, plot_plane_hor, plot_plane_bin_vert]):
 if plot_plume_z:
     buoyancy_dir_z = plot_plume_vertical_spatial(min(time, key=len), ranges, case_opt, fig_folder, case_names, name_uni, lx, z, S_avg, u_rms, v_rms, w_rms, b_avg, b_center, r_bin, bur_fluc_avg, bw_fluc_avg, T_avg, T_fluc_center, S_center)
 if plot_higher_output_data:
-    time_min_opt = np.arange(0, len(min_time_avg)) # can change based on data plotted
-    for it, it_opt in enumerate(time_min_opt):
+    if temporal_avg_hf:
+        S_plt, S_c_plt, w_c_plt = S_avg_hf, S_center_hf, w_center_hf
+        n_frames = S_avg_hf[0].shape[0]
+        hf_save_folder = f'hf profiles temporal average nsteps= {nsteps_hf}'
+    else:
+        S_plt, T_plt, S_c_plt, w_c_plt = S_avg, T_avg, S_center, w_center
+        n_frames = len(min_time_avg)
+        hf_save_folder = None
+
+    for it in range(n_frames):
         lines_var_it = {}
-        lines_var_it['S'] = {'var':[S_avg[n][it_opt, :] for n in range(num_cases)], 'title': r'$\langle\text{S}\rangle_{\text{xy}}$', 'label': '[g/kg]', 'range': ranges['S_avg'] }
-        lines_var_it['S_center'] = {'var':[S_center[n][it_opt, :] for n in range(num_cases)], 'title': r"S(0, 0, z)", 'label': '[g/kg]', 'range': ranges['S'] }
-        #lines_var_it['T_fluc_center'] = {'var':[T_fluc_center[n][it_opt, :] for n in range(num_cases)], 'title': r"T'(0, 0, z)", 'label': r"[$^\circ$C]", 'range': ranges['T_fluc_center']}
-        lines_var_it['w_center'] = {'var':[w_center[n][it_opt, :] for n in range(num_cases)], 'title': r"w(0, 0, z)", 'label': '[g/kg]', 'range': ranges['w'] }
-        title = f'{min_time_avg[it_opt]/3600:.2f} hours'
-        vert_hf_dir_frames = plot_lines(title, it, case_opt, fig_folder, z, lines_var_it)#, error_norm = {'S': Sval, 'S_center': Sval, 'T_fluc_center': dTdz[-1], 'w_center': w0})
+        lines_var_it['S'] = {'var':[S_plt[n][it, :] for n in range(num_cases)], 'title': r'$\langle\text{S}\rangle_{\text{xy}}$', 'label': '[g/kg]', 'range': ranges['S_avg'] }
+        #lines_var_it['T_avg'] = {'var':[T_plt[n][it, :] for n in range(num_cases)], 'title': r'$\langle\text{T}\rangle_{\text{xy}}$', 'label': r"[$^\circ$C]", 'range': ranges['T']}
+        lines_var_it['S_center'] = {'var':[S_c_plt[n][it, :] for n in range(num_cases)], 'title': r"S(0, 0, z)", 'label': '[g/kg]', 'range': ranges['S'] }
+        lines_var_it['w_center'] = {'var':[w_c_plt[n][it, :] for n in range(num_cases)], 'title': r"w(0, 0, z)", 'label': '[m/s]', 'range': ranges['w'] }
+        if temporal_avg_hf:
+            title = f'Temporal average from {min_time_avg[it]/3600:.2f} hours to {min_time_avg[it+nsteps_hf-1]/3600:.2f} hours'
+            vert_hf_dir_frames = plot_lines(title, it, case_opt, fig_folder, case_names, z, lines_var_it, save_folder = hf_save_folder)
+        else:
+            title = f'{min_time_avg[it]/3600:.2f} hours'
+            vert_hf_dir_frames = plot_lines(title, it, case_opt, fig_folder, z, lines_var_it)
     del lines_var_it
 if plot_vert_profiles:
     if temporal_avg:
@@ -630,11 +663,13 @@ if video:
                 create_video(bin_dir_frames[loc], fig_folder, f'z_{loc:.2f}_bin_profiles', f' temporal average nsteps= {nsteps}')
         if plot_vert_profiles:
             create_video(vert_dir_frames, fig_folder, 'vert_profiles', f' temporal average nsteps= {nsteps}')
+        if plot_higher_output_data:
+            create_video(vert_hf_dir_frames, fig_folder, 'vert_hf_profiles', f' temporal average nsteps= {nsteps_hf}')
     else:
-        if plot_vert_profiles:
-            create_video(vert_dir_frames, fig_folder, 'vert_profiles', '')
         if plot_higher_output_data:
             create_video(vert_hf_dir_frames, fig_folder, 'vert_hf_profiles', ' no error')
+        if plot_vert_profiles:
+            create_video(vert_dir_frames, fig_folder, 'vert_profiles', '')
         if plot_plane_vert:
             for dir, name in enumerate(var_names):
                 create_video(variable_dir[var_names[dir]], fig_folder, 'vertical', name)

@@ -210,11 +210,13 @@ class OceananigansData:
 
                 self.nt = len(self.t)
                 self.dt = self.t[1] - self.t[0] if self.nt > 1 else None
-        else:
+        elif self.binning:
             with h5py.File(os.path.join(self.folder, self.bin_file), 'r') as f:
                 self.t = f['/ccc/dimensions/time'][()]
                 self.nt = len(self.t)
                 self.dt = self.t[1] - self.t[0] if self.nt > 1 else None
+
+            
     # ------------------------ ADDITIONAL PARAMETERS -------------------- #
     def load_coriolis(self):
         with h5py.File(os.path.join(self.folder, self.files[0]), 'r') as f:
@@ -294,16 +296,13 @@ class OceananigansData:
                     darr = da.from_array(dset, chunks=dset.shape)
                 if darr.ndim == 3:
                     darr = darr.transpose(2, 1, 0)           # (x_local, y, z)
-                print(f"Loaded {field} from {file} with shape {darr.shape}")
                 rank_slabs.append(darr)
 
             # concatenate ranks along x — still lazy
             time_slabs.append(da.concatenate(rank_slabs, axis=0))  # if 3D, (Nx, Ny, Nz), if 1D (Nz,)
         out = da.stack(time_slabs, axis=0)               # if 3D, (Nt, Nx, Ny, Nz), if 1D (Nt, Nz,)
-        print(f"Loaded {field} with shape {out.shape}")
         if not transpose:
             out = out.transpose(0, 3, 2, 1) if out.ndim == 4 else out.transpose(0, 2, 1)  # (Nt, Nz, Ny, Nx) 
-        print(f"Transposed {field} to shape {out.shape}")
         return out.squeeze()                                 # drop time axis if Nt == 1
     def field_slice(self, field, steps=None, plane='YZ', loc=0.0, N=None):
         """
@@ -550,11 +549,15 @@ class OceananigansData:
                     # linear interpolation of x and y points is the same as averaging the 4 grid points in file
                     if field == 'u': # because raw data is fcc
                         s = s[-1, :, :]
-                    if field == 'v': # because raw data is cfc
+                        s = np.mean(s, axis=0)
+                    elif field == 'v': # because raw data is cfc
                         s = s[:, -1, :]
-                    if field == 'w': # because raw data is ccf
+                        s = np.mean(s, axis=0)
+                    elif field == 'w': # because raw data is ccf
                         s = velocities_to_center(s, axis=-1)
-                    s = np.mean(s, axis=(0, 1))
+                        s = np.mean(s, axis=(0, 1))
+                    else: # because raw data is ccc
+                        s = np.mean(s, axis=(0, 1))
                     centerline[it, :] = s
 
                 if field == 'u' and self.u_s is not None:
@@ -563,6 +566,7 @@ class OceananigansData:
             field_data = self.load_binning_var(field)
             centerline = field_data[:, 0, :] # (nt, Nz)
         else: # no centerline files at all — need to extract from field files
+            print(f"Loading {field} from field files and extracting centerline")
             if steps is None:
                 steps = self.t_save
             steps = np.atleast_1d(steps)
@@ -773,7 +777,8 @@ class OceananigansData:
                     dset = dset[self.hx[2] : -self.hx[2]]
                 if field == 'w':
                     dset = velocities_to_center(np.squeeze(dset), axis=-1)
-                    field_avg[it, :] = dset/self.Nranks
+                if self.averaging_file.endswith('condensed.jld2'):
+                    field_avg[it, :] = np.squeeze(dset)
                 else:
                     field_avg[it, :] = np.squeeze(dset)/self.Nranks
             f.close()
