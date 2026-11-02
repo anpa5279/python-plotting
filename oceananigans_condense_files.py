@@ -22,7 +22,7 @@ from reader import OceananigansData
 # ==========================================================
 # SETTINGS
 # ==========================================================
-folder = ''
+folder = '/scratch/alpine/anpa5279/dxi00625/weno9/testing'
 
 field_files_flag = False
 high_freq_files_flag = False

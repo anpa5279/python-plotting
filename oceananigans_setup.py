@@ -38,7 +38,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/Users/annapauls/Documents/Github repositories/3d_langmuir_gpu/localoutputs/scheme-tests/longer/WENO9/dx0.0625'
+folder = '/scratch/alpine/anpa5279/dxi00625/weno9/condensed_files_old'
 #'/scratch/alpine/anpa5279/dxi00625/weno9/condensed_files_old'
 
 print(f"Reading data from {folder}")
