@@ -2,7 +2,7 @@
 
 nodes=1
 cpus=1
-jobn=postprocessing
+jobn=condensing
 file=oceananigans_condense_files.py
 
 cp "$file" diagnostics.py interpolation.py reader.py physics.py scripts/
@@ -13,14 +13,14 @@ cat > EXEC_STEP << EXEC
 #!/bin/bash -l
 #SBATCH --export=NONE
 #SBATCH --account=ucb-general
-#SBATCH --partition=acpu
-#SBATCH --qos=cpu-normal
+#SBATCH --partition=amem
+#SBATCH --qos=mem-normal
 #SBATCH --job-name=$jobn
 #SBATCH --time=02:00:00
 #SBATCH --nodes=$nodes
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=$cpus
-#SBATCH --mem=100G
+#SBATCH --mem=256G
 #SBATCH --output=$jobn-%j.out
 
 module load intel/2024.2.1 uv
