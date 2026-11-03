@@ -110,6 +110,7 @@ def binning_oc_multi(reader, names, center=(0.0, 0.0), nt_max=None):
             fields['w'] = velocities_to_center(reader.lazy_field('w', t).compute(), axis=-1)
 
         for n in names:
+            print(fields[n].shape)
             out[n][it] = M @ fields[n].reshape(nx[0] * nx[1], nx[2])   # (nr, nz)
         del fields
     return out
