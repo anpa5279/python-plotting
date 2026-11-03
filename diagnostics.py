@@ -86,6 +86,8 @@ def binning_oc_multi(reader, names, center=(0.0, 0.0), nt_max=None):
     nr = np.min(nx[:-1]) // 2
 
     M = radial_binning_matrix(x, y, dx_scale, nr)
+    print(f'Binning matrix shape: {M.shape}')
+    print(nx, nt, nr)
     X2 = x[:, None, None]
     Y2 = y[None, :, None]
 
