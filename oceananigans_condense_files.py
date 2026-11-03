@@ -29,7 +29,7 @@ high_freq_files_flag = False
 time_step_debugging = False   # also save the very last time step as one global 3D file
 
 salinity = True
-with_halos = True
+with_halos = False
 
 # Raw xy_avg files store a sum over ranks, so each run's averages are divided by
 # THAT run's own number of ranks before being combined. The result is written to
