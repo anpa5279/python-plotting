@@ -10,6 +10,7 @@ Whether the number of processors differs is detected automatically from the
 number of field files each reader finds (len(reader.files)).
 """
 import os
+import re
 import shutil
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -50,6 +51,7 @@ class Level:
     reader: OceananigansData
     iter_offset: int      # added to this level's saved iteration numbers
     time_offset: float    # added to this level's saved times
+    label: str = ''       # the real folder, if `folder` is a staging folder of symlinks
 
     @property
     def nranks(self):
@@ -73,7 +75,7 @@ def find_pickup_chain(top_folder):
 
 def has_field_files(level_folder):
     """Same criterion OceananigansData uses to find field files."""
-    return any(f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup')
+    return any(f.endswith('.jld2') and f.startswith('fields')
                for f in os.listdir(level_folder))
 
 
@@ -224,7 +226,7 @@ def append_highfreq_level(level, is_first, is_last, f_avg, f_cen, variables):
 def main():
     outdir = os.path.join(folder, OUTDIR_NAME)
     os.makedirs(outdir, exist_ok=True)
-    shutil.copy2(os.path.join(folder, 'grid_info.jld2'), os.path.join(outdir, 'grid_info.jld2'))
+    shutil.copy2(os.path.join(folder, 'grid_info.jld2'), os.path.join(outdir, 'grid_info.jld2')) # copying grid information
 
     variables = ['u', 'v', 'w', 'T', 'S'] if salinity else ['u', 'v', 'w', 'T']
 
@@ -236,16 +238,13 @@ def main():
     for i, fld in enumerate(chain):
         if not has_field_files(fld):
             found = sorted(f for f in os.listdir(fld) if f.endswith(('.jld2', '.h5')))
-            msg = (f'No field files (fields*.jld2, excluding fields_pickup*) in {fld}. '
-                   f'.jld2/.h5 files present: {found}')
-            if i == 0:
-                raise FileNotFoundError(msg)
-            print(f'  WARNING: {msg}\n  Stopping the chain here; later pickups (if any) are ignored.')
-            break
-        if i > 0:
+            msg = (f'No field files (fields*.jld2 or fields_pickup_rank*.jld2) in {fld}. '
+                   f'{len(found)} .jld2/.h5 files present, e.g. {found[:5]}')
+            raise FileNotFoundError(msg)  # never silently drop a run from the condensed output
+        if i > 0 and fld == fld:
             ensure_grid_info(fld, folder)
         rdr = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
-        lv = Level(fld, rdr, iter_off, time_off)
+        lv = Level(fld, rdr, iter_off, time_off, label=fld)
         levels.append(lv)
         print(f'  [{i}] {fld}  (ranks = {lv.nranks}, x-halo = {lv.halo}, '
               f'last saved iteration = {int(rdr.t_save[-1])})')
