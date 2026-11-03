@@ -71,7 +71,6 @@ def radial_binning_matrix(x, y, dx_scale, nr):
     vals = 1.0 / counts[rows]
     return sp.csr_matrix((vals, (rows, keep)), shape=(nr, r_bin.size))
 
-
 def binning_oc_multi(reader, names, center=(0.0, 0.0), nt_max=None):
     """
     Bin several variables in one pass, loading each raw field once per time step.

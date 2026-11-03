@@ -24,9 +24,9 @@ from reader import OceananigansData
 # ==========================================================
 folder = '/scratch/alpine/anpa5279/dxi00625/weno9/testing'
 
-field_files_flag = False
+field_files_flag = True
 high_freq_files_flag = False
-time_step_debugging = True   # also save the very last time step as one global 3D file
+time_step_debugging = False   # also save the very last time step as one global 3D file
 
 salinity = True
 with_halos = True
