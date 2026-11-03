@@ -5,7 +5,7 @@ cpus=1
 jobn=postprocessing
 file=oceananigans_condense_files.py
 
-cp "$file" oceananigans_condense_files.py diagnostics.py interpolation.py reader.py physics.py scripts/
+cp "$file" diagnostics.py interpolation.py reader.py physics.py scripts/
 
 cd scripts || exit 1
 
