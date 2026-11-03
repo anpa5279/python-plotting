@@ -244,7 +244,7 @@ def main():
             break
         if i > 0:
             ensure_grid_info(fld, folder)
-        rdr = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
+        rdr = OceananigansData(fld, salinity=salinity, with_halos=with_halos, file_name='fields' if i==0 else 'fields_pickup')
         lv = Level(fld, rdr, iter_off, time_off)
         levels.append(lv)
         print(f'  [{i}] {fld}  (ranks = {lv.nranks}, x-halo = {lv.halo}, '
