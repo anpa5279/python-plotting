@@ -13,7 +13,7 @@ from physics import rms
 # ==========================================================
 # FLAGS
 # ==========================================================
-binning_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
+binning_flag = True # creates binning of S, T, u, w in r-z space with the S and w contour values
 filtered_bins_flag = False # creates binning of S, T, u, w in r-z space with the S and w contour values
 centerline_flag = True # creates vertical line of S, T, u, w at x = 0, y = 0 for all time steps
 planelsice_flag = False # creates plane slices of S, T, u, v, w at x = 0 for all time steps
@@ -27,7 +27,7 @@ negative_tracer_flag = False # calculates the number of negative tracer values i
 binning_only = False # certain calculations will be done with binning data
 
 # model options
-with_halos = 5#False
+with_halos = False # or a number if halos are included in the data files
 salinity = True
 
 # update flags if salinity is False
@@ -43,7 +43,7 @@ folder = '/scratch/alpine/anpa5279/dxi00625/weno9/testing/condensed_files'
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
 
-reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1, read_fields=False)
+reader = OceananigansData(folder, salinity = salinity, with_halos=with_halos, Sval=0.1)
 
 # ==========================================================
 # PARAMETERS
