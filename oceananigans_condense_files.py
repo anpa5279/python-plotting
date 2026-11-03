@@ -10,6 +10,7 @@ Whether the number of processors differs is detected automatically from the
 number of field files each reader finds (len(reader.files)).
 """
 import os
+import re
 import shutil
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -22,11 +23,11 @@ from reader import OceananigansData
 # ==========================================================
 # SETTINGS
 # ==========================================================
-folder = '/scratch/alpine/anpa5279/dxi00625/weno9/testing'
+folder = '/scratch/alpine/anpa5279/dxi00625/weno9/testing/condensed_files'
 
-field_files_flag = False
-high_freq_files_flag = False
-time_step_debugging = True   # also save the very last time step as one global 3D file
+field_files_flag = True
+high_freq_files_flag = True
+time_step_debugging = False   # also save the very last time step as one global 3D file
 
 salinity = True
 with_halos = True
@@ -50,6 +51,7 @@ class Level:
     reader: OceananigansData
     iter_offset: int      # added to this level's saved iteration numbers
     time_offset: float    # added to this level's saved times
+    label: str = ''       # the real folder, if `folder` is a staging folder of symlinks
 
     @property
     def nranks(self):
@@ -75,6 +77,70 @@ def has_field_files(level_folder):
     """Same criterion OceananigansData uses to find field files."""
     return any(f.endswith('.jld2') and f.startswith('fields') and not f.startswith('fields_pickup')
                for f in os.listdir(level_folder))
+
+
+PICKUP_FIELD_RE = re.compile(r'^fields_pickup_rank(\d+)\.jld2$')
+PICKUP_AVG_RE = re.compile(r'^xy_avg_pickup_rank(\d+)\.jld2$')
+PICKUP_CENTER_RE = re.compile(r'^centerline_pickup_rank(\d+)\.jld2$')
+
+
+def has_pickup_named_files(level_folder):
+    return any(PICKUP_FIELD_RE.match(f) for f in os.listdir(level_folder))
+
+
+def stage_pickup_folder(src_folder, top_folder, staging_root, index):
+    """
+    Pickup runs can write fields_pickup_rank<N>.jld2, xy_avg_pickup_rank<N>.jld2 and
+    centerline_pickup_rank<N>.jld2, which OceananigansData does not recognise (it skips
+    'fields_pickup*' and builds fields_rank<N>.jld2). Build a folder of symlinks using
+    the names the reader expects. The pickup folder itself is not modified.
+    """
+    stage = os.path.join(staging_root, f'level{index}')
+    os.makedirs(stage, exist_ok=True)
+    src = os.path.abspath(src_folder)
+
+    def matches(regex):
+        out = []
+        for n in os.listdir(src):
+            m = regex.match(n)
+            if m:
+                out.append((int(m.group(1)), n))
+        return sorted(out)
+
+    def link(target, name):
+        dst = os.path.join(stage, name)
+        if os.path.lexists(dst):
+            os.remove(dst)
+        os.symlink(target, dst)
+
+    for rank, name in matches(PICKUP_FIELD_RE):
+        link(os.path.join(src, name), f'fields_rank{rank}.jld2')
+
+    # The reader uses a single xy_avg file, which only makes sense if every rank's
+    # file holds the same all-reduced profile; link rank 0's and spot-check that.
+    avg = matches(PICKUP_AVG_RE)
+    if avg:
+        link(os.path.join(src, avg[0][1]), 'xy_avg.jld2')
+        if len(avg) > 1:
+            try:
+                with h5py.File(os.path.join(src, avg[0][1]), 'r') as a, \
+                     h5py.File(os.path.join(src, avg[-1][1]), 'r') as b:
+                    k = max(a['timeseries/t'].keys(), key=float)
+                    same = np.allclose(a[f'timeseries/T_avg/{k}'][:], b[f'timeseries/T_avg/{k}'][:])
+                if not same:
+                    print('  WARNING: xy_avg files differ between ranks; only rank 0 is used')
+            except Exception as e:
+                print(f'  (could not compare xy_avg files across ranks: {e})')
+
+    center = matches(PICKUP_CENTER_RE)
+    if center:
+        link(os.path.join(src, center[0][1]), 'centerline.jld2')
+
+    gi = os.path.join(src, 'grid_info.jld2')
+    if not os.path.exists(gi):
+        gi = os.path.abspath(os.path.join(top_folder, 'grid_info.jld2'))
+    link(gi, 'grid_info.jld2')
+    return stage
 
 
 def ensure_grid_info(level_folder, top_folder):
@@ -137,14 +203,14 @@ def save_last_time_step(level, outdir, variables):
     time = float(r.t[-1]) + level.time_offset
     hx = [int(h) for h in r.hx] if with_halos else [0, 0, 0]
     out_path = os.path.join(outdir, DEBUG_OUT_NAME)
-    print(f'Saving last time step (iteration {iteration}, from {level.folder}, '
+    print(f'Saving last time step (iteration {iteration}, from {level.label or level.folder}, '
           f'{level.nranks} rank files) to {out_path}')
 
     dsets, nx_local = {}, {}
     with h5py.File(out_path, 'w') as out:
         out.create_dataset('iteration', data=iteration)
         out.create_dataset('t', data=time)
-        out.attrs['source_folder'] = str(level.folder)
+        out.attrs['source_folder'] = str(level.label or level.folder)
         out.attrs['array_order'] = 'x, y, z (halos removed)'
         for rank, fname in enumerate(r.files):
             with h5py.File(os.path.join(level.folder, fname), 'r') as f:
@@ -221,7 +287,7 @@ def append_highfreq_level(level, is_first, is_last, f_avg, f_cen, variables):
 # ==========================================================
 # MAIN
 # ==========================================================
-def main():
+def run(staging_root):
     outdir = os.path.join(folder, OUTDIR_NAME)
     os.makedirs(outdir, exist_ok=True)
     shutil.copy2(os.path.join(folder, 'grid_info.jld2'), os.path.join(outdir, 'grid_info.jld2'))
@@ -234,21 +300,25 @@ def main():
     levels = []
     iter_off, time_off = 0, 0.0
     for i, fld in enumerate(chain):
-        if not has_field_files(fld):
+        io_folder = fld
+        if i > 0 and not has_field_files(fld) and has_pickup_named_files(fld):
+            io_folder = stage_pickup_folder(fld, folder, staging_root, i)
+            print(f'  {fld} uses *_pickup_rank* file names; reading it through symlinks in {io_folder}')
+        if not has_field_files(io_folder):
             found = sorted(f for f in os.listdir(fld) if f.endswith(('.jld2', '.h5')))
-            msg = (f'No field files (fields*.jld2, excluding fields_pickup*) in {fld}. '
-                   f'.jld2/.h5 files present: {found}')
-            if i == 0:
-                raise FileNotFoundError(msg)
-            print(f'  WARNING: {msg}\n  Stopping the chain here; later pickups (if any) are ignored.')
-            break
-        if i > 0:
+            msg = (f'No field files (fields*.jld2 or fields_pickup_rank*.jld2) in {fld}. '
+                   f'{len(found)} .jld2/.h5 files present, e.g. {found[:5]}')
+            raise FileNotFoundError(msg)  # never silently drop a run from the condensed output
+        if i > 0 and io_folder == fld:
             ensure_grid_info(fld, folder)
-        rdr = OceananigansData(fld, salinity=salinity, with_halos=with_halos)
-        lv = Level(fld, rdr, iter_off, time_off)
+        rdr = OceananigansData(io_folder, salinity=salinity, with_halos=with_halos)
+        lv = Level(io_folder, rdr, iter_off, time_off, label=fld)
         levels.append(lv)
         print(f'  [{i}] {fld}  (ranks = {lv.nranks}, x-halo = {lv.halo}, '
               f'last saved iteration = {int(rdr.t_save[-1])})')
+        if i > 0 and rdr.t_save[0] != 0:
+            print(f'  WARNING: first saved iteration of this pickup is {int(rdr.t_save[0])}, not 0. '
+                  f'The script assumes pickup iterations and times restart at 0.')
         iter_off += int(rdr.t_save[-1])
         time_off += float(rdr.t[-1])
 
@@ -271,7 +341,7 @@ def main():
         for name in main_files:
             shutil.copy2(os.path.join(folder, name), os.path.join(outdir, name))
         for i, (lv, ratio) in enumerate(zip(levels[1:], ratios), start=1):
-            print(f'Level {i}: {lv.folder}')
+            print(f'Level {i}: {lv.label or lv.folder}')
             append_field_level(lv, main_files, outdir, ratio, variables)
 
     # ---- high-frequency files
@@ -281,7 +351,7 @@ def main():
         print(f'Combining averaging and centerline files into {outdir}')
         with h5py.File(avg_out, 'w') as f_avg, h5py.File(cen_out, 'w') as f_cen:
             for i, lv in enumerate(levels):
-                print(f'Level {i}: {lv.folder}')
+                print(f'Level {i}: {lv.label or lv.folder}')
                 append_highfreq_level(lv, i == 0, i == len(levels) - 1,
                                       f_avg, f_cen, variables)
 
@@ -293,6 +363,15 @@ def main():
             f_avg.create_dataset('buoyancy/formulation/equation_of_state/haline_contraction', data=beta)
 
     print(f'Condensed files saved to {outdir}')
+
+
+def main():
+    staging_root = os.path.join(folder, OUTDIR_NAME, '_pickup_links')
+    os.makedirs(staging_root, exist_ok=True)
+    try:
+        run(staging_root)
+    finally:
+        shutil.rmtree(staging_root, ignore_errors=True)  # removes the symlinks only, not their targets
 
 
 if __name__ == '__main__':
