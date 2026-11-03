@@ -38,7 +38,7 @@ if not salinity:
 # ==========================================================
 # READER
 # ==========================================================
-folder = '/scratch/alpine/anpa5279/dxi00625/weno9/condensed_files_old'
+folder = '/scratch/alpine/anpa5279/dxi00625/weno9/testing/condensed_files'
 
 print(f"Reading data from {folder}")
 bin_path = os.path.join(folder, 'binning_rtz.h5')
