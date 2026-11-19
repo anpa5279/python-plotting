@@ -22,62 +22,6 @@ def plot_format(fontsize = 20):
     plt.rcParams['mathtext.rm'] = 'DejaVu Serif'
     plt.rcParams['mathtext.it'] = 'DejaVu Serif:italic'
     plt.rcParams['mathtext.bf'] = 'DejaVu Serif:bold'
-## defining ranges for plotting
-def plot_ranges(lz = 96, mld = 60, rho0 = 1026, T0 = 25, dTdz = 0.01, C = 0.04, C_tol = 10**(-7)):
-    ranges = {}
-    list_pqr = ['u', 'v', 'w', 'b', 'T', 'Tracer', 'Pdynamic', 'Pstatic', 'rho', 
-                'b_flux', 
-                'vel_rms', 'b_rms', 
-                'b_avg', 'T_avg', 'vel_avg', 'lamb_avg', 'Tracer_avg', 
-                'vel_restress', 'vel_flux', 'Ri', 
-                'u_fluc', 'v_fluc', 'w_fluc', 'b_fluc', 'vel_fluc', 'bw_fluc', 'Tw_fluc', 'rho_fluc', 'T_fluc', 'Tracer_fluc',
-                'lengthscale', 'gradb', 'alphas', 
-                'Q', 'F', 'M', 'B']
-    for i in range(0,len(list_pqr),1):
-        ranges[list_pqr[i]] = list()
-    ranges['u'] = [-0.002, 0.002]
-    ranges['v'] = [-0.002, 0.002]
-    ranges['w'] = [-0.002, 0.002]
-    ranges['u_avg'] = [-0.002, 0.002]
-    ranges['v_avg'] = [-0.002, 0.002]
-    ranges['w_avg'] = [-0.002, 0.002]
-    ranges['u_fluc'] = [-0.002, 0.002]
-    ranges['v_fluc'] = [-0.002, 0.002]
-    ranges['w_fluc'] = [-0.002, 0.002]
-    ranges['b'] = [-1.5*10**(-3), 10**(-5)]
-    ranges['T'] = [T0-(dTdz*(lz-mld))+0.1, T0 + 0.02]
-    ranges['Tracer'] = [C_tol, C*0.5]
-    ranges['S'] = ranges['Tracer']
-    ranges['S_avg'] = [0, C]
-    ranges['vel'] = [-0.00035, 0.00035]
-    ranges['vel_rms'] = [0, 0.004]
-    ranges['vel_flux'] = [-1*10**(-2), 1*10**(-2)]
-    ranges['restress'] = [-3*10**(-6), 3*10**(-6)]
-    ranges['Ri'] = [0, 5*10**(-3)]
-    ranges['Pdynamic'] = [-0.005, 0.005]
-    ranges['Pstatic'] = [-0.05, 0.05]
-    ranges['b_avg'] = [-1.5*10**(-3), 1.0*10**(-5)]
-    ranges['T_avg'] = ranges['T']
-    ranges['lamb_avg'] = [-4*10**(-6), 4*10**(-6)]
-    ranges['b_rms'] = [0, 2*10**(-5)]
-    ranges['bw_fluc'] = [-1*10**(-8), 1*10**(-8)]
-    ranges['b_flux'] = [-1*10**(-8), 1*10**(-8)]
-    ranges['b_fluc'] = [-1*10**(-4), 1*10**(-4)]
-    ranges['lengthscale'] = [0, 0.4]
-    ranges['rho'] = [rho0-0.02, rho0+0.15]
-    ranges['rho_fluc'] = [-0.02, 0.02]
-    ranges['brms_sign'] = [0, 5*10**(-5)]
-    ranges['bflux_rms'] = [-1*10**(-5), 1*10**(-5)]
-    ranges['z_sign'] = [-1*lz, 0]
-    ranges['alphas'] = [0, 0.2]
-    ranges['gradb'] = [-3*10**(-5), 3*10**(-5)]
-    ranges['T_fluc'] = [-5*10**(-1), 5*10**(-1)]
-    ranges['Tracer_fluc'] = [-1*10**(-1), 1*10**(-1)]
-    ranges['Tw_fluc'] = [-1.6*10**(-4), 1.6*10**(-4)]
-    ranges['Cw'] = [-1*10**(-5), 1*10**(-5)]
-    for key in ranges:
-        ranges[key] = np.array(ranges[key])
-    return ranges
 ## for multiple case comparison plotting
 def comparison_plot_opt(cases, case_opt = 'coolwarm', distinct_groups = [1, ]):
     if isinstance(cases, int):

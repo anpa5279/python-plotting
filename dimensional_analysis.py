@@ -6,7 +6,7 @@ from diagnostics import comparison_info
 from physics import rms, a_fluc_b, buoyancy
 from interpolation import velocities_to_center, vertical_line, horizontal_line, plane_slice_calc, plane_slice_calc
 
-from plotting_general import plot_format, plot_ranges, create_video, comparison_plot_opt
+from plotting_general import plot_format, create_video, comparison_plot_opt
 from plotting_lines import plot_plume_horizontal_spatial, plot_plume_vertical_spatial
 from plotting_analysis import plot_combo_exponents, plot_rig_exponents, plot_Fr_exponents, plot_mld_exponents
 
@@ -118,7 +118,7 @@ else:
 plot_format()
 
 S_tol = 10**(-6)
-ranges = plot_ranges(lz = 96, mld = np.max(mld), rho0 = rho0, T0 = T0, dTdz = np.max(dTdz), C_tol = S_tol)
+ranges = {}
 ranges['b'] = [rho0, rho0+0.15]
 ranges['rho_fluc'] = [-0.025, 0.025]
 ranges['Tracer'] =[S_tol, 0.15]

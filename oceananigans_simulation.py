@@ -4,7 +4,7 @@ import h5py
 import matplotlib.pyplot as plt
 
 from reader import OceananigansData
-from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
+from plotting_general import plot_format, create_video, comparison_plot_opt
 from plotting_planes import plot_var_planeslice, plot_debug_planeslice
 from interpolation import point, interp1d_axis
 # ==========================================================
@@ -167,7 +167,7 @@ print("finished loading data")
 
 mld_var = np.arange(-10**2, 10**2)
 mld_array = -mld * np.ones(len(mld_var))
-ranges = plot_ranges()
+ranges = {}
 ranges['w'] = [-2*10**-3, 2*10**-3]
 ranges['b_fluc'] = [-7*10**(-4), 7*10**(-4)]
 ranges['gradw'] = [-0.05, 0.05]

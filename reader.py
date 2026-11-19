@@ -42,6 +42,8 @@ class OceananigansData:
             self.salinity = salinity
             self.Sval = Sval
             self.beta = None
+        else:
+            self.salinity = False
         if temperature:
             self.temperature = temperature
             self.T0 = None

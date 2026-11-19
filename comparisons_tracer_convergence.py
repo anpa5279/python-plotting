@@ -3,7 +3,7 @@ import numpy as np
 
 from reader import OceananigansData
 from diagnostics import comparison_info
-from plotting_general import create_video, plot_ranges, plot_format, comparison_plot_opt
+from plotting_general import create_video, plot_format, comparison_plot_opt
 from plotting_tracer_convergence import plot_turbulence_convergence, plot_salinity_convergence, plot_temperature_convergence
 from plotting_planes import plot_tracer_slice_comparison
 
@@ -198,7 +198,7 @@ for n, reader in enumerate(readers):
 # ==========================================================
 
 plot_format()
-ranges = plot_ranges(lz = 96, mld = np.max(mld), T0 = T0, dTdz = np.max(dTdz), C = 0.1, C_tol = S_tol)
+ranges = {}
 ranges['Tracer'] =[S_tol, 0.1]
 ranges['S_avg'] = [0, 1*10**(-3)]
 ranges['T'] = [T0-0.7, T0 + 0.05]

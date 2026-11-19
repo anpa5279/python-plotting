@@ -108,7 +108,6 @@ def plot_lines(title, it, case_opt, fig_folder, z, lines_var_it, save_folder = '
                 stepping = int(len(comparison_profile)/len(profiles[n]))
                 error = (profiles[n] - comparison_profile[::stepping])/ np.max(np.abs(comparison_profile[::stepping]))#normalize_error
                 axes[a+n_vars].plot(error, z[n], color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
-                #print(f"it: {it}, var: {lines_var_it[var_name]['title']}, case: {case}, abs max error: {np.max(np.abs(error))}, abs avg error: {np.mean(np.abs(error))}")
             axes[a+n_vars].set_xlabel(r"$\Delta \phi/\phi_{0}$")
             axes[a+n_vars].set_xlim([-0.3, 0.3])
     if num_cases > 1:
@@ -116,7 +115,7 @@ def plot_lines(title, it, case_opt, fig_folder, z, lines_var_it, save_folder = '
         fig.legend(handles=case_handles,
                 loc='lower center',
                 handlelength = 0.9,
-                ncols=np.ceil(num_cases/2).astype(int),
+                ncols=np.ceil(num_cases/2).astype(int) if num_cases > 4 else num_cases,
                 bbox_to_anchor=(0.5, 0.0))
 
     # --- Save Frame ---
@@ -212,12 +211,10 @@ def plot_lines_h(title, it, case_opt, fig_folder, coord, lines_var_it, loc, xlab
                 stepping = int(len(comparison_profile)/len(profiles[n]))
                 error = (profiles[n] - comparison_profile[::stepping])/normalize_error
                 axes[a+n_vars].plot(coord[n], error, color = case_opt[case]['color'], linestyle=case_opt[case]['linestyle'], linewidth = 2.0)
-                #print(f"it: {it}, var: {lines_var_it[var_name]['title']}, case: {case}, abs max error: {np.max(np.abs(error))}, abs avg error: {np.mean(np.abs(error))}")
             axes[a+n_vars].set_ylabel(r"$\frac{\Delta \phi}{\phi_{0}}$")
             axes[a+n_vars].set_ylim([-0.2, 0.2])
             axes[a+n_vars].set_xlabel(xlabel)
             axes[a+n_vars].set_xlim([min(coord[-1]), max(coord[-1])])
-    #print('\n')
     plt.subplots_adjust(left=0.05, bottom=0.30)
     if num_cases > 1:
         case_handles = [Line2D([0], [0], color = case_opt[case]['color'], linewidth = 2.0, label=case) for n, case in enumerate(case_opt.keys())]
@@ -587,8 +584,6 @@ def plot_plume_depths(time, case_opt, fig_folder, lx, zp, zneutral, zc, contour,
             ax[2].plot(time[n]/3600, zc[n], color = case_opt[case]['color'], linewidth = 2.0)
         if trend:
             start = 10
-            print(time[n][start:]/3600)
-            print(zp[n][start:])
             vars = np.polyfit(time[n][start:]/3600, zp[n][start:], 1)
             z_trend = time[n]/3600 * vars[0] + vars[1]
             ax[0].plot(time[n]/3600, z_trend, label=rf"z = {vars[0]:.2f}t + {vars[1]:.2f}", color = case_opt[case]['color'], linestyle = '--', linewidth = 2.0)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from reader import OceananigansData
-from plotting_general import plot_format, create_video, comparison_plot_opt, plot_ranges
+from plotting_general import plot_format, create_video, comparison_plot_opt
 from diagnostics import azimuthal_avg
 """
     what happens when you set neagtive tracer values to 0?
@@ -152,7 +152,7 @@ print("finished loading data")
 # ==========================================================
 # PLOTTING
 # ==========================================================
-ranges = plot_ranges()
+ranges = {}
 ranges['S_avg'] = [0.0, 6*10**-4]
 ranges['b_avg'] = [-1.5*10**(-3), 1.0*10**(-5)]
 ranges['b_rms'] = [0, 4*10**(-5)]
